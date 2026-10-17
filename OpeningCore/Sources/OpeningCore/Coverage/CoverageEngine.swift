@@ -249,15 +249,16 @@ public struct CoverageEngine: Sendable {
         } else if c.reach! < t {
             c.status = .belowTarget
             c.completion = 1
+        } else if node.children.isEmpty, let canonical = canonicalNode(for: node.epd, excluding: id, tree: tree) {
+            // The lines continue at another node with this position (either side to move).
+            c.status = .transposition(canonical)
+            c.completion = info[canonical]?.completion ?? 0
+            setReferences(of: id, to: [canonical])
         } else if !opponentToMove {
             if let main = node.children.first, let mainInfo = info[main] {
                 c.status = .required
                 c.completion = mainInfo.completion
                 add(child: mainInfo)
-            } else if let canonical = canonicalNode(for: node.epd, excluding: id, tree: tree) {
-                c.status = .transposition(canonical)
-                c.completion = info[canonical]?.completion ?? 0
-                setReferences(of: id, to: [canonical])
             } else {
                 c.status = .gap
                 c.completion = 0

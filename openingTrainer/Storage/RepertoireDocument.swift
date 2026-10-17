@@ -31,7 +31,17 @@ final class RepertoireDocument {
     @ObservationIgnored private var listener: UUID?
     @ObservationIgnored private var cachedTrainer: (revision: Int, trainer: Trainer)?
 
-    init(entry: RepertoireEntry, store: StatsStore, queue: ExplorerQueue) throws {
+    /// Reads and parses the PGN off the main actor, since a large file takes a moment.
+    nonisolated static func load(_ url: URL) async throws -> (text: String, tree: RepertoireTree) {
+        try await Task.detached(priority: .userInitiated) {
+            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+            let text = String(decoding: try FileAccess.read(url), as: UTF8.self)
+            return (text, RepertoireTree(pgn: text))
+        }.value
+    }
+
+    /// `text` and `tree` come from `load(_:)`.
+    init(entry: RepertoireEntry, text: String, tree: RepertoireTree, store: StatsStore, queue: ExplorerQueue) throws {
         guard let sidecar = entry.sidecar else { throw CocoaError(.fileNoSuchFile) }
         self.entryID = entry.id
         self.pgnURL = entry.pgnURL
@@ -41,13 +51,12 @@ final class RepertoireDocument {
         self.queue = queue
         self.sidecar = sidecar
         self.coverage = CoverageEngine(settings: sidecar.coverageSettings)
-        self.tree = RepertoireTree()
-
-        try? FileManager.default.startDownloadingUbiquitousItem(at: pgnURL)
-        let text = String(decoding: try FileAccess.read(pgnURL), as: UTF8.self)
+        self.tree = tree
         lastWrittenPGN = text
-        tree = RepertoireTree(pgn: text)
         resolveConflicts()
+        // The file repeats lines under every move order (e.g. a Chessbook export): write the
+        // compact version, so later loads are fast.
+        if tree.mergedTranspositions > 0 { schedulePGNSave() }
 
         store.load(sidecar.database)
         recomputeCoverage()

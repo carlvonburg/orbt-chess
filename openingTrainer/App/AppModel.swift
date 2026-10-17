@@ -11,24 +11,37 @@ final class AppModel {
     @ObservationIgnored lazy var queue = ExplorerQueue(store: stats, auth: auth)
 
     private(set) var documents: [String: RepertoireDocument] = [:]
-    var openError: String?
+    /// Why an entry could not be opened, by entry id.
+    private(set) var openErrors: [String: String] = [:]
+    @ObservationIgnored private var opening: [String: Task<RepertoireDocument?, Never>] = [:]
 
-    /// Opens (or returns the already open) document for a library entry.
-    func document(for entry: RepertoireEntry) -> RepertoireDocument? {
+    /// Opens (or returns the already open) document for a library entry. The PGN is parsed
+    /// in the background; concurrent calls for the same entry share one load.
+    func open(_ entry: RepertoireEntry) async -> RepertoireDocument? {
         if let existing = documents[entry.id] { return existing }
-        do {
-            let doc = try RepertoireDocument(entry: entry, store: stats, queue: queue)
-            documents[entry.id] = doc
-            return doc
-        } catch {
-            openError = "Could not open \(entry.name): \(error.localizedDescription)"
-            return nil
+        if let task = opening[entry.id] { return await task.value }
+        let task = Task { () -> RepertoireDocument? in
+            defer { opening[entry.id] = nil }
+            do {
+                let (text, tree) = try await RepertoireDocument.load(entry.pgnURL)
+                if let existing = documents[entry.id] { return existing }
+                let doc = try RepertoireDocument(entry: entry, text: text, tree: tree, store: stats, queue: queue)
+                documents[entry.id] = doc
+                openErrors[entry.id] = nil
+                return doc
+            } catch {
+                openErrors[entry.id] = "Could not open \(entry.name): \(error.localizedDescription)"
+                return nil
+            }
         }
+        opening[entry.id] = task
+        return await task.value
     }
 
     func close(_ entryID: String) {
         documents[entryID]?.close()
         documents[entryID] = nil
+        openErrors[entryID] = nil
     }
 
     func flushAll() {

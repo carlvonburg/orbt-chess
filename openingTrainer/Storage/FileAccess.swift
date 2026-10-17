@@ -1,7 +1,7 @@
 import Foundation
 
 /// Coordinated reads and writes, so iCloud and other apps see consistent files.
-enum FileAccess {
+nonisolated enum FileAccess {
     static func read(_ url: URL) throws -> Data {
         var coordError: NSError?
         var result: Result<Data, Error> = .failure(CocoaError(.fileReadUnknown))

@@ -96,10 +96,15 @@ struct BuilderView: View {
             NodeHeader(model: model, node: node, onNote: { sheet = .note }, onTrain: {
                 drill = DrillRequest(mode: .branch(node.id))
             })
-            if node.sideToMove == document.color {
-                YourMovePanel(model: model, node: node)
+            // At a transposition the panels show the moves stored for this position elsewhere.
+            let shown = model.shownNode ?? node
+            if let target = model.continuation {
+                TranspositionNote(model: model, target: target)
+            }
+            if shown.sideToMove == document.color {
+                YourMovePanel(model: model, node: shown)
             } else {
-                RepliesPanel(model: model, node: node)
+                RepliesPanel(model: model, node: shown)
             }
         }
     }
@@ -133,7 +138,7 @@ struct BuilderView: View {
                 .disabled(model.current == RepertoireTree.rootID && !model.hasDraft)
             Button("Forward", systemImage: "chevron.forward") { model.forward() }
                 .keyboardShortcut(.rightArrow, modifiers: [])
-                .disabled(model.hasDraft || model.node?.children.isEmpty != false)
+                .disabled(!model.canForward)
             Spacer()
             Button("Biggest Gap", systemImage: "scope") { model.goToBiggestGap() }
                 .disabled(document.coverage.root?.biggestGap == nil)
@@ -188,6 +193,33 @@ struct BuilderView: View {
         case .settings:
             RepertoireSettingsSheet(document: document)
         }
+    }
+}
+
+/// The current position's lines are stored under another move order.
+struct TranspositionNote: View {
+    let model: BuilderModel
+    let target: NodeID
+
+    var body: some View {
+        Button { model.go(to: target) } label: {
+            HStack(alignment: .firstTextBaseline) {
+                Image(systemName: "arrow.triangle.branch").foregroundStyle(.blue)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Transposes. Lines continue after").font(.callout)
+                    Text(Format.moveList(model.tree.moves(to: target), startPly: model.tree.root.ply))
+                        .font(.callout.weight(.semibold))
+                        .lineLimit(2)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+            }
+            .padding(10)
+            .background(.blue.opacity(0.12), in: .rect(cornerRadius: 10))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 6)
     }
 }
 

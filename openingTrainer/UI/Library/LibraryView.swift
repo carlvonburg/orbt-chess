@@ -31,11 +31,15 @@ struct LibraryView: View {
                     }
                 }
                 .navigationDestination(for: String.self) { id in
-                    if let entry = model.library.entry(id: id), let doc = model.document(for: entry) {
-                        BuilderView(document: doc)
+                    if let entry = model.library.entry(id: id) {
+                        OpenDocument(entry: entry) { doc in
+                            BuilderView(document: doc)
+                        } placeholder: {
+                            ProgressView("Opening \(entry.name)…")
+                        }
                     } else {
                         ContentUnavailableView("Repertoire unavailable", systemImage: "exclamationmark.triangle",
-                                               description: Text(model.openError ?? "The file could not be opened."))
+                                               description: Text("The file is no longer in the folder."))
                     }
                 }
         }

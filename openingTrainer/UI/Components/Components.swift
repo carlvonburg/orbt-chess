@@ -58,6 +58,20 @@ enum Format {
         value.formatted(.percent.precision(.fractionLength(0)))
     }
 
+    /// "1. d4 d5 2. c4 c6", numbered from `startPly` (0 = White's first move).
+    static func moveList(_ moves: [PlayedMove], startPly: Int = 0) -> String {
+        var parts: [String] = []
+        for (i, move) in moves.enumerated() {
+            let ply = startPly + i
+            if ply % 2 == 0 {
+                parts.append("\(ply / 2 + 1). \(move.san)")
+            } else {
+                parts.append(i == 0 ? "\(ply / 2 + 1)… \(move.san)" : move.san)
+            }
+        }
+        return parts.joined(separator: " ")
+    }
+
     static func games(_ n: Int) -> String {
         if n >= 1_000_000 { return String(format: "%.1fM", Double(n) / 1_000_000) }
         if n >= 10_000 { return "\(n / 1000)k" }
@@ -107,5 +121,25 @@ extension View {
         padding(.horizontal, 10)
             .padding(.vertical, 5)
             .glassEffect(tint.map { .regular.tint($0) } ?? .regular, in: .capsule)
+    }
+}
+
+/// Shows `content` once the entry's document is open, opening it in the background.
+struct OpenDocument<Content: View, Placeholder: View>: View {
+    @Environment(AppModel.self) private var model
+    let entry: RepertoireEntry
+    @ViewBuilder let content: (RepertoireDocument) -> Content
+    @ViewBuilder let placeholder: () -> Placeholder
+
+    var body: some View {
+        if let doc = model.documents[entry.id] {
+            content(doc)
+        } else if let error = model.openErrors[entry.id] {
+            ContentUnavailableView("Repertoire unavailable", systemImage: "exclamationmark.triangle",
+                                   description: Text(error))
+        } else {
+            placeholder()
+                .task(id: entry.id) { _ = await model.open(entry) }
+        }
     }
 }

@@ -40,6 +40,15 @@ position, model games, bundled engine.
 - `openingTrainer/` — the app target (folder-synced group, new files are
   picked up automatically). `Lichess/`, `Storage/`, `UI/`.
 
+## Transpositions (see RepertoireTree.merge)
+Each position's lines are stored once. When a PGN move order reaches a position whose
+lines already exist at another node (same chapter, not an ancestor), that node becomes a
+leaf and its PGN moves are merged into the existing one (`transpositionTarget`). Chessbook
+exports repeat the subtree under every move order (a 1.2 MB Semi-Slav: 189k moves, 5.5k
+positions); such a file is rewritten compactly after opening. Coverage counts a leaf with a
+target as `.transposition`, training lines and branch drills continue through it, and the
+builder shows the target's moves and adds new moves there.
+
 ## Coverage model (see OpeningCore/Coverage)
 Reach probability p: root 1; own moves keep p; opponent move multiplies by its share at
 the parent (move games / position games). Opponent reply required when p·f ≥ 1/N and the

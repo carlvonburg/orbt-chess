@@ -15,8 +15,12 @@ struct TrainHomeView: View {
                                            description: Text("Create a repertoire and add some moves first."))
                 }
                 ForEach(entries) { entry in
-                    if let doc = model.document(for: entry) {
+                    OpenDocument(entry: entry) { doc in
                         TrainRow(name: entry.name, document: doc) { mode in drill = (doc, mode) }
+                    } placeholder: {
+                        Section {
+                            ProgressView("Opening \(entry.name)…").frame(maxWidth: .infinity)
+                        }
                     }
                 }
             }

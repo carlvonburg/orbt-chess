@@ -51,6 +51,8 @@ public struct RepertoireTree: Sendable {
     public private(set) var epdIndex: [EPD: [NodeID]] = [:]
     /// Moves that could not be played when loading (illegal or unreadable SAN).
     public private(set) var loadWarnings: [String] = []
+    /// Positions whose PGN lines were merged into another node with the same position.
+    public private(set) var mergedTranspositions = 0
     private var nextID: NodeID = 1
 
     public init(startFEN: String = ChessPosition.startFEN) {
@@ -88,8 +90,10 @@ public struct RepertoireTree: Sendable {
     }
 
     public func child(of id: NodeID, san: String) -> NodeID? {
+        guard let children = nodes[id]?.children, !children.isEmpty else { return nil }
+        if let exact = children.first(where: { nodes[$0]?.move?.san == san }) { return exact }
         let wanted = SAN.loose(san)
-        return nodes[id]?.children.first { nodes[$0].map { SAN.loose($0.move?.san ?? "") } == wanted }
+        return children.first { nodes[$0].map { SAN.loose($0.move?.san ?? "") } == wanted }
     }
 
     /// Follows a list of UCI moves from the root; returns nil if any is missing.
@@ -111,6 +115,23 @@ public struct RepertoireTree: Sendable {
             if let node = nodes[n] { stack.append(contentsOf: node.children.reversed()) }
         }
         return result
+    }
+
+    /// For a node without moves: the node with the same position that holds its lines
+    /// (the first one that has moves). Never an ancestor, so following it cannot loop.
+    public func transpositionTarget(of id: NodeID) -> NodeID? {
+        transpositionTarget(of: id, chapter: nil)
+    }
+
+    func transpositionTarget(of id: NodeID, chapter: Int?) -> NodeID? {
+        guard let node = nodes[id], node.children.isEmpty, let candidates = epdIndex[node.epd],
+              candidates.count > 1 else { return nil }
+        return candidates.lazy.filter { candidate in
+            guard candidate != id, let c = self.nodes[candidate], !c.children.isEmpty else { return false }
+            // Moves are written per chapter, so lines only move to a node of the same chapter.
+            if let chapter, !c.chapters.contains(chapter) { return false }
+            return !self.isAncestor(candidate, of: id)
+        }.min()
     }
 
     public func isAncestor(_ a: NodeID, of b: NodeID) -> Bool {
@@ -237,14 +258,20 @@ public struct RepertoireTree: Sendable {
         let before = nodes.count
         let chapter = chapter ?? nodes[id].map(defaultChapter(for:)) ?? 0
         var stack: [(PGNMove, NodeID)] = moves.reversed().map { ($0, id) }
+        // Boards of nodes created here, so their children are played without re-parsing the FEN.
+        var boards: [NodeID: ChessPosition] = [:]
         while let (pgnMove, parent) = stack.popLast() {
             guard let parentNode = nodes[parent] else { continue }
             var target: NodeID
             if let existing = child(of: parent, san: pgnMove.san) {
                 target = existing
-            } else if let (move, next) = parentNode.position.play(san: pgnMove.san) {
-                target = child(of: parent, uci: move.uci)
-                    ?? insert(move: move, position: next, after: parent, chapters: [])
+            } else if let (move, next) = (boards[parent] ?? parentNode.position).play(san: pgnMove.san) {
+                if let existing = child(of: parent, uci: move.uci) {
+                    target = existing
+                } else {
+                    target = insert(move: move, position: next, after: parent, chapters: [])
+                    if !pgnMove.children.isEmpty { boards[target] = next }
+                }
             } else {
                 let line = self.moves(to: parent).map(\.san).joined(separator: " ")
                 loadWarnings.append("Illegal move \(pgnMove.san) after \(line.isEmpty ? "start" : line)")
@@ -256,7 +283,13 @@ public struct RepertoireTree: Sendable {
             for nag in pgnMove.nags where nodes[target]?.nags.contains(nag) == false {
                 nodes[target]?.nags.append(nag)
             }
-            stack.append(contentsOf: pgnMove.children.reversed().map { ($0, target) })
+            // A position whose lines are already stored elsewhere stays a leaf here: its moves
+            // are merged into that node, so each position's continuation is stored once.
+            // (Exports like Chessbook's repeat the whole subtree under every move order.)
+            let continuation = pgnMove.children.isEmpty ? target
+                : transpositionTarget(of: target, chapter: chapter) ?? target
+            if continuation != target { mergedTranspositions += 1 }
+            stack.append(contentsOf: pgnMove.children.reversed().map { ($0, continuation) })
         }
         return nodes.count - before
     }

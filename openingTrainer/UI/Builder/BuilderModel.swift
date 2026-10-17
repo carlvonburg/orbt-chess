@@ -36,6 +36,14 @@ final class BuilderModel {
         return p
     }
 
+    /// When the current position's lines are stored at another node (a transposition), that node.
+    var continuation: NodeID? { draft.isEmpty ? tree.transpositionTarget(of: current) : nil }
+
+    /// The node whose moves the panels show: the current one, or where its lines continue.
+    var shownNode: RepertoireNode? { continuation.flatMap { tree[$0] } ?? node }
+
+    var canForward: Bool { draft.isEmpty && shownNode?.children.isEmpty == false }
+
     var lastMove: PlayedMove? { draft.last ?? node?.move }
     var isUserTurnOnBoard: Bool { position.sideToMove == document.color }
     var hasDraft: Bool { !draft.isEmpty }
@@ -62,7 +70,7 @@ final class BuilderModel {
     }
 
     func forward() {
-        guard draft.isEmpty, let main = node?.children.first else { return }
+        guard draft.isEmpty, let main = shownNode?.children.first else { return }
         current = main
         remember()
     }
@@ -88,7 +96,7 @@ final class BuilderModel {
     }
 
     private func play(_ move: PlayedMove) {
-        if draft.isEmpty, let child = tree.child(of: current, uci: move.uci) {
+        if draft.isEmpty, let shown = shownNode, let child = tree.child(of: shown.id, uci: move.uci) {
             go(to: child)
         } else {
             draft.append(move)
@@ -104,7 +112,9 @@ final class BuilderModel {
     // MARK: Editing
 
     func saveDraft() {
-        guard !draft.isEmpty, let last = document.addLine(draft.map(\.uci), after: current) else { return }
+        // New moves at a transposition go where that position's lines are stored.
+        let parent = tree.transpositionTarget(of: current) ?? current
+        guard !draft.isEmpty, let last = document.addLine(draft.map(\.uci), after: parent) else { return }
         draft = []
         current = last
         remember()
@@ -116,7 +126,7 @@ final class BuilderModel {
 
     /// Adds a move from the panel and goes there.
     func add(uci: String) {
-        if let id = document.addMove(uci, after: current) {
+        if let id = document.addMove(uci, after: continuation ?? current) {
             go(to: id)
         }
     }
@@ -156,14 +166,14 @@ final class BuilderModel {
     /// Arrows for the current node: your saved moves, or the opponent's replies sized by
     /// frequency with missing required replies as dashed orange arrows.
     var arrows: [BoardArrow] {
-        guard draft.isEmpty, let node else { return [] }
+        guard draft.isEmpty, let node = shownNode else { return [] }
         if node.sideToMove == document.color {
             return node.children.enumerated().compactMap { i, child in
                 guard let move = tree[child]?.move else { return nil }
                 return BoardArrow(from: move.from, to: move.to, style: .mine, width: i == 0 ? 0.2 : 0.12, opacity: i == 0 ? 0.85 : 0.5)
             }
         }
-        guard let replies = document.coverage[current]?.replies, !replies.isEmpty else {
+        guard let replies = document.coverage[node.id]?.replies, !replies.isEmpty else {
             return node.children.compactMap { child in
                 tree[child]?.move.map { BoardArrow(from: $0.from, to: $0.to, style: .opponent, width: 0.12, opacity: 0.6) }
             }

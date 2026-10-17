@@ -4,7 +4,8 @@ import Foundation
 ///
 /// A card is a position (EPD) where it is your move and the repertoire has a main move.
 /// Transposed positions share one card. Alternative moves of yours (not the first) and
-/// everything below them are not trained.
+/// everything below them are not trained. A line that ends in a position whose moves are
+/// stored at another node continues there.
 public struct Trainer: Sendable {
     public let tree: RepertoireTree
     public let color: Side
@@ -17,21 +18,42 @@ public struct Trainer: Sendable {
         var trainable: Set<NodeID> = []
         var stack = [RepertoireTree.rootID]
         while let id = stack.popLast() {
-            guard let node = tree[id] else { continue }
-            trainable.insert(id)
-            if node.sideToMove == color {
-                if let main = node.children.first { stack.append(main) }
-            } else {
-                stack.append(contentsOf: node.children)
-            }
+            guard tree[id] != nil, trainable.insert(id).inserted else { continue }
+            stack.append(contentsOf: Self.next(after: id, tree: tree, color: color))
         }
         self.trainable = trainable
     }
 
+    /// Nodes a line continues to: your main move, every opponent reply, or for a position
+    /// whose moves are stored elsewhere, that node's continuations.
+    private static func next(after id: NodeID, tree: RepertoireTree, color: Side) -> [NodeID] {
+        guard let node = tree[id] else { return [] }
+        let holder = node.children.isEmpty ? tree.transpositionTarget(of: id).flatMap { tree[$0] } : node
+        guard let holder else { return [] }
+        return holder.sideToMove == color ? Array(holder.children.prefix(1)) : holder.children
+    }
+
+    private func next(after id: NodeID) -> [NodeID] {
+        Self.next(after: id, tree: tree, color: color)
+    }
+
+    /// Trainable nodes below `root`, following transpositions, each once.
+    private func reachable(under root: NodeID) -> [NodeID] {
+        var result: [NodeID] = []
+        var seen: Set<NodeID> = []
+        var stack = [root]
+        while let id = stack.popLast() {
+            guard trainable.contains(id), seen.insert(id).inserted else { continue }
+            result.append(id)
+            stack.append(contentsOf: next(after: id).reversed())
+        }
+        return result
+    }
+
     /// Your-turn nodes with a main move, i.e. where a card is asked.
     public func cardNodes(under root: NodeID = RepertoireTree.rootID) -> [NodeID] {
-        tree.subtree(of: root).filter { id in
-            guard trainable.contains(id), let node = tree[id] else { return false }
+        reachable(under: root).filter { id in
+            guard let node = tree[id] else { return false }
             return node.sideToMove == color && !node.children.isEmpty
         }
     }
@@ -117,31 +139,45 @@ public struct Trainer: Sendable {
 
     /// Every line below `root` once (for "train this branch").
     public func allLines(under root: NodeID) -> [Line] {
-        var leaves: [NodeID] = []
-        var stack = [root]
-        while let id = stack.popLast() {
-            guard let node = tree[id], trainable.contains(id) else { continue }
-            let next = node.sideToMove == color ? Array(node.children.prefix(1)) : node.children
-            if next.isEmpty { leaves.append(id) } else { stack.append(contentsOf: next.reversed()) }
+        guard trainable.contains(root) else { return [] }
+        var lines: [Line] = []
+        // A transposed position's continuation is drilled once: lines into a position stored
+        // inside this branch end there, and one stored elsewhere is entered by one line only.
+        var continued: Set<NodeID> = []
+        var stack: [[NodeID]] = [tree.path(to: root)]
+        while let line = stack.popLast() {
+            let id = line.last!
+            var nextNodes = next(after: id).filter(trainable.contains)
+            if tree[id]?.children.isEmpty == true, let target = tree.transpositionTarget(of: id),
+               target == root || tree.isAncestor(root, of: target) || !continued.insert(target).inserted {
+                nextNodes = []
+            }
+            if nextNodes.isEmpty {
+                lines.append(Line(nodes: line))
+            } else {
+                for n in nextNodes.reversed() { stack.append(line + [n]) }
+            }
         }
-        return leaves.map { Line(nodes: tree.path(to: $0)) }
+        return lines
     }
 
     /// Path to `target`, continued to a leaf choosing opponent moves by `preferring`.
     public func line(through target: NodeID, preferring score: (NodeID) -> Double = { _ in 1 }) -> Line {
         var nodes = tree.path(to: target)
+        var visited = Set(nodes)
         var cursor = target
-        while let node = tree[cursor] {
-            let options = node.sideToMove == color ? Array(node.children.prefix(1)) : node.children.filter(trainable.contains)
+        while true {
+            let options = next(after: cursor).filter { trainable.contains($0) && !visited.contains($0) }
             guard let next = options.max(by: { score($0) < score($1) }) else { break }
             nodes.append(next)
+            visited.insert(next)
             cursor = next
         }
         return Line(nodes: nodes)
     }
 
     private func dueCount(under id: NodeID, dueEPDs: Set<EPD>) -> Double {
-        Double(tree.subtree(of: id).filter { trainable.contains($0) && dueEPDs.contains(tree[$0]!.epd) }.count)
+        Double(reachable(under: id).filter { dueEPDs.contains(tree[$0]!.epd) }.count)
     }
 }
 
@@ -193,7 +229,8 @@ public struct DrillSession: Sendable {
             index += 1
             return .correct
         }
-        if node.children.dropFirst().contains(where: { trainer.tree[$0]?.move?.uci == uci }) {
+        let holder = node.children.isEmpty ? trainer.tree.transpositionTarget(of: node.id).flatMap { trainer.tree[$0] } ?? node : node
+        if holder.children.dropFirst().contains(where: { trainer.tree[$0]?.move?.uci == uci }) {
             return .alternative
         }
         mistakes[node.epd, default: 0] += 1
