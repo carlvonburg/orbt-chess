@@ -29,3 +29,15 @@ public struct EPD: Hashable, Sendable, Codable, Comparable, CustomStringConverti
         try c.encode(rawValue)
     }
 }
+
+extension EPD: CodingKeyRepresentable {
+    public var codingKey: CodingKey { Key(stringValue: rawValue) }
+    public init?<T: CodingKey>(codingKey: T) { rawValue = codingKey.stringValue }
+
+    private struct Key: CodingKey {
+        var stringValue: String
+        var intValue: Int? { nil }
+        init(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+}
