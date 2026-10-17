@@ -3,17 +3,16 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 extension UTType {
-    static let pgn = UTType(filenameExtension: "pgn", conformingTo: .plainText) ?? .plainText
+    /// Declared in Info.plist (UTImportedTypeDeclarations); the identifier matches macOS Chess.app.
+    static let pgn = UTType(importedAs: "com.apple.chess.pgn", conformingTo: .plainText)
 }
 
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
     @State private var path: [String] = []
     @State private var showNew = false
-    @State private var showConnect = false
+    @State private var showImport = false
     @State private var setupEntry: RepertoireEntry?
-    @State private var connectURL: URL?
-    @State private var reconnectEntry: RepertoireEntry?
     @State private var deleteEntry: RepertoireEntry?
     @State private var errorMessage: String?
 
@@ -25,7 +24,7 @@ struct LibraryView: View {
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
                             Button("New Repertoire", systemImage: "plus") { showNew = true }
-                            Button("Connect PGN…", systemImage: "link") { showConnect = true }
+                            Button("Import PGN…", systemImage: "square.and.arrow.down") { showImport = true }
                         } label: {
                             Label("Add", systemImage: "plus")
                         }
@@ -46,26 +45,15 @@ struct LibraryView: View {
         .sheet(item: $setupEntry) { entry in
             SetupSheet(title: "Set up \(entry.name)") { sidecar in
                 try model.library.saveSidecar(sidecar, for: entry)
-            }
-        }
-        .sheet(item: Binding(get: { connectURL.map(IdentifiedURL.init) }, set: { connectURL = $0?.url })) { item in
-            SetupSheet(title: "Connect \(item.url.deletingPathExtension().lastPathComponent)") { sidecar in
-                let entry = try model.library.connect(item.url, sidecar: sidecar)
                 path = [entry.id]
             }
         }
-        .fileImporter(isPresented: $showConnect, allowedContentTypes: [.pgn, .plainText]) { result in
-            switch result {
-            case .success(let url): connectURL = url
-            case .failure(let error): errorMessage = error.localizedDescription
+        .fileImporter(isPresented: $showImport, allowedContentTypes: [.pgn, .plainText]) { result in
+            do {
+                setupEntry = try model.library.importPGN(from: result.get())
+            } catch {
+                errorMessage = error.localizedDescription
             }
-        }
-        .fileImporter(isPresented: Binding(get: { reconnectEntry != nil }, set: { if !$0 { reconnectEntry = nil } }),
-                      allowedContentTypes: [.pgn, .plainText]) { result in
-            if case .success(let url) = result, let entry = reconnectEntry {
-                do { try model.library.reconnect(entry, to: url) } catch { errorMessage = error.localizedDescription }
-            }
-            reconnectEntry = nil
         }
         .confirmationDialog("Delete \(deleteEntry?.name ?? "")?", isPresented: Binding(
             get: { deleteEntry != nil }, set: { if !$0 { deleteEntry = nil } }), titleVisibility: .visible) {
@@ -76,11 +64,9 @@ struct LibraryView: View {
                 }
             }
         } message: {
-            if deleteEntry?.isConnected == true {
-                Text("Removes the link and training progress. The PGN file itself is kept.")
-            } else {
-                Text("Deletes the PGN and its training progress from iCloud Drive on all devices.")
-            }
+            Text(model.library.usesICloud
+                 ? "Deletes the PGN and its training progress from iCloud Drive on all devices."
+                 : "Deletes the PGN and its training progress from this device.")
         }
         .alert("Something went wrong", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
         } message: {
@@ -97,11 +83,11 @@ struct LibraryView: View {
             ContentUnavailableView {
                 Label("No repertoires yet", systemImage: "book.closed")
             } description: {
-                Text("Create a repertoire to start a PGN in iCloud Drive, or connect a PGN you already have.")
+                Text("Create a new repertoire, or import a PGN you already have. It's copied into the app's folder and every edit is saved to it.")
             } actions: {
                 Button("New Repertoire") { showNew = true }
                     .buttonStyle(.glassProminent)
-                Button("Connect PGN…") { showConnect = true }
+                Button("Import PGN…") { showImport = true }
                     .buttonStyle(.glass)
             }
         } else {
@@ -127,12 +113,7 @@ struct LibraryView: View {
 
     @ViewBuilder
     private func row(_ entry: RepertoireEntry) -> some View {
-        if entry.needsReconnect {
-            Button { reconnectEntry = entry } label: {
-                LibraryRow(entry: entry, status: "Not available on this device. Tap to reconnect the file.")
-            }
-            .tint(.primary)
-        } else if entry.needsSetup {
+        if entry.needsSetup {
             Button { setupEntry = entry } label: {
                 LibraryRow(entry: entry, status: entry.isDownloading ? "Downloading from iCloud…" : "New PGN. Tap to set it up.")
             }
@@ -145,11 +126,6 @@ struct LibraryView: View {
     }
 }
 
-private struct IdentifiedURL: Identifiable {
-    let url: URL
-    var id: URL { url }
-}
-
 struct LibraryRow: View {
     let entry: RepertoireEntry
     var document: RepertoireDocument?
@@ -159,13 +135,7 @@ struct LibraryRow: View {
         HStack(spacing: 12) {
             SideIcon(side: entry.sidecar?.color ?? .white)
             VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text(entry.name).font(.headline)
-                    if entry.isConnected {
-                        Image(systemName: "link").font(.caption).foregroundStyle(.secondary)
-                            .accessibilityLabel("Connected file")
-                    }
-                }
+                Text(entry.name).font(.headline)
                 if let status {
                     Text(status).font(.caption).foregroundStyle(.secondary)
                 } else {
@@ -282,7 +252,7 @@ struct NewRepertoireSheet: View {
     }
 }
 
-/// Settings for a PGN that has no sidecar yet (connected or dropped into the folder).
+/// Settings for a PGN that has no sidecar yet (imported or dropped into the folder).
 struct SetupSheet: View {
     @Environment(\.dismiss) private var dismiss
     let title: String

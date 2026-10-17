@@ -9,7 +9,7 @@ struct TrainHomeView: View {
     var body: some View {
         NavigationStack {
             List {
-                let entries = model.library.entries.filter { !$0.needsSetup && !$0.needsReconnect }
+                let entries = model.library.entries.filter { !$0.needsSetup }
                 if entries.isEmpty {
                     ContentUnavailableView("Nothing to train yet", systemImage: "graduationcap",
                                            description: Text("Create a repertoire and add some moves first."))

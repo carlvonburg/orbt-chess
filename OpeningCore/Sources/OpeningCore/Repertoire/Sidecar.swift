@@ -32,10 +32,6 @@ public struct Sidecar: Codable, Sendable, Equatable {
     public var settingsModified: Date
     public var cards: [EPD: CardState]
     public var summary: Summary?
-    /// Security-scoped bookmark of a connected PGN outside the app folder.
-    public var bookmark: Data?
-    /// Display name of a connected PGN.
-    public var connectedName: String?
     /// Last position the user looked at, as UCI moves from the start.
     public var lastLine: [String]?
 
@@ -65,7 +61,6 @@ public struct Sidecar: Codable, Sendable, Equatable {
             cards[epd] = card
         }
         result.cards = cards
-        result.bookmark = bookmark ?? other.bookmark
         return result
     }
 

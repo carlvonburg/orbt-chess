@@ -10,7 +10,6 @@ final class RepertoireDocument {
     let entryID: String
     let pgnURL: URL
     let sidecarURL: URL
-    let isConnected: Bool
     private(set) var name: String
 
     private(set) var tree: RepertoireTree
@@ -30,15 +29,13 @@ final class RepertoireDocument {
     @ObservationIgnored private var sidecarSaveTask: Task<Void, Never>?
     @ObservationIgnored private var presenters: [FilePresenter] = []
     @ObservationIgnored private var listener: UUID?
-    @ObservationIgnored private var accessingScope = false
     @ObservationIgnored private var cachedTrainer: (revision: Int, trainer: Trainer)?
 
     init(entry: RepertoireEntry, store: StatsStore, queue: ExplorerQueue) throws {
-        guard let pgnURL = entry.pgnURL, let sidecar = entry.sidecar else { throw CocoaError(.fileNoSuchFile) }
+        guard let sidecar = entry.sidecar else { throw CocoaError(.fileNoSuchFile) }
         self.entryID = entry.id
-        self.pgnURL = pgnURL
+        self.pgnURL = entry.pgnURL
         self.sidecarURL = entry.sidecarURL
-        self.isConnected = entry.isConnected
         self.name = entry.name
         self.store = store
         self.queue = queue
@@ -46,7 +43,6 @@ final class RepertoireDocument {
         self.coverage = CoverageEngine(settings: sidecar.coverageSettings)
         self.tree = RepertoireTree()
 
-        if isConnected { accessingScope = pgnURL.startAccessingSecurityScopedResource() }
         try? FileManager.default.startDownloadingUbiquitousItem(at: pgnURL)
         let text = String(decoding: try FileAccess.read(pgnURL), as: UTF8.self)
         lastWrittenPGN = text
@@ -72,8 +68,6 @@ final class RepertoireDocument {
         presenters = []
         if let listener { queue.unsubscribe(listener) }
         listener = nil
-        if accessingScope { pgnURL.stopAccessingSecurityScopedResource() }
-        accessingScope = false
     }
 
     var color: Side { sidecar.color }

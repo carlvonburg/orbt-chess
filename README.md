@@ -3,8 +3,8 @@
 A free, open-source opening repertoire trainer for iPhone and iPad, in the spirit of
 Chessbook, without a subscription.
 
-- **Your repertoire is a PGN** in iCloud Drive (Files › Opening Trainer), or any PGN you
-  connect. Every edit is written to the file immediately, and changes from other devices
+- **Your repertoire is a PGN** in iCloud Drive (Files › Opening Trainer). Create one, or
+  import an existing PGN, which is copied into that folder. Every edit is written to the file immediately, and changes from other devices
   are merged in.
 - **Coverage** from the Lichess opening explorer (masters, or Lichess games filtered by
   speed and rating). Pick a target such as "cover every move seen once in 500 games" and

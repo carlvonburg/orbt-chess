@@ -6,20 +6,17 @@ struct RepertoireEntry: Identifiable, Equatable {
     /// Path of the sidecar, stable across launches.
     let id: String
     var name: String
-    /// nil for a connected PGN whose bookmark cannot be resolved on this device.
-    var pgnURL: URL?
+    var pgnURL: URL
     var sidecarURL: URL
     /// nil when a PGN was dropped into the folder and has not been set up yet.
     var sidecar: Sidecar?
-    var isConnected: Bool
     var isDownloading: Bool
 
     var needsSetup: Bool { sidecar == nil }
-    var needsReconnect: Bool { isConnected && pgnURL == nil }
 }
 
-/// The repertoires in the app's iCloud Drive folder ("Opening Trainer" in Files) plus
-/// PGNs connected from elsewhere. Falls back to the local Documents folder without iCloud.
+/// The repertoires in the app's iCloud Drive folder ("Opening Trainer" in Files). Falls back
+/// to the local Documents folder without iCloud. Imported PGNs are copied into this folder.
 @Observable
 final class RepertoireLibrary {
     nonisolated static let containerID = "iCloud.ch.cvb.openingTrainer"
@@ -32,8 +29,6 @@ final class RepertoireLibrary {
     var lastError: String?
 
     @ObservationIgnored private var presenter: FilePresenter?
-
-    var connectedFolder: URL? { folder?.appending(path: "Connected", directoryHint: .isDirectory) }
 
     func setUp() async {
         guard folder == nil else { return }
@@ -65,7 +60,6 @@ final class RepertoireLibrary {
         var pgns: [URL] = []
         var placeholders: [URL] = []
         while let url = enumerator?.nextObject() as? URL {
-            if url.lastPathComponent == "Connected" { enumerator?.skipDescendants(); continue }
             let name = url.lastPathComponent
             if name.hasSuffix(".pgn") {
                 pgns.append(url)
@@ -82,20 +76,7 @@ final class RepertoireLibrary {
             if sidecar == nil { try? fm.startDownloadingUbiquitousItem(at: sidecarURL) }
             result.append(RepertoireEntry(id: sidecarURL.path, name: pgn.deletingPathExtension().lastPathComponent,
                                           pgnURL: pgn, sidecarURL: sidecarURL, sidecar: sidecar,
-                                          isConnected: false, isDownloading: placeholders.contains(pgn)))
-        }
-        if let connectedFolder, let files = try? fm.contentsOfDirectory(at: connectedFolder, includingPropertiesForKeys: nil) {
-            for url in files where url.lastPathComponent.hasSuffix(Self.sidecarExtension) {
-                guard let sidecar = (try? FileAccess.read(url)).flatMap({ try? Sidecar.decode($0) }) else { continue }
-                var pgnURL: URL?
-                if let bookmark = sidecar.bookmark {
-                    var stale = false
-                    pgnURL = try? URL(resolvingBookmarkData: bookmark, bookmarkDataIsStale: &stale)
-                }
-                result.append(RepertoireEntry(id: url.path, name: sidecar.connectedName ?? "Connected PGN",
-                                              pgnURL: pgnURL, sidecarURL: url, sidecar: sidecar,
-                                              isConnected: true, isDownloading: false))
-            }
+                                          isDownloading: placeholders.contains(pgn)))
         }
         entries = result.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
@@ -109,8 +90,7 @@ final class RepertoireLibrary {
     /// Creates `<name>.pgn` and its sidecar in the repertoire folder.
     func create(name: String, sidecar: Sidecar) throws -> RepertoireEntry {
         guard let folder else { throw CocoaError(.fileNoSuchFile) }
-        let clean = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+        let clean = Self.cleanName(name)
         guard !clean.isEmpty else { throw CocoaError(.fileWriteInvalidFileName) }
         let pgn = folder.appending(path: clean + ".pgn")
         guard !FileManager.default.fileExists(atPath: pgn.path) else { throw CocoaError(.fileWriteFileExists) }
@@ -122,43 +102,47 @@ final class RepertoireLibrary {
         return entry(id: Self.sidecarURL(for: pgn).path)!
     }
 
-    /// Connects a PGN picked from Files. Only the PGN itself is accessible, so the sidecar
-    /// lives in the app folder together with a bookmark to the file.
-    func connect(_ url: URL, sidecar: Sidecar) throws -> RepertoireEntry {
-        guard let connectedFolder else { throw CocoaError(.fileNoSuchFile) }
+    /// Copies a PGN picked from Files into the repertoire folder, as "Name 2.pgn" when the
+    /// name is taken. The new entry has no sidecar yet and needs setup.
+    func importPGN(from url: URL) throws -> RepertoireEntry {
+        guard let folder else { throw CocoaError(.fileNoSuchFile) }
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-        var sidecar = sidecar
-        sidecar.bookmark = try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
-        sidecar.connectedName = url.deletingPathExtension().lastPathComponent
-        try FileManager.default.createDirectory(at: connectedFolder, withIntermediateDirectories: true)
-        let sidecarURL = connectedFolder.appending(path: "\(sidecar.id.uuidString).\(Self.sidecarExtension)")
-        try FileAccess.write(sidecar.encoded(), to: sidecarURL)
+        let data = try FileAccess.read(url)
+        let base = Self.cleanName(url.deletingPathExtension().lastPathComponent).nonEmpty ?? "Imported"
+        var pgn = folder.appending(path: base + ".pgn")
+        var n = 2
+        while FileManager.default.fileExists(atPath: pgn.path)
+                || FileManager.default.fileExists(atPath: Self.sidecarURL(for: pgn).path) {
+            pgn = folder.appending(path: "\(base) \(n).pgn")
+            n += 1
+        }
+        try FileAccess.write(data, to: pgn)
         refresh()
-        return entry(id: sidecarURL.path)!
+        return entry(id: Self.sidecarURL(for: pgn).path)!
     }
 
-    /// Writes a sidecar for a PGN that was dropped into the folder, or updates the bookmark of a connected PGN.
+    /// Writes a sidecar for a PGN that was imported or dropped into the folder.
     func saveSidecar(_ sidecar: Sidecar, for entry: RepertoireEntry) throws {
         try FileAccess.write(sidecar.encoded(), to: entry.sidecarURL)
         refresh()
     }
 
-    func reconnect(_ entry: RepertoireEntry, to url: URL) throws {
-        guard var sidecar = entry.sidecar else { return }
-        let accessing = url.startAccessingSecurityScopedResource()
-        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-        sidecar.bookmark = try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
-        try saveSidecar(sidecar, for: entry)
-    }
-
-    /// Deletes a repertoire from the folder (PGN and sidecar). For a connected PGN only the
-    /// link and training data are removed; the PGN itself is left alone.
+    /// Deletes a repertoire from the folder (PGN and sidecar).
     func delete(_ entry: RepertoireEntry) throws {
-        if !entry.isConnected, let pgn = entry.pgnURL { try FileAccess.delete(pgn) }
+        try FileAccess.delete(entry.pgnURL)
         try? FileAccess.delete(entry.sidecarURL)
         refresh()
     }
+
+    private static func cleanName(_ name: String) -> String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+    }
+}
+
+private extension String {
+    var nonEmpty: String? { isEmpty ? nil : self }
 }
 
 extension RepertoireTree {

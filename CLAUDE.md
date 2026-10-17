@@ -22,7 +22,8 @@ Priorities, in order:
 Requirements:
 - Lichess stats are cached by EPD (FEN without move counters; ep square only if an
   en-passant capture is legal).
-- A repertoire is a PGN: created in the app's iCloud folder or connected from anywhere.
+- A repertoire is a PGN in the app's folder (iCloud Drive, or Documents without iCloud):
+  created there, or imported (copied in) from Files.
   Every edit is saved to the PGN immediately. Settings and training state live in a
   sidecar `<Name>.otrep.json`, never in the PGN.
 - Each repertoire chooses its coverage database (masters, or Lichess speeds + rating
