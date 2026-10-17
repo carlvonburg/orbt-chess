@@ -67,7 +67,6 @@ struct BoardView: View {
                     Image(piece.assetName)
                         .resizable()
                         .frame(width: sq, height: sq)
-                        .scaleEffect(isDragged ? 1.6 : 1)
                         .position(isDragged ? liftedPoint(dragLocation!, sq: sq) : center(piece.square, sq: sq))
                         .zIndex(isDragged ? 10 : 1)
                         .allowsHitTesting(false)
