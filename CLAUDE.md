@@ -50,5 +50,9 @@ recomputes only the edited subtree and its ancestors.
 ## Conventions
 - Code in OpeningCore is pure Swift, `Sendable` value types, no UIKit/SwiftUI.
 - App code is MainActor by default (`SWIFT_DEFAULT_ACTOR_ISOLATION`).
-- Explorer: one request at a time, 60 s pause on HTTP 429, re-login on 401.
+- Explorer: one request at a time, paced (~0.6 s), Retry-After on HTTP 429, re-login on 401.
+- Fetch policy: the position on screen first; plus a background coverage check only while a
+  repertoire is open in the builder, limited to opponent-to-move positions above the target
+  (bounded by the target, not PGN size: a 4.4k-position PGN needs ~15 requests at 1-in-500).
+  Never fetch every position of a PGN.
 - Build: `xcodebuild -project openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' build`

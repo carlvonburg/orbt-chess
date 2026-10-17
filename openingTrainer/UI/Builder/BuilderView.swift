@@ -61,6 +61,8 @@ struct BuilderView: View {
         .fullScreenCover(item: $drill) { request in
             DrillView(document: document, mode: request.mode)
         }
+        .onAppear { document.startCoverageCheck() }
+        .onDisappear { document.stopCoverageCheck() }
         .onChange(of: model.current, initial: true) { requestStats() }
         .onChange(of: model.draft) { requestStats() }
         .alert("Could not save", isPresented: .constant(document.saveError != nil)) {
@@ -277,6 +279,7 @@ struct NodeHeader: View {
                 }
                 Spacer()
             }
+            CoverageCheckStatus(document: document)
             HStack(spacing: 12) {
                 progress("Built", value: info?.completion ?? 0, tint: .green)
                 progress("Learned", value: learning.matureFraction, tint: .blue)
@@ -605,5 +608,35 @@ struct StatsUnavailableNote: View {
         .font(.footnote)
         .foregroundStyle(.secondary)
         .padding(.vertical, 8)
+    }
+}
+
+/// Shows the background coverage check while it runs.
+struct CoverageCheckStatus: View {
+    @Environment(AppModel.self) private var app
+    let document: RepertoireDocument
+
+    var body: some View {
+        let unchecked = document.uncheckedPositions
+        if unchecked > 0 {
+            HStack(spacing: 6) {
+                switch app.queue.state {
+                case .rateLimited(let until):
+                    Image(systemName: "hourglass")
+                    Text("Lichess asked to slow down · resuming \(until, style: .relative)")
+                case .offline:
+                    Image(systemName: "wifi.slash")
+                    Text("Offline · \(unchecked) positions not checked yet")
+                case .needsLogin:
+                    Image(systemName: "person.crop.circle.badge.exclamationmark")
+                    Text("Sign in to Lichess to check \(unchecked) positions")
+                default:
+                    ProgressView().controlSize(.mini)
+                    Text("Checking coverage · \(unchecked) waiting")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
     }
 }

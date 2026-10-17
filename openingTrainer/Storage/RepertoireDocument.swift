@@ -86,17 +86,44 @@ final class RepertoireDocument {
         store.stats(epd, sidecar.database)
     }
 
-    /// Fetches stats for a position the user is looking at. This is the only place stats
-    /// are requested: nothing is fetched in the background, so a large PGN never turns into
-    /// a burst of explorer requests. Coverage uses whatever is cached.
+    /// Fetches stats for the position on screen, ahead of the coverage check.
     func requestStats(for epd: EPD) {
-        queue.request(epd, sidecar.database, priority: 1)
+        queue.request(epd, sidecar.database, priority: 2)
     }
+
+    /// Set while the repertoire is open in the builder. Only then is the coverage check run,
+    /// so opening the Train tab never starts fetching.
+    @ObservationIgnored private var checksCoverage = false
+
+    /// Starts the background coverage check. It only asks for opponent-to-move positions
+    /// you would meet at least once in N games (N = your target), most frequent first, and
+    /// each answer tells which positions below are frequent enough to need a request. So
+    /// the number of requests depends on the target, not on the size of the PGN.
+    func startCoverageCheck() {
+        checksCoverage = true
+        checkCoverage()
+    }
+
+    func stopCoverageCheck() {
+        checksCoverage = false
+        queue.cancelAll(for: sidecar.database)
+    }
+
+    private func checkCoverage() {
+        guard checksCoverage else { return }
+        for (epd, reach) in coverage.pendingPositions(tree: tree) {
+            queue.request(epd, sidecar.database, priority: reach)
+        }
+    }
+
+    /// Opponent positions above your target whose stats are not loaded yet.
+    var uncheckedPositions: Int { coverage.root?.pendingCount ?? 0 }
 
     private func statsArrived(_ epd: EPD, _ database: ExplorerDatabase) {
         guard database == sidecar.database else { return }
         coverage.statsArrived(for: epd, tree: tree, stats: lookup)
         revision += 1
+        checkCoverage()
         scheduleSidecarSave(delay: 5)
     }
 
@@ -110,6 +137,7 @@ final class RepertoireDocument {
         coverage = CoverageEngine(settings: sidecar.coverageSettings)
         coverage.recomputeAll(tree: tree, stats: lookup)
         revision += 1
+        checkCoverage()
     }
 
     // MARK: Edits
@@ -192,6 +220,7 @@ final class RepertoireDocument {
         coverage.recomputeAll(tree: tree, stats: lookup)
         canUndo = !undoStack.isEmpty
         revision += 1
+        checkCoverage()
         schedulePGNSave()
     }
 
@@ -211,6 +240,7 @@ final class RepertoireDocument {
     private func didEdit() {
         canUndo = !undoStack.isEmpty
         revision += 1
+        checkCoverage()
         schedulePGNSave()
         scheduleSidecarSave(delay: 3)
     }
@@ -337,6 +367,7 @@ final class RepertoireDocument {
         canUndo = false
         coverage.recomputeAll(tree: tree, stats: lookup)
         revision += 1
+        checkCoverage()
         if pgnSaveTask != nil || tree.pgnText() != text { schedulePGNSave() }
     }
 
