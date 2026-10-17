@@ -86,22 +86,17 @@ final class RepertoireDocument {
         store.stats(epd, sidecar.database)
     }
 
-    /// Fetch stats for a position the user is looking at, ahead of coverage work.
+    /// Fetches stats for a position the user is looking at. This is the only place stats
+    /// are requested: nothing is fetched in the background, so a large PGN never turns into
+    /// a burst of explorer requests. Coverage uses whatever is cached.
     func requestStats(for epd: EPD) {
-        queue.request(epd, sidecar.database, priority: 2)
-    }
-
-    private func requestPendingStats() {
-        for (epd, reach) in coverage.pendingPositions(tree: tree) {
-            queue.request(epd, sidecar.database, priority: reach)
-        }
+        queue.request(epd, sidecar.database, priority: 1)
     }
 
     private func statsArrived(_ epd: EPD, _ database: ExplorerDatabase) {
         guard database == sidecar.database else { return }
         coverage.statsArrived(for: epd, tree: tree, stats: lookup)
         revision += 1
-        requestPendingStats()
         scheduleSidecarSave(delay: 5)
     }
 
@@ -115,7 +110,6 @@ final class RepertoireDocument {
         coverage = CoverageEngine(settings: sidecar.coverageSettings)
         coverage.recomputeAll(tree: tree, stats: lookup)
         revision += 1
-        requestPendingStats()
     }
 
     // MARK: Edits
@@ -212,7 +206,6 @@ final class RepertoireDocument {
         tree = working
         coverage.update(changedAt: node, epds: epds, tree: tree, stats: lookup)
         didEdit()
-        requestPendingStats()
     }
 
     private func didEdit() {
@@ -345,7 +338,6 @@ final class RepertoireDocument {
         coverage.recomputeAll(tree: tree, stats: lookup)
         revision += 1
         if pgnSaveTask != nil || tree.pgnText() != text { schedulePGNSave() }
-        requestPendingStats()
     }
 
     private func sidecarChangedOnDisk() {

@@ -333,7 +333,7 @@ struct NodeHeader: View {
         case .gap:
             Text("Your move is missing").font(.caption.weight(.semibold)).glassChip(tint: .orange)
         case .pending:
-            Text("Loading stats…").font(.caption).glassChip()
+            Text("Stats not loaded yet").font(.caption).glassChip()
         case .belowTarget:
             Text("Beyond your target").font(.caption).glassChip()
         case .transposition:
