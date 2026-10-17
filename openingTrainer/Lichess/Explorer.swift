@@ -1,11 +1,13 @@
 import Foundation
 import Observation
+import os
 import OpeningCore
 import SwiftData
 
 enum ExplorerError: Error, Equatable {
     case unauthorized
-    case rateLimited
+    /// Seconds from the Retry-After header, if Lichess sent one.
+    case rateLimited(retryAfter: Double?)
     case offline
     case http(Int)
     case decoding
@@ -38,7 +40,9 @@ enum ExplorerClient {
         switch status {
         case 200: break
         case 401: throw .unauthorized
-        case 429: throw .rateLimited
+        case 429:
+            let header = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After")
+            throw .rateLimited(retryAfter: header.flatMap(Double.init))
         default: throw .http(status)
         }
         guard let raw = try? JSONDecoder().decode(ExplorerStats.self, from: data) else { throw .decoding }
@@ -229,6 +233,11 @@ final class ExplorerQueue {
         }
     }
 
+    private static let minInterval = 0.6
+    @ObservationIgnored private var interval = 0.8
+
+    private static let log = Logger(subsystem: "ch.cvb.openingTrainer", category: "explorer")
+
     private func run() async {
         while let (key, request) = pending.max(by: { $0.value.priority < $1.value.priority }) {
             guard let token = auth.token else {
@@ -236,15 +245,23 @@ final class ExplorerQueue {
                 return
             }
             state = .fetching(remaining: pending.count)
+            let started = ContinuousClock.now
             do {
                 let stats = try await ExplorerClient.fetch(request.epd, database: request.database, token: token)
+                Self.log.info("explorer \(request.database.cacheKey, privacy: .public) priority \(request.priority, format: .fixed(precision: 4)) took \(started.duration(to: .now).description, privacy: .public), \(self.pending.count) queued")
                 pending[key] = nil
                 store.save(stats, for: request.epd, request.database)
                 for listener in listeners.values { listener(request.epd, request.database) }
-            } catch .rateLimited {
-                let until = Date.now.addingTimeInterval(60)
-                state = .rateLimited(until: until)
-                try? await Task.sleep(for: .seconds(60))
+                // Pace requests: Lichess answers a fast burst with 429 and a one-minute ban.
+                interval = max(interval * 0.95, Self.minInterval)
+                if !pending.isEmpty { try? await Task.sleep(for: .seconds(interval)) }
+            } catch .rateLimited(let retryAfter) {
+                // Back off and slow down so the next burst does not hit the limit again.
+                interval = min(interval * 2, 4)
+                let wait = retryAfter ?? 60
+                Self.log.error("explorer 429, waiting \(wait)s, interval now \(self.interval)s")
+                state = .rateLimited(until: Date.now.addingTimeInterval(wait))
+                try? await Task.sleep(for: .seconds(wait))
             } catch .unauthorized {
                 auth.tokenRejected()
                 state = .needsLogin

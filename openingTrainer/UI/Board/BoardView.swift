@@ -26,10 +26,11 @@ struct BoardArrow: Hashable, Identifiable {
 }
 
 enum BoardTheme {
-    static let light = Color(red: 0.93, green: 0.93, blue: 0.82)
-    static let dark = Color(red: 0.46, green: 0.59, blue: 0.34)
-    static let lastMove = Color(red: 0.98, green: 0.84, blue: 0.29).opacity(0.45)
-    static let selected = Color(red: 0.2, green: 0.55, blue: 0.95).opacity(0.45)
+    // Blue-gray squares that match the app's blue accent.
+    static let light = Color(red: 0.87, green: 0.89, blue: 0.92)
+    static let dark = Color(red: 0.49, green: 0.58, blue: 0.68)
+    static let lastMove = Color(red: 0.0, green: 0.48, blue: 1.0).opacity(0.28)
+    static let selected = Color(red: 0.0, green: 0.48, blue: 1.0).opacity(0.45)
     static let mine = Color(red: 0.13, green: 0.6, blue: 0.3)
     static let opponent = Color(red: 0.16, green: 0.42, blue: 0.85)
     static let gap = Color.orange
