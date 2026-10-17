@@ -1,0 +1,54 @@
+# Opening Trainer
+
+Open-source (GPL-3.0), subscription-free alternative to Chessbook for iPhone and iPad.
+SwiftUI on iOS 26 with Liquid Glass. Repertoires are PGN files in iCloud Drive; opponent
+statistics come from the Lichess opening explorer.
+
+## How the owner uses the app (product guidance — every feature serves this)
+1. Read a book or watch a video on an opening.
+2. Enter its moves, including the opponent responses and the branches it explains.
+3. When unsure why a move fails for the opponent, open the position in Lichess analysis
+   (one tap, keeps the move history).
+4. Come back and add the crucial lines they personally want to cover.
+5. Train with spaced repetition, or drill everything under one branch.
+
+Priorities, in order:
+1. See which opponent moves are not covered yet (gaps), with "seen every N games".
+2. Navigate the repertoire easily and add new lines quickly.
+3. Hand off a position to Lichess analysis in one tap.
+4. Spaced-repetition training, including training a single branch. Works offline.
+5. Separate progress for building (coverage) and for learning (cards).
+
+Requirements:
+- Lichess stats are cached by EPD (FEN without move counters; ep square only if an
+  en-passant capture is legal).
+- A repertoire is a PGN: created in the app's iCloud folder or connected from anywhere.
+  Every edit is saved to the PGN immediately. Settings and training state live in a
+  sidecar `<Name>.otrep.json`, never in the PGN.
+- Each repertoire chooses its coverage database (masters, or Lichess speeds + rating
+  buckets) and its coverage target ("cover moves seen once in N games").
+- Chessbook screenshots only show how that app works; its layout is not a template.
+
+Non-goals for now: auto gap filling, online game review, daily tasks, plans in a
+position, model games, bundled engine.
+
+## Layout
+- `OpeningCore/` — local Swift package, no UI. Chess wrapper over
+  chesskit-swift, PGN parser/writer, RepertoireTree, explorer stats model, coverage
+  engine, FSRS training. Test with `swift test` inside that folder.
+- `openingTrainer/` — the app target (folder-synced group, new files are
+  picked up automatically). `Lichess/`, `Storage/`, `UI/`.
+
+## Coverage model (see OpeningCore/Coverage)
+Reach probability p: root 1; own moves keep p; opponent move multiplies by its share at
+the parent (move games / position games). Opponent reply required when p·f ≥ 1/N and the
+position has ≥ minGames games. Gaps: own-turn node with p ≥ 1/N and no saved move (and no
+transposition), or a missing required reply. Completion C is the frequency-weighted mean
+over required replies. Values are cached per node and updated incrementally: an edit
+recomputes only the edited subtree and its ancestors.
+
+## Conventions
+- Code in OpeningCore is pure Swift, `Sendable` value types, no UIKit/SwiftUI.
+- App code is MainActor by default (`SWIFT_DEFAULT_ACTOR_ISOLATION`).
+- Explorer: one request at a time, 60 s pause on HTTP 429, re-login on 401.
+- Build: `xcodebuild -project openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' build`
