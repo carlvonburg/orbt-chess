@@ -12,10 +12,16 @@ final class BuilderModel {
     private(set) var draft: [PlayedMove] = []
     var orientation: Side
 
-    init(document: RepertoireDocument) {
+    /// False while browsing from a drill, so the builder's last position is not overwritten.
+    private let remembersPosition: Bool
+
+    init(document: RepertoireDocument, start: NodeID? = nil) {
         self.document = document
         orientation = document.color
-        if let last = document.sidecar.lastLine, let node = document.tree.node(followingUCI: last) {
+        remembersPosition = start == nil
+        if let start, document.tree[start] != nil {
+            current = start
+        } else if let last = document.sidecar.lastLine, let node = document.tree.node(followingUCI: last) {
             current = node
         }
     }
@@ -143,6 +149,7 @@ final class BuilderModel {
     }
 
     private func remember() {
+        guard remembersPosition else { return }
         document.rememberLine(tree.moves(to: current).map(\.uci))
     }
 

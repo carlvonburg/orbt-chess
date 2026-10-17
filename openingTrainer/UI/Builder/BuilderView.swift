@@ -15,16 +15,16 @@ struct BuilderView: View {
         var id: String { rawValue }
     }
 
-    init(document: RepertoireDocument) {
-        _model = State(initialValue: BuilderModel(document: document))
+    init(document: RepertoireDocument, start: NodeID? = nil) {
+        _model = State(initialValue: BuilderModel(document: document, start: start))
     }
 
     private var document: RepertoireDocument { model.document }
 
     var body: some View {
         let _ = document.revision
-        Group {
-            if sizeClass == .regular {
+        GeometryReader { geo in
+            if sizeClass == .regular && geo.size.width > geo.size.height {
                 HStack(alignment: .top, spacing: 0) {
                     VStack(spacing: 12) {
                         board
@@ -44,6 +44,8 @@ struct BuilderView: View {
                         MovePathStrip(model: model)
                         panel
                     }
+                    .frame(maxWidth: 680)
+                    .frame(maxWidth: .infinity)
                     .padding(.horizontal, 12)
                     .padding(.bottom, 24)
                 }
@@ -73,7 +75,7 @@ struct BuilderView: View {
                   arrows: model.arrows, movableSide: model.position.sideToMove) { from, to, promotion in
             model.play(from: from, to: to, promotion: promotion)
         }
-        .frame(maxWidth: 560)
+        .frame(maxWidth: 680)
         .clipShape(.rect(cornerRadius: 6))
     }
 

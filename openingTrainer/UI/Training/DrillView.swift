@@ -116,6 +116,14 @@ final class DrillModel {
         }
     }
 
+    /// The node to open when the user browses the repertoire mid-drill. Browsing on your
+    /// own turn reveals the answer, so it counts like a hint.
+    func browseNode() -> NodeID? {
+        guard let session else { return nil }
+        if session.isUserTurn { self.session?.useHint() }
+        return session.currentNode
+    }
+
     func hint() {
         session?.useHint()
         showHint = true
@@ -201,6 +209,12 @@ final class DrillModel {
 struct DrillView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var model: DrillModel
+    @State private var browsing: BrowseRequest?
+
+    private struct BrowseRequest: Identifiable {
+        let node: NodeID
+        var id: NodeID { node }
+    }
 
     init(document: RepertoireDocument, mode: DrillMode) {
         _model = State(initialValue: DrillModel(document: document, mode: mode))
@@ -243,6 +257,9 @@ struct DrillView: View {
                     ToolbarItemGroup(placement: .bottomBar) {
                         Button("Hint", systemImage: "lightbulb") { model.hint() }
                             .disabled(!model.isUserTurn)
+                        Button("Browse Repertoire", systemImage: "list.bullet.indent") {
+                            if let node = model.browseNode() { browsing = BrowseRequest(node: node) }
+                        }
                         Spacer()
                         Button("Skip Line", systemImage: "forward") { model.skipLine() }
                     }
@@ -257,6 +274,16 @@ struct DrillView: View {
             }
         }
         .task { model.start() }
+        .sheet(item: $browsing) { request in
+            NavigationStack {
+                BuilderView(document: model.document, start: request.node)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Back to Training", systemImage: "xmark") { browsing = nil }
+                        }
+                    }
+            }
+        }
     }
 
     private var status: some View {
