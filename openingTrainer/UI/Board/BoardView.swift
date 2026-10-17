@@ -67,7 +67,7 @@ struct BoardView: View {
                     Image(piece.assetName)
                         .resizable()
                         .frame(width: sq, height: sq)
-                        .position(isDragged ? liftedPoint(dragLocation!, sq: sq) : center(piece.square, sq: sq))
+                        .position(isDragged ? dragLocation! : center(piece.square, sq: sq))
                         .zIndex(isDragged ? 10 : 1)
                         .allowsHitTesting(false)
                 }
@@ -241,10 +241,6 @@ struct BoardView: View {
     private func center(_ square: BoardSquare, sq: CGFloat) -> CGPoint {
         let r = rect(for: square, sq: sq)
         return CGPoint(x: r.midX, y: r.midY)
-    }
-
-    private func liftedPoint(_ p: CGPoint, sq: CGFloat) -> CGPoint {
-        CGPoint(x: p.x, y: p.y - sq * 0.6)
     }
 
     private func square(at point: CGPoint, sq: CGFloat) -> BoardSquare? {
