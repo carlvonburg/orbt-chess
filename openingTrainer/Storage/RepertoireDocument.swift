@@ -193,30 +193,6 @@ final class RepertoireDocument {
         didEdit()
     }
 
-    /// Merges pasted PGN. Lines that start from the initial position are merged at the root,
-    /// otherwise at `node`. Returns the number of new moves.
-    @discardableResult
-    func mergePGN(_ text: String, at node: NodeID) -> Int {
-        let games = PGNParser.parse(text)
-        guard !games.isEmpty else { return 0 }
-        var added = 0
-        perform(changedAt: RepertoireTree.rootID) { tree in
-            for game in games {
-                var probe = tree
-                let atRoot = probe.merge(game.moves, at: RepertoireTree.rootID)
-                let rootWarnings = probe.loadWarnings.count - tree.loadWarnings.count
-                if rootWarnings == 0 || node == RepertoireTree.rootID {
-                    tree = probe
-                    added += atRoot
-                } else {
-                    added += tree.merge(game.moves, at: node)
-                }
-            }
-            return Set(tree.nodes.values.map(\.epd))
-        }
-        return added
-    }
-
     func undo() {
         guard let previous = undoStack.popLast() else { return }
         tree = previous

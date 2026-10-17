@@ -11,7 +11,7 @@ struct BuilderView: View {
     @State private var drill: DrillRequest?
 
     enum Sheet: String, Identifiable {
-        case outline, gaps, note, paste, analysis, settings
+        case outline, gaps, note, analysis, settings
         var id: String { rawValue }
     }
 
@@ -33,30 +33,32 @@ struct BuilderView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity)
-                    ScrollView { panel.padding() }
+                    List { panelRows }
+                        .listStyle(.plain)
                         .frame(width: 420)
-                        .background(.background.secondary)
                 }
             } else {
-                ScrollView {
-                    VStack(spacing: 10) {
-                        board
+                // A List so saved moves can be swiped to delete.
+                List {
+                    // Edge to edge on a phone.
+                    board
+                        .frame(maxWidth: .infinity)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                    if model.current != RepertoireTree.rootID || model.hasDraft {
                         MovePathStrip(model: model)
-                        panel
+                            .builderRow(separator: false)
                     }
-                    .frame(maxWidth: 680)
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 24)
+                    panelRows
                 }
+                .listStyle(.plain)
+                .environment(\.defaultMinListRowHeight, 0)
                 .scrollDismissesKeyboard(.immediately)
             }
         }
         .navigationTitle(document.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
         .toolbar { toolbar }
-        .safeAreaInset(edge: .bottom) { draftBar }
         .sheet(item: $sheet) { sheet in sheetContent(sheet) }
         .fullScreenCover(item: $drill) { request in
             DrillView(document: document, mode: request.mode)
@@ -78,7 +80,6 @@ struct BuilderView: View {
             model.play(from: from, to: to, promotion: promotion)
         }
         .frame(maxWidth: 680)
-        .clipShape(.rect(cornerRadius: 6))
     }
 
     private func requestStats() {
@@ -88,18 +89,19 @@ struct BuilderView: View {
 
     // MARK: Panel
 
+    /// The panel as List rows: header rows without separators, then one row per move.
     @ViewBuilder
-    private var panel: some View {
+    private var panelRows: some View {
         if model.hasDraft {
             DraftPanel(model: model)
         } else if let node = model.node {
-            NodeHeader(model: model, node: node, onNote: { sheet = .note }, onTrain: {
-                drill = DrillRequest(mode: .branch(node.id))
-            })
+            NodeHeader(model: model, node: node, onNote: { sheet = .note })
+                .builderRow(separator: false)
             // At a transposition the panels show the moves stored for this position elsewhere.
             let shown = model.shownNode ?? node
             if let target = model.continuation {
                 TranspositionNote(model: model, target: target)
+                    .builderRow(separator: false)
             }
             if shown.sideToMove == document.color {
                 YourMovePanel(model: model, node: shown)
@@ -117,17 +119,10 @@ struct BuilderView: View {
             Button("Undo", systemImage: "arrow.uturn.backward") { document.undo() }
                 .disabled(!document.canUndo)
             Menu("More", systemImage: "ellipsis") {
-                Button("Train This Branch", systemImage: "graduationcap") {
-                    drill = DrillRequest(mode: .branch(model.current))
-                }
+                Button("Outline", systemImage: "list.bullet.indent") { sheet = .outline }
                 Button("Gaps", systemImage: "exclamationmark.circle") { sheet = .gaps }
-                Button("Paste PGN…", systemImage: "doc.on.clipboard") { sheet = .paste }
                 Button("Edit Note", systemImage: "note.text") { sheet = .note }
                 Button("Flip Board", systemImage: "arrow.up.arrow.down") { model.orientation = model.orientation.opposite }
-                if model.current != RepertoireTree.rootID {
-                    Button("Make Main Line", systemImage: "arrow.up.to.line") { document.promote(model.current) }
-                    Button("Delete From Here", systemImage: "trash", role: .destructive) { model.deleteCurrent() }
-                }
                 Divider()
                 Button("Repertoire Settings", systemImage: "gearshape") { sheet = .settings }
             }
@@ -139,37 +134,37 @@ struct BuilderView: View {
             Button("Forward", systemImage: "chevron.forward") { model.forward() }
                 .keyboardShortcut(.rightArrow, modifiers: [])
                 .disabled(!model.canForward)
-            Spacer()
-            Button("Biggest Gap", systemImage: "scope") { model.goToBiggestGap() }
-                .disabled(document.coverage.root?.biggestGap == nil)
-            Button("Outline", systemImage: "list.bullet.indent") { sheet = .outline }
-            Button("Analyze on Lichess", systemImage: "magnifyingglass") { sheet = .analysis }
+        }
+        ToolbarSpacer(.flexible, placement: .bottomBar)
+        if model.hasDraft {
+            // While a new line is on the board: keep it or drop it.
+            ToolbarItemGroup(placement: .bottomBar) {
+                Button("Analyze on Lichess", systemImage: "cpu") { sheet = .analysis }
+                Button("Discard", systemImage: "xmark", role: .destructive) { model.discardDraft() }
+            }
+            ToolbarSpacer(.fixed, placement: .bottomBar)
+            ToolbarItem(placement: .bottomBar) {
+                Button { model.saveDraft() } label: {
+                    Label(model.draft.count == 1 ? "Save" : "Save \(model.draft.count)", systemImage: "checkmark")
+                        .labelStyle(.titleAndIcon)
+                }
+                .buttonStyle(.glassProminent)
+            }
+        } else {
+            ToolbarItemGroup(placement: .bottomBar) {
+                Button("Biggest Gap", systemImage: "scope") { model.goToBiggestGap() }
+                    .disabled(document.coverage.root?.biggestGap == nil)
+                Button("Train This Branch", systemImage: "graduationcap") {
+                    drill = DrillRequest(mode: .branch(model.current))
+                }
+                .disabled(document.learningProgress(under: model.current).cards == 0)
+                Button("Analyze on Lichess", systemImage: "cpu") { sheet = .analysis }
+            }
         }
         ToolbarItem(placement: .keyboard) {
             HStack {
                 Button("Previous line") { model.sibling(-1) }.keyboardShortcut(.upArrow, modifiers: [])
                 Button("Next line") { model.sibling(1) }.keyboardShortcut(.downArrow, modifiers: [])
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var draftBar: some View {
-        if model.hasDraft {
-            GlassEffectContainer {
-                HStack(spacing: 12) {
-                    Button(role: .destructive) { model.discardDraft() } label: {
-                        Label("Discard", systemImage: "xmark")
-                    }
-                    .buttonStyle(.glass)
-                    Button { model.saveDraft() } label: {
-                        Label("Save \(model.draft.count == 1 ? "move" : "\(model.draft.count) moves")", systemImage: "plus")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.glassProminent)
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 6)
             }
         }
     }
@@ -185,8 +180,6 @@ struct BuilderView: View {
         case .note:
             NoteSheet(document: document, node: model.current)
                 .presentationDetents([.medium, .large])
-        case .paste:
-            PastePGNSheet(model: model)
         case .analysis:
             SafariView(url: LichessLinks.analysis(moves: model.movesToBoard, orientation: model.orientation))
                 .ignoresSafeArea()
@@ -237,12 +230,15 @@ struct MovePathStrip: View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
-                    Button { model.go(to: RepertoireTree.rootID) } label: {
-                        Image(systemName: "house")
+                    // Only needed once you have left the start position.
+                    if model.current != RepertoireTree.rootID || model.hasDraft {
+                        Button { model.go(to: RepertoireTree.rootID) } label: {
+                            Image(systemName: "house")
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 6)
+                        .accessibilityLabel("Start position")
                     }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, 6)
-                    .accessibilityLabel("Start position")
                     ForEach(path, id: \.self) { id in
                         if let node = model.tree[id], let move = node.move {
                             chip(ply: node.ply, san: move.san, isCurrent: id == model.current && !model.hasDraft, dashed: false)
@@ -294,7 +290,6 @@ struct NodeHeader: View {
     let model: BuilderModel
     let node: RepertoireNode
     let onNote: () -> Void
-    let onTrain: () -> Void
 
     var body: some View {
         let document = model.document
@@ -307,7 +302,7 @@ struct NodeHeader: View {
             HStack(spacing: 8) {
                 statusChip(info)
                 if let reach = info?.reach, node.id != RepertoireTree.rootID {
-                    Text("Seen \(Format.seenEvery(reach)) games").font(.caption).foregroundStyle(.secondary)
+                    Text(reach >= 0.67 ? "Seen in every game" : "Seen \(Format.seenEvery(reach)) games").font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -326,20 +321,6 @@ struct NodeHeader: View {
                         .background(.yellow.opacity(0.15), in: .rect(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
-            }
-            if let gaps = info?.gapCount, gaps > 0 || learning.cards > 0 {
-                HStack {
-                    if gaps > 0 {
-                        Label(gaps == 1 ? "1 gap below" : "\(gaps) gaps below", systemImage: "exclamationmark.circle").foregroundStyle(.orange)
-                    }
-                    Spacer()
-                    if learning.cards > 0 {
-                        Button("Train branch", systemImage: "graduationcap", action: onTrain)
-                            .buttonStyle(.glass)
-                            .controlSize(.small)
-                    }
-                }
-                .font(.caption)
             }
         }
         .padding(.top, 4)
@@ -393,23 +374,29 @@ struct RepliesPanel: View {
     var body: some View {
         let document = model.document
         let info = document.coverage[node.id]
-        VStack(alignment: .leading, spacing: 0) {
+        Group {
             HStack {
-                Text("Opponent's replies").font(.headline)
+                Text("Replies").font(.headline)
                 Spacer()
                 Text("Seen").font(.caption).foregroundStyle(.secondary).frame(width: 74, alignment: .trailing)
                 Text("Covered").font(.caption).foregroundStyle(.secondary).frame(width: 64, alignment: .trailing)
+                Text("Games").font(.caption).foregroundStyle(.secondary).frame(width: 40, alignment: .trailing)
+                Color.clear.frame(width: 22, height: 1)
             }
-            .padding(.vertical, 8)
+            .padding(.top, 8)
+            .builderRow(separator: false)
             if let replies = info?.replies, !replies.isEmpty {
-                ForEach(replies, id: \.uci) { reply in
-                    Divider()
-                    ReplyRow(reply: reply, model: model)
+                let stats = document.stats(node.epd)
+                // Replies in the repertoire first, then the rest; each group by how often it is played.
+                let ordered = replies.filter { $0.child != nil || $0.transposesTo != nil }.sorted { $0.share > $1.share }
+                    + replies.filter { $0.child == nil && $0.transposesTo == nil }.sorted { $0.share > $1.share }
+                ForEach(ordered, id: \.uci) { reply in
+                    ReplyRow(reply: reply, games: stats?.moves.first { $0.uci == reply.uci }?.games, model: model)
+                        .builderRow()
                 }
             } else {
                 ForEach(node.children, id: \.self) { child in
                     if let move = model.tree[child]?.move {
-                        Divider()
                         Button { model.go(to: child) } label: {
                             HStack {
                                 Text(move.san).font(.body.weight(.semibold))
@@ -420,9 +407,12 @@ struct RepliesPanel: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .deletable(child, model: model)
+                        .builderRow()
                     }
                 }
                 StatsUnavailableNote()
+                    .builderRow(separator: false)
             }
         }
     }
@@ -430,6 +420,7 @@ struct RepliesPanel: View {
 
 struct ReplyRow: View {
     let reply: ReplyInfo
+    let games: Int?
     let model: BuilderModel
 
     var body: some View {
@@ -461,87 +452,188 @@ struct ReplyRow: View {
                         }
                     }
                     .frame(width: 64)
+                    Text(games.map(Format.games) ?? "").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                        .frame(width: 40, alignment: .trailing)
                 }
                 .opacity(reply.required || inRepertoire ? 1 : 0.55)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             if reply.child == nil {
-                Button("Add \(reply.san)", systemImage: "plus.circle.fill") { model.add(uci: reply.uci) }
+                // Opens the reply on the board so you can add your answer; it is saved with it.
+                Button("Add \(reply.san)", systemImage: "plus.circle.fill") { model.preview(uci: reply.uci) }
                     .labelStyle(.iconOnly)
                     .font(.title3)
                     .foregroundStyle(isGap ? .orange : .secondary)
+                    .buttonStyle(.borderless)
             } else {
                 Image(systemName: "chevron.right").foregroundStyle(.tertiary).frame(width: 22)
             }
         }
         .padding(.vertical, 9)
+        .deletable(reply.child, model: model)
     }
 }
 
-/// Your move: your saved moves and explorer candidates with results and cloud eval.
+/// Your move: explorer candidates with your saved moves marked in place.
 struct YourMovePanel: View {
     let model: BuilderModel
     let node: RepertoireNode
+
+    var body: some View {
+        if node.children.isEmpty {
+            Label("Choose your move: play it on the board or pick a candidate.", systemImage: "hand.point.up.left")
+                .font(.callout)
+                .foregroundStyle(.orange)
+                .padding(.vertical, 8)
+                .builderRow(separator: false)
+        }
+        CandidatesSection(model: model, epd: node.epd, title: "Candidates", savedAt: node,
+                          select: model.preview(uci:), add: model.add(uci:))
+    }
+}
+
+/// Explorer moves for a position with cloud eval, results, games and share of games.
+/// Moves saved under `savedAt` come first (with their note and Main/Alternative tag), then the
+/// other explorer moves; each group is sorted by how often it is played.
+/// Tapping a row plays the move on the board (or opens a saved move); + adds it.
+struct CandidatesSection: View {
+    let model: BuilderModel
+    let epd: EPD
+    let title: String
+    var savedAt: RepertoireNode?
+    let select: (String) -> Void
+    let add: (String) -> Void
     @State private var eval: CloudEvalClient.Eval?
 
     var body: some View {
-        let document = model.document
-        VStack(alignment: .leading, spacing: 0) {
-            if !node.children.isEmpty {
-                Text("Your moves").font(.headline).padding(.vertical, 8)
-                ForEach(Array(node.children.enumerated()), id: \.element) { index, child in
-                    if let childNode = model.tree[child], let move = childNode.move {
-                        Divider()
-                        Button { model.go(to: child) } label: {
-                            HStack(alignment: .firstTextBaseline) {
-                                Text(move.san).font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
-                                if index == 0 && node.children.count > 1 {
-                                    Text("Main").font(.caption2).glassChip(tint: .green)
-                                } else if index > 0 {
-                                    Text("Alternative · not trained").font(.caption2).foregroundStyle(.secondary)
-                                }
-                                Text(childNode.note.isEmpty ? "" : childNode.note)
-                                    .font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                                Spacer()
-                                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
-                            }
-                            .padding(.vertical, 10)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            if index > 0 { Button("Make Main Move", systemImage: "arrow.up.to.line") { document.promote(child) } }
-                            Button("Delete", systemImage: "trash", role: .destructive) { model.delete(child) }
-                        }
-                    }
-                }
-            } else {
-                Label("Choose your move: play it on the board or pick a candidate.", systemImage: "hand.point.up.left")
-                    .font(.callout)
-                    .foregroundStyle(.orange)
-                    .padding(.vertical, 8)
+        let stats = model.document.stats(epd)
+        let explorer = stats?.moves ?? []
+        let saved = savedChildren
+        let isSaved = { (uci: String) in saved.contains { $0.uci == uci } }
+        // Saved moves first, then the other explorer moves; each group by how often it is played.
+        let savedRows = saved.map { move in (move, explorer.first { $0.uci == move.uci }) }
+            .sorted { ($0.1?.games ?? -1) > ($1.1?.games ?? -1) }
+        let otherRows = explorer.filter { !isSaved($0.uci) }.prefix(max(0, 12 - savedRows.count))
+        Text(title).font(.headline).padding(.top, 8)
+            .builderRow(separator: false)
+            .task(id: epd) {
+                eval = nil
+                eval = await CloudEvalClient.fetch(epd)
             }
-
-            Text("Candidates").font(.headline).padding(.top, 16).padding(.bottom, 8)
-            if let stats = document.stats(node.epd), !stats.moves.isEmpty {
-                ForEach(stats.moves.prefix(12), id: \.uci) { move in
-                    Divider()
-                    CandidateRow(move: move, total: stats.total, eval: evalText(for: move.uci),
-                                 inRepertoire: model.tree.child(of: node.id, uci: move.uci) != nil, model: model)
-                }
-            } else {
-                StatsUnavailableNote()
-            }
+        ForEach(savedRows, id: \.0.uci) { played, move in
+            row(uci: played.uci, san: played.san, move: move, total: stats?.total ?? 0)
+                .builderRow()
+                .listRowBackground(Color.green.opacity(0.08))
         }
-        .task(id: node.epd) {
-            eval = nil
-            eval = await CloudEvalClient.fetch(node.epd)
+        ForEach(otherRows, id: \.uci) { move in
+            row(uci: move.uci, san: move.san, move: move, total: stats?.total ?? 0)
+                .builderRow()
+        }
+        if explorer.isEmpty {
+            StatsUnavailableNote()
+                .builderRow(separator: false)
         }
     }
 
-    private func evalText(for uci: String) -> String? {
-        guard let pv = eval?.pvs.first(where: { $0.moves.hasPrefix(uci) }) else { return nil }
+    private var savedChildren: [PlayedMove] {
+        guard let savedAt else { return [] }
+        return savedAt.children.compactMap { model.tree[$0]?.move }
+    }
+
+    private func row(uci: String, san: String, move: ExplorerMove?, total: Int) -> some View {
+        let saved = savedAt.flatMap { parent in
+            parent.children.firstIndex { model.tree[$0]?.move?.uci == uci }.map { index in
+                SavedMove(id: parent.children[index], index: index, siblings: parent.children.count,
+                          note: model.tree[parent.children[index]]?.note ?? "")
+            }
+        }
+        return CandidateRow(san: san, move: move, total: total, eval: eval?.text(for: uci), saved: saved,
+                            select: { if let saved { model.go(to: saved.id) } else { select(uci) } },
+                            add: { add(uci) })
+            .deletable(saved?.id, model: model,
+                       promote: saved.flatMap { saved in saved.index > 0 ? { model.document.promote(saved.id) } : nil })
+    }
+}
+
+extension View {
+    /// Layout for one row of the builder's List.
+    func builderRow(separator: Bool = true) -> some View {
+        listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
+            .listRowSeparator(separator ? .automatic : .hidden)
+    }
+
+    /// Long-press menu and swipe actions for a saved move: Delete (confirmed in a dialog anchored
+    /// to this row) and, for an alternative, Make Main Move. Does nothing for a move that is not saved.
+    func deletable(_ id: NodeID?, model: BuilderModel, promote: (() -> Void)? = nil) -> some View {
+        modifier(DeleteMove(id: id, model: model, promote: promote))
+    }
+}
+
+private struct DeleteMove: ViewModifier {
+    let id: NodeID?
+    let model: BuilderModel
+    let promote: (() -> Void)?
+    @State private var confirming = false
+
+    func body(content: Content) -> some View {
+        if let id {
+            content
+                .contextMenu {
+                    if let promote {
+                        Button("Make Main Move", systemImage: "arrow.up.to.line", action: promote)
+                    }
+                    Button("Delete", systemImage: "trash", role: .destructive) { confirming = true }
+                }
+                // Not .destructive: that role removes the row before the dialog is answered.
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button("Delete", systemImage: "trash") { confirming = true }
+                        .tint(.red)
+                    if let promote {
+                        Button("Main", systemImage: "arrow.up.to.line", action: promote)
+                            .tint(.green)
+                            .accessibilityLabel("Make Main Move")
+                    }
+                }
+                .confirmationDialog(title(id), isPresented: $confirming, titleVisibility: .visible) {
+                    Button("Delete", role: .destructive) { model.delete(id) }
+                } message: {
+                    Text(message(id))
+                }
+        } else {
+            content
+        }
+    }
+
+    private func title(_ id: NodeID) -> String {
+        model.tree[id]?.move.map { "Delete \($0.san)?" } ?? "Delete move?"
+    }
+
+    private func message(_ id: NodeID) -> String {
+        guard model.tree[id]?.children.isEmpty == false else { return "You can undo this." }
+        let lines = model.tree.leaves(under: id).count
+        return lines == 1 ? "This also deletes the line that follows it. You can undo this."
+            : "This also deletes the \(lines) lines that follow it. You can undo this."
+    }
+}
+
+/// A candidate that is already in the repertoire.
+struct SavedMove {
+    let id: NodeID
+    let index: Int
+    let siblings: Int
+    let note: String
+
+    var tag: String? {
+        if index > 0 { return "Alternative · not trained" }
+        return siblings > 1 ? "Main" : nil
+    }
+}
+
+extension CloudEvalClient.Eval {
+    /// Eval after `uci`, from White's point of view, if it is one of the cloud lines.
+    func text(for uci: String) -> String? {
+        guard let pv = pvs.first(where: { $0.moves.hasPrefix(uci) }) else { return nil }
         if let mate = pv.mate { return "#\(mate)" }
         guard let cp = pv.cp else { return nil }
         return String(format: "%+.1f", Double(cp) / 100)
@@ -549,71 +641,88 @@ struct YourMovePanel: View {
 }
 
 struct CandidateRow: View {
-    let move: ExplorerMove
+    let san: String
+    let move: ExplorerMove?
     let total: Int
     let eval: String?
-    let inRepertoire: Bool
-    let model: BuilderModel
+    let saved: SavedMove?
+    let select: () -> Void
+    let add: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
-            Button { model.preview(uci: move.uci) } label: {
-                HStack(spacing: 8) {
-                    Text(move.san).font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
-                    Text(Format.percent(total > 0 ? Double(move.games) / Double(total) : 0))
-                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary).frame(width: 36, alignment: .trailing)
-                    Text(eval ?? "")
-                        .font(.caption.monospacedDigit().weight(.semibold)).frame(width: 40)
-                    ScoreBar(white: move.white, draws: move.draws, black: move.black)
-                    Text(Format.games(move.games)).font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-                        .frame(width: 40, alignment: .trailing)
+            Button(action: select) {
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 8) {
+                        Text(san).font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
+                        Text(eval ?? "")
+                            .font(.caption.monospacedDigit().weight(.semibold)).frame(width: 40)
+                        if let move {
+                            ScoreBar(white: move.white, draws: move.draws, black: move.black)
+                            // Games and share of games side by side, as in the Lichess explorer.
+                            let share = Format.percent(total > 0 ? Double(move.games) / Double(total) : 0)
+                            Text("\(Text(Format.games(move.games)).foregroundStyle(.primary)) · \(share)")
+                                .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                                .lineLimit(1)
+                                .frame(width: 76, alignment: .trailing)
+                        } else {
+                            Spacer()
+                        }
+                    }
+                    if let saved, saved.tag != nil || !saved.note.isEmpty {
+                        HStack(spacing: 6) {
+                            if let tag = saved.tag {
+                                if saved.index == 0 {
+                                    Text(tag).font(.caption2).glassChip(tint: .green)
+                                } else {
+                                    Text(tag).font(.caption2).foregroundStyle(.secondary)
+                                }
+                            }
+                            if !saved.note.isEmpty {
+                                Text(saved.note).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                            }
+                        }
+                    }
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            if inRepertoire {
+            if saved != nil {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.title3)
                     .accessibilityLabel("In repertoire")
             } else {
-                Button("Add \(move.san)", systemImage: "plus.circle") { model.add(uci: move.uci) }
+                Button("Add \(san)", systemImage: "plus.circle", action: add)
                     .labelStyle(.iconOnly)
                     .font(.title3)
+                    .foregroundStyle(Color.accentColor)
+                    .buttonStyle(.borderless)
             }
         }
         .padding(.vertical, 8)
     }
 }
 
-/// Shown while a draft is on the board.
+/// Shown while a draft is on the board: the same candidates as a saved position.
+/// Tapping a move extends the draft; + extends it and saves the line.
 struct DraftPanel: View {
     let model: BuilderModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             Text("New line").font(.headline)
-            Text("Keep playing moves for both sides, then save. Moves are added to the repertoire and the PGN right away.")
+            Text("Keep playing moves for both sides, then save.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
-            if let stats = model.document.stats(model.position.epd) {
-                let maxGames = stats.moves.first?.games ?? 1
-                Text(model.isUserTurnOnBoard ? "Popular moves for you" : "Popular replies")
-                    .font(.subheadline.weight(.semibold)).padding(.top, 6)
-                ForEach(stats.moves.prefix(6), id: \.uci) { move in
-                    Button { model.play(uci: move.uci) } label: {
-                        HStack {
-                            Text(move.san).fontWeight(.semibold).frame(width: 60, alignment: .leading)
-                            CompletionBar(value: Double(move.games) / Double(max(maxGames, 1)), tint: .accentColor.opacity(0.6))
-                            Text(Format.percent(Double(move.games) / Double(max(stats.total, 1))))
-                                .font(.caption.monospacedDigit()).frame(width: 40, alignment: .trailing)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.vertical, 4)
-                }
-            }
         }
         .padding(.top, 4)
+        .builderRow(separator: false)
+        CandidatesSection(model: model, epd: model.position.epd,
+                          title: model.isUserTurnOnBoard ? "Candidates" : "Opponent's replies",
+                          select: model.play(uci:),
+                          add: { uci in
+                              model.play(uci: uci)
+                              model.saveDraft()
+                          })
     }
 }
 

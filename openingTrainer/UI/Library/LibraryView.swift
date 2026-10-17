@@ -15,12 +15,24 @@ struct LibraryView: View {
     @State private var setupEntry: RepertoireEntry?
     @State private var deleteEntry: RepertoireEntry?
     @State private var errorMessage: String?
+    @State private var showSettings = false
+    @State private var drill: LibraryDrill?
+    @AppStorage("library.sort") private var sort = LibrarySort.name
+    @AppStorage("library.side") private var sideFilter = LibrarySideFilter.all
+    @AppStorage("library.onlyGaps") private var onlyGaps = false
+    @AppStorage("library.onlyDue") private var onlyDue = false
 
     var body: some View {
         NavigationStack(path: $path) {
             content
                 .navigationTitle("Repertoires")
                 .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Settings", systemImage: "gearshape") { showSettings = true }
+                    }
+                    if !model.library.entries.isEmpty {
+                        ToolbarItem(placement: .topBarTrailing) { filterMenu }
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
                             Button("New Repertoire", systemImage: "plus") { showNew = true }
@@ -42,6 +54,16 @@ struct LibraryView: View {
                                                description: Text("The file is no longer in the folder."))
                     }
                 }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
+        }
+        .fullScreenCover(item: $drill) { drill in
+            OpenDocument(entry: drill.entry) { doc in
+                DrillView(document: doc, mode: drill.mode)
+            } placeholder: {
+                ProgressView("Opening \(drill.entry.name)…")
+            }
         }
         .sheet(isPresented: $showNew) {
             NewRepertoireSheet { entry in path = [entry.id] }
@@ -104,14 +126,85 @@ struct LibraryView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                ForEach(library.entries) { entry in
-                    row(entry)
-                        .swipeActions {
-                            Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
+                let shown = visibleEntries
+                if shown.isEmpty {
+                    ContentUnavailableView {
+                        Label("No matching repertoires", systemImage: "line.3.horizontal.decrease.circle")
+                    } actions: {
+                        Button("Clear Filters") { clearFilters() }
+                            .buttonStyle(.glass)
+                    }
+                }
+                ForEach(shown) { entry in
+                    Section {
+                        row(entry)
+                            .swipeActions {
+                                Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
+                            }
+                        if !entry.needsSetup {
+                            TrainActions(entry: entry, document: model.documents[entry.id]) { mode in
+                                drill = LibraryDrill(entry: entry, mode: mode)
+                            }
                         }
+                    }
                 }
             }
             .refreshable { library.refresh() }
+        }
+    }
+
+    // MARK: Filter and sort
+
+    private var filtersActive: Bool { sideFilter != .all || onlyGaps || onlyDue }
+
+    private func clearFilters() {
+        sideFilter = .all
+        onlyGaps = false
+        onlyDue = false
+    }
+
+    private var filterMenu: some View {
+        Menu {
+            Picker("Sort By", selection: $sort) {
+                ForEach(LibrarySort.allCases) { Label($0.title, systemImage: $0.icon).tag($0) }
+            }
+            Section("Show") {
+                Picker("Side", selection: $sideFilter) {
+                    ForEach(LibrarySideFilter.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Toggle("Has Gaps", systemImage: "exclamationmark.circle", isOn: $onlyGaps)
+                Toggle("Due for Review", systemImage: "clock", isOn: $onlyDue)
+            }
+            if filtersActive {
+                Button("Clear Filters", systemImage: "xmark.circle") { clearFilters() }
+            }
+        } label: {
+            Label("Filter and Sort", systemImage: filtersActive
+                  ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+        }
+    }
+
+    private var visibleEntries: [RepertoireEntry] {
+        let all = model.library.entries
+        guard filtersActive || sort != .name else { return all }
+        let stats = Dictionary(uniqueKeysWithValues: all.map { ($0.id, EntryStats(entry: $0, document: model.documents[$0.id])) })
+        let filtered = all.filter { entry in
+            guard let s = stats[entry.id] else { return false }
+            if !filtersActive { return true }
+            // A PGN that is not set up yet has no side or progress to filter by.
+            guard let side = entry.sidecar?.color else { return false }
+            if let wanted = sideFilter.side, side != wanted { return false }
+            if onlyGaps && s.gaps == 0 { return false }
+            if onlyDue && s.due == 0 { return false }
+            return true
+        }
+        // library.entries is already sorted by name, and Swift's sort is stable.
+        switch sort {
+        case .name: return filtered
+        case .gaps: return filtered.sorted { stats[$0.id]!.gaps > stats[$1.id]!.gaps }
+        case .due: return filtered.sorted { stats[$0.id]!.due > stats[$1.id]!.due }
+        case .built: return filtered.sorted { stats[$0.id]!.completion < stats[$1.id]!.completion }
         }
     }
 
@@ -128,6 +221,46 @@ struct LibraryView: View {
             }
         }
     }
+}
+
+private struct LibraryDrill: Identifiable {
+    let entry: RepertoireEntry
+    let mode: DrillMode
+    var id: String { "\(entry.id)-\(mode)" }
+}
+
+/// Review due cards, learn new ones, or play every line. Opens the PGN only when started.
+private struct TrainActions: View {
+    let entry: RepertoireEntry
+    var document: RepertoireDocument?
+    let start: (DrillMode) -> Void
+
+    var body: some View {
+        let counts = self.counts
+        GlassEffectContainer {
+            HStack {
+                Button { start(.due) } label: {
+                    Label("Review \(counts.due)", systemImage: "clock.arrow.circlepath").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glassProminent)
+                .disabled(counts.due == 0)
+                Button { start(.learnNew) } label: {
+                    Label("Learn \(min(counts.unseen, DrillModel.newPerSession))", systemImage: "sparkles").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glass)
+                .disabled(counts.unseen == 0)
+                Menu("More training", systemImage: "ellipsis") {
+                    Button("Play All Lines", systemImage: "list.bullet") { start(.branch(RepertoireTree.rootID)) }
+                        .disabled(counts.cards == 0)
+                }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.glass)
+            }
+        }
+        .font(.subheadline)
+    }
+
+    private var counts: EntryStats { EntryStats(entry: entry, document: document) }
 }
 
 struct LibraryRow: View {
@@ -166,24 +299,74 @@ struct LibraryRow: View {
             }
             HStack(spacing: 10) {
                 if summary.gaps > 0 { Label(summary.gaps == 1 ? "1 gap" : "\(summary.gaps) gaps", systemImage: "exclamationmark.circle").foregroundStyle(.orange) }
-                if summary.due > 0 { Label("\(summary.due) due", systemImage: "clock").foregroundStyle(.blue) }
                 Text(entry.sidecar?.database.summary ?? "").foregroundStyle(.secondary).lineLimit(1)
             }
             .font(.caption2)
         }
     }
 
-    private var summaryValues: (completion: Double, learned: Double, gaps: Int, due: Int) {
+    private var summaryValues: EntryStats { EntryStats(entry: entry, document: document) }
+}
+
+enum LibrarySort: String, CaseIterable, Identifiable {
+    case name, gaps, due, built
+    var id: Self { self }
+    var title: String {
+        switch self {
+        case .name: "Name"
+        case .gaps: "Most Gaps"
+        case .due: "Most Due"
+        case .built: "Least Built"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .name: "textformat"
+        case .gaps: "exclamationmark.circle"
+        case .due: "clock"
+        case .built: "chart.bar"
+        }
+    }
+}
+
+enum LibrarySideFilter: String, CaseIterable, Identifiable {
+    case all, white, black
+    var id: Self { self }
+    var title: String { self == .all ? "All" : rawValue.capitalized }
+    var side: Side? { self == .all ? nil : Side(rawValue: rawValue) }
+}
+
+/// Progress of one repertoire: live from the open document, else from the sidecar summary.
+struct EntryStats {
+    var completion = 0.0
+    var learned = 0.0
+    var gaps = 0
+    var due = 0
+    var unseen = 0
+    var cards = 0
+
+    init(entry: RepertoireEntry, document: RepertoireDocument?) {
         if let document {
             _ = document.revision
             let root = document.coverage.root
             let progress = document.learningProgress()
-            return (root?.completion ?? 0, progress.matureFraction, root?.gapCount ?? 0, progress.due)
+            completion = root?.completion ?? 0
+            learned = progress.matureFraction
+            gaps = root?.gapCount ?? 0
+            due = progress.due
+            unseen = progress.cards - progress.seen
+            cards = progress.cards
+            return
         }
-        guard let s = entry.sidecar?.summary else { return (0, 0, 0, 0) }
-        let learned = s.cardCount > 0 ? Double(s.matureCount) / Double(s.cardCount) : 0
-        let due = entry.sidecar?.cards.values.filter { $0.isDue(at: .now) }.count ?? s.dueCount
-        return (s.completion, learned, s.gapCount, due)
+        guard let sidecar = entry.sidecar else { return }
+        let seen = sidecar.cards
+        due = seen.values.filter { $0.isDue(at: .now) }.count
+        guard let s = sidecar.summary else { return }
+        completion = s.completion
+        learned = s.cardCount > 0 ? Double(s.matureCount) / Double(s.cardCount) : 0
+        gaps = s.gapCount
+        cards = s.cardCount
+        unseen = max(s.cardCount - seen.count, 0)
     }
 }
 

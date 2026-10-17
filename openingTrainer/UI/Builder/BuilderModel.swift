@@ -131,13 +131,6 @@ final class BuilderModel {
         }
     }
 
-    func deleteCurrent() {
-        guard let parent = node?.parent else { return }
-        let id = current
-        go(to: parent)
-        document.delete(id)
-    }
-
     func delete(_ id: NodeID) {
         if id == current || tree.isAncestor(id, of: current), let parent = tree[id]?.parent {
             go(to: parent)

@@ -7,7 +7,7 @@ struct RepertoireSettingsDraft: Equatable {
     var useMasters = false
     var speeds: Set<ExplorerSpeed> = [.blitz, .rapid, .classical]
     var ratings: Set<Int> = [1600, 1800, 2000]
-    var targetGames = 500
+    var targetGames = CoverageDepth.bulletproof.games
     var minGames = 25
 
     init() {}
@@ -41,8 +41,6 @@ struct RepertoireSettingsForm: View {
     @Binding var draft: RepertoireSettingsDraft
     @State private var customTarget = false
 
-    static let presets = [100, 250, 500, 1000, 2000]
-
     var body: some View {
         Section("I play") {
             Picker("Color", selection: $draft.color) {
@@ -70,23 +68,86 @@ struct RepertoireSettingsForm: View {
         }
 
         Section {
-            Picker("Cover moves seen", selection: Binding(
-                get: { customTarget || !Self.presets.contains(draft.targetGames) ? 0 : draft.targetGames },
-                set: { value in
-                    if value == 0 { customTarget = true } else { customTarget = false; draft.targetGames = value }
-                })) {
-                ForEach(Self.presets, id: \.self) { Text("once in \($0.formatted()) games").tag($0) }
-                Text("Custom").tag(0)
+            let isPreset = CoverageDepth(games: draft.targetGames) != nil
+            ForEach(CoverageDepth.allCases) { depth in
+                Button {
+                    customTarget = false
+                    draft.targetGames = depth.games
+                } label: {
+                    DepthRow(name: depth.title, games: depth.games,
+                             selected: !customTarget && draft.targetGames == depth.games)
+                }
+                .tint(.primary)
             }
-            if customTarget || !Self.presets.contains(draft.targetGames) {
-                Stepper("Once in \(draft.targetGames.formatted()) games", value: $draft.targetGames, in: 20...20000, step: 50)
+            Button {
+                customTarget = true
+            } label: {
+                DepthRow(name: "Custom", games: isPreset && !customTarget ? nil : draft.targetGames,
+                         selected: customTarget || !isPreset)
+            }
+            .tint(.primary)
+            if customTarget || !isPreset {
+                Stepper("1 in \(draft.targetGames.formatted()) games", value: $draft.targetGames, in: 20...20000, step: 50)
             }
             Stepper("Ignore positions under \(draft.minGames) games", value: $draft.minGames, in: 1...500, step: 5)
         } header: {
-            Text("Coverage target")
+            Text("How much do you want to learn?")
         } footer: {
-            Text("Every opponent move you would meet at least once in this many games must have an answer in your repertoire.")
+            Text("Every opponent move you would meet at least once in this many games must have an answer in your repertoire. Deeper goals mean more lines to learn.")
         }
+    }
+}
+
+/// Named coverage targets ("cover moves seen once in N games").
+enum CoverageDepth: Int, CaseIterable, Identifiable {
+    case standard = 150, advanced = 200, tournament = 300, bulletproof = 400, overkill = 600, extremeOverkill = 800
+
+    var id: Int { rawValue }
+    var games: Int { rawValue }
+    init?(games: Int) { self.init(rawValue: games) }
+
+    var title: String {
+        switch self {
+        case .standard: "Standard"
+        case .advanced: "Advanced"
+        case .tournament: "Tournament"
+        case .bulletproof: "Bulletproof"
+        case .overkill: "Overkill"
+        case .extremeOverkill: "Extreme overkill"
+        }
+    }
+}
+
+/// One coverage goal: name, "1 in N games", and a bar for how much study it takes.
+private struct DepthRow: View {
+    let name: String
+    let games: Int?
+    let selected: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(name)
+                .fontWeight(selected ? .semibold : .regular)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Text(games.map { "1 in \($0.formatted()) games" } ?? "")
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize()
+            // Study time grows roughly with the number of games covered.
+            Capsule()
+                .fill(Color.accentColor.opacity(selected ? 1 : 0.45))
+                .frame(width: games.map { 6 + 40 * min(Double($0) / 800, 1.2) } ?? 0, height: 5)
+                .frame(width: 54, alignment: .leading)
+            Image(systemName: "checkmark")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+                .opacity(selected ? 1 : 0)
+        }
+        .contentShape(Rectangle())
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
