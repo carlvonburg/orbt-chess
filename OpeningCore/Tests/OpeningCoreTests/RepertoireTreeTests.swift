@@ -49,3 +49,17 @@ struct RepertoireTreeTests {
         #expect(tree.epdIndex[tree[a]!.epd]?.sorted() == [a, b].sorted())
     }
 }
+
+struct TreeMergeTests {
+    @Test func unionOfConcurrentEdits() throws {
+        let base = "1. e4 e5 2. Nf3 *"
+        var local = RepertoireTree(pgn: base)
+        local.add("e4 c5 Nf3")
+        var remote = RepertoireTree(pgn: base)
+        remote.add("e4 e6 d4")
+        local.merge(tree: remote)
+        #expect(local.find("e4 c5 Nf3") != nil)
+        #expect(local.find("e4 e6 d4") != nil)
+        #expect(local.count == 8)
+    }
+}

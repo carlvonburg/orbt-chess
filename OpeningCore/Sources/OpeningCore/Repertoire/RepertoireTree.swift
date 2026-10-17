@@ -189,6 +189,19 @@ public struct RepertoireTree: Sendable {
         nodes[id]?.comments = combined.isEmpty ? [] : [combined]
     }
 
+    public mutating func setChapterTag(_ index: Int, _ name: String, _ value: String) {
+        if chapters.isEmpty {
+            chapters = [Chapter(tags: Self.defaultTags(), comments: [], result: "*")]
+            nodes[Self.rootID]?.chapters = [0]
+        }
+        guard chapters.indices.contains(index) else { return }
+        if let i = chapters[index].tags.firstIndex(where: { $0.name == name }) {
+            chapters[index].tags[i].value = value
+        } else {
+            chapters[index].tags.insert(PGNTag(name, value), at: 0)
+        }
+    }
+
     // MARK: PGN
 
     /// Builds a tree from PGN games. Games from the standard position are merged into one tree.
@@ -248,6 +261,23 @@ public struct RepertoireTree: Sendable {
         return nodes.count - before
     }
 
+    /// Union of both trees (used when the file changed elsewhere). Chapters are matched by index.
+    @discardableResult
+    public mutating func merge(tree other: RepertoireTree) -> Int {
+        var added = 0
+        for (index, game) in other.pgnGames().enumerated() {
+            if index < chapters.count, chapters[index].passthrough == nil, other.chapters[index].passthrough == nil {
+                added += merge(game.moves, at: Self.rootID, chapter: index)
+            } else if index >= chapters.count {
+                let before = nodes.count
+                appendChapter(game)
+                nodes[Self.rootID]?.chapters = Set(chapters.indices.filter { chapters[$0].passthrough == nil })
+                added += nodes.count - before
+            }
+        }
+        return added
+    }
+
     /// Writes all chapters back as PGN games.
     public func pgnGames() -> [PGNGame] {
         chapters.indices.map { index in
@@ -304,7 +334,7 @@ public struct RepertoireTree: Sendable {
 
 /// Helpers for PGN comments with embedded commands like `[%cal Ge2e4,Rd7d5]`.
 public enum Comment {
-    nonisolated(unsafe) static let commandPattern = try! NSRegularExpression(pattern: "\\[%[^\\]]*\\]")
+    static let commandPattern = try! NSRegularExpression(pattern: "\\[%[^\\]]*\\]")
 
     public static func commands(in comment: String) -> [String] {
         let range = NSRange(comment.startIndex..., in: comment)

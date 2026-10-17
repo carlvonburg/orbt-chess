@@ -6,7 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		AA00000000000000000000A1 /* OpeningCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000A3 /* OpeningCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		AA00000000000000000000A4 /* OpeningCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = OpeningCore; sourceTree = "<group>"; };
 		1F1758813083B5B8003B959B /* openingTrainer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = openingTrainer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -23,6 +28,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA00000000000000000000A1 /* OpeningCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -32,6 +38,7 @@
 		1F1758783083B5B8003B959B = {
 			isa = PBXGroup;
 			children = (
+				AA00000000000000000000A4 /* OpeningCore */,
 				1F1758833083B5B8003B959B /* openingTrainer */,
 				1F1758823083B5B8003B959B /* Products */,
 			);
@@ -65,6 +72,7 @@
 			);
 			name = openingTrainer;
 			packageProductDependencies = (
+				AA00000000000000000000A3 /* OpeningCore */,
 			);
 			productName = openingTrainer;
 			productReference = 1F1758813083B5B8003B959B /* openingTrainer.app */;
@@ -94,6 +102,9 @@
 			);
 			mainGroup = 1F1758783083B5B8003B959B;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				AA00000000000000000000A2 /* XCLocalSwiftPackageReference "OpeningCore" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1F1758823083B5B8003B959B /* Products */;
 			projectDirPath = "";
@@ -251,11 +262,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/openingTrainer.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5UQ3MTX86T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Opening Trainer";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -273,7 +287,7 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -283,11 +297,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Config/openingTrainer.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5UQ3MTX86T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Opening Trainer";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -305,7 +322,7 @@
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -332,6 +349,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		AA00000000000000000000A2 /* XCLocalSwiftPackageReference "OpeningCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = OpeningCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AA00000000000000000000A3 /* OpeningCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OpeningCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1F1758793083B5B8003B959B /* Project object */;
 }
