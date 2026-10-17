@@ -52,6 +52,7 @@ struct BuilderView: View {
         }
         .navigationTitle(document.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .toolbar { toolbar }
         .safeAreaInset(edge: .bottom) { draftBar }
         .sheet(item: $sheet) { sheet in sheetContent(sheet) }
@@ -292,7 +293,7 @@ struct NodeHeader: View {
             if let gaps = info?.gapCount, gaps > 0 || learning.cards > 0 {
                 HStack {
                     if gaps > 0 {
-                        Label("\(gaps) gaps below", systemImage: "exclamationmark.circle").foregroundStyle(.orange)
+                        Label(gaps == 1 ? "1 gap below" : "\(gaps) gaps below", systemImage: "exclamationmark.circle").foregroundStyle(.orange)
                     }
                     Spacer()
                     if learning.cards > 0 {

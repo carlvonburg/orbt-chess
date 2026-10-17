@@ -198,6 +198,9 @@ struct PastePGNSheet: View {
         NavigationStack {
             Form {
                 Section {
+                    PasteButton(payloadType: String.self) { strings in
+                        if let first = strings.first { text = first }
+                    }
                     TextEditor(text: $text)
                         .font(.callout.monospaced())
                         .frame(minHeight: 200)
@@ -225,9 +228,6 @@ struct PastePGNSheet: View {
                     }
                     .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
-            }
-            .onAppear {
-                if let clip = UIPasteboard.general.string, clip.contains(".") { text = clip }
             }
         }
     }

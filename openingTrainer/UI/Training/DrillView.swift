@@ -108,7 +108,10 @@ final class DrillModel {
             feedback = .wrong(expected: expected)
             Task {
                 try? await Task.sleep(for: .milliseconds(1200))
-                if case .wrong = feedback { feedback = .none }
+                if case .wrong = feedback {
+                    feedback = .none
+                    prepareUserTurn()
+                }
             }
         }
     }

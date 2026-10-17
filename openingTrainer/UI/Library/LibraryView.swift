@@ -191,7 +191,7 @@ struct LibraryRow: View {
                 Text(Format.percent(summary.learned)).font(.caption2.monospacedDigit()).frame(width: 36, alignment: .trailing)
             }
             HStack(spacing: 10) {
-                if summary.gaps > 0 { Label("\(summary.gaps) gaps", systemImage: "exclamationmark.circle").foregroundStyle(.orange) }
+                if summary.gaps > 0 { Label(summary.gaps == 1 ? "1 gap" : "\(summary.gaps) gaps", systemImage: "exclamationmark.circle").foregroundStyle(.orange) }
                 if summary.due > 0 { Label("\(summary.due) due", systemImage: "clock").foregroundStyle(.blue) }
                 Text(entry.sidecar?.database.summary ?? "").foregroundStyle(.secondary).lineLimit(1)
             }
