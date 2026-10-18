@@ -12,7 +12,9 @@ final class RepertoireDocument {
     private(set) var sidecarURL: URL
     private(set) var name: String
 
-    private(set) var tree: RepertoireTree
+    private(set) var tree: RepertoireTree {
+        didSet { treeVersion += 1 }
+    }
     private(set) var sidecar: Sidecar
     private(set) var coverage: CoverageEngine
     /// Bumped on every change so views can refresh derived values.
@@ -29,7 +31,12 @@ final class RepertoireDocument {
     @ObservationIgnored private var sidecarSaveTask: Task<Void, Never>?
     @ObservationIgnored private var presenters: [FilePresenter] = []
     @ObservationIgnored private var listener: UUID?
-    @ObservationIgnored private var cachedTrainer: (revision: Int, trainer: Trainer)?
+    /// Bumped whenever the tree changes. The trainer and the card positions depend only on the
+    /// tree and your color, so answering a move (which bumps `revision`) keeps them.
+    @ObservationIgnored private var treeVersion = 0
+    @ObservationIgnored private var cachedTrainer: (treeVersion: Int, color: Side, trainer: Trainer)?
+    @ObservationIgnored private var cachedCardSets: (treeVersion: Int, color: Side, cards: Set<EPD>, suspended: Int)?
+    @ObservationIgnored private var cachedProgress: (revision: Int, progress: Trainer.Progress)?
     @ObservationIgnored private var cachedCounts: (revision: Int, minute: Int64, counts: CardQueues.Counts)?
     /// Answers not yet appended to the review log.
     @ObservationIgnored private var pendingRevlog: [RevlogEntry] = []
@@ -293,16 +300,36 @@ final class RepertoireDocument {
     }
 
     var trainer: Trainer {
-        if let cachedTrainer, cachedTrainer.revision == revision { return cachedTrainer.trainer }
+        if let cachedTrainer, cachedTrainer.treeVersion == treeVersion, cachedTrainer.color == sidecar.color {
+            return cachedTrainer.trainer
+        }
         let trainer = Trainer(tree: tree, color: sidecar.color)
-        cachedTrainer = (revision, trainer)
+        cachedTrainer = (treeVersion, sidecar.color, trainer)
         return trainer
     }
 
     var revlogURL: URL { RepertoireLibrary.revlogURL(for: pgnURL) }
 
+    /// The whole repertoire's progress is read by the list, the overview and every save, so it
+    /// is computed once per change; the card positions behind it once per tree change.
     func learningProgress(under node: NodeID = RepertoireTree.rootID) -> Trainer.Progress {
-        trainer.progress(under: node, cards: sidecar.studyCards)
+        guard node == RepertoireTree.rootID else { return trainer.progress(under: node, cards: sidecar.studyCards) }
+        if let cachedProgress, cachedProgress.revision == revision { return cachedProgress.progress }
+        let sets: (cards: Set<EPD>, suspended: Int)
+        if let cached = cachedCardSets, cached.treeVersion == treeVersion, cached.color == sidecar.color {
+            sets = (cached.cards, cached.suspended)
+        } else {
+            let trainer = trainer
+            sets = (trainer.cardEPDSet, trainer.suspendedCardEPDs().count)
+            cachedCardSets = (treeVersion, sidecar.color, sets.cards, sets.suspended)
+        }
+        var progress = Trainer.Progress(suspended: sets.suspended)
+        for epd in sets.cards {
+            progress.cards += 1
+            if let card = sidecar.studyCards[epd] { progress.add(card) }
+        }
+        cachedProgress = (revision, progress)
+        return progress
     }
 
     /// Every move in the PGN, both sides.

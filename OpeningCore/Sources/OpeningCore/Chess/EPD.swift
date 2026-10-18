@@ -15,7 +15,13 @@ public struct EPD: Hashable, Sendable, Codable, Comparable, CustomStringConverti
 
     /// FEN to send to Lichess: EPD with neutral move counters.
     public var queryFEN: String { rawValue + " 0 1" }
-    public var sideToMove: Side { rawValue.split(separator: " ").dropFirst().first == "b" ? .black : .white }
+    /// The letter after the board field. Read in place: card walks call this for every node.
+    public var sideToMove: Side {
+        let bytes = rawValue.utf8
+        guard let space = bytes.firstIndex(of: UInt8(ascii: " ")) else { return .white }
+        let side = bytes.index(after: space)
+        return side < bytes.endIndex && bytes[side] == UInt8(ascii: "b") ? .black : .white
+    }
     public var description: String { rawValue }
 
     public static func < (lhs: EPD, rhs: EPD) -> Bool { lhs.rawValue < rhs.rawValue }

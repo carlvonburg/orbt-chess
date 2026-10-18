@@ -269,9 +269,6 @@ extension Trainer {
         return order
     }
 
-    /// All card positions.
-    public var cardEPDSet: Set<EPD> { cardEPDs() }
-
     /// The highest reach of any node with each position.
     func reachByEPD(_ reach: [NodeID: Double]) -> [EPD: Double] {
         var result: [EPD: Double] = [:]

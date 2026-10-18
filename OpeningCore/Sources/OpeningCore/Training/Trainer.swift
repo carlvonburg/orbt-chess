@@ -11,6 +11,8 @@ public struct Trainer: Sendable {
     public let color: Side
     /// Nodes on main lines (not below an alternative move of yours).
     public let trainable: Set<NodeID>
+    /// All card positions, computed once: study sessions test every card against it.
+    public private(set) var cardEPDSet: Set<EPD> = []
 
     public init(tree: RepertoireTree, color: Side) {
         self.tree = tree
@@ -22,6 +24,7 @@ public struct Trainer: Sendable {
             stack.append(contentsOf: Self.next(after: id, tree: tree, color: color))
         }
         self.trainable = trainable
+        cardEPDSet = cardEPDs()
     }
 
     /// Nodes a line continues to: your main move, every opponent reply, or for a position
@@ -66,7 +69,7 @@ public struct Trainer: Sendable {
     /// of yours. Their cards are suspended (as in Anki), so a line keeps its progress when it
     /// stops being the main line and gets it back when it is the main line again.
     public func suspendedCardEPDs(under root: NodeID = RepertoireTree.rootID) -> Set<EPD> {
-        let active = cardEPDs()
+        let active = cardEPDSet
         var result: Set<EPD> = []
         for id in tree.subtree(of: root) where !trainable.contains(id) {
             guard let node = tree[id], node.sideToMove == color, !node.children.isEmpty,
