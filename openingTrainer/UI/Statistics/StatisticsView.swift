@@ -52,6 +52,8 @@ struct StatisticsView: View {
                 await model.load(app)
             }
             .refreshable { await model.load(app) }
+            .onChange(of: app.statisticsScope, initial: true) { model.scope = app.statisticsScope }
+            .onChange(of: model.scope) { app.statisticsScope = model.scope }
         }
     }
 
@@ -280,7 +282,8 @@ private struct CalendarCard: View {
         }
         let maxCount = max(cells.map(\.count).max() ?? 1, 1)
         let studiedDays = counts.filter { $0.value.total > 0 && $0.key > -365 }.count
-        StatCard(title: "Calendar", subtitle: "Moves studied per day, last \(weeks) weeks. Studied on \(studiedDays) days this year.") {
+        let streak = graphs.streak()
+        StatCard(title: "Calendar", subtitle: "Moves studied per day, last \(weeks) weeks. Studied on \(studiedDays) days this year. Streak: \(streak.current) \(streak.current == 1 ? "day" : "days"), longest \(streak.longest).") {
             Grid(horizontalSpacing: 3, verticalSpacing: 3) {
                 ForEach(0..<7, id: \.self) { weekday in
                     GridRow {
@@ -300,7 +303,15 @@ private struct CalendarCard: View {
 
 private enum ReviewKind: String, CaseIterable, Plottable {
     case learn = "Learn", relearn = "Relearn", young = "Young", mature = "Mature", filtered = "Filtered"
-    var slot: Int { Self.allCases.firstIndex(of: self)! }
+    var color: Color {
+        switch self {
+        case .learn: StudyColors.learningGroup
+        case .relearn: StudyColors.relearningGroup
+        case .young: StudyColors.young
+        case .mature: StudyColors.mature
+        case .filtered: StudyColors.filtered
+        }
+    }
 
     func value(_ c: GraphsContext.ReviewCounts) -> Int {
         switch self {
@@ -350,12 +361,12 @@ private struct ReviewsCard: View {
                 }
             }
             .chartForegroundStyleScale(domain: ReviewKind.allCases.map(\.rawValue),
-                                       range: ReviewKind.allCases.map { ChartPalette.color($0.slot) })
+                                       range: ReviewKind.allCases.map(\.color))
             .chartXScale(domain: (first - 1)...1)
             .chartXSelection(value: $selected)
             .chartLegend(.hidden)
             .frame(height: 180)
-            LegendRow(items: ReviewKind.allCases.map { ($0.rawValue, ChartPalette.color($0.slot),
+            LegendRow(items: ReviewKind.allCases.map { ($0.rawValue, $0.color,
                                                          showTime ? duration(totals[$0] ?? 0) : "\(totals[$0] ?? 0)") })
             Text("Days studied: \(studied). Total: \(showTime ? duration(totals.values.reduce(0, +)) : "\(totals.values.reduce(0, +)) answers").")
                 .font(.footnote).foregroundStyle(.secondary)
@@ -386,18 +397,19 @@ private struct CardCountsCard: View {
 
     var body: some View {
         let c = graphs.cardCounts()
-        let items: [(String, Int)] = [("New", c.new), ("Learning", c.learn), ("Relearning", c.relearn),
-                                      ("Young", c.young), ("Mature", c.mature), ("Suspended", c.suspended)]
-        StatCard(title: "Card Counts", subtitle: "\(c.total) moves. Mature: shown again in 21 days or more.") {
+        let items: [(String, Int, Color)] = [
+            ("New", c.new, StudyColors.newGroup), ("Learning", c.learn, StudyColors.learningGroup),
+            ("Relearning", c.relearn, StudyColors.relearningGroup), ("Young", c.young, StudyColors.young),
+            ("Mature", c.mature, StudyColors.mature), ("Suspended", c.suspended, StudyColors.suspended),
+        ]
+        StatCard(title: "Move Counts", subtitle: "\(c.total) moves. Mature: shown again in 21 days or more.") {
             HStack(spacing: 16) {
-                Chart(Array(items.enumerated()), id: \.offset) { index, item in
+                Chart(Array(items.enumerated()), id: \.offset) { _, item in
                     SectorMark(angle: .value("Moves", item.1), innerRadius: .ratio(0.6), angularInset: 1)
-                        .foregroundStyle(ChartPalette.color(index))
+                        .foregroundStyle(item.2)
                 }
                 .frame(width: 120, height: 120)
-                LegendRow(items: items.enumerated().map { index, item in
-                    (item.0, ChartPalette.color(index), "\(item.1)")
-                })
+                LegendRow(items: items.map { ($0.0, $0.2, "\($0.1)") })
             }
         }
     }

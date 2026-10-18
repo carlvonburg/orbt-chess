@@ -1,7 +1,7 @@
 import Foundation
 import OpeningCore
 
-/// The default daily-practice preset (Anki's "Default" preset), edited in Settings. A
+/// The default daily-practice preset (Anki's "Default" preset), edited in a repertoire's options. A
 /// repertoire can override the limits and the practice mode.
 enum TrainingDefaults {
     static let newPerDayKey = "training.newPerDay"

@@ -49,3 +49,13 @@ struct StatisticsTests {
         #expect(recall == 0.5)
     }
 }
+
+struct StreakTests {
+    @Test func currentAndLongest() {
+        #expect(Streak(days: [0, -1, -2, -5, -6, -7, -8]) == Streak(current: 3, longest: 4, studiedToday: true))
+        // Not studied yet today: yesterday's streak still counts.
+        #expect(Streak(days: [-1, -2]) == Streak(current: 2, longest: 2, studiedToday: false))
+        #expect(Streak(days: [-2, -3]).current == 0)
+        #expect(Streak(days: []) == Streak())
+    }
+}

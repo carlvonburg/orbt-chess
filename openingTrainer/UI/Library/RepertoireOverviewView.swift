@@ -1,0 +1,182 @@
+import OpeningCore
+import SwiftUI
+
+/// Anki's deck overview for one repertoire: building progress, today's counts with Study Now
+/// and Options, and a short version of its statistics.
+struct RepertoireOverviewView: View {
+    @Environment(AppModel.self) private var app
+    let document: RepertoireDocument
+    let editLines: () -> Void
+    @State private var drill: DrillRequest?
+    @State private var sheet: Sheet?
+    @State private var graphs: GraphsContext?
+
+    private enum Sheet: String, Identifiable {
+        case settings, options
+        var id: Self { self }
+    }
+
+    var body: some View {
+        let stats = EntryStats(document: document)
+        List {
+            Section {
+                HStack(spacing: 12) {
+                    SideIcon(side: document.color)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(document.name).font(.title3.weight(.semibold))
+                        Text(subtitle).font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            buildSection(stats)
+            studySection(stats)
+            statisticsSection(stats)
+        }
+        .navigationTitle(document.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Repertoire Settings", systemImage: "pencil") { sheet = .settings }
+            }
+        }
+        .sheet(item: $sheet) { sheet in
+            switch sheet {
+            case .settings: RepertoireSettingsSheet(document: document)
+            case .options: StudyOptionsSheet(document: document)
+            }
+        }
+        .fullScreenCover(item: $drill) { request in
+            DrillView(document: document, mode: request.mode)
+        }
+        .task(id: document.revision) {
+            graphs = GraphsContext(cards: Array(document.sidecar.studyCards.values), newCount: 0,
+                                   revlog: document.reviewLog(), timing: SchedTiming())
+        }
+    }
+
+    private var subtitle: String {
+        let side = document.color == .white ? "White" : "Black"
+        return "\(side) · \(document.database.summary) · \(Format.seenEvery(1 / Double(document.sidecar.targetGames)))"
+    }
+
+    // MARK: Build
+
+    private func buildSection(_ stats: EntryStats) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Build").font(.headline)
+                    Spacer()
+                    Text(Format.percent(stats.completion)).font(.headline.monospacedDigit())
+                }
+                CompletionBar(value: stats.completion, tint: .green)
+            }
+            LabeledContent("Saved moves", value: stats.savedMoves.formatted())
+            if stats.gaps > 0 {
+                LabeledContent {
+                    Text(stats.gaps.formatted()).foregroundStyle(.orange)
+                } label: {
+                    Text("Gaps").foregroundStyle(.orange)
+                }
+            }
+            Button(action: editLines) {
+                Text("Browse / Edit").frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.glassProminent)
+        }
+    }
+
+    // MARK: Study
+
+    private func studySection(_ stats: EntryStats) -> some View {
+        Section {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Study").font(.headline)
+                Spacer()
+                Button("Options", systemImage: "slider.horizontal.3") { sheet = .options }
+                    .font(.subheadline)
+                    .buttonStyle(.borderless)
+            }
+            if stats.counts.total > 0 {
+                countRow("New", stats.counts.new, StudyColors.new)
+                countRow("Learning", stats.counts.learning, StudyColors.learning)
+                countRow("To Review", stats.counts.review, StudyColors.review)
+                Button { drill = DrillRequest(mode: .study) } label: {
+                    Text("Study Now").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glassProminent)
+            } else {
+                Label(doneText(stats), systemImage: "checkmark.circle")
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func doneText(_ stats: EntryStats) -> String {
+        if stats.progress.cards == 0 { return "Add moves of yours to study them." }
+        guard let next = document.sidecar.nextDue(timing: SchedTiming()) else { return "Done for today." }
+        if Calendar.current.isDateInToday(next) {
+            return "Done for now. More moves are due at \(next.formatted(date: .omitted, time: .shortened))."
+        }
+        return "Done for today. Next review \(next.formatted(.relative(presentation: .named)))."
+    }
+
+    private func countRow(_ title: String, _ value: Int, _ color: Color) -> some View {
+        LabeledContent(title) {
+            Text(value.formatted())
+                .foregroundStyle(value > 0 ? color : .secondary)
+                .fontWeight(.semibold)
+                .monospacedDigit()
+        }
+    }
+
+    // MARK: Statistics
+
+    private func statisticsSection(_ stats: EntryStats) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Statistics").font(.headline)
+                    Spacer()
+                    Text("\(stats.progress.cards.formatted()) of your moves").font(.footnote).foregroundStyle(.secondary)
+                }
+                StudiedBar(progress: stats.progress)
+            }
+            groupRow("Not studied", stats.progress.notStudied, Color(.quaternaryLabel))
+            groupRow("Learning", stats.progress.learning, StudyColors.learningGroup)
+            groupRow("Young", stats.progress.young, StudyColors.young)
+            groupRow("Mature", stats.progress.mature, StudyColors.mature)
+            if stats.progress.suspended > 0 {
+                groupRow("Suspended", stats.progress.suspended, StudyColors.suspended)
+            }
+            if let graphs {
+                let today = graphs.today()
+                LabeledContent("Today", value: today.answerCount == 0 ? "Not studied"
+                               : "\(today.answerCount) \(today.answerCount == 1 ? "move" : "moves") · \(Int((Double(today.answerMillis) / 60_000).rounded())) min")
+                if let retention = graphs.trueRetention()[.month]?.total {
+                    LabeledContent("True retention (month)", value: Format.percent(retention))
+                }
+            }
+            Button("Show More", systemImage: "chart.bar") {
+                app.statisticsScope = .repertoire(document.entryID)
+                app.selectedTab = .statistics
+            }
+        } footer: {
+            if stats.progress.suspended > 0 {
+                Text("Suspended: your moves below alternative moves. They keep their progress and are studied again if their line becomes the main line.")
+            }
+        }
+    }
+
+    private func groupRow(_ title: String, _ value: Int, _ color: Color) -> some View {
+        LabeledContent {
+            Text(value.formatted()).monospacedDigit()
+        } label: {
+            Label {
+                Text(title)
+            } icon: {
+                RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 10, height: 10)
+            }
+        }
+    }
+}

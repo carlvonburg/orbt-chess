@@ -13,15 +13,22 @@ public struct Sidecar: Codable, Sendable, Equatable {
         public var gapCount: Int
         public var cardCount: Int
         public var matureCount: Int
+        /// Every move in the PGN, both sides. Nil in summaries written before it was added.
+        public var savedMoveCount: Int?
+        /// Your positions below alternative moves (suspended), studied or not.
+        public var suspendedCount: Int?
         public var dueCount: Int
         public var configKey: String
         public var computedAt: Date
 
-        public init(completion: Double, gapCount: Int, cardCount: Int, matureCount: Int, dueCount: Int, configKey: String, computedAt: Date) {
+        public init(completion: Double, gapCount: Int, cardCount: Int, matureCount: Int, savedMoveCount: Int? = nil,
+                    suspendedCount: Int? = nil, dueCount: Int, configKey: String, computedAt: Date) {
             self.completion = completion
             self.gapCount = gapCount
             self.cardCount = cardCount
             self.matureCount = matureCount
+            self.savedMoveCount = savedMoveCount
+            self.suspendedCount = suspendedCount
             self.dueCount = dueCount
             self.configKey = configKey
             self.computedAt = computedAt
@@ -114,6 +121,27 @@ public struct Sidecar: Codable, Sendable, Equatable {
         case let (a, b): result.studyStats = a ?? b
         }
         return result
+    }
+
+    /// Suspends the cards of positions that are not on a main line (below an alternative move,
+    /// or no longer in the PGN) and restores the others, keeping their progress either way.
+    /// Returns whether a card changed.
+    @discardableResult
+    public mutating func syncSuspension(active: Set<EPD>) -> Bool {
+        var changed = false
+        for (epd, card) in studyCards {
+            var card = card
+            if active.contains(epd) {
+                guard card.queue == .suspended else { continue }
+                card.restoreQueue()
+            } else {
+                guard card.queue != .suspended else { continue }
+                card.queue = .suspended
+            }
+            studyCards[epd] = card
+            changed = true
+        }
+        return changed
     }
 
     private static let dateStyle = Date.ISO8601FormatStyle(includingFractionalSeconds: true)

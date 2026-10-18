@@ -62,6 +62,20 @@ public struct Trainer: Sendable {
         Set(cardNodes(under: root).compactMap { tree[$0]?.epd })
     }
 
+    /// Your-turn positions with a move saved that are only reached below an alternative move
+    /// of yours. Their cards are suspended (as in Anki), so a line keeps its progress when it
+    /// stops being the main line and gets it back when it is the main line again.
+    public func suspendedCardEPDs(under root: NodeID = RepertoireTree.rootID) -> Set<EPD> {
+        let active = cardEPDs()
+        var result: Set<EPD> = []
+        for id in tree.subtree(of: root) where !trainable.contains(id) {
+            guard let node = tree[id], node.sideToMove == color, !node.children.isEmpty,
+                  !active.contains(node.epd) else { continue }
+            result.insert(node.epd)
+        }
+        return result
+    }
+
     /// The main move for a card position (first node with that EPD that has one).
     public func expectedMove(at id: NodeID) -> PlayedMove? {
         guard let node = tree[id] else { return nil }
@@ -74,23 +88,44 @@ public struct Trainer: Sendable {
 
     // MARK: Progress
 
+    /// Your moves by Anki's card-count groups: learning (learn and relearn), young (review
+    /// interval under 21 days) and mature.
     public struct Progress: Sendable, Equatable {
         public var cards = 0
-        public var seen = 0
+        public var learning = 0
+        public var young = 0
         public var mature = 0
+        /// Positions below your alternative moves; not part of `cards`.
+        public var suspended = 0
 
-        public var seenFraction: Double { cards > 0 ? Double(seen) / Double(cards) : 0 }
-        public var matureFraction: Double { cards > 0 ? Double(mature) / Double(cards) : 0 }
+        public init(cards: Int = 0, learning: Int = 0, young: Int = 0, mature: Int = 0, suspended: Int = 0) {
+            self.cards = cards
+            self.learning = learning
+            self.young = young
+            self.mature = mature
+            self.suspended = suspended
+        }
+
+        public var studied: Int { learning + young + mature }
+
+        public mutating func add(_ card: Card) {
+            guard card.queue != .suspended else { return }
+            switch card.ctype {
+            case .new: break
+            case .learn, .relearn: learning += 1
+            case .review: if card.interval < GraphsContext.matureInterval { young += 1 } else { mature += 1 }
+            }
+        }
+        public var notStudied: Int { cards - studied }
     }
 
     public func progress(under root: NodeID = RepertoireTree.rootID, cards: [EPD: Card]) -> Progress {
         var p = Progress()
         for epd in cardEPDs(under: root) {
             p.cards += 1
-            guard let card = cards[epd] else { continue }
-            p.seen += 1
-            if card.isMature { p.mature += 1 }
+            if let card = cards[epd] { p.add(card) }
         }
+        p.suspended = suspendedCardEPDs(under: root).count
         return p
     }
 

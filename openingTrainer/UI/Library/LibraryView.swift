@@ -7,16 +7,24 @@ extension UTType {
     static let pgn = UTType(importedAs: "com.apple.chess.pgn", conformingTo: .plainText)
 }
 
+enum LibraryRoute: Hashable {
+    case overview(String)
+    case builder(String)
+}
+
+/// Anki's deck list: today's totals, then one row per repertoire. A row opens the overview.
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
-    @State private var path: [String] = []
+    @State private var path: [LibraryRoute] = []
     @State private var showNew = false
     @State private var showImport = false
     @State private var setupEntry: RepertoireEntry?
     @State private var deleteEntry: RepertoireEntry?
+    @State private var sheet: EntrySheet?
     @State private var errorMessage: String?
     @State private var showSettings = false
-    @State private var drill: LibraryDrill?
+    @State private var studyAll = false
+    @State private var today = LibraryTodayModel()
     @AppStorage("library.sort") private var sort = LibrarySort.name
     @AppStorage("library.side") private var sideFilter = LibrarySideFilter.all
     @AppStorage("library.onlyGaps") private var onlyGaps = false
@@ -42,36 +50,42 @@ struct LibraryView: View {
                         }
                     }
                 }
-                .navigationDestination(for: String.self) { id in
-                    if let entry = model.library.entry(id: model.currentID(id)) {
-                        OpenDocument(entry: entry) { doc in
-                            BuilderView(document: doc)
-                        } placeholder: {
-                            ProgressView("Opening \(entry.name)…")
+                .navigationDestination(for: LibraryRoute.self) { route in
+                    switch route {
+                    case .overview(let id):
+                        destination(id) { doc in
+                            RepertoireOverviewView(document: doc) { path.append(.builder(doc.entryID)) }
                         }
-                    } else {
-                        ContentUnavailableView("Repertoire unavailable", systemImage: "exclamationmark.triangle",
-                                               description: Text("The file is no longer in the folder."))
+                    case .builder(let id):
+                        destination(id) { BuilderView(document: $0) }
                     }
                 }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
-        .fullScreenCover(item: $drill) { drill in
-            OpenDocument(entry: drill.entry) { doc in
-                DrillView(document: doc, mode: drill.mode)
+        .sheet(item: $sheet) { sheet in
+            OpenDocument(entry: sheet.entry) { doc in
+                switch sheet.kind {
+                case .settings: RepertoireSettingsSheet(document: doc)
+                case .options: StudyOptionsSheet(document: doc)
+                }
             } placeholder: {
-                ProgressView("Opening \(drill.entry.name)…")
+                ProgressView("Opening \(sheet.entry.name)…")
             }
         }
+        .fullScreenCover(isPresented: $studyAll) {
+            StudyAllView(entries: model.library.entries.filter {
+                !$0.needsSetup && EntryStats(entry: $0, document: model.documents[$0.id]).counts.total > 0
+            })
+        }
         .sheet(isPresented: $showNew) {
-            NewRepertoireSheet { entry in path = [entry.id] }
+            NewRepertoireSheet { entry in path = [.overview(entry.id), .builder(entry.id)] }
         }
         .sheet(item: $setupEntry) { entry in
             SetupSheet(title: "Set up \(entry.name)") { sidecar in
                 try model.library.saveSidecar(sidecar, for: entry)
-                path = [entry.id]
+                path = [.overview(entry.id)]
             }
         }
         .fileImporter(isPresented: $showImport, allowedContentTypes: [.pgn, .plainText]) { result in
@@ -101,6 +115,18 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
+    private func destination<V: View>(_ id: String, @ViewBuilder _ view: @escaping (RepertoireDocument) -> V) -> some View {
+        if let entry = model.library.entry(id: model.currentID(id)) {
+            OpenDocument(entry: entry, content: view) {
+                ProgressView("Opening \(entry.name)…")
+            }
+        } else {
+            ContentUnavailableView("Repertoire unavailable", systemImage: "exclamationmark.triangle",
+                                   description: Text("The file is no longer in the folder."))
+        }
+    }
+
+    @ViewBuilder
     private var content: some View {
         let library = model.library
         if !library.isLoaded {
@@ -117,16 +143,21 @@ struct LibraryView: View {
                     .buttonStyle(.glass)
             }
         } else {
+            let stats = Dictionary(uniqueKeysWithValues: library.entries.map {
+                ($0.id, EntryStats(entry: $0, document: model.documents[$0.id]))
+            })
             List {
                 if !model.auth.isSignedIn {
                     SignInBanner()
                 }
-                if !library.usesICloud {
-                    Label("iCloud Drive is off. Repertoires are stored on this device only.", systemImage: "icloud.slash")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                Section {
+                    TodayCard(counts: stats.values.reduce(into: CardQueues.Counts()) {
+                        $0.new += $1.counts.new
+                        $0.learning += $1.counts.learning
+                        $0.review += $1.counts.review
+                    }, today: today.today, streak: today.streak) { studyAll = true }
                 }
-                let shown = visibleEntries
+                let shown = visibleEntries(stats)
                 if shown.isEmpty {
                     ContentUnavailableView {
                         Label("No matching repertoires", systemImage: "line.3.horizontal.decrease.circle")
@@ -135,22 +166,35 @@ struct LibraryView: View {
                             .buttonStyle(.glass)
                     }
                 }
-                ForEach(shown) { entry in
-                    Section {
-                        row(entry)
+                Section {
+                    ForEach(shown) { entry in
+                        row(entry, stats[entry.id]!)
                             .swipeActions {
                                 Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
                             }
-                        if !entry.needsSetup {
-                            TrainActions(entry: entry, document: model.documents[entry.id]) { mode in
-                                drill = LibraryDrill(entry: entry, mode: mode)
-                            }
-                        }
+                            .contextMenu { if !entry.needsSetup { menu(entry) } }
                     }
                 }
             }
             .refreshable { library.refresh() }
+            .task(id: TodayKey(entries: library.entries.count, answered: stats.values.reduce(0) { $0 + $1.counts.total })) {
+                await today.load(model)
+            }
         }
+    }
+
+    private struct TodayKey: Hashable {
+        let entries: Int
+        let answered: Int
+    }
+
+    /// Anki's deck gear menu.
+    @ViewBuilder
+    private func menu(_ entry: RepertoireEntry) -> some View {
+        Button("Rename", systemImage: "pencil") { sheet = EntrySheet(entry: entry, kind: .settings) }
+        Button("Options", systemImage: "slider.horizontal.3") { sheet = EntrySheet(entry: entry, kind: .options) }
+        ShareLink(item: entry.pgnURL) { Label("Export", systemImage: "square.and.arrow.up") }
+        Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
     }
 
     // MARK: Filter and sort
@@ -185,13 +229,11 @@ struct LibraryView: View {
         }
     }
 
-    private var visibleEntries: [RepertoireEntry] {
+    private func visibleEntries(_ stats: [String: EntryStats]) -> [RepertoireEntry] {
         let all = model.library.entries
-        guard filtersActive || sort != .name else { return all }
-        let stats = Dictionary(uniqueKeysWithValues: all.map { ($0.id, EntryStats(entry: $0, document: model.documents[$0.id])) })
         let filtered = all.filter { entry in
-            guard let s = stats[entry.id] else { return false }
             if !filtersActive { return true }
+            guard let s = stats[entry.id] else { return false }
             // A PGN that is not set up yet has no side or progress to filter by.
             guard let side = entry.sidecar?.color else { return false }
             if let wanted = sideFilter.side, side != wanted { return false }
@@ -209,71 +251,119 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
-    private func row(_ entry: RepertoireEntry) -> some View {
+    private func row(_ entry: RepertoireEntry, _ stats: EntryStats) -> some View {
         if entry.needsSetup {
             Button { setupEntry = entry } label: {
-                LibraryRow(entry: entry, status: entry.isDownloading ? "Downloading from iCloud…" : "New PGN. Tap to set it up.")
+                LibraryRow(entry: entry, stats: stats, status: entry.isDownloading ? "Downloading from iCloud…" : "New PGN. Tap to set it up.")
             }
             .tint(.primary)
         } else {
-            NavigationLink(value: entry.id) {
-                LibraryRow(entry: entry, document: model.documents[entry.id])
+            NavigationLink(value: LibraryRoute.overview(entry.id)) {
+                LibraryRow(entry: entry, stats: stats)
             }
         }
     }
 }
 
-private struct LibraryDrill: Identifiable {
+private struct EntrySheet: Identifiable {
+    enum Kind { case settings, options }
     let entry: RepertoireEntry
-    let mode: DrillMode
-    var id: String { "\(entry.id)-\(mode)" }
+    let kind: Kind
+    var id: String { "\(entry.id)-\(kind)" }
 }
 
-/// Anki's deck overview: New / Learning / To Review counts and Study. Opens the PGN only
-/// when started.
-private struct TrainActions: View {
-    let entry: RepertoireEntry
-    var document: RepertoireDocument?
-    let start: (DrillMode) -> Void
+/// Today across all repertoires: Anki's due totals and "Studied N cards in M minutes today".
+private struct TodayCard: View {
+    let counts: CardQueues.Counts
+    let today: GraphsContext.Today?
+    let streak: Streak
+    let studyAll: () -> Void
 
     var body: some View {
-        let counts = EntryStats(entry: entry, document: document).counts
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                countRow("New", counts.new, .blue)
-                countRow("Learning", counts.learning, .red)
-                countRow("To Review", counts.review, .green)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Today").font(.headline)
+                Spacer()
+                HStack(spacing: 10) {
+                    count(counts.new, StudyColors.new)
+                    count(counts.learning, StudyColors.learning)
+                    count(counts.review, StudyColors.review)
+                }
+                .font(.headline.monospacedDigit())
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(counts.new) new, \(counts.learning) learning, \(counts.review) to review")
             }
-            .font(.caption)
-            Spacer()
-            Button { start(.study) } label: {
-                Label("Study", systemImage: "graduationcap")
+            Text(studiedText).font(.footnote).foregroundStyle(.secondary)
+            if streak.current > 0 {
+                Label(streakText, systemImage: "flame.fill")
+                    .font(.footnote)
+                    .foregroundStyle(streak.studiedToday ? .orange : .secondary)
+            }
+            Button(action: studyAll) {
+                Text("Study All").frame(maxWidth: .infinity)
             }
             .buttonStyle(.glassProminent)
             .disabled(counts.total == 0)
         }
+        .padding(.vertical, 4)
     }
 
-    private func countRow(_ title: String, _ value: Int, _ color: Color) -> some View {
-        HStack(spacing: 6) {
-            Text(title).foregroundStyle(.secondary).frame(width: 64, alignment: .leading)
-            Text(value.formatted()).foregroundStyle(value > 0 ? color : .secondary).monospacedDigit().fontWeight(.semibold)
+    private var studiedText: String {
+        guard let today, today.answerCount > 0 else { return "No moves studied today." }
+        let minutes = Int((Double(today.answerMillis) / 60_000).rounded())
+        let correct = Format.percent(Double(today.correctCount) / Double(today.answerCount))
+        return "Studied \(today.answerCount) \(today.answerCount == 1 ? "move" : "moves") in \(minutes) \(minutes == 1 ? "minute" : "minutes") · \(correct) correct"
+    }
+
+    private var streakText: String {
+        let days = "\(streak.current)-day streak"
+        let longest = streak.longest > streak.current ? " · longest \(streak.longest)" : ""
+        return streak.studiedToday ? days + longest : "Study today to keep your \(days)"
+    }
+
+    private func count(_ value: Int, _ color: Color) -> some View {
+        Text(value.formatted()).foregroundStyle(value > 0 ? color : Color.secondary.opacity(0.6))
+    }
+}
+
+/// Today's answers and the study streak across all repertoires, read from their review logs.
+@Observable
+final class LibraryTodayModel {
+    private(set) var today: GraphsContext.Today?
+    private(set) var streak = Streak()
+
+    func load(_ app: AppModel) async {
+        var revlog: [RevlogEntry] = []
+        for entry in app.library.entries where !entry.needsSetup {
+            revlog += await StudyLog.revlog(for: entry, in: app)
         }
+        let graphs = GraphsContext(cards: [], newCount: 0, revlog: revlog, timing: SchedTiming())
+        today = graphs.today()
+        streak = graphs.streak()
     }
 }
 
 struct LibraryRow: View {
     let entry: RepertoireEntry
-    var document: RepertoireDocument?
+    let stats: EntryStats
     var status: String?
 
     var body: some View {
         HStack(spacing: 12) {
             SideIcon(side: entry.sidecar?.color ?? .white)
-            VStack(alignment: .leading, spacing: 6) {
-                Text(entry.name).font(.headline)
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(entry.name).font(.headline).lineLimit(1)
+                    Spacer(minLength: 0)
+                    if status == nil {
+                        DueCounts(counts: stats.counts, progress: stats.progress)
+                            .layoutPriority(1)
+                    }
+                }
                 if let status {
                     Text(status).font(.caption).foregroundStyle(.secondary)
+                } else if stats.progress.cards == 0 && stats.savedMoves == 0 {
+                    Text("Empty · add moves to start").font(.caption).foregroundStyle(.secondary)
                 } else {
                     progress
                 }
@@ -284,27 +374,29 @@ struct LibraryRow: View {
 
     @ViewBuilder
     private var progress: some View {
-        let summary = summaryValues
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text("Built").font(.caption2).foregroundStyle(.secondary).frame(width: 44, alignment: .leading)
-                CompletionBar(value: summary.completion, tint: .green)
-                Text(Format.percent(summary.completion)).font(.caption2.monospacedDigit()).frame(width: 36, alignment: .trailing)
+            bar("Built") { CompletionBar(value: stats.completion, tint: .green) }
+            if stats.progress.studied > 0 {
+                bar("Studied") { StudiedBar(progress: stats.progress) }
             }
-            HStack {
-                Text("Learned").font(.caption2).foregroundStyle(.secondary).frame(width: 44, alignment: .leading)
-                CompletionBar(value: summary.learned, tint: .blue)
-                Text(Format.percent(summary.learned)).font(.caption2.monospacedDigit()).frame(width: 36, alignment: .trailing)
+            let notStudied = stats.progress.studied == 0 && stats.progress.cards > 0
+            if notStudied || stats.gaps > 0 {
+                HStack(spacing: 0) {
+                    if notStudied { Text("Not studied yet").foregroundStyle(.secondary) }
+                    if notStudied && stats.gaps > 0 { Text(" · ").foregroundStyle(.secondary) }
+                    if stats.gaps > 0 { Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps) gaps").foregroundStyle(.orange) }
+                }
+                .font(.caption)
             }
-            HStack(spacing: 10) {
-                if summary.gaps > 0 { Label(summary.gaps == 1 ? "1 gap" : "\(summary.gaps) gaps", systemImage: "exclamationmark.circle").foregroundStyle(.orange) }
-                Text(entry.sidecar?.database.summary ?? "").foregroundStyle(.secondary).lineLimit(1)
-            }
-            .font(.caption2)
         }
     }
 
-    private var summaryValues: EntryStats { EntryStats(entry: entry, document: document) }
+    private func bar(_ title: String, @ViewBuilder _ content: () -> some View) -> some View {
+        HStack {
+            Text(title).font(.caption2).foregroundStyle(.secondary).frame(width: 48, alignment: .leading)
+            content()
+        }
+    }
 }
 
 enum LibrarySort: String, CaseIterable, Identifiable {
@@ -335,32 +427,43 @@ enum LibrarySideFilter: String, CaseIterable, Identifiable {
     var side: Side? { self == .all ? nil : Side(rawValue: rawValue) }
 }
 
-/// Progress of one repertoire: live from the open document, else from the sidecar summary.
+/// Progress of one repertoire: live from the open document, else from the sidecar.
 struct EntryStats {
     var completion = 0.0
-    var learned = 0.0
     var gaps = 0
+    var savedMoves = 0
+    var progress = Trainer.Progress()
     var counts = CardQueues.Counts()
     /// Learning and review cards waiting today.
     var due: Int { counts.learning + counts.review }
 
+    init(document: RepertoireDocument) {
+        _ = document.revision
+        let root = document.coverage.root
+        completion = root?.completion ?? 0
+        gaps = root?.gapCount ?? 0
+        savedMoves = document.savedMoveCount
+        progress = document.learningProgress()
+        counts = document.studyCounts()
+    }
+
     init(entry: RepertoireEntry, document: RepertoireDocument?) {
         if let document {
-            _ = document.revision
-            let root = document.coverage.root
-            let progress = document.learningProgress()
-            completion = root?.completion ?? 0
-            learned = progress.matureFraction
-            gaps = root?.gapCount ?? 0
-            counts = document.studyCounts()
-            return
+            self.init(document: document)
+        } else {
+            self.init(sidecar: entry.sidecar)
         }
-        guard let sidecar = entry.sidecar else { return }
+    }
+
+    private init(sidecar: Sidecar?) {
+        guard let sidecar else { return }
         counts = sidecar.estimatedStudyCounts(config: TrainingDefaults.config, timing: SchedTiming())
+        progress = sidecar.estimatedProgress
         guard let s = sidecar.summary else { return }
         completion = s.completion
-        learned = s.cardCount > 0 ? Double(s.matureCount) / Double(s.cardCount) : 0
         gaps = s.gapCount
+        // Older summaries have no move count: anything with your moves has saved moves.
+        savedMoves = s.savedMoveCount ?? s.cardCount
     }
 }
 
@@ -470,7 +573,7 @@ struct SetupSheet: View {
     }
 }
 
-/// Edit settings of an open repertoire.
+/// Name, side and coverage settings of an open repertoire.
 struct RepertoireSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppModel.self) private var model
@@ -478,13 +581,11 @@ struct RepertoireSettingsSheet: View {
     @State private var draft: RepertoireSettingsDraft
     @State private var name: String
     @State private var error: String?
-    @State private var practice: DailyPracticeDraft
 
     init(document: RepertoireDocument) {
         self.document = document
         _draft = State(initialValue: RepertoireSettingsDraft(document.sidecar))
         _name = State(initialValue: document.name)
-        _practice = State(initialValue: DailyPracticeDraft(sidecar: document.sidecar, today: SchedTiming().daysElapsed))
     }
 
     var body: some View {
@@ -496,7 +597,6 @@ struct RepertoireSettingsSheet: View {
                         .onChange(of: name) { name = name.safeRepertoireName }
                 }
                 RepertoireSettingsForm(draft: $draft)
-                DailyPracticeSection(draft: $practice)
                 if let error { Text(error).foregroundStyle(.red) }
                 Section("File") {
                     LabeledContent("PGN", value: document.pgnURL.lastPathComponent)
@@ -527,11 +627,44 @@ struct RepertoireSettingsSheet: View {
                         }
                         document.updateSettings(color: draft.color, database: draft.database,
                                                 targetGames: draft.targetGames, minGames: draft.minGames)
+                        dismiss()
+                    }
+                    .disabled(!draft.isValid || name.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+    }
+}
+
+/// Anki's deck options: daily limits (default preset, this repertoire, today only), practice
+/// mode and the scheduling the app uses.
+struct StudyOptionsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let document: RepertoireDocument
+    @State private var practice: DailyPracticeDraft
+
+    init(document: RepertoireDocument) {
+        self.document = document
+        _practice = State(initialValue: DailyPracticeDraft(sidecar: document.sidecar, today: SchedTiming().daysElapsed))
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                DailyPracticeSection(draft: $practice)
+            }
+            .navigationTitle("\(document.name) Options")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", systemImage: "xmark") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save", systemImage: "checkmark") {
                         practice.savePreset()
                         document.updateStudySettings(limits: practice.limits, practiceMode: practice.practiceMode)
                         dismiss()
                     }
-                    .disabled(!draft.isValid || name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
         }

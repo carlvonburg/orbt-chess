@@ -61,6 +61,16 @@ public struct Card: Codable, Sendable, Hashable {
         return Int64(bitPattern: hash & 0x7FFF_FFFF_FFFF_FFFF)
     }
 
+    /// Anki's `restore_queue_after_bury_or_suspend`: the queue follows the card type; a
+    /// learning card whose due is a timestamp is intraday, otherwise interday.
+    public mutating func restoreQueue() {
+        switch ctype {
+        case .new: queue = .new
+        case .learn, .relearn: queue = due > 1_000_000_000 ? .learn : .dayLearn
+        case .review: queue = .review
+        }
+    }
+
     /// Anki: interval ≥ 21 days.
     public var isMature: Bool { (ctype == .review || ctype == .relearn) && interval >= 21 }
     public var isLearning: Bool { queue == .learn || queue == .dayLearn }

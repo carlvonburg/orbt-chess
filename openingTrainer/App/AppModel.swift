@@ -2,9 +2,17 @@ import Foundation
 import Observation
 import OpeningCore
 
+enum AppTab: Hashable {
+    case repertoires, statistics
+}
+
 /// Shared services and the open documents.
 @Observable
 final class AppModel {
+    var selectedTab = AppTab.repertoires
+    /// The Statistics tab's repertoire, set when a repertoire's overview shows more.
+    var statisticsScope = StatisticsModel.Scope.all
+
     let auth = LichessAuth()
     let stats = StatsStore()
     let library = RepertoireLibrary()

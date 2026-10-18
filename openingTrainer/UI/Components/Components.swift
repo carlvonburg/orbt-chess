@@ -89,7 +89,8 @@ struct SideIcon: View {
             .resizable()
             .frame(width: 28, height: 28)
             .padding(4)
-            .background(Circle().fill(side == .white ? Color(white: 0.3) : Color(white: 0.85)))
+            // One mid grey that both kings stand out on, in light and dark mode.
+            .background(Circle().fill(Color(white: 0.55)))
             .accessibilityLabel(side == .white ? "White repertoire" : "Black repertoire")
     }
 }
@@ -143,5 +144,77 @@ struct OpenDocument<Content: View, Placeholder: View>: View {
             placeholder()
                 .task(id: entry.id) { _ = await model.open(entry) }
         }
+    }
+}
+
+/// Colors of Anki's due counts, and of its card-count groups (used by the overview, the list
+/// and the Statistics tab alike).
+enum StudyColors {
+    static let new = Color.blue
+    static let learning = Color.red
+    static let review = Color.green
+
+    static let newGroup = Color.blue
+    static let learningGroup = Color.orange
+    static let relearningGroup = Color.red
+    static let young = Color(red: 0.6, green: 0.8, blue: 0.4)
+    static let mature = Color(red: 0.2, green: 0.5, blue: 0.1)
+    static let suspended = Color.yellow
+    /// Reviews ahead (Anki's filtered decks).
+    static let filtered = Color.purple
+}
+
+/// Studied moves by Anki's groups (learning, young, mature) over all your moves; moves not
+/// studied yet are the empty track.
+struct StudiedBar: View {
+    let progress: Trainer.Progress
+    var height: CGFloat = 6
+
+    var body: some View {
+        GeometryReader { geo in
+            let total = CGFloat(max(progress.cards, 1))
+            HStack(spacing: 0) {
+                Rectangle().fill(StudyColors.learningGroup).frame(width: geo.size.width * CGFloat(progress.learning) / total)
+                Rectangle().fill(StudyColors.young).frame(width: geo.size.width * CGFloat(progress.young) / total)
+                Rectangle().fill(StudyColors.mature).frame(width: geo.size.width * CGFloat(progress.mature) / total)
+                Spacer(minLength: 0)
+            }
+            .background(.quaternary)
+            .clipShape(.capsule)
+        }
+        .frame(height: height)
+        .accessibilityElement()
+        .accessibilityLabel("Studied")
+        .accessibilityValue("\(progress.learning) learning, \(progress.young) young, \(progress.mature) mature, \(progress.notStudied) not studied")
+    }
+}
+
+/// New / Learning / To Review, as on Anki's deck list. Nothing when the repertoire has no
+/// moves of yours yet, only the new count before anything was studied, zeros greyed.
+struct DueCounts: View {
+    let counts: CardQueues.Counts
+    let progress: Trainer.Progress
+    var font: Font = .subheadline
+
+    var body: some View {
+        if progress.cards == 0 {
+            EmptyView()
+        } else if progress.studied == 0 {
+            Text("\(counts.new) new").foregroundStyle(counts.new > 0 ? StudyColors.new : .secondary)
+                .font(font.weight(.semibold).monospacedDigit())
+        } else {
+            HStack(spacing: 8) {
+                number(counts.new, StudyColors.new)
+                number(counts.learning, StudyColors.learning)
+                number(counts.review, StudyColors.review)
+            }
+            .font(font.weight(.semibold).monospacedDigit())
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(counts.new) new, \(counts.learning) learning, \(counts.review) to review")
+        }
+    }
+
+    private func number(_ value: Int, _ color: Color) -> some View {
+        Text(value.formatted()).foregroundStyle(value > 0 ? color : Color.secondary.opacity(0.6))
     }
 }

@@ -10,15 +10,18 @@ public struct GraphsContext: Sendable {
     public var cards: [Card]
     /// Cards never studied (Anki: cards of type New).
     public var newCount: Int
+    /// Suspended positions never studied (below alternative moves), which have no stored card.
+    public var suspendedNewCount: Int
     public var revlog: [RevlogEntry]
     public var timing: SchedTiming
     public var localOffsetSecs: Int
     public var fsrs = FSRS6()
 
-    public init(cards: [Card], newCount: Int, revlog: [RevlogEntry], timing: SchedTiming,
+    public init(cards: [Card], newCount: Int, suspendedNewCount: Int = 0, revlog: [RevlogEntry], timing: SchedTiming,
                 localOffsetSecs: Int = TimeZone.current.secondsFromGMT()) {
         self.cards = cards
         self.newCount = newCount
+        self.suspendedNewCount = suspendedNewCount
         self.revlog = revlog.sorted { $0.id < $1.id }
         self.timing = timing
         self.localOffsetSecs = localOffsetSecs
@@ -96,7 +99,7 @@ public struct GraphsContext: Sendable {
 
     /// Excluding inactive cards: suspended ones are counted separately.
     public func cardCounts() -> CardCounts {
-        var counts = CardCounts(new: newCount)
+        var counts = CardCounts(new: newCount, suspended: suspendedNewCount)
         for card in cards {
             if card.queue == .suspended {
                 counts.suspended += 1

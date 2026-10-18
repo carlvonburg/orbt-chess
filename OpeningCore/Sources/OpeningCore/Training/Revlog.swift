@@ -35,6 +35,33 @@ public enum RevlogFile {
 }
 
 extension Sidecar {
+    /// Progress without opening the PGN: the stored cards, out of the positions counted in the
+    /// last summary.
+    public var estimatedProgress: Trainer.Progress {
+        let active = studyCards.values.filter { $0.queue != .suspended }
+        var p = Trainer.Progress(cards: max(summary?.cardCount ?? 0, active.count))
+        for card in active { p.add(card) }
+        p.suspended = summary?.suspendedCount ?? (studyCards.count - active.count)
+        return p
+    }
+
+    /// When the next card falls due after today's are done: a learning step later today, or
+    /// the start of the day a review is due.
+    public func nextDue(timing: SchedTiming) -> Date? {
+        var next: Int64?
+        for card in studyCards.values {
+            let at: Int64
+            switch card.queue {
+            case .learn: at = card.due
+            case .review, .dayLearn: at = timing.nextDayAt + (max(card.due, Int64(timing.daysElapsed) + 1) - Int64(timing.daysElapsed) - 1) * 86_400
+            default: continue
+            }
+            guard at > timing.now else { continue }
+            next = min(next ?? at, at)
+        }
+        return next.map { Date(timeIntervalSince1970: TimeInterval($0)) }
+    }
+
     /// New / learning / review counts without opening the PGN, as Anki's deck list computes
     /// them: learning within the learn-ahead limit, reviews and new cards within today's limits.
     public func estimatedStudyCounts(config: DeckConfig, timing: SchedTiming) -> CardQueues.Counts {
@@ -53,7 +80,7 @@ extension Sidecar {
         interday = min(interday, remaining.review)
         let reviewLeft = remaining.review - interday
         review = min(review, reviewLeft)
-        let unseen = max(0, (summary?.cardCount ?? 0) - studyCards.count)
+        let unseen = max(0, (summary?.cardCount ?? 0) - studyCards.values.filter { $0.queue != .suspended }.count)
         var new = min(unseen, remaining.new)
         if remaining.capNewToReview { new = min(new, reviewLeft - review) }
         return CardQueues.Counts(new: max(new, 0), learning: intraday + interday, review: review)

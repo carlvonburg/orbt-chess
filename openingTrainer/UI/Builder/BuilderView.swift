@@ -123,7 +123,7 @@ struct BuilderView: View {
                 Button("Outline", systemImage: "list.bullet.indent") { sheet = .outline }
                 Button("Gaps", systemImage: "exclamationmark.circle") { sheet = .gaps }
                 Button("Edit Note", systemImage: "note.text") { sheet = .note }
-                Button("Card Info", systemImage: "info.circle") { sheet = .cardInfo }
+                Button("Move Info", systemImage: "info.circle") { sheet = .cardInfo }
                     .disabled(document.tree[model.current].flatMap { document.sidecar.studyCards[$0.epd] } == nil
                               || document.tree[model.current]?.sideToMove != document.color)
                 Button("Flip Board", systemImage: "arrow.up.arrow.down") { model.orientation = model.orientation.opposite }
@@ -323,7 +323,10 @@ struct NodeHeader: View {
             CoverageCheckStatus(document: document)
             HStack(spacing: 12) {
                 progress("Built", value: info?.completion ?? 0, tint: .green)
-                progress("Learned", value: learning.matureFraction, tint: .blue)
+                HStack(spacing: 6) {
+                    Text("Studied").font(.caption2).foregroundStyle(.secondary)
+                    StudiedBar(progress: learning)
+                }
             }
             if !node.note.isEmpty {
                 Button(action: onNote) {

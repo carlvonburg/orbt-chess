@@ -70,6 +70,9 @@ card on it; moves you play that aren't due are reviews ahead (filtered deck); ne
 introduced a line at a time (most reached first) and a started line is finished past the
 daily limit; reviews due the same day are ordered by reach. Grading is Again/Good only
 (wrong, hint or browsing = Again). Ported files keep Anki's AGPL header.
+The UI follows Anki's deck list → deck overview → deck options, and says "moves", never
+"cards". Progress uses Anki's card-count groups (learning, young, mature), not a percentage.
+Study All runs repertoires one after another (Anki would mix a parent deck's reviews).
 
 ## Conventions
 - Code in OpeningCore is pure Swift, `Sendable` value types, no UIKit/SwiftUI.

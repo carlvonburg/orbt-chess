@@ -163,6 +163,7 @@ final class RepertoireDocument {
         coverage = CoverageEngine(settings: sidecar.coverageSettings)
         coverage.recomputeAll(tree: tree, stats: lookup)
         revision += 1
+        syncSuspension()
         checkCoverage()
     }
 
@@ -222,6 +223,7 @@ final class RepertoireDocument {
         coverage.recomputeAll(tree: tree, stats: lookup)
         canUndo = !undoStack.isEmpty
         revision += 1
+        syncSuspension()
         checkCoverage()
         schedulePGNSave()
     }
@@ -242,6 +244,7 @@ final class RepertoireDocument {
     private func didEdit() {
         canUndo = !undoStack.isEmpty
         revision += 1
+        syncSuspension()
         checkCoverage()
         schedulePGNSave()
         scheduleSidecarSave(delay: 3)
@@ -291,6 +294,9 @@ final class RepertoireDocument {
     func learningProgress(under node: NodeID = RepertoireTree.rootID) -> Trainer.Progress {
         trainer.progress(under: node, cards: sidecar.studyCards)
     }
+
+    /// Every move in the PGN, both sides.
+    var savedMoveCount: Int { max(0, tree.count - 1) }
 
     // MARK: Study (Anki)
 
@@ -439,7 +445,8 @@ final class RepertoireDocument {
         let root = coverage.root
         sidecar.summary = Sidecar.Summary(
             completion: root?.completion ?? 0, gapCount: root?.gapCount ?? 0,
-            cardCount: progress.cards, matureCount: progress.mature, dueCount: studyCounts().review,
+            cardCount: progress.cards, matureCount: progress.mature, savedMoveCount: savedMoveCount,
+            suspendedCount: progress.suspended, dueCount: studyCounts().review,
             configKey: sidecar.configKey, computedAt: .now)
         guard let data = try? sidecar.encoded(), data != lastWrittenSidecar else { return }
         do {
@@ -469,6 +476,7 @@ final class RepertoireDocument {
         canUndo = false
         coverage.recomputeAll(tree: tree, stats: lookup)
         revision += 1
+        syncSuspension()
         checkCoverage()
         if pgnSaveTask != nil || tree.pgnText() != text { schedulePGNSave() }
     }
@@ -488,6 +496,15 @@ final class RepertoireDocument {
         } else {
             revision += 1
         }
+        // The other device's cards may have been suspended against its own copy of the PGN.
+        syncSuspension()
+    }
+
+    /// Suspends cards below alternative moves and restores the main line's (Anki's suspend).
+    private func syncSuspension() {
+        guard sidecar.syncSuspension(active: trainer.cardEPDs()) else { return }
+        revision += 1
+        scheduleSidecarSave(delay: 1)
     }
 
     private func resolveConflicts() {

@@ -28,6 +28,86 @@ struct TrainingTests {
         #expect(String(data: try merged.encoded(), encoding: .utf8)!.contains("\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -\""))
     }
 
+    @Test func summaryRoundTrip() throws {
+        var sidecar = Sidecar(color: .black)
+        sidecar.summary = Sidecar.Summary(completion: 0.5, gapCount: 2, cardCount: 10, matureCount: 1, savedMoveCount: 25, dueCount: 4, configKey: "k", computedAt: .now)
+        let decoded = try Sidecar.decode(sidecar.encoded())
+        #expect(decoded.summary?.savedMoveCount == 25)
+        // Summaries written before the counts were added still decode.
+        var old = try JSONSerialization.jsonObject(with: sidecar.encoded()) as! [String: Any]
+        var summary = old["summary"] as! [String: Any]
+        summary["savedMoveCount"] = nil
+        old["summary"] = summary
+        let legacy = try Sidecar.decode(JSONSerialization.data(withJSONObject: old))
+        #expect(legacy.summary?.savedMoveCount == nil && legacy.summary?.cardCount == 10)
+    }
+
+    @Test func progressGroups() {
+        let tree = whiteTree()
+        let trainer = Trainer(tree: tree, color: .white)
+        let epds = trainer.cardNodes().compactMap { tree[$0]?.epd }
+        var cards: [EPD: Card] = [:]
+        var learning = Card(id: 1, position: 0, added: 0)
+        learning.ctype = .learn
+        cards[epds[0]] = learning
+        var young = Card(id: 2, position: 1, added: 0)
+        young.ctype = .review
+        young.interval = 5
+        cards[epds[1]] = young
+        var mature = Card(id: 3, position: 2, added: 0)
+        mature.ctype = .review
+        mature.interval = 30
+        cards[epds[2]] = mature
+        let p = trainer.progress(cards: cards)
+        #expect(p == Trainer.Progress(cards: 5, learning: 1, young: 1, mature: 1))
+        #expect(p.notStudied == 2)
+    }
+
+    @Test func nextDueAfterToday() {
+        let timing = SchedTiming(daysElapsed: 10, nextDayAt: 100_000, now: 50_000)
+        var sidecar = Sidecar(color: .white)
+        var review = Card(id: 1, position: 0, added: 0)
+        review.ctype = .review
+        review.queue = .review
+        review.due = 12
+        sidecar.studyCards[ChessPosition.start.epd] = review
+        #expect(sidecar.nextDue(timing: timing) == Date(timeIntervalSince1970: 186_400))
+        var learning = Card(id: 2, position: 1, added: 0)
+        learning.ctype = .learn
+        learning.queue = .learn
+        learning.due = 60_000
+        sidecar.studyCards[ChessPosition.start.play(san: "e4")!.1.epd] = learning
+        #expect(sidecar.nextDue(timing: timing) == Date(timeIntervalSince1970: 60_000))
+        #expect(sidecar.estimatedProgress.learning == 1 && sidecar.estimatedProgress.young == 1)
+    }
+
+    @Test func alternativesAreSuspendedAndKeepProgress() {
+        var tree = whiteTree()
+        // whiteTree: after 1.e4 e5 the main move is Nf3, Bc4 is an alternative.
+        tree.add("e4 e5 Bc4 Nf6 d3")
+        let trainer = Trainer(tree: tree, color: .white)
+        let afterNf6 = tree.find("e4 e5 Bc4 Nf6")!
+        let epd = tree[afterNf6]!.epd
+        #expect(trainer.suspendedCardEPDs() == [epd])
+        #expect(trainer.progress(cards: [:]).suspended == 1)
+
+        // A studied card on the main line, then the line becomes an alternative and back.
+        var sidecar = Sidecar(color: .white)
+        var review = Card(id: 1, position: 0, added: 0)
+        review.ctype = .review
+        review.queue = .review
+        review.interval = 30
+        review.due = 100
+        sidecar.studyCards[epd] = review
+        let suspended = sidecar.syncSuspension(active: trainer.cardEPDs())
+        #expect(suspended && sidecar.studyCards[epd]?.queue == .suspended)
+        #expect(sidecar.estimatedProgress.mature == 0)
+        let restored = sidecar.syncSuspension(active: [epd])
+        #expect(restored && sidecar.studyCards[epd] == review)
+        let unchanged = sidecar.syncSuspension(active: [epd])
+        #expect(!unchanged)
+    }
+
     func whiteTree() -> RepertoireTree {
         var tree = RepertoireTree()
         tree.add("e4 c5 Nf3 d6 d4")

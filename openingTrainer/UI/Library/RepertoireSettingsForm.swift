@@ -200,7 +200,7 @@ struct DailyPracticeDraft: Equatable {
         var id: Self { self }
         var title: String {
             switch self {
-            case .preset: "Preset"
+            case .preset: "Default"
             case .deck: "This Repertoire"
             case .today: "Today Only"
             }
@@ -209,6 +209,7 @@ struct DailyPracticeDraft: Equatable {
 
     var presetNew = TrainingDefaults.newPerDay
     var presetReviews = TrainingDefaults.reviewsPerDay
+    var presetPracticeMode = TrainingDefaults.practiceMode
     var limits = DeckLimits()
     var practiceMode: PracticeMode?
     var scope = Scope.preset
@@ -277,6 +278,7 @@ struct DailyPracticeDraft: Equatable {
     func savePreset() {
         UserDefaults.standard.set(presetNew, forKey: TrainingDefaults.newPerDayKey)
         UserDefaults.standard.set(presetReviews, forKey: TrainingDefaults.reviewsPerDayKey)
+        UserDefaults.standard.set(presetPracticeMode.rawValue, forKey: TrainingDefaults.practiceModeKey)
     }
 }
 
@@ -298,15 +300,34 @@ struct DailyPracticeSection: View {
         }
 
         Section {
-            Picker("Practice", selection: $draft.practiceMode) {
-                Text("Default (\(TrainingDefaults.practiceMode.title))").tag(PracticeMode?.none)
+            Picker("This repertoire", selection: $draft.practiceMode) {
+                Text("Default (\(draft.presetPracticeMode.title))").tag(PracticeMode?.none)
                 ForEach(PracticeMode.allCases) { Text($0.title).tag(PracticeMode?.some($0)) }
+            }
+            Picker("Default", selection: $draft.presetPracticeMode) {
+                ForEach(PracticeMode.allCases) { Text($0.title).tag($0) }
             }
         } header: {
             Text("Practice")
         } footer: {
-            Text("Every line starts from the first move. Individual moves: the app plays the moves leading up to the ones you are asked. Complete lines: you play all your moves, every time or once per session.")
+            Text("Every line starts from the first move. Individual moves: the app plays the moves leading up to the ones you are asked. Complete lines: you play all your moves, every time or once per session. The default applies to all repertoires.")
         }
+
+        let config = DeckConfig()
+        Section {
+            LabeledContent("Learning steps", value: steps(config.learnSteps))
+            LabeledContent("Relearning steps", value: steps(config.relearnSteps))
+            LabeledContent("Desired retention", value: Format.percent(config.desiredRetention))
+            LabeledContent("Next day starts at", value: "\(SchedTiming.rolloverHour) AM")
+        } header: {
+            Text("Scheduling")
+        } footer: {
+            Text("Anki's defaults with FSRS.")
+        }
+    }
+
+    private func steps(_ minutes: [Double]) -> String {
+        minutes.map { $0 < 60 ? "\(Int($0))m" : "\(Int($0 / 60))h" }.joined(separator: " ")
     }
 
     private var footer: String {

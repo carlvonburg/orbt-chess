@@ -261,8 +261,12 @@ struct DrillView: View {
         var id: NodeID { node }
     }
 
-    init(document: RepertoireDocument, mode: DrillMode) {
+    /// The next repertoire when studying all of them: its name and how to go on.
+    private let next: (name: String, start: () -> Void)?
+
+    init(document: RepertoireDocument, mode: DrillMode, next: (name: String, start: () -> Void)? = nil) {
         _model = State(initialValue: DrillModel(document: document, mode: mode))
+        self.next = next
     }
 
     var body: some View {
@@ -363,7 +367,7 @@ struct DrillView: View {
         } description: {
             VStack(spacing: 8) {
                 Text(model.answeredCount > 0
-                     ? "You have finished this repertoire for now."
+                     ? "You have finished \(model.document.name) for now."
                      : model.isFiltered ? "There are no moves in this branch yet." : "No moves are due right now.")
                 if let due = model.nextLearningDue {
                     Text("More moves you are learning are due at \(due.formatted(date: .omitted, time: .shortened)).")
@@ -383,8 +387,15 @@ struct DrillView: View {
                     }
                     .buttonStyle(.glass)
                 }
-                Button("Done") { dismiss() }
-                    .buttonStyle(.glassProminent)
+                if let next {
+                    Button("Continue with \(next.name)") { next.start() }
+                        .buttonStyle(.glassProminent)
+                    Button("Done") { dismiss() }
+                        .buttonStyle(.glass)
+                } else {
+                    Button("Done") { dismiss() }
+                        .buttonStyle(.glassProminent)
+                }
             }
         }
     }

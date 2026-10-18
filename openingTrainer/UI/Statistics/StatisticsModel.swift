@@ -33,20 +33,26 @@ final class StatisticsModel {
             document = nil
             var allCards: [Card] = []
             var newCount = 0
+            var suspendedNew = 0
             var revlog: [RevlogEntry] = []
             for entry in app.library.entries where !entry.needsSetup {
                 if let doc = app.documents[entry.id] {
-                    allCards += doc.sidecar.studyCards.values
-                    newCount += max(0, doc.learningProgress().cards - doc.sidecar.studyCards.count)
+                    let cards = doc.sidecar.studyCards
+                    allCards += cards.values
+                    newCount += doc.learningProgress().notStudied
+                    suspendedNew += doc.trainer.suspendedCardEPDs().filter { cards[$0] == nil }.count
                     revlog += doc.reviewLog()
                 } else if let sidecar = entry.sidecar {
                     allCards += sidecar.studyCards.values
-                    newCount += max(0, (sidecar.summary?.cardCount ?? 0) - sidecar.studyCards.count)
-                    revlog += await Self.readRevlog(RepertoireLibrary.revlogURL(for: entry.pgnURL))
+                    let progress = sidecar.estimatedProgress
+                    newCount += progress.notStudied
+                    let storedSuspended = sidecar.studyCards.values.filter { $0.queue == .suspended }.count
+                    suspendedNew += max(0, progress.suspended - storedSuspended)
+                    revlog += await StudyLog.read(RepertoireLibrary.revlogURL(for: entry.pgnURL))
                 }
             }
             cards = [:]
-            graphs = GraphsContext(cards: allCards, newCount: newCount, revlog: revlog, timing: timing)
+            graphs = GraphsContext(cards: allCards, newCount: newCount, suspendedNewCount: suspendedNew, revlog: revlog, timing: timing)
         case .repertoire(let id):
             guard let entry = app.library.entry(id: id), let doc = await app.open(entry) else {
                 graphs = nil
@@ -55,19 +61,16 @@ final class StatisticsModel {
             document = doc
             let root = branch ?? RepertoireTree.rootID
             let epds = doc.trainer.cardEPDs(under: root)
+            let suspended = doc.trainer.suspendedCardEPDs(under: root)
             let studied = doc.sidecar.studyCards.filter { epds.contains($0.key) }
+            let studiedSuspended = doc.sidecar.studyCards.filter { suspended.contains($0.key) }
             cards = studied
-            let revlog = doc.reviewLog().filter { epds.contains($0.cid) }
-            graphs = GraphsContext(cards: Array(studied.values), newCount: epds.count - studied.count,
+            let revlog = doc.reviewLog().filter { epds.contains($0.cid) || suspended.contains($0.cid) }
+            graphs = GraphsContext(cards: Array(studied.values) + Array(studiedSuspended.values),
+                                   newCount: epds.count - studied.count,
+                                   suspendedNewCount: suspended.count - studiedSuspended.count,
                                    revlog: revlog, timing: timing)
         }
-    }
-
-    private nonisolated static func readRevlog(_ url: URL) async -> [RevlogEntry] {
-        await Task.detached {
-            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
-            return (try? FileAccess.read(url)).map(RevlogFile.decode) ?? []
-        }.value
     }
 
     // MARK: Chess statistics

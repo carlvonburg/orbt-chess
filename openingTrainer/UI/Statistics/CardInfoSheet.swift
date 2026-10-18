@@ -48,7 +48,7 @@ struct CardInfoSheet: View {
                     Text("This move has not been studied yet.").foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Card Info")
+            .navigationTitle("Move Info")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

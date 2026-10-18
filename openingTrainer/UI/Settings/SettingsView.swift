@@ -6,9 +6,6 @@ struct SettingsView: View {
     @Environment(\.webAuthenticationSession) private var webAuth
     @Environment(\.dismiss) private var dismiss
     @State private var cacheCount = 0
-    @AppStorage(TrainingDefaults.newPerDayKey) private var newPerDay = DeckConfig().newPerDay
-    @AppStorage(TrainingDefaults.reviewsPerDayKey) private var reviewsPerDay = DeckConfig().reviewsPerDay
-    @AppStorage(TrainingDefaults.practiceModeKey) private var practiceMode = PracticeMode.default
 
     var body: some View {
         NavigationStack {
@@ -37,18 +34,6 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Stepper("New moves/day: \(newPerDay)", value: $newPerDay, in: 0...9999)
-                    Stepper("Maximum reviews/day: \(reviewsPerDay)", value: $reviewsPerDay, in: 0...9999, step: 10)
-                    Picker("Practice", selection: $practiceMode) {
-                        ForEach(PracticeMode.allCases) { Text($0.title).tag($0) }
-                    }
-                } header: {
-                    Text("Daily practice")
-                } footer: {
-                    Text("The default for every repertoire; each can override it in its settings. Scheduling follows Anki: learning steps of 1 and 10 minutes, FSRS with 90% retention, the day starts at 4 AM.")
-                }
-
-                Section {
                     LabeledContent("Storage", value: model.library.usesICloud ? "iCloud Drive › Opening Trainer" : "On this device")
                     LabeledContent("Cached positions", value: cacheCount.formatted())
                     Button("Clear Statistics Cache", role: .destructive) {
@@ -58,7 +43,8 @@ struct SettingsView: View {
                 } header: {
                     Text("Data")
                 } footer: {
-                    Text("Repertoires are PGN files you can open in any chess program. Statistics are cached on this device and fetched again when needed.")
+                    Text((model.library.usesICloud ? "" : "iCloud Drive is off, so repertoires are stored on this device only. ")
+                         + "Repertoires are PGN files you can open in any chess program. Statistics are cached on this device and fetched again when needed.")
                 }
 
                 Section("About") {
