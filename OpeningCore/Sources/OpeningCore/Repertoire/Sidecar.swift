@@ -5,7 +5,7 @@ import Foundation
 public struct Sidecar: Codable, Sendable, Equatable {
     enum CodingKeys: String, CodingKey {
         case version, id, color, database, targetGames, minGames, settingsModified, studyCards, studyStats,
-             limits, practiceMode, cards, summary, lastLine, excludedMoves
+             limits, practiceMode, summary, lastLine, excludedMoves
     }
 
     public struct Summary: Codable, Sendable, Equatable {
@@ -43,8 +43,6 @@ public struct Sidecar: Codable, Sendable, Equatable {
     public var limits: DeckLimits?
     /// Overrides the default practice mode.
     public var practiceMode: PracticeMode?
-    /// Version 1 cards (own FSRS-5 scheduler); converted by `decode`.
-    var cards: [EPD: LegacyCard]?
     public var summary: Summary?
     /// Last position the user looked at, as UCI moves from the start.
     public var lastLine: [String]?
@@ -76,7 +74,6 @@ public struct Sidecar: Codable, Sendable, Equatable {
         studyStats = try c.decodeIfPresent(DeckStudyStats.self, forKey: .studyStats)
         limits = try c.decodeIfPresent(DeckLimits.self, forKey: .limits)
         practiceMode = try c.decodeIfPresent(PracticeMode.self, forKey: .practiceMode)
-        cards = try c.decodeIfPresent([EPD: LegacyCard].self, forKey: .cards)
         summary = try c.decodeIfPresent(Summary.self, forKey: .summary)
         lastLine = try c.decodeIfPresent([String].self, forKey: .lastLine)
         excludedMoves = try c.decodeIfPresent([EPD: [String]].self, forKey: .excludedMoves)
@@ -119,16 +116,6 @@ public struct Sidecar: Codable, Sendable, Equatable {
         return result
     }
 
-    /// Converts version 1 cards to Anki cards.
-    mutating func migrateLegacyCards(timing: SchedTiming) {
-        guard let legacy = cards else { return }
-        for (epd, old) in legacy where studyCards[epd] == nil {
-            studyCards[epd] = old.converted(epd: epd, timing: timing)
-        }
-        cards = nil
-        version = 2
-    }
-
     private static let dateStyle = Date.ISO8601FormatStyle(includingFractionalSeconds: true)
 
     public static func decode(_ data: Data) throws -> Sidecar {
@@ -138,9 +125,7 @@ public struct Sidecar: Codable, Sendable, Equatable {
             if let date = try? Date(text, strategy: Self.dateStyle) { return date }
             return try Date(text, strategy: .iso8601)
         }
-        var sidecar = try decoder.decode(Sidecar.self, from: data)
-        sidecar.migrateLegacyCards(timing: SchedTiming())
-        return sidecar
+        return try decoder.decode(Sidecar.self, from: data)
     }
 
     public func encoded() throws -> Data {
@@ -151,44 +136,5 @@ public struct Sidecar: Codable, Sendable, Equatable {
         }
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(self)
-    }
-}
-
-/// A version 1 card, scheduled by the app's own FSRS-5 code.
-struct LegacyCard: Codable, Sendable, Equatable {
-    enum Phase: String, Codable, Sendable { case learning, review, relearning }
-
-    var stability: Double
-    var difficulty: Double
-    var due: Date
-    var lastReview: Date
-    var reps: Int
-    var lapses: Int
-    var phase: Phase
-
-    /// Review cards keep their memory and due day (as Anki does when parameters change);
-    /// learning cards restart at the first step, due now.
-    func converted(epd: EPD, timing: SchedTiming) -> Card {
-        var card = Card(id: Card.id(for: epd), position: 0, added: Int64(lastReview.timeIntervalSince1970))
-        card.reps = reps
-        card.lapses = lapses
-        card.easeFactor = 2500
-        card.memory = MemoryState(stability: stability, difficulty: difficulty)
-        card.lastReviewTime = Int64(lastReview.timeIntervalSince1970)
-        let dueDay = timing.daysElapsed + Int(((due.timeIntervalSince1970 - TimeInterval(timing.dayStart)) / 86_400).rounded(.down))
-        switch phase {
-        case .review:
-            card.ctype = .review
-            card.queue = .review
-            card.interval = max(1, Int((due.timeIntervalSince(lastReview) / 86_400).rounded()))
-            card.due = Int64(dueDay)
-        case .learning, .relearning:
-            card.ctype = phase == .learning ? .learn : .relearn
-            card.queue = .learn
-            card.interval = phase == .learning ? 0 : 1
-            card.remainingSteps = phase == .learning ? 2 : 1
-            card.due = timing.now
-        }
-        return card
     }
 }

@@ -28,24 +28,6 @@ struct TrainingTests {
         #expect(String(data: try merged.encoded(), encoding: .utf8)!.contains("\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -\""))
     }
 
-    @Test func legacyCardsAreMigrated() throws {
-        let json = """
-        {"version":1,"id":"6F9619FF-8B86-D011-B42D-00C04FC964FF","color":"white",
-         "database":{"masters":{}},"targetGames":500,"minGames":25,
-         "settingsModified":"2026-01-01T00:00:00Z",
-         "cards":{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -":
-           {"stability":12,"difficulty":4,"due":"2099-01-11T12:00:00Z","lastReview":"2099-01-01T12:00:00Z",
-            "reps":3,"lapses":1,"phase":"review"}}}
-        """
-        let sidecar = try Sidecar.decode(Data(json.utf8))
-        let card = try #require(sidecar.studyCards[ChessPosition.start.epd])
-        #expect(card.ctype == .review && card.queue == .review)
-        #expect(card.interval == 10)
-        #expect(card.memory == MemoryState(stability: 12, difficulty: 4))
-        #expect(card.reps == 3 && card.lapses == 1)
-        #expect(sidecar.version == 2)
-    }
-
     func whiteTree() -> RepertoireTree {
         var tree = RepertoireTree()
         tree.add("e4 c5 Nf3 d6 d4")
