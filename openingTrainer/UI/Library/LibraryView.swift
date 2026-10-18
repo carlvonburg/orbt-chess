@@ -43,7 +43,7 @@ struct LibraryView: View {
                     }
                 }
                 .navigationDestination(for: String.self) { id in
-                    if let entry = model.library.entry(id: id) {
+                    if let entry = model.library.entry(id: model.currentID(id)) {
                         OpenDocument(entry: entry) { doc in
                             BuilderView(document: doc)
                         } placeholder: {
@@ -400,6 +400,7 @@ struct NewRepertoireSheet: View {
                 Section("Name") {
                     TextField("e.g. Najdorf", text: $name)
                         .textInputAutocapitalization(.words)
+                        .onChange(of: name) { name = name.safeRepertoireName }
                 }
                 RepertoireSettingsForm(draft: $draft)
                 if let error {
@@ -469,18 +470,28 @@ struct SetupSheet: View {
 /// Edit settings of an open repertoire.
 struct RepertoireSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppModel.self) private var model
     let document: RepertoireDocument
     @State private var draft: RepertoireSettingsDraft
+    @State private var name: String
+    @State private var error: String?
 
     init(document: RepertoireDocument) {
         self.document = document
         _draft = State(initialValue: RepertoireSettingsDraft(document.sidecar))
+        _name = State(initialValue: document.name)
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                Section("Name") {
+                    TextField("Name", text: $name)
+                        .textInputAutocapitalization(.words)
+                        .onChange(of: name) { name = name.safeRepertoireName }
+                }
                 RepertoireSettingsForm(draft: $draft)
+                if let error { Text(error).foregroundStyle(.red) }
                 Section("File") {
                     LabeledContent("PGN", value: document.pgnURL.lastPathComponent)
                     if !document.loadWarnings.isEmpty {
@@ -498,11 +509,21 @@ struct RepertoireSettingsSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", systemImage: "checkmark") {
+                        let newName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if newName != document.name {
+                            do {
+                                try model.rename(document, to: newName)
+                            } catch {
+                                self.error = (error as? CocoaError)?.code == .fileWriteFileExists
+                                    ? "A repertoire with this name already exists." : error.localizedDescription
+                                return
+                            }
+                        }
                         document.updateSettings(color: draft.color, database: draft.database,
                                                 targetGames: draft.targetGames, minGames: draft.minGames)
                         dismiss()
                     }
-                    .disabled(!draft.isValid)
+                    .disabled(!draft.isValid || name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
         }

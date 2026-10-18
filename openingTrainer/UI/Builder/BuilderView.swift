@@ -115,10 +115,11 @@ struct BuilderView: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            Button("Undo", systemImage: "arrow.uturn.backward") { document.undo() }
-                .disabled(!document.canUndo)
+        ToolbarItem(placement: .topBarTrailing) {
             Menu("More", systemImage: "ellipsis") {
+                Button("Undo", systemImage: "arrow.uturn.backward") { document.undo() }
+                    .disabled(!document.canUndo)
+                Divider()
                 Button("Outline", systemImage: "list.bullet.indent") { sheet = .outline }
                 Button("Gaps", systemImage: "exclamationmark.circle") { sheet = .gaps }
                 Button("Edit Note", systemImage: "note.text") { sheet = .note }

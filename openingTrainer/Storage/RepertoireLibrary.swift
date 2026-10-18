@@ -128,6 +128,33 @@ final class RepertoireLibrary {
         refresh()
     }
 
+    /// Renames a repertoire's PGN and sidecar to `<name>.pgn` and `<name>.otrep.json`.
+    func rename(pgn: URL, to name: String) throws -> RepertoireEntry {
+        let clean = Self.cleanName(name)
+        guard !clean.isEmpty else { throw CocoaError(.fileWriteInvalidFileName) }
+        let newPGN = pgn.deletingLastPathComponent().appending(path: clean + ".pgn")
+        let sidecar = Self.sidecarURL(for: pgn)
+        let newSidecar = Self.sidecarURL(for: newPGN)
+        // A case-only rename points at the same file on a case-insensitive volume.
+        let sameFile = newPGN.path.lowercased() == pgn.path.lowercased()
+        if !sameFile, FileManager.default.fileExists(atPath: newPGN.path)
+            || FileManager.default.fileExists(atPath: newSidecar.path) {
+            throw CocoaError(.fileWriteFileExists)
+        }
+        if newPGN != pgn {
+            try FileAccess.move(pgn, to: newPGN)
+            do {
+                try FileAccess.move(sidecar, to: newSidecar)
+            } catch {
+                try? FileAccess.move(newPGN, to: pgn)
+                throw error
+            }
+        }
+        refresh()
+        guard let entry = entry(id: newSidecar.path) else { throw CocoaError(.fileNoSuchFile) }
+        return entry
+    }
+
     /// Deletes a repertoire from the folder (PGN and sidecar).
     func delete(_ entry: RepertoireEntry) throws {
         try FileAccess.delete(entry.pgnURL)
@@ -135,14 +162,44 @@ final class RepertoireLibrary {
         refresh()
     }
 
+    /// The name as a file name: safe characters only, single spaces, no leading dot, at
+    /// most 100 characters.
     private static func cleanName(_ name: String) -> String {
-        name.trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+        let words = name.safeRepertoireName.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        return String(words.drop { $0 == "." || $0 == " " }.prefix(100))
+            .trimmingCharacters(in: .whitespaces)
     }
 }
 
 private extension String {
     var nonEmpty: String? { isEmpty ? nil : self }
+}
+
+extension String {
+    /// Keeps letters and digits of any script, spaces, and - _ . , ( ) ' & + !
+    /// Path separators become "-" (":" becomes " -", as in "Ruy Lopez - Berlin"); emoji and
+    /// other symbols that cause trouble in file names (on iOS, Windows or in sync) are removed.
+    var safeRepertoireName: String {
+        let allowed = Set("-_.,()'&+! ")
+        return String(flatMap { c -> String in
+            if c == ":" { return " -" }
+            if "/\\".contains(c) { return "-" }
+            if allowed.contains(c) { return String(c) }
+            let ok = c.unicodeScalars.allSatisfy { scalar in
+                switch scalar.properties.generalCategory {
+                case .uppercaseLetter, .lowercaseLetter, .titlecaseLetter, .modifierLetter, .otherLetter,
+                     .decimalNumber, .letterNumber, .otherNumber, .spacingMark:
+                    return true
+                case .nonspacingMark:
+                    // Accents, but not the emoji variation selector.
+                    return scalar.value != 0xFE0F
+                default:
+                    return false
+                }
+            }
+            return ok ? String(c) : ""
+        })
+    }
 }
 
 extension RepertoireTree {

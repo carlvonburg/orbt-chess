@@ -7,9 +7,9 @@ import OpeningCore
 /// and changes made on another device are merged in.
 @Observable
 final class RepertoireDocument {
-    let entryID: String
-    let pgnURL: URL
-    let sidecarURL: URL
+    private(set) var entryID: String
+    private(set) var pgnURL: URL
+    private(set) var sidecarURL: URL
     private(set) var name: String
 
     private(set) var tree: RepertoireTree
@@ -64,6 +64,10 @@ final class RepertoireDocument {
         listener = queue.subscribe { [weak self] epd, database in
             self?.statsArrived(epd, database)
         }
+        startPresenters()
+    }
+
+    private func startPresenters() {
         let pgnPresenter = FilePresenter(url: pgnURL) { [weak self] in self?.pgnChangedOnDisk() }
         let sidecarPresenter = FilePresenter(url: sidecarURL) { [weak self] in self?.sidecarChangedOnDisk() }
         pgnPresenter.start()
@@ -71,10 +75,26 @@ final class RepertoireDocument {
         presenters = [pgnPresenter, sidecarPresenter]
     }
 
-    func close() {
-        flush()
+    private func stopPresenters() {
         for p in presenters { p.stop() }
         presenters = []
+    }
+
+    /// Renames the PGN and sidecar. The entry id changes with the file names.
+    func rename(to newName: String, in library: RepertoireLibrary) throws {
+        flush()
+        stopPresenters()
+        defer { startPresenters() }
+        let entry = try library.rename(pgn: pgnURL, to: newName)
+        entryID = entry.id
+        pgnURL = entry.pgnURL
+        sidecarURL = entry.sidecarURL
+        name = entry.name
+    }
+
+    func close() {
+        flush()
+        stopPresenters()
         if let listener { queue.unsubscribe(listener) }
         listener = nil
     }

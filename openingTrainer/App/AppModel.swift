@@ -14,6 +14,8 @@ final class AppModel {
     /// Why an entry could not be opened, by entry id.
     private(set) var openErrors: [String: String] = [:]
     @ObservationIgnored private var opening: [String: Task<RepertoireDocument?, Never>] = [:]
+    /// Old entry id → new one, for renamed repertoires, so open screens keep their document.
+    private var renamedIDs: [String: String] = [:]
 
     /// Opens (or returns the already open) document for a library entry. The PGN is parsed
     /// in the background; concurrent calls for the same entry share one load.
@@ -36,6 +38,22 @@ final class AppModel {
         }
         opening[entry.id] = task
         return await task.value
+    }
+
+    func rename(_ document: RepertoireDocument, to name: String) throws {
+        let oldID = document.entryID
+        try document.rename(to: name, in: library)
+        guard document.entryID != oldID else { return }
+        documents[oldID] = nil
+        documents[document.entryID] = document
+        renamedIDs[oldID] = document.entryID
+    }
+
+    /// The current id of an entry that may have been renamed since `id` was taken.
+    func currentID(_ id: String) -> String {
+        var id = id
+        while let next = renamedIDs[id], next != id { id = next }
+        return id
     }
 
     func close(_ entryID: String) {

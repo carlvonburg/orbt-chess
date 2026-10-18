@@ -32,6 +32,24 @@ nonisolated enum FileAccess {
         if let deleteError { throw deleteError }
     }
 
+    static func move(_ url: URL, to destination: URL) throws {
+        var coordError: NSError?
+        var moveError: Error?
+        let coordinator = NSFileCoordinator()
+        coordinator.coordinate(writingItemAt: url, options: .forMoving,
+                               writingItemAt: destination, options: .forReplacing, error: &coordError) { from, to in
+            do {
+                coordinator.item(at: from, willMoveTo: to)
+                try FileManager.default.moveItem(at: from, to: to)
+                coordinator.item(at: from, didMoveTo: to)
+            } catch {
+                moveError = error
+            }
+        }
+        if let coordError { throw coordError }
+        if let moveError { throw moveError }
+    }
+
     /// Merges iCloud conflict versions into the current file with `merge`, then resolves them.
     static func resolveConflicts(at url: URL, merge: (Data) -> Void) {
         guard let conflicts = NSFileVersion.unresolvedConflictVersionsOfItem(at: url), !conflicts.isEmpty else { return }
