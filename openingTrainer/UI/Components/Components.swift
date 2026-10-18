@@ -81,20 +81,6 @@ enum Format {
     }
 }
 
-struct SideIcon: View {
-    let side: Side
-
-    var body: some View {
-        Image(side == .white ? "wK" : "bK")
-            .resizable()
-            .frame(width: 28, height: 28)
-            .padding(4)
-            // One mid grey that both kings stand out on, in light and dark mode.
-            .background(Circle().fill(Color(white: 0.55)))
-            .accessibilityLabel(side == .white ? "White repertoire" : "Black repertoire")
-    }
-}
-
 struct SafariView: UIViewControllerRepresentable {
     let url: URL
 

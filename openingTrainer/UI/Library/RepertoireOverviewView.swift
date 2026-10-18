@@ -19,15 +19,6 @@ struct RepertoireOverviewView: View {
     var body: some View {
         let stats = EntryStats(document: document)
         List {
-            Section {
-                HStack(spacing: 12) {
-                    SideIcon(side: document.color)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(document.name).font(.title3.weight(.semibold))
-                        Text(subtitle).font(.footnote).foregroundStyle(.secondary)
-                    }
-                }
-            }
             buildSection(stats)
             studySection(stats)
             statisticsSection(stats)
@@ -36,7 +27,7 @@ struct RepertoireOverviewView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("Repertoire Settings", systemImage: "pencil") { sheet = .settings }
+                Button("Repertoire Settings", systemImage: "gearshape") { sheet = .settings }
             }
         }
         .sheet(item: $sheet) { sheet in
@@ -54,21 +45,12 @@ struct RepertoireOverviewView: View {
         }
     }
 
-    private var subtitle: String {
-        let side = document.color == .white ? "White" : "Black"
-        return "\(side) · \(document.database.summary) · \(Format.seenEvery(1 / Double(document.sidecar.targetGames)))"
-    }
-
     // MARK: Build
 
     private func buildSection(_ stats: EntryStats) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Build").font(.headline)
-                    Spacer()
-                    Text(Format.percent(stats.completion)).font(.headline.monospacedDigit())
-                }
+                Text("\(Format.percent(stats.completion)) complete").font(.headline.monospacedDigit())
                 CompletionBar(value: stats.completion, tint: .green)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
@@ -138,7 +120,7 @@ struct RepertoireOverviewView: View {
                 HStack(alignment: .firstTextBaseline) {
                     Text("Statistics").font(.headline)
                     Spacer()
-                    Text("\(stats.progress.cards.formatted()) of your moves").font(.footnote).foregroundStyle(.secondary)
+                    Text("\(stats.progress.cards.formatted()) trainable").font(.footnote).foregroundStyle(.secondary)
                 }
                 StudiedBar(progress: stats.progress)
             }

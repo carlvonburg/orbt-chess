@@ -166,13 +166,19 @@ struct LibraryView: View {
                             .buttonStyle(.glass)
                     }
                 }
-                Section {
-                    ForEach(shown) { entry in
-                        row(entry, stats[entry.id]!)
-                            .swipeActions {
-                                Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
+                // Grouped by side, as Chessbook does; the sort applies within each group.
+                ForEach(LibraryGroup.allCases) { group in
+                    let entries = shown.filter { group.contains($0) }
+                    if !entries.isEmpty {
+                        Section(group.title) {
+                            ForEach(entries) { entry in
+                                row(entry, stats[entry.id]!)
+                                    .swipeActions {
+                                        Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
+                                    }
+                                    .contextMenu { if !entry.needsSetup { menu(entry) } }
                             }
-                            .contextMenu { if !entry.needsSetup { menu(entry) } }
+                        }
                     }
                 }
             }
@@ -349,9 +355,7 @@ struct LibraryRow: View {
     var status: String?
 
     var body: some View {
-        HStack(spacing: 12) {
-            SideIcon(side: entry.sidecar?.color ?? .white)
-            VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(entry.name).font(.headline).lineLimit(1)
                     Spacer(minLength: 0)
@@ -367,7 +371,6 @@ struct LibraryRow: View {
                 } else {
                     progress
                 }
-            }
         }
         .padding(.vertical, 4)
     }
@@ -395,6 +398,27 @@ struct LibraryRow: View {
         HStack {
             Text(title).font(.caption2).foregroundStyle(.secondary).frame(width: 48, alignment: .leading)
             content()
+        }
+    }
+}
+
+/// Sections of the repertoire list.
+private enum LibraryGroup: String, CaseIterable, Identifiable {
+    case white, black, setup
+    var id: Self { self }
+    var title: String {
+        switch self {
+        case .white: "White"
+        case .black: "Black"
+        case .setup: "Not Set Up"
+        }
+    }
+
+    func contains(_ entry: RepertoireEntry) -> Bool {
+        switch self {
+        case .white: entry.sidecar?.color == .white
+        case .black: entry.sidecar?.color == .black
+        case .setup: entry.sidecar == nil
         }
     }
 }
