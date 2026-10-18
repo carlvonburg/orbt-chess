@@ -233,12 +233,29 @@ final class ExplorerQueue {
         }
     }
 
-    private static let minInterval = 0.6
-    @ObservationIgnored private var interval = 0.8
+    /// Seconds from one request's start to the next. Lichess publishes no number; nginx limits
+    /// each user by the tier lila's /auth/check returns. Measured 2026-10-18 with a normal
+    /// account, cold cache: 0.7 s got a 429 after 28 requests, 2 s after 61, while 3.5 s ran
+    /// 136 without one. That fits a budget of about 20 a minute plus a burst of about 20.
+    /// The launch argument `-explorerInterval <seconds>` overrides it for testing.
+    private static let baseInterval: Double = {
+        let override = UserDefaults.standard.double(forKey: "explorerInterval")
+        return override > 0 ? override : 3.5
+    }()
+    /// Never shrinks again after a 429, as Lichess asks.
+    @ObservationIgnored private var interval = baseInterval
+
+    /// The end of a ban, kept across launches: a relaunch must not restart Lichess's penalty.
+    private static let bannedUntilKey = "explorerBannedUntil"
 
     private static let log = Logger(subsystem: "ch.cvb.openingTrainer", category: "explorer")
 
     private func run() async {
+        if let until = UserDefaults.standard.object(forKey: Self.bannedUntilKey) as? Date, until > .now {
+            Self.log.error("explorer still banned for \(until.timeIntervalSinceNow)s")
+            state = .rateLimited(until: until)
+            try? await Task.sleep(for: .seconds(until.timeIntervalSinceNow))
+        }
         while let (key, request) = pending.max(by: { $0.value.priority < $1.value.priority }) {
             guard let token = auth.token else {
                 state = .needsLogin
@@ -248,19 +265,18 @@ final class ExplorerQueue {
             let started = ContinuousClock.now
             do {
                 let stats = try await ExplorerClient.fetch(request.epd, database: request.database, token: token)
-                Self.log.info("explorer \(request.database.cacheKey, privacy: .public) priority \(request.priority, format: .fixed(precision: 4)) took \(started.duration(to: .now).description, privacy: .public), \(self.pending.count) queued")
+                Self.log.info("explorer \(request.database.cacheKey, privacy: .public) priority \(request.priority, format: .fixed(precision: 4)) took \(started.duration(to: .now).description, privacy: .public), interval \(self.interval)s, \(self.pending.count) queued")
                 pending[key] = nil
                 store.save(stats, for: request.epd, request.database)
                 for listener in listeners.values { listener(request.epd, request.database) }
-                // Pace requests: Lichess answers a fast burst with 429 and a one-minute ban.
-                interval = max(interval * 0.95, Self.minInterval)
-                if !pending.isEmpty { try? await Task.sleep(for: .seconds(interval)) }
+                if !pending.isEmpty { try? await Task.sleep(until: started + .seconds(interval)) }
             } catch .rateLimited(let retryAfter) {
-                // Back off and slow down so the next burst does not hit the limit again.
-                interval = min(interval * 2, 4)
+                interval = min(interval * 1.5, 10)
                 let wait = retryAfter ?? 60
+                let until = Date.now.addingTimeInterval(wait)
+                UserDefaults.standard.set(until, forKey: Self.bannedUntilKey)
                 Self.log.error("explorer 429, waiting \(wait)s, interval now \(self.interval)s")
-                state = .rateLimited(until: Date.now.addingTimeInterval(wait))
+                state = .rateLimited(until: until)
                 try? await Task.sleep(for: .seconds(wait))
             } catch .unauthorized {
                 auth.tokenRejected()
