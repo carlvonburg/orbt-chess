@@ -59,9 +59,10 @@ struct BuilderView: View {
         .navigationTitle(document.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { toolbar }
+        .toolbarVisibility(.hidden, for: .tabBar)
         .sheet(item: $sheet) { sheet in sheetContent(sheet) }
-        .fullScreenCover(item: $drill) { request in
-            DrillView(document: document, mode: request.mode)
+        .navigationDestination(item: $drill) { request in
+            DrillView(document: document, mode: request.mode, pushed: true)
         }
         .onAppear { document.startCoverageCheck() }
         .onDisappear { document.stopCoverageCheck() }
@@ -223,9 +224,8 @@ struct TranspositionNote: View {
     }
 }
 
-struct DrillRequest: Identifiable {
+struct DrillRequest: Hashable {
     let mode: DrillMode
-    var id: String { "\(mode)" }
 }
 
 /// Horizontally scrolling move list; tap a move to go there. Draft moves are dashed.
@@ -248,14 +248,14 @@ struct MovePathStrip: View {
                     }
                     ForEach(path, id: \.self) { id in
                         if let node = model.tree[id], let move = node.move {
-                            chip(ply: node.ply, san: move.san, isCurrent: id == model.current && !model.hasDraft, dashed: false)
+                            MoveChip(ply: node.ply, san: move.san, isCurrent: id == model.current && !model.hasDraft)
                                 .onTapGesture { model.go(to: id) }
                                 .id(id)
                         }
                     }
                     let basePly = model.node?.ply ?? 0
                     ForEach(Array(model.draft.enumerated()), id: \.offset) { i, move in
-                        chip(ply: basePly + i + 1, san: move.san, isCurrent: i == model.draft.count - 1, dashed: true)
+                        MoveChip(ply: basePly + i + 1, san: move.san, isCurrent: i == model.draft.count - 1, dashed: true)
                             .id("draft\(i)")
                     }
                 }
@@ -268,7 +268,16 @@ struct MovePathStrip: View {
         }
     }
 
-    private func chip(ply: Int, san: String, isCurrent: Bool, dashed: Bool) -> some View {
+}
+
+/// One move of a move list: "1. d4", with the current move highlighted.
+struct MoveChip: View {
+    let ply: Int
+    let san: String
+    let isCurrent: Bool
+    var dashed = false
+
+    var body: some View {
         HStack(spacing: 2) {
             if ply % 2 == 1 {
                 Text("\(ply / 2 + 1).").foregroundStyle(.secondary)
@@ -301,9 +310,10 @@ struct NodeHeader: View {
     var body: some View {
         let document = model.document
         let info = document.coverage[node.id]
-        let learning = document.learningProgress(under: node.id)
+        // At a transposition, the moves shown below are stored at the target.
+        let saved = model.tree.subtree(of: model.shownNode?.id ?? node.id).count - 1
         VStack(alignment: .leading, spacing: 8) {
-            if let name = openingName {
+            if let name = document.openingName(at: node.id) {
                 Text(name).font(.subheadline.weight(.semibold)).lineLimit(2)
             }
             HStack(spacing: 8) {
@@ -323,10 +333,15 @@ struct NodeHeader: View {
             CoverageCheckStatus(document: document)
             HStack(spacing: 12) {
                 progress("Built", value: info?.completion ?? 0, tint: .green)
-                HStack(spacing: 6) {
-                    Text("Studied").font(.caption2).foregroundStyle(.secondary)
-                    StudiedBar(progress: learning)
+                Spacer(minLength: 0)
+                HStack(spacing: 0) {
+                    if let gaps = info?.gapCount, gaps > 0 {
+                        Text("\(gaps.formatted()) \(gaps == 1 ? "gap" : "gaps")").foregroundStyle(.orange)
+                        + Text(" · ").foregroundStyle(.secondary)
+                    }
+                    Text("\(saved.formatted()) \(saved == 1 ? "move" : "moves")").foregroundStyle(.secondary)
                 }
+                .font(.caption2.monospacedDigit())
             }
             if !node.note.isEmpty {
                 Button(action: onNote) {
@@ -341,15 +356,6 @@ struct NodeHeader: View {
             }
         }
         .padding(.top, 4)
-    }
-
-    private var openingName: String? {
-        var cursor: NodeID? = node.id
-        while let id = cursor, let n = model.tree[id] {
-            if let name = model.document.stats(n.epd)?.opening?.name { return name }
-            cursor = n.parent
-        }
-        return nil
     }
 
     private func progress(_ title: String, value: Double, tint: Color) -> some View {
@@ -783,13 +789,7 @@ struct DraftPanel: View {
     }
 
     private var openingName: String? {
-        if let name = model.document.stats(model.position.epd)?.opening?.name { return name }
-        var cursor: NodeID? = model.current
-        while let id = cursor, let n = model.tree[id] {
-            if let name = model.document.stats(n.epd)?.opening?.name { return name }
-            cursor = n.parent
-        }
-        return nil
+        model.document.stats(model.position.epd)?.opening?.name ?? model.document.openingName(at: model.current)
     }
 }
 

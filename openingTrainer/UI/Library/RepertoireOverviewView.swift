@@ -7,7 +7,7 @@ struct RepertoireOverviewView: View {
     @Environment(AppModel.self) private var app
     let document: RepertoireDocument
     let editLines: () -> Void
-    @State private var drill: DrillRequest?
+    let study: () -> Void
     @State private var sheet: Sheet?
     @State private var graphs: GraphsContext?
 
@@ -35,9 +35,6 @@ struct RepertoireOverviewView: View {
             case .settings: RepertoireSettingsSheet(document: document)
             case .options: StudyOptionsSheet(document: document)
             }
-        }
-        .fullScreenCover(item: $drill) { request in
-            DrillView(document: document, mode: request.mode)
         }
         .task(id: document.revision) {
             graphs = GraphsContext(cards: Array(document.sidecar.studyCards.values), newCount: 0,
@@ -83,7 +80,7 @@ struct RepertoireOverviewView: View {
                 countRow("New", stats.counts.new, StudyColors.new)
                 countRow("Learning", stats.counts.learning, StudyColors.learning)
                 countRow("To Review", stats.counts.review, StudyColors.review)
-                Button { drill = DrillRequest(mode: .study) } label: {
+                Button(action: study) {
                     Text("Study Now").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.glassProminent)

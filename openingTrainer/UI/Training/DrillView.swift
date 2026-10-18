@@ -42,11 +42,12 @@ final class DrillModel {
     private(set) var feedback: Feedback = .none
     private(set) var finished = false
     private(set) var showHint = false
-    private(set) var note: String?
     /// Cards answered in this session.
     private(set) var answeredCount = 0
 
-    @ObservationIgnored private var autoplay: Task<Void, Never>?
+    /// Observed: `isUserTurn` depends on it, so the board unlocks when autoplay ends.
+    private var autoplay: Task<Void, Never>?
+    @ObservationIgnored private var interrupted = false
     @ObservationIgnored private var turnStarted = Date.now
     /// Cards already answered on the current line (a wrong try answers once).
     @ObservationIgnored private var answeredOnLine: Set<EPD> = []
@@ -66,6 +67,9 @@ final class DrillModel {
         return node.position
     }
     var lastMove: PlayedMove? { run.flatMap { document.tree[$0.currentNode]?.move } }
+    /// The moves on the board, from the start of the line.
+    var playedNodes: ArraySlice<NodeID> { run.map { $0.nodes[...$0.index].dropFirst() } ?? [] }
+    var openingName: String? { run.flatMap { document.openingName(at: $0.currentNode) } }
 
     private var currentRole: MoveRole? {
         guard let run, run.isOwnTurn else { return nil }
@@ -98,11 +102,18 @@ final class DrillModel {
     }
 
     func start() {
+        // Runs again when the view reappears (after browsing, or as it's pushed): resume the
+        // opponent's moves if they were stopped, keep the session.
+        if session != nil {
+            if interrupted { interrupted = false; continueLine() }
+            return
+        }
         session = document.studySession(branch: { if case .branch(let id) = mode { id } else { nil } }())
         nextLine()
     }
 
     func stop() {
+        interrupted = autoplay != nil
         autoplay?.cancel()
         autoplay = nil
     }
@@ -120,7 +131,6 @@ final class DrillModel {
             session?.didPlay(epd)
             showHint = false
             feedback = .correct
-            note = document.tree[run.currentNode]?.note.nilIfEmpty
             continueLine()
         case .alternative:
             feedback = .alternative
@@ -153,8 +163,11 @@ final class DrillModel {
         showHint = true
     }
 
-    func skipLine() {
-        nextLine()
+    /// The moves to the board, for Lichess analysis. Looking counts as Again, like browsing.
+    func analysisMoves() -> [PlayedMove] {
+        failCurrentCard()
+        guard let run else { return [] }
+        return document.tree.moves(to: run.currentNode)
     }
 
     /// Anki's custom study "Increase today's new card limit".
@@ -201,7 +214,6 @@ final class DrillModel {
                 guard !Task.isCancelled else { return }
                 run.advance()
                 self.run = run
-                if let text = self.document.tree[run.currentNode]?.note.nilIfEmpty { self.note = text }
                 try? await Task.sleep(for: .milliseconds(450))
             }
             guard !Task.isCancelled else { return }
@@ -246,7 +258,6 @@ final class DrillModel {
         answeredOnLine = []
         feedback = .none
         showHint = false
-        note = nil
         continueLine()
     }
 }
@@ -256,109 +267,142 @@ struct DrillView: View {
     @State private var model: DrillModel
     @State private var browsing: BrowseRequest?
 
-    private struct BrowseRequest: Identifiable {
+    private struct BrowseRequest: Hashable {
         let node: NodeID
-        var id: NodeID { node }
+    }
+
+    @State private var analysis: AnalysisRequest?
+
+    private struct AnalysisRequest: Identifiable {
+        let url: URL
+        var id: URL { url }
     }
 
     /// The next repertoire when studying all of them: its name and how to go on.
     private let next: (name: String, start: () -> Void)?
+    /// Pushed onto the caller's navigation stack (Study Now) instead of presented full screen.
+    private let pushed: Bool
 
-    init(document: RepertoireDocument, mode: DrillMode, next: (name: String, start: () -> Void)? = nil) {
+    init(document: RepertoireDocument, mode: DrillMode, pushed: Bool = false,
+         next: (name: String, start: () -> Void)? = nil) {
         _model = State(initialValue: DrillModel(document: document, mode: mode))
+        self.pushed = pushed
         self.next = next
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                if model.finished {
-                    finishedView
-                } else {
-                    status
-                    BoardView(position: model.position, orientation: model.color, lastMove: model.lastMove,
-                              arrows: model.arrows, movableSide: model.isUserTurn ? model.color : nil) { from, to, promotion in
-                        model.userMoved(from: from, to: to, promotion: promotion)
-                    }
-                    .clipShape(.rect(cornerRadius: 6))
-                    .frame(maxWidth: 640)
-                    if let note = model.note {
-                        Text(note)
-                            .font(.callout)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(10)
-                            .background(.yellow.opacity(0.15), in: .rect(cornerRadius: 8))
-                    }
-                    Spacer(minLength: 0)
-                }
+        Group {
+            if pushed {
+                content.toolbarVisibility(.hidden, for: .tabBar)
+            } else {
+                NavigationStack { content }
             }
-            .padding()
-            .navigationTitle(model.mode.title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
+        }
+        .task { model.start() }
+        // Browsing pushes the builder on top; training goes on when it's popped.
+        .onDisappear { if browsing == nil { model.stop() } }
+        .sheet(item: $analysis) { request in
+            SafariView(url: request.url).ignoresSafeArea()
+        }
+    }
+
+    private var content: some View {
+        VStack(spacing: 12) {
+            if model.finished {
+                finishedView.padding()
+            } else {
+                // Edge to edge on a phone, as in the builder.
+                BoardView(position: model.position, orientation: model.color, lastMove: model.lastMove,
+                          arrows: model.arrows, movableSide: model.isUserTurn ? model.color : nil) { from, to, promotion in
+                    model.userMoved(from: from, to: to, promotion: promotion)
+                }
+                .frame(maxWidth: 680)
+                // Laid out like the builder: move list, then opening name; then what to do.
+                VStack(alignment: .leading, spacing: 8) {
+                    LineHistory(tree: model.document.tree, nodes: model.playedNodes)
+                    if let name = model.openingName {
+                        Text(name).font(.subheadline.weight(.semibold)).lineLimit(2)
+                    }
+                    status
+                }
+                .frame(maxWidth: 680, alignment: .leading)
+                .padding(.horizontal)
+                Spacer(minLength: 0)
+            }
+        }
+        .padding(.vertical)
+        .navigationTitle(model.mode.title)
+        .navigationSubtitle(model.document.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if !model.finished {
+                ToolbarItem(placement: .topBarTrailing) {
+                    StudyCountsView(counts: model.counts, highlight: model.askedKind)
+                        .font(.subheadline.monospacedDigit().weight(.semibold))
+                }
+                .sharedBackgroundVisibility(.hidden)
+            }
+            if !pushed {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark") {
                         model.stop()
                         dismiss()
                     }
                 }
-                if !model.finished {
-                    ToolbarItemGroup(placement: .bottomBar) {
-                        Button("Hint", systemImage: "lightbulb") { model.hint() }
-                            .disabled(!model.isUserTurn)
-                        Button("Browse Repertoire", systemImage: "list.bullet.indent") {
-                            if let node = model.browseNode() { browsing = BrowseRequest(node: node) }
-                        }
-                        Spacer()
-                        Button("Skip Line", systemImage: "forward") { model.skipLine() }
-                    }
-                }
             }
-            .sensoryFeedback(trigger: model.feedback) { _, new in
-                switch new {
-                case .correct: .success
-                case .wrong: .error
-                default: nil
+            if !model.finished {
+                ToolbarItem(placement: .bottomBar) {
+                    Button("Hint", systemImage: "lightbulb") { model.hint() }
+                        .disabled(!model.isUserTurn)
+                }
+                ToolbarSpacer(.flexible, placement: .bottomBar)
+                // Both leave the board to look the move up, so both count as Again.
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Button("Browse Repertoire", systemImage: "list.bullet.indent") {
+                        if let node = model.browseNode() { browsing = BrowseRequest(node: node) }
+                    }
+                    Button("Analyze on Lichess", systemImage: "cpu") {
+                        analysis = AnalysisRequest(url: LichessLinks.analysis(moves: model.analysisMoves(),
+                                                                              orientation: model.color))
+                    }
                 }
             }
         }
-        .task { model.start() }
-        .onDisappear { model.stop() }
-        .sheet(item: $browsing) { request in
-            NavigationStack {
-                BuilderView(document: model.document, start: request.node)
-                    .toolbar {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button("Back to Training", systemImage: "xmark") { browsing = nil }
-                        }
-                    }
+        .navigationDestination(item: $browsing) { request in
+            BuilderView(document: model.document, start: request.node)
+        }
+        .sensoryFeedback(trigger: model.feedback) { _, new in
+            switch new {
+            case .correct: .success
+            case .wrong: .error
+            default: nil
             }
         }
     }
 
+    /// What to do now, or how the last move went.
     private var status: some View {
-        HStack {
-            Group {
-                switch model.feedback {
-                case .correct:
-                    Label("Correct", systemImage: "checkmark.circle.fill").glassChip(tint: .green)
-                case .wrong(let expected):
-                    Label("Not quite — \(expected.san)", systemImage: "xmark.circle.fill").glassChip(tint: .red)
-                case .alternative:
-                    Label("That's your alternative. Play your main move.", systemImage: "arrow.triangle.branch").glassChip(tint: .yellow)
-                case .newMove(let move):
-                    Label("New move: play \(move.san)", systemImage: "sparkles").glassChip(tint: .blue)
-                case .none:
-                    Label(model.isUserTurn ? "Your move" : "Opponent is moving…", systemImage: "circle.fill")
-                        .glassChip()
+        Group {
+            switch model.feedback {
+            case .correct:
+                Label("Correct", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+            case .wrong(let expected):
+                Label("Not quite, play \(expected.san)", systemImage: "xmark.circle.fill").foregroundStyle(.red)
+            case .alternative:
+                Label("That's your alternative. Play your main move.", systemImage: "arrow.triangle.branch")
+                    .foregroundStyle(.orange)
+            case .newMove(let move):
+                Label("New move: play \(move.san)", systemImage: "sparkles").foregroundStyle(.blue)
+            case .none:
+                if model.isUserTurn {
+                    Label("Your move", systemImage: "circle.fill")
+                } else {
+                    Label("Playing the line…", systemImage: "circle.dotted").foregroundStyle(.secondary)
                 }
             }
-            .font(.subheadline.weight(.semibold))
-            .animation(.default, value: model.feedback)
-            Spacer()
-            StudyCountsView(counts: model.counts, highlight: model.askedKind)
-                .font(.subheadline.monospacedDigit().weight(.semibold))
         }
+        .font(.headline)
+        .animation(.default, value: model.feedback)
     }
 
     private var finishedView: some View {
@@ -397,6 +441,30 @@ struct DrillView: View {
                         .buttonStyle(.glassProminent)
                 }
             }
+        }
+    }
+}
+
+/// The moves played so far on a study line. Read-only: going to a move would show its answer.
+private struct LineHistory: View {
+    let tree: RepertoireTree
+    let nodes: ArraySlice<NodeID>
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    // Plies from the line's position: after a transposition a node's own ply can differ.
+                    ForEach(Array(nodes.enumerated()), id: \.element) { i, id in
+                        if let move = tree[id]?.move {
+                            MoveChip(ply: tree.root.ply + i + 1, san: move.san, isCurrent: i == nodes.count - 1)
+                                .id(id)
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            .onChange(of: nodes.last) { if let last = nodes.last { proxy.scrollTo(last, anchor: .trailing) } }
         }
     }
 }

@@ -10,6 +10,7 @@ extension UTType {
 enum LibraryRoute: Hashable {
     case overview(String)
     case builder(String)
+    case study(String)
 }
 
 /// Anki's deck list: today's totals, then one row per repertoire. A row opens the overview.
@@ -54,10 +55,14 @@ struct LibraryView: View {
                     switch route {
                     case .overview(let id):
                         destination(id) { doc in
-                            RepertoireOverviewView(document: doc) { path.append(.builder(doc.entryID)) }
+                            RepertoireOverviewView(document: doc,
+                                                   editLines: { path.append(.builder(doc.entryID)) },
+                                                   study: { path.append(.study(doc.entryID)) })
                         }
                     case .builder(let id):
                         destination(id) { BuilderView(document: $0) }
+                    case .study(let id):
+                        destination(id) { DrillView(document: $0, mode: .study, pushed: true) }
                     }
                 }
         }

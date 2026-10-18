@@ -55,20 +55,38 @@ struct BoardView: View {
     @State private var dragLocation: CGPoint?
     @State private var promotion: (from: BoardSquare, to: BoardSquare)?
     @State private var layout = PieceLayout()
+    /// A move made by dragging: the piece stays where it was dropped instead of sliding there.
+    @State private var drop: Drop?
+
+    private struct Drop {
+        let from: BoardSquare
+        let to: BoardSquare
+        let side: Side
+        let fen: String
+    }
+
+    /// The drop, once the position shows it played (not when the move was refused).
+    private var playedDrop: Drop? {
+        guard let drop, drop.fen != position.fen, position.piece(at: drop.to)?.side == drop.side else { return nil }
+        return drop
+    }
 
     var body: some View {
         GeometryReader { geo in
             let size = min(geo.size.width, geo.size.height)
             let sq = size / 8
+            let dropped = playedDrop
             ZStack(alignment: .topLeading) {
                 squares(sq: sq)
                 coordinates(sq: sq)
                 ForEach(layout.pieces) { piece in
                     let isDragged = piece.square == dragFrom && dragLocation != nil
+                    // Until the layout catches up with the new position (onChange runs after a frame).
+                    let square = dropped?.from == piece.square ? dropped!.to : piece.square
                     Image(piece.assetName)
                         .resizable()
                         .frame(width: sq, height: sq)
-                        .position(isDragged ? dragLocation! : center(piece.square, sq: sq))
+                        .position(isDragged ? dragLocation! : center(square, sq: sq))
                         .zIndex(isDragged ? 10 : 1)
                         .allowsHitTesting(false)
                 }
@@ -89,7 +107,12 @@ struct BoardView: View {
         .onAppear { layout.update(to: position) }
         .onChange(of: position.fen) {
             selected = nil
-            withAnimation(.easeOut(duration: 0.15)) { layout.update(to: position) }
+            if playedDrop != nil {
+                layout.update(to: position)
+            } else {
+                withAnimation(.easeOut(duration: 0.15)) { layout.update(to: position) }
+            }
+            drop = nil
         }
         .sensoryFeedback(.impact(weight: .light), trigger: position.fen)
         .accessibilityElement(children: .ignore)
@@ -199,7 +222,7 @@ struct BoardView: View {
                 guard movableSide != nil, promotion == nil, let target = square(at: value.location, sq: sq) else { return }
                 let wasDrag = dragLocation != nil
                 if wasDrag, let from = dragFrom {
-                    if from != target { attemptMove(from: from, to: target) }
+                    if from != target { attemptMove(from: from, to: target, dragged: true) }
                     return
                 }
                 // Tap
@@ -218,7 +241,7 @@ struct BoardView: View {
         return piece.side == movableSide && piece.side == position.sideToMove
     }
 
-    private func attemptMove(from: BoardSquare, to: BoardSquare) {
+    private func attemptMove(from: BoardSquare, to: BoardSquare, dragged: Bool = false) {
         guard position.legalDestinations(from: from).contains(to) else {
             selected = canMove(from: to) ? to : nil
             return
@@ -228,6 +251,9 @@ struct BoardView: View {
             return
         }
         selected = nil
+        if dragged, let side = position.piece(at: from)?.side {
+            drop = Drop(from: from, to: to, side: side, fen: position.fen)
+        }
         onMove(from, to, nil)
     }
 

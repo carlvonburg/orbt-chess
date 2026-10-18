@@ -112,6 +112,16 @@ final class RepertoireDocument {
         store.stats(epd, sidecar.database)
     }
 
+    /// The opening name of a node, or of its nearest ancestor, from stats already loaded.
+    func openingName(at id: NodeID) -> String? {
+        var cursor: NodeID? = id
+        while let id = cursor, let n = tree[id] {
+            if let name = stats(n.epd)?.opening?.name { return name }
+            cursor = n.parent
+        }
+        return nil
+    }
+
     /// Fetches stats for the position on screen, ahead of the coverage check.
     func requestStats(for epd: EPD) {
         queue.request(epd, sidecar.database, priority: 2)
