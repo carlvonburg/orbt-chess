@@ -171,6 +171,20 @@ public struct CoverageEngine: Sendable {
         propagateTranspositions(tree: tree, stats: stats)
     }
 
+    /// Replies at a position that is not in the repertoire (a draft on the board), reached with
+    /// probability `reach`. None of them is covered yet.
+    public func replies(at epd: EPD, stats: ExplorerStats, reach: Double?) -> [ReplyInfo] {
+        let enough = stats.total >= settings.minGames
+        return stats.moves.map { move in
+            let share = stats.total > 0 ? Double(move.games) / Double(stats.total) : 0
+            let r = (reach ?? 0) * share
+            let excluded = settings.isExcluded(move.uci, at: epd)
+            let required = enough && reach != nil && r >= settings.threshold && !excluded
+            return ReplyInfo(uci: move.uci, san: move.san, share: share, reach: r, required: required,
+                             excluded: excluded, child: nil, transposesTo: nil, completion: 0, games: move.games)
+        }
+    }
+
     /// Positions whose stats are needed, biggest reach first.
     public func pendingPositions(tree: RepertoireTree) -> [(epd: EPD, reach: Double)] {
         var best: [EPD: Double] = [:]

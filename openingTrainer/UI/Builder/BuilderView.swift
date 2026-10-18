@@ -106,7 +106,7 @@ struct BuilderView: View {
             if shown.sideToMove == document.color {
                 YourMovePanel(model: model, node: shown)
             } else {
-                RepliesPanel(model: model, node: shown)
+                RepliesPanel(model: model, replies: document.coverage[shown.id]?.replies, saved: shown)
             }
         }
     }
@@ -365,15 +365,14 @@ struct NodeHeader: View {
 }
 
 /// Opponent to move: the replies from the explorer with coverage, plus moves in the
-/// repertoire that the explorer does not list.
+/// repertoire that the explorer does not list. `saved` is the node when the position is in the
+/// repertoire, nil for a draft.
 struct RepliesPanel: View {
-    @Environment(AppModel.self) private var app
     let model: BuilderModel
-    let node: RepertoireNode
+    let replies: [ReplyInfo]?
+    let saved: RepertoireNode?
 
     var body: some View {
-        let document = model.document
-        let info = document.coverage[node.id]
         Group {
             HStack {
                 Text("Replies").font(.headline)
@@ -384,19 +383,18 @@ struct RepliesPanel: View {
             }
             .padding(.top, 8)
             .builderRow(separator: false)
-            if let replies = info?.replies, !replies.isEmpty {
-                let stats = document.stats(node.epd)
+            if let replies, !replies.isEmpty {
                 // Replies in the repertoire, needed or excluded first, then the ones not needed;
                 // each group by how often it is played.
                 let matters = { (r: ReplyInfo) in r.child != nil || r.transposesTo != nil || r.required || r.excluded }
                 let ordered = replies.filter(matters).sorted { $0.share > $1.share }
                     + replies.filter { !matters($0) }.sorted { $0.share > $1.share }
                 ForEach(ordered, id: \.uci) { reply in
-                    ReplyRow(reply: reply, games: stats?.moves.first { $0.uci == reply.uci }?.games, node: node.id, model: model)
+                    ReplyRow(reply: reply, node: saved?.id, model: model)
                         .builderRow()
                 }
             } else {
-                ForEach(node.children, id: \.self) { child in
+                ForEach(saved?.children ?? [], id: \.self) { child in
                     if let move = model.tree[child]?.move {
                         Button { model.go(to: child) } label: {
                             HStack {
@@ -420,8 +418,8 @@ struct RepliesPanel: View {
 
 struct ReplyRow: View {
     let reply: ReplyInfo
-    let games: Int?
-    let node: NodeID
+    /// The saved position the reply is at; nil in a draft.
+    let node: NodeID?
     let model: BuilderModel
 
     var body: some View {
@@ -430,7 +428,13 @@ struct ReplyRow: View {
         // Tapping opens the reply; one not in the repertoire is played on the board so you can
         // add your answer, and is saved with it.
         Button {
-            if let child = reply.child { model.go(to: child) } else { model.preview(uci: reply.uci) }
+            if let child = reply.child {
+                model.go(to: child)
+            } else if node != nil {
+                model.preview(uci: reply.uci)
+            } else {
+                model.play(uci: reply.uci)
+            }
         } label: {
             HStack(spacing: 8) {
                 Text(reply.san).font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
@@ -456,7 +460,7 @@ struct ReplyRow: View {
                     }
                 }
                 .frame(width: 64)
-                Text(games.map(Format.games) ?? "").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                Text(reply.games > 0 ? Format.games(reply.games) : "").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
                     .frame(width: 40, alignment: .trailing)
             }
             .opacity(reply.required || inRepertoire ? 1 : 0.55)
@@ -579,8 +583,8 @@ extension View {
 extension View {
     /// Long-press menu and swipe action to exclude an opponent move you have no line for from
     /// coverage, or include it again. Does nothing when `reply` is nil.
-    func excludable(_ reply: ReplyInfo?, at node: NodeID, model: BuilderModel) -> some View {
-        modifier(ExcludeMove(reply: reply, node: node, model: model))
+    func excludable(_ reply: ReplyInfo?, at node: NodeID?, model: BuilderModel) -> some View {
+        modifier(ExcludeMove(reply: node == nil ? nil : reply, node: node ?? RepertoireTree.rootID, model: model))
     }
 }
 
@@ -723,23 +727,52 @@ struct CandidateRow: View {
     }
 }
 
-/// Shown while a draft is on the board: the same candidates as a saved position.
+/// Shown while a draft is on the board: the same candidates or replies as a saved position.
 /// Tapping a move extends the draft.
 struct DraftPanel: View {
     let model: BuilderModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("New line").font(.headline)
-            Text("Keep playing moves for both sides, then save.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
+        let replies = model.isUserTurnOnBoard ? nil : model.draftReplies
+        // Every reply is below the target: the line is deep enough to save.
+        let reached = model.reachOnBoard != nil && replies?.isEmpty == false
+            && replies?.contains(where: \.required) == false
+        // Laid out like NodeHeader: opening name, then status and reach.
+        VStack(alignment: .leading, spacing: 8) {
+            if let name = openingName {
+                Text(name).font(.subheadline.weight(.semibold)).lineLimit(2)
+            }
+            HStack(spacing: 8) {
+                if reached {
+                    Text("Coverage target reached").font(.caption.weight(.semibold)).glassChip(tint: .green)
+                } else {
+                    Text("New line, not saved").font(.caption).glassChip()
+                }
+                if let reach = model.reachOnBoard {
+                    Text("Seen \(Format.seenEvery(reach)) games").font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
         }
         .padding(.top, 4)
         .builderRow(separator: false)
-        CandidatesSection(model: model, epd: model.position.epd,
-                          title: model.isUserTurnOnBoard ? "Candidates" : "Opponent's replies",
-                          select: model.play(uci:))
+        .sensoryFeedback(.success, trigger: reached) { old, new in !old && new }
+        if model.isUserTurnOnBoard {
+            CandidatesSection(model: model, epd: model.position.epd, title: "Candidates",
+                              select: model.play(uci:))
+        } else {
+            RepliesPanel(model: model, replies: replies, saved: nil)
+        }
+    }
+
+    private var openingName: String? {
+        if let name = model.document.stats(model.position.epd)?.opening?.name { return name }
+        var cursor: NodeID? = model.current
+        while let id = cursor, let n = model.tree[id] {
+            if let name = model.document.stats(n.epd)?.opening?.name { return name }
+            cursor = n.parent
+        }
+        return nil
     }
 }
 

@@ -95,6 +95,19 @@ struct CoverageTests {
         #expect(engine.root!.gapCount == 1)
     }
 
+    @Test func repliesAtUnsavedPosition() throws {
+        let (tree, stats) = fixture()
+        var engine = CoverageEngine(settings: CoverageSettings(color: .white, targetGames: 10, minGames: 10))
+        engine.recomputeAll(tree: tree, stats: stats.lookup)
+        let epd = tree[tree.find("e4")!]!.epd
+        engine.settings.excluded = [epd: ["c7c6"]]
+        let replies = engine.replies(at: epd, stats: stats.lookup(epd)!, reach: 0.5)
+        #expect(replies.map(\.san) == ["c5", "e5", "e6", "c6"])
+        #expect(replies.map(\.required) == [true, true, false, false])
+        #expect(abs(replies[1].reach - 0.15) < 1e-9)
+        #expect(replies[3].excluded && replies.allSatisfy { $0.child == nil })
+    }
+
     @Test func incrementalAddAndStatsArrival() throws {
         var (tree, stats) = fixture()
         var engine = CoverageEngine(settings: CoverageSettings(color: .white, targetGames: 10, minGames: 10))

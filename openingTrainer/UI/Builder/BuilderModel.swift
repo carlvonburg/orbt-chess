@@ -48,6 +48,29 @@ final class BuilderModel {
     var isUserTurnOnBoard: Bool { position.sideToMove == document.color }
     var hasDraft: Bool { !draft.isEmpty }
 
+    /// Probability of reaching the board position: the current node's reach times the share of
+    /// each opponent move in the draft. Nil while a needed statistic is missing.
+    var reachOnBoard: Double? {
+        guard var reach = document.coverage[current]?.reach else { return nil }
+        var p = node?.position ?? .start
+        for move in draft {
+            if p.sideToMove != document.color {
+                guard let stats = document.stats(p.epd) else { return nil }
+                reach *= stats.share(of: move.uci)
+            }
+            p = p.play(uci: move.uci)?.1 ?? p
+        }
+        return reach
+    }
+
+    /// Opponent replies at the board position while a draft is on it.
+    var draftReplies: [ReplyInfo]? {
+        guard hasDraft, !isUserTurnOnBoard else { return nil }
+        let epd = position.epd
+        guard let stats = document.stats(epd) else { return nil }
+        return document.coverage.replies(at: epd, stats: stats, reach: reachOnBoard)
+    }
+
     /// Moves from the start to the board position, including the draft.
     var movesToBoard: [PlayedMove] { tree.moves(to: current) + draft }
 
