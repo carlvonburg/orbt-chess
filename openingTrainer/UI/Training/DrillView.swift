@@ -480,6 +480,8 @@ struct StudyCountsView: View {
             number(counts.learning, .red, .learning)
             number(counts.review, .green, .review)
         }
+        // The toolbar would truncate the numbers; let the title truncate instead.
+        .fixedSize()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(counts.new) new, \(counts.learning) learning, \(counts.review) to review")
     }
