@@ -135,6 +135,14 @@ struct GapsSheet: View {
                         }
                     }
                     .tint(.primary)
+                    .swipeActions(edge: .trailing) {
+                        if case let .missingReply(uci, _) = gap.kind {
+                            Button("Exclude", systemImage: "nosign") {
+                                document.setExcluded(uci, at: gap.node, true)
+                            }
+                            .tint(.gray)
+                        }
+                    }
                 }
             }
             .navigationTitle("\(gaps.count) Gaps")

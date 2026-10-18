@@ -69,6 +69,32 @@ struct CoverageTests {
         #expect(engine.gaps().map(\.seenEvery) == [5, 7])
     }
 
+    @Test func excludedRepliesAreNotGaps() throws {
+        var (tree, stats) = fixture()
+        var engine = CoverageEngine(settings: CoverageSettings(color: .white, targetGames: 10, minGames: 10))
+        engine.recomputeAll(tree: tree, stats: stats.lookup)
+        let e4 = try #require(tree.find("e4"))
+        let epd = tree[e4]!.epd
+
+        engine.settings.excluded = [epd: ["e7e6"]]
+        engine.exclusionsChanged(at: epd, tree: tree, stats: stats.lookup)
+        #expect(engine.root!.gapCount == 1)
+        #expect(abs(engine.root!.completion - 0.3 / 0.8) < 1e-9)
+        let e6 = try #require(engine[e4]!.replies.first { $0.san == "e6" })
+        #expect(e6.excluded && !e6.required)
+
+        // A move you save anyway is covered as usual.
+        let leaf = tree.add("e4 e6 d4")
+        stats.set("e4 e6 d4", [("d5", 5)])
+        engine.update(changedAt: e4, epds: [tree[leaf]!.epd], tree: tree, stats: stats.lookup)
+        #expect(engine[e4]!.replies.first { $0.san == "e6" }?.excluded == false)
+        #expect(abs(engine.root!.completion - 0.45 / 0.95) < 1e-9)
+
+        engine.settings.excluded = [:]
+        engine.exclusionsChanged(at: epd, tree: tree, stats: stats.lookup)
+        #expect(engine.root!.gapCount == 1)
+    }
+
     @Test func incrementalAddAndStatsArrival() throws {
         var (tree, stats) = fixture()
         var engine = CoverageEngine(settings: CoverageSettings(color: .white, targetGames: 10, minGames: 10))

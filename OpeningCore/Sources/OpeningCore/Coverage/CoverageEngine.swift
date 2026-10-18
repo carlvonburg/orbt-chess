@@ -6,14 +6,22 @@ public struct CoverageSettings: Codable, Sendable, Hashable {
     public var targetGames: Int
     /// Positions with fewer explorer games create no requirements.
     public var minGames: Int
+    /// Opponent moves (UCI) you chose not to cover, by the position before them. They are
+    /// never required and never gaps. A move you save anyway is covered as usual.
+    public var excluded: [EPD: Set<String>]
 
-    public init(color: Side, targetGames: Int = 500, minGames: Int = 25) {
+    public init(color: Side, targetGames: Int = 500, minGames: Int = 25, excluded: [EPD: Set<String>] = [:]) {
         self.color = color
         self.targetGames = targetGames
         self.minGames = minGames
+        self.excluded = excluded
     }
 
     public var threshold: Double { 1 / Double(max(targetGames, 1)) }
+
+    public func isExcluded(_ uci: String, at epd: EPD) -> Bool {
+        excluded[epd]?.contains(uci) == true
+    }
 }
 
 public struct CoverageGap: Hashable, Sendable {
@@ -40,6 +48,8 @@ public struct ReplyInfo: Hashable, Sendable {
     public let share: Double
     public let reach: Double
     public let required: Bool
+    /// Not in the repertoire and excluded from coverage.
+    public let excluded: Bool
     /// The child node if the reply is in the repertoire.
     public let child: NodeID?
     /// A node elsewhere with the same position and a move of yours.
@@ -148,6 +158,16 @@ public struct CoverageEngine: Sendable {
             refreshAncestors(of: id, tree: tree, stats: stats)
         }
         // Missing replies that lead into this position may now have a different status.
+        propagateTranspositions(tree: tree, stats: stats)
+    }
+
+    /// Call after the excluded moves at `epd` changed in `settings`.
+    public mutating func exclusionsChanged(at epd: EPD, tree: RepertoireTree, stats: StatsLookup) {
+        guard let ids = tree.epdIndex[epd] else { return }
+        for id in ids where info[id] != nil {
+            aggregate(id, tree: tree, stats: stats)
+            refreshAncestors(of: id, tree: tree, stats: stats)
+        }
         propagateTranspositions(tree: tree, stats: stats)
     }
 
@@ -310,8 +330,9 @@ public struct CoverageEngine: Sendable {
             seen.insert(move.uci)
             let share = stats.total > 0 ? Double(move.games) / Double(stats.total) : 0
             let r = (reach ?? 0) * share
-            let required = enough && reach != nil && r >= t
             let child = tree.child(of: node.id, uci: move.uci)
+            let excluded = child == nil && settings.isExcluded(move.uci, at: node.epd)
+            let required = enough && reach != nil && r >= t && !excluded
             var transposesTo: NodeID?
             var completion = child.flatMap { info[$0]?.completion } ?? 0
             if child == nil, required, let epd = replyEPD(node: node, uci: move.uci) {
@@ -319,12 +340,12 @@ public struct CoverageEngine: Sendable {
                 if let tr = transposesTo { completion = info[tr]?.completion ?? 0 }
             }
             result.append(ReplyInfo(uci: move.uci, san: move.san, share: share, reach: r, required: required,
-                                    child: child, transposesTo: transposesTo, completion: completion, games: move.games))
+                                    excluded: excluded, child: child, transposesTo: transposesTo, completion: completion, games: move.games))
         }
         for childID in node.children {
             guard let child = tree[childID], let move = child.move, !seen.contains(move.uci) else { continue }
             result.append(ReplyInfo(uci: move.uci, san: move.san, share: 0, reach: 0, required: false,
-                                    child: childID, transposesTo: nil, completion: info[childID]?.completion ?? 0, games: 0))
+                                    excluded: false, child: childID, transposesTo: nil, completion: info[childID]?.completion ?? 0, games: 0))
         }
         return result
     }

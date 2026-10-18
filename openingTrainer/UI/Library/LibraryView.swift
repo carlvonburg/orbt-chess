@@ -229,7 +229,7 @@ private struct LibraryDrill: Identifiable {
     var id: String { "\(entry.id)-\(mode)" }
 }
 
-/// Review due cards, learn new ones, or play every line. Opens the PGN only when started.
+/// Review due cards or learn new ones. Opens the PGN only when started.
 private struct TrainActions: View {
     let entry: RepertoireEntry
     var document: RepertoireDocument?
@@ -249,12 +249,6 @@ private struct TrainActions: View {
                 }
                 .buttonStyle(.glass)
                 .disabled(counts.unseen == 0)
-                Menu("More training", systemImage: "ellipsis") {
-                    Button("Play All Lines", systemImage: "list.bullet") { start(.branch(RepertoireTree.rootID)) }
-                        .disabled(counts.cards == 0)
-                }
-                .labelStyle(.iconOnly)
-                .buttonStyle(.glass)
             }
         }
         .font(.subheadline)
@@ -343,7 +337,6 @@ struct EntryStats {
     var gaps = 0
     var due = 0
     var unseen = 0
-    var cards = 0
 
     init(entry: RepertoireEntry, document: RepertoireDocument?) {
         if let document {
@@ -355,7 +348,6 @@ struct EntryStats {
             gaps = root?.gapCount ?? 0
             due = progress.due
             unseen = progress.cards - progress.seen
-            cards = progress.cards
             return
         }
         guard let sidecar = entry.sidecar else { return }
@@ -365,7 +357,6 @@ struct EntryStats {
         completion = s.completion
         learned = s.cardCount > 0 ? Double(s.matureCount) / Double(s.cardCount) : 0
         gaps = s.gapCount
-        cards = s.cardCount
         unseen = max(s.cardCount - seen.count, 0)
     }
 }

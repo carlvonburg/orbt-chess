@@ -239,6 +239,17 @@ final class RepertoireDocument {
         scheduleSidecarSave(delay: 0.5)
     }
 
+    /// Excludes an opponent move at `node`'s position from coverage, or includes it again.
+    /// Applies wherever the position occurs.
+    func setExcluded(_ uci: String, at node: NodeID, _ excluded: Bool) {
+        guard let epd = tree[node]?.epd, sidecar.isExcluded(uci, at: epd) != excluded else { return }
+        sidecar.setExcluded(uci, at: epd, excluded)
+        coverage.settings = sidecar.coverageSettings
+        coverage.exclusionsChanged(at: epd, tree: tree, stats: lookup)
+        revision += 1
+        scheduleSidecarSave(delay: 0.5)
+    }
+
     func rememberLine(_ ucis: [String]) {
         guard sidecar.lastLine != ucis else { return }
         sidecar.lastLine = ucis
@@ -354,10 +365,13 @@ final class RepertoireDocument {
         guard let data = try? FileAccess.read(sidecarURL), data != lastWrittenSidecar,
               let remote = try? Sidecar.decode(data) else { return }
         let settingsBefore = sidecar.configKey
+        let excludedBefore = sidecar.excludedMoves
         sidecar = sidecar.merged(with: remote)
         lastWrittenSidecar = data
         if sidecar.configKey != settingsBefore {
             store.load(sidecar.database)
+            recomputeCoverage()
+        } else if sidecar.excludedMoves != excludedBefore {
             recomputeCoverage()
         } else {
             revision += 1

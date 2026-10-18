@@ -381,17 +381,18 @@ struct RepliesPanel: View {
                 Text("Seen").font(.caption).foregroundStyle(.secondary).frame(width: 74, alignment: .trailing)
                 Text("Covered").font(.caption).foregroundStyle(.secondary).frame(width: 64, alignment: .trailing)
                 Text("Games").font(.caption).foregroundStyle(.secondary).frame(width: 40, alignment: .trailing)
-                Color.clear.frame(width: 22, height: 1)
             }
             .padding(.top, 8)
             .builderRow(separator: false)
             if let replies = info?.replies, !replies.isEmpty {
                 let stats = document.stats(node.epd)
-                // Replies in the repertoire first, then the rest; each group by how often it is played.
-                let ordered = replies.filter { $0.child != nil || $0.transposesTo != nil }.sorted { $0.share > $1.share }
-                    + replies.filter { $0.child == nil && $0.transposesTo == nil }.sorted { $0.share > $1.share }
+                // Replies in the repertoire, needed or excluded first, then the ones not needed;
+                // each group by how often it is played.
+                let matters = { (r: ReplyInfo) in r.child != nil || r.transposesTo != nil || r.required || r.excluded }
+                let ordered = replies.filter(matters).sorted { $0.share > $1.share }
+                    + replies.filter { !matters($0) }.sorted { $0.share > $1.share }
                 ForEach(ordered, id: \.uci) { reply in
-                    ReplyRow(reply: reply, games: stats?.moves.first { $0.uci == reply.uci }?.games, model: model)
+                    ReplyRow(reply: reply, games: stats?.moves.first { $0.uci == reply.uci }?.games, node: node.id, model: model)
                         .builderRow()
                 }
             } else {
@@ -401,7 +402,6 @@ struct RepliesPanel: View {
                             HStack {
                                 Text(move.san).font(.body.weight(.semibold))
                                 Spacer()
-                                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                             }
                             .padding(.vertical, 10)
                             .contentShape(Rectangle())
@@ -421,57 +421,51 @@ struct RepliesPanel: View {
 struct ReplyRow: View {
     let reply: ReplyInfo
     let games: Int?
+    let node: NodeID
     let model: BuilderModel
 
     var body: some View {
         let inRepertoire = reply.child != nil || reply.transposesTo != nil
         let isGap = reply.required && !inRepertoire
-        HStack(spacing: 10) {
-            Button {
-                if let child = reply.child { model.go(to: child) } else { model.preview(uci: reply.uci) }
-            } label: {
-                HStack(spacing: 8) {
-                    Text(reply.san).font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
-                    if isGap {
-                        Text("Gap").font(.caption2.weight(.bold)).foregroundStyle(.white)
-                            .padding(.horizontal, 6).padding(.vertical, 2)
-                            .background(.orange, in: .capsule)
-                    } else if reply.transposesTo != nil && reply.child == nil {
-                        Text("Transposes").font(.caption2).foregroundStyle(.blue)
-                    }
-                    Spacer()
-                    Text(Format.seenEvery(reply.reach)).font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary).frame(width: 74, alignment: .trailing)
-                    Group {
-                        if inRepertoire && reply.required {
-                            CompletionBar(value: reply.completion, tint: reply.completion >= 0.999 ? .green : .yellow)
-                        } else if !reply.required {
-                            Text("Not needed").font(.caption2).foregroundStyle(.tertiary)
-                        } else {
-                            CompletionBar(value: 0, tint: .orange)
-                        }
-                    }
-                    .frame(width: 64)
-                    Text(games.map(Format.games) ?? "").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-                        .frame(width: 40, alignment: .trailing)
+        // Tapping opens the reply; one not in the repertoire is played on the board so you can
+        // add your answer, and is saved with it.
+        Button {
+            if let child = reply.child { model.go(to: child) } else { model.preview(uci: reply.uci) }
+        } label: {
+            HStack(spacing: 8) {
+                Text(reply.san).font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
+                if isGap {
+                    Text("Gap").font(.caption2.weight(.bold)).foregroundStyle(.white)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(.orange, in: .capsule)
+                } else if reply.transposesTo != nil && reply.child == nil {
+                    Text("Transposes").font(.caption2).foregroundStyle(.blue)
                 }
-                .opacity(reply.required || inRepertoire ? 1 : 0.55)
-                .contentShape(Rectangle())
+                Spacer()
+                Text(Format.seenEvery(reply.reach)).font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary).frame(width: 74, alignment: .trailing)
+                Group {
+                    if inRepertoire && reply.required {
+                        CompletionBar(value: reply.completion, tint: reply.completion >= 0.999 ? .green : .yellow)
+                    } else if reply.excluded {
+                        Text("Excluded").font(.caption2).foregroundStyle(.secondary)
+                    } else if !reply.required {
+                        Text("Not needed").font(.caption2).foregroundStyle(.tertiary)
+                    } else {
+                        CompletionBar(value: 0, tint: .orange)
+                    }
+                }
+                .frame(width: 64)
+                Text(games.map(Format.games) ?? "").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                    .frame(width: 40, alignment: .trailing)
             }
-            .buttonStyle(.plain)
-            if reply.child == nil {
-                // Opens the reply on the board so you can add your answer; it is saved with it.
-                Button("Add \(reply.san)", systemImage: "plus.circle.fill") { model.preview(uci: reply.uci) }
-                    .labelStyle(.iconOnly)
-                    .font(.title3)
-                    .foregroundStyle(isGap ? .orange : .secondary)
-                    .buttonStyle(.borderless)
-            } else {
-                Image(systemName: "chevron.right").foregroundStyle(.tertiary).frame(width: 22)
-            }
+            .opacity(reply.required || inRepertoire ? 1 : 0.55)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .padding(.vertical, 9)
         .deletable(reply.child, model: model)
+        .excludable(reply.child == nil ? reply : nil, at: node, model: model)
     }
 }
 
@@ -489,22 +483,23 @@ struct YourMovePanel: View {
                 .builderRow(separator: false)
         }
         CandidatesSection(model: model, epd: node.epd, title: "Candidates", savedAt: node,
-                          select: model.preview(uci:), add: model.add(uci:))
+                          select: model.preview(uci:))
     }
 }
 
 /// Explorer moves for a position with cloud eval, results, games and share of games.
 /// Moves saved under `savedAt` come first (with their note and Main/Alternative tag), then the
-/// other explorer moves; each group is sorted by how often it is played.
-/// Tapping a row plays the move on the board (or opens a saved move); + adds it.
+/// other explorer moves; each group is sorted by how often it is played. Once a move is saved,
+/// the heading reads "Your Moves" and the other moves stay hidden behind "Add Alternative Move".
+/// Tapping a row plays the move on the board (or opens a saved move).
 struct CandidatesSection: View {
     let model: BuilderModel
     let epd: EPD
     let title: String
     var savedAt: RepertoireNode?
     let select: (String) -> Void
-    let add: (String) -> Void
     @State private var eval: CloudEvalClient.Eval?
+    @State private var showOthers = false
 
     var body: some View {
         let stats = model.document.stats(epd)
@@ -515,9 +510,11 @@ struct CandidatesSection: View {
         let savedRows = saved.map { move in (move, explorer.first { $0.uci == move.uci }) }
             .sorted { ($0.1?.games ?? -1) > ($1.1?.games ?? -1) }
         let otherRows = explorer.filter { !isSaved($0.uci) }.prefix(max(0, 12 - savedRows.count))
-        Text(title).font(.headline).padding(.top, 8)
+        let collapsed = !saved.isEmpty && !showOthers
+        Text(saved.isEmpty ? title : "Your Moves").font(.headline).padding(.top, 8)
             .builderRow(separator: false)
             .task(id: epd) {
+                showOthers = false
                 eval = nil
                 eval = await CloudEvalClient.fetch(epd)
             }
@@ -526,13 +523,23 @@ struct CandidatesSection: View {
                 .builderRow()
                 .listRowBackground(Color.green.opacity(0.08))
         }
-        ForEach(otherRows, id: \.uci) { move in
-            row(uci: move.uci, san: move.san, move: move, total: stats?.total ?? 0)
-                .builderRow()
-        }
-        if explorer.isEmpty {
-            StatsUnavailableNote()
+        if collapsed {
+            Button("Add Alternative Move", systemImage: "plus") { showOthers = true }
+                .padding(.vertical, 10)
                 .builderRow(separator: false)
+        } else {
+            if !saved.isEmpty {
+                Text(title).font(.headline).padding(.top, 8)
+                    .builderRow(separator: false)
+            }
+            ForEach(otherRows, id: \.uci) { move in
+                row(uci: move.uci, san: move.san, move: move, total: stats?.total ?? 0)
+                    .builderRow()
+            }
+            if explorer.isEmpty {
+                StatsUnavailableNote()
+                    .builderRow(separator: false)
+            }
         }
     }
 
@@ -549,8 +556,7 @@ struct CandidatesSection: View {
             }
         }
         return CandidateRow(san: san, move: move, total: total, eval: eval?.text(for: uci), saved: saved,
-                            select: { if let saved { model.go(to: saved.id) } else { select(uci) } },
-                            add: { add(uci) })
+                            select: { if let saved { model.go(to: saved.id) } else { select(uci) } })
             .deletable(saved?.id, model: model,
                        promote: saved.flatMap { saved in saved.index > 0 ? { model.document.promote(saved.id) } : nil })
     }
@@ -567,6 +573,38 @@ extension View {
     /// to this row) and, for an alternative, Make Main Move. Does nothing for a move that is not saved.
     func deletable(_ id: NodeID?, model: BuilderModel, promote: (() -> Void)? = nil) -> some View {
         modifier(DeleteMove(id: id, model: model, promote: promote))
+    }
+}
+
+extension View {
+    /// Long-press menu and swipe action to exclude an opponent move you have no line for from
+    /// coverage, or include it again. Does nothing when `reply` is nil.
+    func excludable(_ reply: ReplyInfo?, at node: NodeID, model: BuilderModel) -> some View {
+        modifier(ExcludeMove(reply: reply, node: node, model: model))
+    }
+}
+
+private struct ExcludeMove: ViewModifier {
+    let reply: ReplyInfo?
+    let node: NodeID
+    let model: BuilderModel
+
+    func body(content: Content) -> some View {
+        if let reply {
+            let title = reply.excluded ? "Include" : "Exclude"
+            let icon = reply.excluded ? "plus.circle" : "nosign"
+            let toggle = { model.document.setExcluded(reply.uci, at: node, !reply.excluded) }
+            content
+                .contextMenu {
+                    Button("\(title) \(reply.san)", systemImage: icon, action: toggle)
+                }
+                .swipeActions(edge: .trailing) {
+                    Button(title, systemImage: icon, action: toggle)
+                        .tint(reply.excluded ? .blue : .gray)
+                }
+        } else {
+            content
+        }
     }
 }
 
@@ -647,63 +685,46 @@ struct CandidateRow: View {
     let eval: String?
     let saved: SavedMove?
     let select: () -> Void
-    let add: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            Button(action: select) {
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 8) {
-                        Text(san).font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
-                        Text(eval ?? "")
-                            .font(.caption.monospacedDigit().weight(.semibold)).frame(width: 40)
-                        if let move {
-                            ScoreBar(white: move.white, draws: move.draws, black: move.black)
-                            // Games and share of games side by side, as in the Lichess explorer.
-                            let share = Format.percent(total > 0 ? Double(move.games) / Double(total) : 0)
-                            Text("\(Text(Format.games(move.games)).foregroundStyle(.primary)) · \(share)")
-                                .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-                                .lineLimit(1)
-                                .frame(width: 76, alignment: .trailing)
-                        } else {
-                            Spacer()
-                        }
+        Button(action: select) {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 8) {
+                    Text(san).font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
+                    Text(eval ?? "")
+                        .font(.caption.monospacedDigit().weight(.semibold)).frame(width: 40)
+                    if let move {
+                        ScoreBar(white: move.white, draws: move.draws, black: move.black)
+                        // Games and share of games side by side, as in the Lichess explorer.
+                        let share = Format.percent(total > 0 ? Double(move.games) / Double(total) : 0)
+                        Text("\(Text(Format.games(move.games)).foregroundStyle(.primary)) · \(share)")
+                            .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .frame(width: 76, alignment: .trailing)
+                    } else {
+                        Spacer()
                     }
-                    if let saved, saved.tag != nil || !saved.note.isEmpty {
-                        HStack(spacing: 6) {
-                            if let tag = saved.tag {
-                                if saved.index == 0 {
-                                    Text(tag).font(.caption2).glassChip(tint: .green)
-                                } else {
-                                    Text(tag).font(.caption2).foregroundStyle(.secondary)
-                                }
-                            }
-                            if !saved.note.isEmpty {
-                                Text(saved.note).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                            }
+                }
+                if let saved, saved.tag != nil || !saved.note.isEmpty {
+                    HStack(spacing: 6) {
+                        if let tag = saved.tag {
+                            Text(tag).font(.caption2).foregroundStyle(.secondary)
+                        }
+                        if !saved.note.isEmpty {
+                            Text(saved.note).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                         }
                     }
                 }
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-            if saved != nil {
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(.green).font(.title3)
-                    .accessibilityLabel("In repertoire")
-            } else {
-                Button("Add \(san)", systemImage: "plus.circle", action: add)
-                    .labelStyle(.iconOnly)
-                    .font(.title3)
-                    .foregroundStyle(Color.accentColor)
-                    .buttonStyle(.borderless)
-            }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .padding(.vertical, 8)
     }
 }
 
 /// Shown while a draft is on the board: the same candidates as a saved position.
-/// Tapping a move extends the draft; + extends it and saves the line.
+/// Tapping a move extends the draft.
 struct DraftPanel: View {
     let model: BuilderModel
 
@@ -718,11 +739,7 @@ struct DraftPanel: View {
         .builderRow(separator: false)
         CandidatesSection(model: model, epd: model.position.epd,
                           title: model.isUserTurnOnBoard ? "Candidates" : "Opponent's replies",
-                          select: model.play(uci:),
-                          add: { uci in
-                              model.play(uci: uci)
-                              model.saveDraft()
-                          })
+                          select: model.play(uci:))
     }
 }
 

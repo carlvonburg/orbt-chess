@@ -125,12 +125,6 @@ final class BuilderModel {
     }
 
     /// Adds a move from the panel and goes there.
-    func add(uci: String) {
-        if let id = document.addMove(uci, after: continuation ?? current) {
-            go(to: id)
-        }
-    }
-
     func delete(_ id: NodeID) {
         if id == current || tree.isAncestor(id, of: current), let parent = tree[id]?.parent {
             go(to: parent)

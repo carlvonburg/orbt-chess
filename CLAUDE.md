@@ -54,7 +54,9 @@ Reach probability p: root 1; own moves keep p; opponent move multiplies by its s
 the parent (move games / position games). Opponent reply required when p·f ≥ 1/N and the
 position has ≥ minGames games. Gaps: own-turn node with p ≥ 1/N and no saved move (and no
 transposition), or a missing required reply. Completion C is the frequency-weighted mean
-over required replies. Values are cached per node and updated incrementally: an edit
+over required replies. Opponent moves the user excludes (sidecar `excludedMoves`, keyed by
+the EPD before the move, so they apply at every transposition) are never required; a move
+saved anyway is covered as usual. Values are cached per node and updated incrementally: an edit
 recomputes only the edited subtree and its ancestors.
 
 ## Conventions
