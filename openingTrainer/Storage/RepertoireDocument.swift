@@ -30,6 +30,9 @@ final class RepertoireDocument {
     @ObservationIgnored private var presenters: [FilePresenter] = []
     @ObservationIgnored private var listener: UUID?
     @ObservationIgnored private var cachedTrainer: (revision: Int, trainer: Trainer)?
+    @ObservationIgnored private var cachedCounts: (revision: Int, minute: Int64, counts: CardQueues.Counts)?
+    /// Answers not yet appended to the review log.
+    @ObservationIgnored private var pendingRevlog: [RevlogEntry] = []
 
     /// Reads and parses the PGN off the main actor, since a large file takes a moment.
     nonisolated static func load(_ url: URL) async throws -> (text: String, tree: RepertoireTree) {
@@ -283,15 +286,92 @@ final class RepertoireDocument {
         return trainer
     }
 
-    func record(_ grades: [EPD: Grade]) {
-        guard !grades.isEmpty else { return }
-        DrillSession.apply(grades, to: &sidecar.cards)
-        revision += 1
-        scheduleSidecarSave(delay: 1)
-    }
+    var revlogURL: URL { RepertoireLibrary.revlogURL(for: pgnURL) }
 
     func learningProgress(under node: NodeID = RepertoireTree.rootID) -> Trainer.Progress {
-        trainer.progress(under: node, cards: sidecar.cards)
+        trainer.progress(under: node, cards: sidecar.studyCards)
+    }
+
+    // MARK: Study (Anki)
+
+    /// The default preset; per-repertoire limits are applied by `remainingLimits`.
+    var deckConfig: DeckConfig { TrainingDefaults.config }
+    var scheduler: Scheduler { Scheduler(config: deckConfig) }
+    var practiceMode: PracticeMode { sidecar.practiceMode ?? TrainingDefaults.practiceMode }
+
+    func remainingLimits(_ timing: SchedTiming) -> RemainingLimits {
+        RemainingLimits(config: deckConfig, limits: sidecar.limits ?? DeckLimits(),
+                        stats: sidecar.studyStats ?? DeckStudyStats(), today: timing.daysElapsed)
+    }
+
+    /// How often each position is reached, for ordering new cards and reviews.
+    var reach: [NodeID: Double] {
+        var result: [NodeID: Double] = [:]
+        for id in tree.subtree(of: RepertoireTree.rootID) {
+            if let r = coverage[id]?.reach { result[id] = r }
+        }
+        return result
+    }
+
+    func studySession(branch: NodeID? = nil, timing: SchedTiming = SchedTiming()) -> StudySession {
+        if let branch {
+            return StudySession(trainer: trainer, mode: practiceMode, branch: branch, cards: sidecar.studyCards,
+                                timing: timing, learnAheadSecs: deckConfig.learnAheadSecs, reach: reach)
+        }
+        return StudySession(trainer: trainer, mode: practiceMode, cards: sidecar.studyCards, limits: remainingLimits(timing),
+                            timing: timing, learnAheadSecs: deckConfig.learnAheadSecs, reach: reach)
+    }
+
+    /// Today's New / Learning / To Review counts, as on Anki's deck overview.
+    func studyCounts(timing: SchedTiming = SchedTiming()) -> CardQueues.Counts {
+        let minute = timing.now / 60
+        if let cachedCounts, cachedCounts.revision == revision, cachedCounts.minute == minute { return cachedCounts.counts }
+        let counts = studySession(timing: timing).queue.counts
+        cachedCounts = (revision, minute, counts)
+        return counts
+    }
+
+    /// Answers a card and logs it. Answers outside today's queue (a branch session or a review
+    /// ahead) don't count toward the daily limits, as in an Anki filtered deck.
+    @discardableResult
+    func answer(_ epd: EPD, position: Int, rating: Rating, filtered: Bool, takenMillis: Int,
+                timing: SchedTiming = SchedTiming()) -> Card {
+        let result = scheduler.answer(sidecar.studyCards[epd], epd: epd, position: position, rating: rating,
+                                      timing: timing, filtered: filtered, takenMillis: takenMillis)
+        sidecar.studyCards[epd] = result.card
+        if !filtered {
+            var stats = sidecar.studyStats ?? DeckStudyStats()
+            stats.recordAnswer(fromQueue: result.fromQueue, millis: result.revlog.time, today: timing.daysElapsed)
+            sidecar.studyStats = stats
+        }
+        pendingRevlog.append(result.revlog)
+        revision += 1
+        scheduleSidecarSave(delay: 1)
+        return result.card
+    }
+
+    /// Anki's custom study "Increase today's new card limit".
+    func extendNewLimitToday(by count: Int, timing: SchedTiming = SchedTiming()) {
+        var stats = sidecar.studyStats ?? DeckStudyStats()
+        stats.extendLimits(today: timing.daysElapsed, new: count, review: 0)
+        sidecar.studyStats = stats
+        revision += 1
+        scheduleSidecarSave(delay: 0.5)
+    }
+
+    /// Daily limits ("This deck" / "Today only") and practice mode for this repertoire.
+    func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?) {
+        sidecar.limits = limits.isEmpty ? nil : limits
+        sidecar.practiceMode = practiceMode
+        sidecar.settingsModified = .now
+        revision += 1
+        scheduleSidecarSave(delay: 0.5)
+    }
+
+    /// The whole review log, including answers not written yet.
+    func reviewLog() -> [RevlogEntry] {
+        let onDisk = (try? FileAccess.read(revlogURL)).map(RevlogFile.decode) ?? []
+        return RevlogFile.merged(onDisk, pendingRevlog)
     }
 
     // MARK: Saving
@@ -308,6 +388,7 @@ final class RepertoireDocument {
             sidecarSaveTask = nil
             saveSidecar()
         }
+        saveRevlog()
     }
 
     private func schedulePGNSave() {
@@ -342,12 +423,23 @@ final class RepertoireDocument {
         }
     }
 
+    private func saveRevlog() {
+        guard !pendingRevlog.isEmpty else { return }
+        do {
+            try FileAccess.append(RevlogFile.encode(pendingRevlog), to: revlogURL)
+            pendingRevlog = []
+        } catch {
+            saveError = "Could not save the review log: \(error.localizedDescription)"
+        }
+    }
+
     private func saveSidecar() {
+        saveRevlog()
         let progress = learningProgress()
         let root = coverage.root
         sidecar.summary = Sidecar.Summary(
             completion: root?.completion ?? 0, gapCount: root?.gapCount ?? 0,
-            cardCount: progress.cards, matureCount: progress.mature, dueCount: progress.due,
+            cardCount: progress.cards, matureCount: progress.mature, dueCount: studyCounts().review,
             configKey: sidecar.configKey, computedAt: .now)
         guard let data = try? sidecar.encoded(), data != lastWrittenSidecar else { return }
         do {

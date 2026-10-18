@@ -229,32 +229,37 @@ private struct LibraryDrill: Identifiable {
     var id: String { "\(entry.id)-\(mode)" }
 }
 
-/// Review due cards or learn new ones. Opens the PGN only when started.
+/// Anki's deck overview: New / Learning / To Review counts and Study. Opens the PGN only
+/// when started.
 private struct TrainActions: View {
     let entry: RepertoireEntry
     var document: RepertoireDocument?
     let start: (DrillMode) -> Void
 
     var body: some View {
-        let counts = self.counts
-        GlassEffectContainer {
-            HStack {
-                Button { start(.due) } label: {
-                    Label("Review \(counts.due)", systemImage: "clock.arrow.circlepath").frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.glassProminent)
-                .disabled(counts.due == 0)
-                Button { start(.learnNew) } label: {
-                    Label("Learn \(min(counts.unseen, DrillModel.newPerSession))", systemImage: "sparkles").frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.glass)
-                .disabled(counts.unseen == 0)
+        let counts = EntryStats(entry: entry, document: document).counts
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                countRow("New", counts.new, .blue)
+                countRow("Learning", counts.learning, .red)
+                countRow("To Review", counts.review, .green)
             }
+            .font(.caption)
+            Spacer()
+            Button { start(.study) } label: {
+                Label("Study", systemImage: "graduationcap")
+            }
+            .buttonStyle(.glassProminent)
+            .disabled(counts.total == 0)
         }
-        .font(.subheadline)
     }
 
-    private var counts: EntryStats { EntryStats(entry: entry, document: document) }
+    private func countRow(_ title: String, _ value: Int, _ color: Color) -> some View {
+        HStack(spacing: 6) {
+            Text(title).foregroundStyle(.secondary).frame(width: 64, alignment: .leading)
+            Text(value.formatted()).foregroundStyle(value > 0 ? color : .secondary).monospacedDigit().fontWeight(.semibold)
+        }
+    }
 }
 
 struct LibraryRow: View {
@@ -335,8 +340,9 @@ struct EntryStats {
     var completion = 0.0
     var learned = 0.0
     var gaps = 0
-    var due = 0
-    var unseen = 0
+    var counts = CardQueues.Counts()
+    /// Learning and review cards waiting today.
+    var due: Int { counts.learning + counts.review }
 
     init(entry: RepertoireEntry, document: RepertoireDocument?) {
         if let document {
@@ -346,18 +352,15 @@ struct EntryStats {
             completion = root?.completion ?? 0
             learned = progress.matureFraction
             gaps = root?.gapCount ?? 0
-            due = progress.due
-            unseen = progress.cards - progress.seen
+            counts = document.studyCounts()
             return
         }
         guard let sidecar = entry.sidecar else { return }
-        let seen = sidecar.cards
-        due = seen.values.filter { $0.isDue(at: .now) }.count
+        counts = sidecar.estimatedStudyCounts(config: TrainingDefaults.config, timing: SchedTiming())
         guard let s = sidecar.summary else { return }
         completion = s.completion
         learned = s.cardCount > 0 ? Double(s.matureCount) / Double(s.cardCount) : 0
         gaps = s.gapCount
-        unseen = max(s.cardCount - seen.count, 0)
     }
 }
 
@@ -475,11 +478,13 @@ struct RepertoireSettingsSheet: View {
     @State private var draft: RepertoireSettingsDraft
     @State private var name: String
     @State private var error: String?
+    @State private var practice: DailyPracticeDraft
 
     init(document: RepertoireDocument) {
         self.document = document
         _draft = State(initialValue: RepertoireSettingsDraft(document.sidecar))
         _name = State(initialValue: document.name)
+        _practice = State(initialValue: DailyPracticeDraft(sidecar: document.sidecar, today: SchedTiming().daysElapsed))
     }
 
     var body: some View {
@@ -491,6 +496,7 @@ struct RepertoireSettingsSheet: View {
                         .onChange(of: name) { name = name.safeRepertoireName }
                 }
                 RepertoireSettingsForm(draft: $draft)
+                DailyPracticeSection(draft: $practice)
                 if let error { Text(error).foregroundStyle(.red) }
                 Section("File") {
                     LabeledContent("PGN", value: document.pgnURL.lastPathComponent)
@@ -521,6 +527,8 @@ struct RepertoireSettingsSheet: View {
                         }
                         document.updateSettings(color: draft.color, database: draft.database,
                                                 targetGames: draft.targetGames, minGames: draft.minGames)
+                        practice.savePreset()
+                        document.updateStudySettings(limits: practice.limits, practiceMode: practice.practiceMode)
                         dismiss()
                     }
                     .disabled(!draft.isValid || name.trimmingCharacters(in: .whitespaces).isEmpty)

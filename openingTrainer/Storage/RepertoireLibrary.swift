@@ -85,6 +85,11 @@ final class RepertoireLibrary {
         pgn.deletingPathExtension().appendingPathExtension(sidecarExtension)
     }
 
+    /// The review log next to a PGN.
+    static func revlogURL(for pgn: URL) -> URL {
+        pgn.deletingPathExtension().appendingPathExtension(RevlogFile.fileExtension)
+    }
+
     func entry(id: String) -> RepertoireEntry? { entries.first { $0.id == id } }
 
     /// Creates `<name>.pgn` and its sidecar in the repertoire folder.
@@ -113,7 +118,8 @@ final class RepertoireLibrary {
         var pgn = folder.appending(path: base + ".pgn")
         var n = 2
         while FileManager.default.fileExists(atPath: pgn.path)
-                || FileManager.default.fileExists(atPath: Self.sidecarURL(for: pgn).path) {
+                || FileManager.default.fileExists(atPath: Self.sidecarURL(for: pgn).path)
+                || FileManager.default.fileExists(atPath: Self.revlogURL(for: pgn).path) {
             pgn = folder.appending(path: "\(base) \(n).pgn")
             n += 1
         }
@@ -149,6 +155,10 @@ final class RepertoireLibrary {
                 try? FileAccess.move(newPGN, to: pgn)
                 throw error
             }
+            let revlog = Self.revlogURL(for: pgn)
+            if FileManager.default.fileExists(atPath: revlog.path) {
+                try? FileAccess.move(revlog, to: Self.revlogURL(for: newPGN))
+            }
         }
         refresh()
         guard let entry = entry(id: newSidecar.path) else { throw CocoaError(.fileNoSuchFile) }
@@ -159,6 +169,7 @@ final class RepertoireLibrary {
     func delete(_ entry: RepertoireEntry) throws {
         try FileAccess.delete(entry.pgnURL)
         try? FileAccess.delete(entry.sidecarURL)
+        try? FileAccess.delete(Self.revlogURL(for: entry.pgnURL))
         refresh()
     }
 

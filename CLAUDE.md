@@ -1,6 +1,6 @@
 # Opening Trainer
 
-Open-source (GPL-3.0), subscription-free alternative to Chessbook for iPhone and iPad.
+Open-source (AGPL-3.0), subscription-free alternative to Chessbook for iPhone and iPad.
 SwiftUI on iOS 26 with Liquid Glass. Repertoires are PGN files in iCloud Drive; opponent
 statistics come from the Lichess opening explorer.
 
@@ -25,7 +25,8 @@ Requirements:
 - A repertoire is a PGN in the app's folder (iCloud Drive, or Documents without iCloud):
   created there, or imported (copied in) from Files.
   Every edit is saved to the PGN immediately. Settings and training state live in a
-  sidecar `<Name>.otrep.json`, never in the PGN.
+  sidecar `<Name>.otrep.json`, never in the PGN; the review log is `<Name>.otlog.jsonl`
+  (append-only, one Anki revlog entry per line).
 - Each repertoire chooses its coverage database (masters, or Lichess speeds + rating
   buckets) and its coverage target ("cover moves seen once in N games").
 - Chessbook screenshots only show how that app works; its layout is not a template.
@@ -36,7 +37,7 @@ position, model games, bundled engine.
 ## Layout
 - `OpeningCore/` — local Swift package, no UI. Chess wrapper over
   chesskit-swift, PGN parser/writer, RepertoireTree, explorer stats model, coverage
-  engine, FSRS training. Test with `swift test` inside that folder.
+  engine, training (Anki's scheduler ported in `Training/Anki/`). Test with `swift test` inside that folder.
 - `openingTrainer/` — the app target (folder-synced group, new files are
   picked up automatically). `Lichess/`, `Storage/`, `UI/`.
 
@@ -58,6 +59,17 @@ over required replies. Opponent moves the user excludes (sidecar `excludedMoves`
 the EPD before the move, so they apply at every transposition) are never required; a move
 saved anyway is covered as usual. Values are cached per node and updated incrementally: an edit
 recomputes only the edited subtree and its ancestors.
+
+## Training (see OpeningCore/Training/Anki, ported from Anki's rslib scheduler)
+Follow Anki's code, not invented rules. A card is a position where it's your move (one per
+EPD). States, learning steps (1m 10m, relearn 10m), FSRS-6, fuzz, day rollover at 4 AM,
+learn-ahead 20 min, queue order and daily limits (preset / this repertoire / today only)
+are Anki's. Chess additions, kept minimal and listed in `Study.swift`: lines start at move 1
+and the practice mode decides who plays your earlier moves; one line answers every queued
+card on it; moves you play that aren't due are reviews ahead (filtered deck); new cards are
+introduced a line at a time (most reached first) and a started line is finished past the
+daily limit; reviews due the same day are ordered by reach. Grading is Again/Good only
+(wrong, hint or browsing = Again). Ported files keep Anki's AGPL header.
 
 ## Conventions
 - Code in OpeningCore is pure Swift, `Sendable` value types, no UIKit/SwiftUI.

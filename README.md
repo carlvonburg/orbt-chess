@@ -9,7 +9,7 @@ Chessbook, without a subscription.
 - **Coverage** from the Lichess opening explorer (masters, or Lichess games filtered by
   speed and rating). Pick a target such as "cover every move seen once in 500 games" and
   the app shows each gap, how often you'd meet it, and a completion bar per move.
-- **Spaced repetition** (FSRS) per position, plus "train this branch". Works offline.
+- **Spaced repetition** with Anki's scheduler (learning steps, FSRS, daily limits) per position, plus "study this branch". Works offline.
 - **Analyze on Lichess** opens the current line in the Lichess analysis board.
 
 ## How coverage is computed
@@ -35,5 +35,8 @@ cd OpeningCore && swift test
 Lichess login uses OAuth with PKCE and needs no client registration.
 
 ## License
-GPL-3.0. Piece set "cburnett" (GPLv2+) via Lichess. Chess rules by
+AGPL-3.0-or-later. The study scheduler is ported from
+[Anki](https://github.com/ankitects/anki) (AGPL-3.0, Ankitects Pty Ltd and contributors) and
+[fsrs-rs](https://github.com/open-spaced-repetition/fsrs-rs) (BSD-3-Clause, Open Spaced
+Repetition). Piece set "cburnett" (GPLv2+) via Lichess. Chess rules by
 [chesskit-swift](https://github.com/chesskit-app/chesskit-swift) (MIT).

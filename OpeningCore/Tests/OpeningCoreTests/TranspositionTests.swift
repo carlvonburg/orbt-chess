@@ -69,9 +69,9 @@ struct TranspositionTests {
         #expect(trainer.cardNodes(under: nf3).contains(afterNc3))
         // A drill along the transposed line expects the stored move.
         let line = try #require(lines.first { $0.nodes.contains(afterNc3) })
-        var drill = DrillSession(trainer: trainer, line: line)
+        var drill = LineRun(trainer: trainer, nodes: line.nodes)
         while !drill.isFinished {
-            if drill.isUserTurn { #expect(drill.userPlayed(uci: drill.expected!.uci) == .correct) } else { _ = drill.playOpponent() }
+            if drill.isOwnTurn { #expect(drill.userPlayed(uci: drill.expected!.uci) == .correct) } else { drill.advance() }
         }
     }
 

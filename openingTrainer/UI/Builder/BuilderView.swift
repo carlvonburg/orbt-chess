@@ -11,7 +11,7 @@ struct BuilderView: View {
     @State private var drill: DrillRequest?
 
     enum Sheet: String, Identifiable {
-        case outline, gaps, note, analysis, settings
+        case outline, gaps, note, analysis, settings, cardInfo
         var id: String { rawValue }
     }
 
@@ -123,6 +123,9 @@ struct BuilderView: View {
                 Button("Outline", systemImage: "list.bullet.indent") { sheet = .outline }
                 Button("Gaps", systemImage: "exclamationmark.circle") { sheet = .gaps }
                 Button("Edit Note", systemImage: "note.text") { sheet = .note }
+                Button("Card Info", systemImage: "info.circle") { sheet = .cardInfo }
+                    .disabled(document.tree[model.current].flatMap { document.sidecar.studyCards[$0.epd] } == nil
+                              || document.tree[model.current]?.sideToMove != document.color)
                 Button("Flip Board", systemImage: "arrow.up.arrow.down") { model.orientation = model.orientation.opposite }
                 Divider()
                 Button("Repertoire Settings", systemImage: "gearshape") { sheet = .settings }
@@ -155,7 +158,7 @@ struct BuilderView: View {
             ToolbarItemGroup(placement: .bottomBar) {
                 Button("Biggest Gap", systemImage: "scope") { model.goToBiggestGap() }
                     .disabled(document.coverage.root?.biggestGap == nil)
-                Button("Train This Branch", systemImage: "graduationcap") {
+                Button("Study Branch", systemImage: "graduationcap") {
                     drill = DrillRequest(mode: .branch(model.current))
                 }
                 .disabled(document.learningProgress(under: model.current).cards == 0)
@@ -186,6 +189,9 @@ struct BuilderView: View {
                 .ignoresSafeArea()
         case .settings:
             RepertoireSettingsSheet(document: document)
+        case .cardInfo:
+            CardInfoSheet(document: document, node: model.current)
+                .presentationDetents([.medium, .large])
         }
     }
 }
@@ -306,6 +312,13 @@ struct NodeHeader: View {
                     Text(reach >= 0.67 ? "Seen in every game" : "Seen \(Format.seenEvery(reach)) games").font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
+                if node.sideToMove == document.color, document.sidecar.studyCards[node.epd]?.leech == true {
+                    // Anki's "leech" tag: a move you keep forgetting
+                    Label("Leech", systemImage: "ant.fill")
+                        .font(.caption.weight(.semibold))
+                        .glassChip(tint: .orange)
+                        .accessibilityHint("You keep forgetting this move.")
+                }
             }
             CoverageCheckStatus(document: document)
             HStack(spacing: 12) {

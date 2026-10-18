@@ -22,6 +22,27 @@ nonisolated enum FileAccess {
         if let writeError { throw writeError }
     }
 
+    /// Appends to a file, creating it if needed.
+    static func append(_ data: Data, to url: URL) throws {
+        var coordError: NSError?
+        var writeError: Error?
+        NSFileCoordinator().coordinate(writingItemAt: url, options: .forMerging, error: &coordError) { actual in
+            do {
+                if let handle = try? FileHandle(forWritingTo: actual) {
+                    defer { try? handle.close() }
+                    try handle.seekToEnd()
+                    try handle.write(contentsOf: data)
+                } else {
+                    try data.write(to: actual, options: .atomic)
+                }
+            } catch {
+                writeError = error
+            }
+        }
+        if let coordError { throw coordError }
+        if let writeError { throw writeError }
+    }
+
     static func delete(_ url: URL) throws {
         var coordError: NSError?
         var deleteError: Error?
