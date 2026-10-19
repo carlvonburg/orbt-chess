@@ -478,7 +478,7 @@ struct ReplyRow: View {
                     } else if reply.excluded {
                         Text("Excluded").font(.caption2).foregroundStyle(.secondary)
                     } else if !reply.required {
-                        Text("Not needed").font(.caption2).foregroundStyle(.tertiary)
+                        Text("Not needed").font(.caption2).foregroundStyle(.secondary)
                     } else {
                         CompletionBar(value: 0, tint: .orange)
                     }
