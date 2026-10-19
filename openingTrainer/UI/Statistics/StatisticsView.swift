@@ -35,7 +35,7 @@ struct StatisticsView: View {
                         TrueRetentionCard(graphs: graphs)
                         if model.document != nil {
                             WeakestMovesCard(model: model)
-                            if model.branch == nil { BranchRetentionCard(model: model) }
+                            BranchRetentionCard(model: model)
                         }
                     } else if model.isLoading {
                         ProgressView().padding(.top, 60)
@@ -48,7 +48,11 @@ struct StatisticsView: View {
                 .padding(.bottom, 24)
             }
             .navigationTitle("Statistics")
-            .task(id: TaskKey(scope: model.scope, branch: model.branch, entries: app.library.entries.count)) {
+            .navigationSubtitle(scopeTitle)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) { filterMenu }
+            }
+            .task(id: TaskKey(scope: model.scope, entries: app.library.entries.count)) {
                 await model.load(app)
             }
             .refreshable { await model.load(app) }
@@ -59,42 +63,30 @@ struct StatisticsView: View {
 
     private struct TaskKey: Hashable {
         let scope: StatisticsModel.Scope
-        let branch: NodeID?
         let entries: Int
     }
 
+    /// The period stays in the content; which repertoire is in the toolbar.
     private var filters: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Menu {
-                    Picker("Repertoire", selection: $model.scope) {
-                        Text("All Repertoires").tag(StatisticsModel.Scope.all)
-                        ForEach(app.library.entries.filter { !$0.needsSetup }) { entry in
-                            Text(entry.name).tag(StatisticsModel.Scope.repertoire(entry.id))
-                        }
-                    }
-                } label: {
-                    Label(scopeTitle, systemImage: "books.vertical").lineLimit(1)
-                }
-                .buttonStyle(.glass)
-                if model.document != nil {
-                    Menu {
-                        Picker("Branch", selection: $model.branch) {
-                            Text("Whole Repertoire").tag(NodeID?.none)
-                            ForEach(model.branches, id: \.self) { id in
-                                Text(model.document?.tree.lineText(to: id) ?? "").tag(NodeID?.some(id))
-                            }
-                        }
-                    } label: {
-                        Label(branchTitle, systemImage: "arrow.triangle.branch").lineLimit(1)
-                    }
-                    .buttonStyle(.glass)
+        Picker("Period", selection: $model.range) {
+            ForEach(GraphsContext.Range.allCases) { Text($0.title).tag($0) }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    /// The repertoire, in the toolbar as iOS 26 apps do; the icon is filled while filtering.
+    private var filterMenu: some View {
+        Menu {
+            Picker("Repertoire", selection: $model.scope) {
+                Text("All Repertoires").tag(StatisticsModel.Scope.all)
+                ForEach(app.library.entries.filter { !$0.needsSetup }) { entry in
+                    Text(entry.name).tag(StatisticsModel.Scope.repertoire(entry.id))
                 }
             }
-            Picker("Period", selection: $model.range) {
-                ForEach(GraphsContext.Range.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
+            .pickerStyle(.inline)
+        } label: {
+            Label("Filter", systemImage: model.scope == .all ? "line.3.horizontal.decrease.circle"
+                                                             : "line.3.horizontal.decrease.circle.fill")
         }
     }
 
@@ -105,10 +97,6 @@ struct StatisticsView: View {
         }
     }
 
-    private var branchTitle: String {
-        guard let branch = model.branch else { return "Whole Repertoire" }
-        return model.document?.tree.lineText(to: branch) ?? "Branch"
-    }
 }
 
 // MARK: Palette

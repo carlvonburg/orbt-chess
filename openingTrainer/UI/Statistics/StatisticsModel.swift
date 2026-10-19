@@ -3,7 +3,7 @@ import Observation
 import OpeningCore
 
 /// Loads cards and review logs for the Statistics tab: all repertoires (Anki's whole
-/// collection), one repertoire, or one branch of it.
+/// collection) or one repertoire.
 @Observable
 final class StatisticsModel {
     enum Scope: Hashable {
@@ -11,16 +11,12 @@ final class StatisticsModel {
         case repertoire(String)
     }
 
-    var scope = Scope.all {
-        didSet { if scope != oldValue { branch = nil } }
-    }
-    /// A branch of the selected repertoire; nil for all of it.
-    var branch: NodeID?
+    var scope = Scope.all
     var range = GraphsContext.Range.month
 
     private(set) var graphs: GraphsContext?
     private(set) var cards: [EPD: Card] = [:]
-    /// The open repertoire, for branches, reach and move names.
+    /// The open repertoire, for reach, opening branches and move names.
     private(set) var document: RepertoireDocument?
     private(set) var isLoading = false
 
@@ -59,7 +55,7 @@ final class StatisticsModel {
                 return
             }
             document = doc
-            let root = branch ?? RepertoireTree.rootID
+            let root = RepertoireTree.rootID
             let epds = doc.trainer.cardEPDs(under: root)
             let suspended = doc.trainer.suspendedCardEPDs(under: root)
             let studied = doc.sidecar.studyCards.filter { epds.contains($0.key) }
@@ -75,12 +71,11 @@ final class StatisticsModel {
 
     // MARK: Chess statistics
 
-    /// Reach of each card position under the selected branch.
+    /// Reach of each card position in the repertoire.
     private var reachByEPD: [EPD: Double] {
         guard let document else { return [:] }
-        let root = branch ?? RepertoireTree.rootID
         var result: [EPD: Double] = [:]
-        for id in document.trainer.cardNodes(under: root) {
+        for id in document.trainer.cardNodes() {
             guard let node = document.tree[id], let reach = document.coverage[id]?.reach else { continue }
             result[node.epd] = max(result[node.epd] ?? 0, reach)
         }
