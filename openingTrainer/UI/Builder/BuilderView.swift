@@ -201,26 +201,43 @@ struct BuilderView: View {
 struct TranspositionNote: View {
     let model: BuilderModel
     let target: NodeID
+    /// The board shows an unsaved draft that reaches `target`'s position.
+    var inDraft = false
 
     var body: some View {
-        Button { model.go(to: target) } label: {
-            HStack(alignment: .firstTextBaseline) {
-                Image(systemName: "arrow.triangle.branch").foregroundStyle(.blue)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Transposes. Lines continue after").font(.callout)
-                    Text(Format.moveList(model.tree.moves(to: target), startPly: model.tree.root.ply))
-                        .font(.callout.weight(.semibold))
-                        .lineLimit(2)
+        if inDraft {
+            // Not a link: going there would drop the draft. Saving it covers this position.
+            content(detail: "Save to cover this move order.")
+                .padding(.vertical, 6)
+        } else {
+            Button { model.go(to: target) } label: {
+                content(detail: nil)
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, 6)
+        }
+    }
+
+    private func content(detail: String?) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Image(systemName: "arrow.triangle.branch").foregroundStyle(.blue)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(inDraft ? "Transposed into" : "Transposes. Lines continue after").font(.callout)
+                Text(Format.moveList(model.tree.moves(to: target), startPly: model.tree.root.ply))
+                    .font(.callout.weight(.semibold))
+                    .lineLimit(2)
+                if let detail {
+                    Text(detail).font(.caption).foregroundStyle(.secondary)
                 }
-                Spacer()
+            }
+            Spacer()
+            if !inDraft {
                 Image(systemName: "chevron.right").foregroundStyle(.tertiary)
             }
-            .padding(10)
-            .background(.blue.opacity(0.12), in: .rect(cornerRadius: 10))
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .padding(.vertical, 6)
+        .padding(10)
+        .background(.blue.opacity(0.12), in: .rect(cornerRadius: 10))
+        .contentShape(Rectangle())
     }
 }
 
@@ -475,7 +492,8 @@ struct ReplyRow: View {
     let model: BuilderModel
 
     var body: some View {
-        let inRepertoire = reply.child != nil || reply.transposesTo != nil
+        let transposes = reply.child == nil && (reply.transposesTo != nil || model.transposition(after: reply.uci) != nil)
+        let inRepertoire = reply.child != nil || transposes
         let isGap = reply.required && !inRepertoire
         // Tapping opens the reply; one not in the repertoire is played on the board so you can
         // add your answer, and is saved with it.
@@ -489,13 +507,17 @@ struct ReplyRow: View {
             }
         } label: {
             HStack(spacing: 8) {
-                Text(reply.san).font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
+                HStack(spacing: 4) {
+                    Text(reply.san).font(.body.weight(.semibold))
+                    if transposes {
+                        TranspositionIcon()
+                    }
+                }
+                .frame(minWidth: 48, alignment: .leading)
                 if isGap {
                     Text("Gap").font(.caption2.weight(.bold)).foregroundStyle(.white)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(.orange, in: .capsule)
-                } else if reply.transposesTo != nil && reply.child == nil {
-                    Text("Transposes").font(.caption2).foregroundStyle(.blue)
                 }
                 Spacer()
                 Text(Format.seenEvery(reply.reach)).font(.caption.monospacedDigit())
@@ -623,7 +645,8 @@ struct CandidatesSection: View {
                           note: model.tree[parent.children[index]]?.note ?? "")
             }
         }
-        return CandidateRow(san: san, move: move, total: total, eval: eval?.text(for: uci), loading: loading, saved: saved,
+        return CandidateRow(san: san, move: move, total: total, eval: eval?.text(for: uci), loading: loading,
+                            transposes: model.transposition(after: uci) != nil, saved: saved,
                             select: { if let saved { model.go(to: saved.id) } else { select(uci) } })
             .deletable(saved?.id, model: model,
                        promote: saved.flatMap { saved in saved.index > 0 ? { model.document.promote(saved.id) } : nil })
@@ -753,6 +776,8 @@ struct CandidateRow: View {
     let eval: String?
     /// Stats not in yet: placeholders where they will be.
     var loading = false
+    /// Playing it reaches a position whose lines you already have elsewhere.
+    var transposes = false
     let saved: SavedMove?
     let select: () -> Void
 
@@ -760,7 +785,11 @@ struct CandidateRow: View {
         Button(action: select) {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 8) {
-                    Text(san).font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
+                    HStack(spacing: 4) {
+                        Text(san).font(.body.weight(.semibold))
+                        if transposes { TranspositionIcon() }
+                    }
+                    .frame(minWidth: 48, alignment: .leading)
                     Text(eval ?? "")
                         .font(.caption.monospacedDigit().weight(.semibold)).frame(width: 40)
                     if let move {
@@ -806,6 +835,16 @@ private struct StatsPlaceholder: View {
     }
 }
 
+/// Marks a move that leads into a position whose lines you already have.
+struct TranspositionIcon: View {
+    var body: some View {
+        Image(systemName: "arrow.triangle.branch")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.blue)
+            .accessibilityLabel("Transposes")
+    }
+}
+
 /// Stands in for an explorer candidate while the stats load.
 struct CandidatePlaceholderRow: View {
     var body: some View {
@@ -826,6 +865,7 @@ struct DraftPanel: View {
     let model: BuilderModel
 
     var body: some View {
+        let target = model.draftTransposition
         let replies = model.isUserTurnOnBoard ? nil : model.draftReplies
         // Every reply is below the target: the line is deep enough to save.
         let reached = model.reachOnBoard != nil && replies?.isEmpty == false
@@ -836,7 +876,9 @@ struct DraftPanel: View {
                 Text(name).font(.subheadline.weight(.semibold)).lineLimit(2)
             }
             HStack(spacing: 8) {
-                if reached {
+                if target != nil {
+                    Text("Transposed").font(.caption.weight(.semibold)).statusBadge(tint: .blue)
+                } else if reached {
                     Text("Coverage target reached").font(.caption.weight(.semibold)).statusBadge(tint: .green)
                 } else {
                     Text("New line, not saved").font(.caption).statusBadge()
@@ -850,7 +892,16 @@ struct DraftPanel: View {
         .padding(.top, 4)
         .builderRow(separator: false)
         .sensoryFeedback(.success, trigger: reached) { old, new in !old && new }
-        if model.isUserTurnOnBoard {
+        if let target, let node = model.tree[target] {
+            // Your lines from this position, with their coverage.
+            TranspositionNote(model: model, target: target, inDraft: true)
+                .builderRow(separator: false)
+            if node.sideToMove == model.document.color {
+                YourMovePanel(model: model, node: node)
+            } else {
+                RepliesPanel(model: model, replies: model.document.coverage[target]?.replies, saved: node)
+            }
+        } else if model.isUserTurnOnBoard {
             CandidatesSection(model: model, epd: model.position.epd, title: "Candidates",
                               select: model.play(uci:))
         } else {

@@ -39,10 +39,27 @@ final class BuilderModel {
     /// When the current position's lines are stored at another node (a transposition), that node.
     var continuation: NodeID? { draft.isEmpty ? tree.transpositionTarget(of: current) : nil }
 
-    /// The node whose moves the panels show: the current one, or where its lines continue.
-    var shownNode: RepertoireNode? { continuation.flatMap { tree[$0] } ?? node }
+    /// While a draft is on the board: a saved node with the same position whose lines continue
+    /// from it, i.e. the draft transposes into your repertoire.
+    var draftTransposition: NodeID? {
+        guard !draft.isEmpty, let candidates = tree.epdIndex[position.epd] else { return nil }
+        return candidates.filter { candidate in
+            candidate != current && tree[candidate]?.children.isEmpty == false && !tree.isAncestor(candidate, of: current)
+        }.min()
+    }
 
-    var canForward: Bool { draft.isEmpty && shownNode?.children.isEmpty == false }
+    /// The saved node with lines that `uci`, played on the board, leads into by another move
+    /// order. Nil when the move is your saved line itself, or reaches nothing you have.
+    func transposition(after uci: String) -> NodeID? {
+        guard let next = position.play(uci: uci)?.1, let candidates = tree.epdIndex[next.epd] else { return nil }
+        let ownChild = draft.isEmpty || draftTransposition != nil ? shownNode.flatMap { tree.child(of: $0.id, uci: uci) } : nil
+        return candidates.filter { $0 != ownChild && tree[$0]?.children.isEmpty == false }.min()
+    }
+
+    /// The node whose moves the panels show: the current one, or where its lines continue.
+    var shownNode: RepertoireNode? { (continuation ?? draftTransposition).flatMap { tree[$0] } ?? node }
+
+    var canForward: Bool { (draft.isEmpty || draftTransposition != nil) && shownNode?.children.isEmpty == false }
 
     var lastMove: PlayedMove? { draft.last ?? node?.move }
     var isUserTurnOnBoard: Bool { position.sideToMove == document.color }
@@ -78,6 +95,7 @@ final class BuilderModel {
 
     func go(to id: NodeID) {
         guard tree[id] != nil else { return }
+        if let target = draftTransposition, tree[id]?.parent == target { saveTransposingDraft() }
         draft = []
         current = id
         remember()
@@ -93,6 +111,7 @@ final class BuilderModel {
     }
 
     func forward() {
+        saveTransposingDraft()
         guard draft.isEmpty, let main = shownNode?.children.first else { return }
         current = main
         remember()
@@ -119,6 +138,7 @@ final class BuilderModel {
     }
 
     private func play(_ move: PlayedMove) {
+        saveTransposingDraft()
         if draft.isEmpty, let shown = shownNode, let child = tree.child(of: shown.id, uci: move.uci) {
             go(to: child)
         } else {
@@ -128,8 +148,15 @@ final class BuilderModel {
 
     /// Previews a reply or candidate from the panel as a draft move.
     func preview(uci: String) {
-        draft = []
+        if draftTransposition == nil { draft = [] }
         play(uci: uci)
+    }
+
+    /// Going on from a draft that transposes into your repertoire: saves the moves that reach
+    /// the position (they now cover it as a transposition), so you continue where its lines are
+    /// stored instead of copying them under the new move order.
+    private func saveTransposingDraft() {
+        if draftTransposition != nil { saveDraft() }
     }
 
     // MARK: Editing
@@ -176,7 +203,7 @@ final class BuilderModel {
     /// Arrows for the current node: your saved moves, or the opponent's replies sized by
     /// frequency with missing required replies as dashed orange arrows.
     var arrows: [BoardArrow] {
-        guard draft.isEmpty, let node = shownNode else { return [] }
+        guard draft.isEmpty || draftTransposition != nil, let node = shownNode else { return [] }
         if node.sideToMove == document.color {
             return node.children.enumerated().compactMap { i, child in
                 guard let move = tree[child]?.move else { return nil }
