@@ -327,7 +327,7 @@ struct NodeHeader: View {
                     // Anki's "leech" tag: a move you keep forgetting
                     Label("Leech", systemImage: "ant.fill")
                         .font(.caption.weight(.semibold))
-                        .glassChip(tint: .orange)
+                        .statusBadge(tint: .orange)
                         .accessibilityHint("You keep forgetting this move.")
                 }
             }
@@ -371,17 +371,17 @@ struct NodeHeader: View {
     private func statusChip(_ info: NodeCoverage?) -> some View {
         switch info?.status {
         case .gap:
-            Text("Your move is missing").font(.caption.weight(.semibold)).glassChip(tint: .orange)
+            Text("Your move is missing").font(.caption.weight(.semibold)).statusBadge(tint: .orange)
         case .pending:
-            Text("Stats not loaded yet").font(.caption).glassChip()
+            Text("Stats not loaded yet").font(.caption).statusBadge()
         case .belowTarget:
-            Text("Beyond your target").font(.caption).glassChip()
+            Text("Beyond your target").font(.caption).statusBadge()
         case .transposition:
-            Text("Transposes").font(.caption).glassChip(tint: .blue)
+            Text("Transposes").font(.caption).statusBadge(tint: .blue)
         case .alternative:
-            Text("Alternative line").font(.caption).glassChip()
+            Text("Alternative line").font(.caption).statusBadge()
         case .unknown:
-            Text("Stats unavailable").font(.caption).glassChip()
+            Text("Stats unavailable").font(.caption).statusBadge()
         default:
             EmptyView()
         }
@@ -768,9 +768,9 @@ struct DraftPanel: View {
             }
             HStack(spacing: 8) {
                 if reached {
-                    Text("Coverage target reached").font(.caption.weight(.semibold)).glassChip(tint: .green)
+                    Text("Coverage target reached").font(.caption.weight(.semibold)).statusBadge(tint: .green)
                 } else {
-                    Text("New line, not saved").font(.caption).glassChip()
+                    Text("New line, not saved").font(.caption).statusBadge()
                 }
                 if let reach = model.reachOnBoard {
                     Text("Seen \(Format.seenEvery(reach)) games").font(.caption).foregroundStyle(.secondary)

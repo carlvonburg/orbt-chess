@@ -105,11 +105,13 @@ enum LichessLinks {
 }
 
 extension View {
-    /// Small rounded "chip" with Liquid Glass.
-    func glassChip(tint: Color? = nil) -> some View {
+    /// A small status label: tinted text on a light tint of the same color, or secondary text
+    /// on a neutral fill. Not glass: it's content, not a control.
+    func statusBadge(tint: Color? = nil) -> some View {
         padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .glassEffect(tint.map { .regular.tint($0) } ?? .regular, in: .capsule)
+            .padding(.vertical, 4)
+            .foregroundStyle(tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.secondary))
+            .background(tint.map { AnyShapeStyle($0.opacity(0.18)) } ?? AnyShapeStyle(.fill.tertiary), in: .capsule)
     }
 }
 
