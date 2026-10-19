@@ -62,6 +62,19 @@ extension Sidecar {
         return next.map { Date(timeIntervalSince1970: TimeInterval($0)) }
     }
 
+    /// When the learning cards waiting for a later step are due, soonest first.
+    public func laterLearningDues(timing: SchedTiming) -> [Date] {
+        studyCards.values.filter { $0.queue == .learn && $0.due > timing.now }
+            .map { Date(timeIntervalSince1970: TimeInterval($0.due)) }
+            .sorted()
+    }
+
+    /// Reviews due tomorrow (Anki's "Due tomorrow" in today's statistics).
+    public func dueTomorrow(timing: SchedTiming) -> Int {
+        let tomorrow = Int64(timing.daysElapsed) + 1
+        return studyCards.values.filter { ($0.queue == .review || $0.queue == .dayLearn) && $0.due == tomorrow }.count
+    }
+
     /// New / learning / review counts without opening the PGN, as Anki's deck list computes
     /// them: learning within the learn-ahead limit, reviews and new cards within today's limits.
     public func estimatedStudyCounts(config: DeckConfig, timing: SchedTiming) -> CardQueues.Counts {

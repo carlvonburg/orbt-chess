@@ -21,7 +21,7 @@ public enum PracticeMode: String, Codable, CaseIterable, Identifiable, Sendable 
         }
     }
 
-    public static let `default` = PracticeMode.completeLinesOncePerSession
+    public static let `default` = PracticeMode.individualMoves
 }
 
 /// How one of your moves on a study line is handled.

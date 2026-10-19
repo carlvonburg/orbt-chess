@@ -7,6 +7,8 @@ enum TrainingDefaults {
     static let newPerDayKey = "training.newPerDay"
     static let reviewsPerDayKey = "training.reviewsPerDay"
     static let practiceModeKey = "training.practiceMode"
+    /// New moves added to today's limit by "Learn N New Moves" (Anki's custom study).
+    static let learnMoreCount = 5
 
     static var newPerDay: Int { UserDefaults.standard.object(forKey: newPerDayKey) as? Int ?? DeckConfig().newPerDay }
     static var reviewsPerDay: Int { UserDefaults.standard.object(forKey: reviewsPerDayKey) as? Int ?? DeckConfig().reviewsPerDay }

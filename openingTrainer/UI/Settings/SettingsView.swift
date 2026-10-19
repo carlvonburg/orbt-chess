@@ -6,6 +6,9 @@ struct SettingsView: View {
     @Environment(\.webAuthenticationSession) private var webAuth
     @Environment(\.dismiss) private var dismiss
     @State private var cacheCount = 0
+    @AppStorage(TrainingDefaults.newPerDayKey) private var newPerDay = DeckConfig().newPerDay
+    @AppStorage(TrainingDefaults.reviewsPerDayKey) private var reviewsPerDay = DeckConfig().reviewsPerDay
+    @AppStorage(TrainingDefaults.practiceModeKey) private var practiceMode = PracticeMode.default
 
     var body: some View {
         NavigationStack {
@@ -31,6 +34,27 @@ struct SettingsView: View {
                     Text("Lichess")
                 } footer: {
                     Text("Used only to read opening statistics from the Lichess explorer. No scopes are requested.")
+                }
+
+                Section {
+                    Stepper("New moves/day: \(newPerDay)", value: $newPerDay, in: 0...9999)
+                    Stepper("Maximum reviews/day: \(reviewsPerDay)", value: $reviewsPerDay, in: 0...9999, step: 10)
+                    PracticeModePicker(mode: $practiceMode)
+                } header: {
+                    Text("Study defaults")
+                } footer: {
+                    Text("For every repertoire. A repertoire's options can set its own. A line of new moves that has started is always finished.")
+                }
+
+                Section {
+                    LabeledContent("Learning steps", value: steps(DeckConfig().learnSteps))
+                    LabeledContent("Relearning steps", value: steps(DeckConfig().relearnSteps))
+                    LabeledContent("Desired retention", value: Format.percent(DeckConfig().desiredRetention))
+                    LabeledContent("Next day starts at", value: "\(SchedTiming.rolloverHour) AM")
+                } header: {
+                    Text("Scheduling")
+                } footer: {
+                    Text("Anki's defaults with FSRS.")
                 }
 
                 Section {
@@ -64,5 +88,9 @@ struct SettingsView: View {
             }
             .onAppear { cacheCount = model.stats.entryCount }
         }
+    }
+
+    private func steps(_ minutes: [Double]) -> String {
+        minutes.map { $0 < 60 ? "\(Int($0))m" : "\(Int($0 / 60))h" }.joined(separator: " ")
     }
 }

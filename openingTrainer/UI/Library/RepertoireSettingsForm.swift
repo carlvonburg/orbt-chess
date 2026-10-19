@@ -192,149 +192,122 @@ struct ChipGrid<Item: Hashable>: View {
     }
 }
 
-/// Daily limits and practice mode, as Anki's deck options: the preset (all repertoires), this
-/// repertoire, or today only.
+/// A repertoire's daily limits and practice mode: the defaults from Settings, or its own
+/// (Anki's "This deck" limits). One-day changes are custom study, from the overview.
 struct DailyPracticeDraft: Equatable {
-    enum Scope: String, CaseIterable, Identifiable {
-        case preset, deck, today
-        var id: Self { self }
-        var title: String {
-            switch self {
-            case .preset: "Default"
-            case .deck: "This Repertoire"
-            case .today: "Today Only"
-            }
-        }
-    }
-
-    var presetNew = TrainingDefaults.newPerDay
-    var presetReviews = TrainingDefaults.reviewsPerDay
-    var presetPracticeMode = TrainingDefaults.practiceMode
+    let presetNew = TrainingDefaults.newPerDay
+    let presetReviews = TrainingDefaults.reviewsPerDay
+    let presetPracticeMode = TrainingDefaults.practiceMode
     var limits = DeckLimits()
+    /// This repertoire's practice mode; nil uses the default.
     var practiceMode: PracticeMode?
-    var scope = Scope.preset
-    let today: Int
 
-    init(sidecar: Sidecar, today: Int) {
-        self.today = today
+    init(sidecar: Sidecar) {
         limits = sidecar.limits ?? DeckLimits()
+        // Limits for one day only are no longer offered; drop any left over.
+        limits.newLimitToday = nil
+        limits.reviewLimitToday = nil
         practiceMode = sidecar.practiceMode
-        if limits.newLimitToday?.today == today || limits.reviewLimitToday?.today == today {
-            scope = .today
-        } else if limits.newLimit != nil || limits.reviewLimit != nil {
-            scope = .deck
+    }
+
+    /// Off: this repertoire's own limits, starting from the defaults.
+    var useDefaultLimits: Bool {
+        get { limits.newLimit == nil && limits.reviewLimit == nil }
+        set {
+            if newValue {
+                limits = DeckLimits()
+            } else {
+                limits.newLimit = presetNew
+                limits.reviewLimit = presetReviews
+            }
         }
     }
 
-    /// The value shown for the selected scope; editing it sets that scope.
     var newPerDay: Int {
-        get {
-            switch scope {
-            case .preset: presetNew
-            case .deck: limits.newLimit ?? presetNew
-            case .today: limits.newLimitToday.flatMap { $0.today == today ? $0.limit : nil } ?? limits.newLimit ?? presetNew
-            }
-        }
-        set {
-            switch scope {
-            case .preset: presetNew = newValue
-            case .deck: limits.newLimit = newValue
-            case .today: limits.newLimitToday = DayLimit(limit: newValue, today: today)
-            }
-        }
+        get { limits.newLimit ?? presetNew }
+        set { limits.newLimit = newValue }
     }
 
     var reviewsPerDay: Int {
-        get {
-            switch scope {
-            case .preset: presetReviews
-            case .deck: limits.reviewLimit ?? presetReviews
-            case .today: limits.reviewLimitToday.flatMap { $0.today == today ? $0.limit : nil } ?? limits.reviewLimit ?? presetReviews
-            }
-        }
-        set {
-            switch scope {
-            case .preset: presetReviews = newValue
-            case .deck: limits.reviewLimit = newValue
-            case .today: limits.reviewLimitToday = DayLimit(limit: newValue, today: today)
-            }
-        }
+        get { limits.reviewLimit ?? presetReviews }
+        set { limits.reviewLimit = newValue }
     }
 
-    /// Choosing a narrower scope clears the narrower overrides when going back to a wider one.
-    mutating func select(_ newScope: Scope) {
-        switch newScope {
-        case .preset:
-            limits = DeckLimits()
-        case .deck:
-            limits.newLimitToday = nil
-            limits.reviewLimitToday = nil
-        case .today:
-            break
-        }
-        scope = newScope
-    }
-
-    func savePreset() {
-        UserDefaults.standard.set(presetNew, forKey: TrainingDefaults.newPerDayKey)
-        UserDefaults.standard.set(presetReviews, forKey: TrainingDefaults.reviewsPerDayKey)
-        UserDefaults.standard.set(presetPracticeMode.rawValue, forKey: TrainingDefaults.practiceModeKey)
+    var mode: PracticeMode {
+        get { practiceMode ?? presetPracticeMode }
+        set { practiceMode = newValue }
     }
 }
 
+/// A repertoire's options: the default limits or its own, and its practice mode.
 struct DailyPracticeSection: View {
     @Binding var draft: DailyPracticeDraft
 
     var body: some View {
         Section {
-            Picker("Limits apply to", selection: Binding(get: { draft.scope }, set: { draft.select($0) })) {
-                ForEach(DailyPracticeDraft.Scope.allCases) { Text($0.title).tag($0) }
+            Toggle("Use Default Limits", isOn: $draft.useDefaultLimits)
+            Group {
+                Stepper("New moves/day: \(draft.newPerDay)", value: $draft.newPerDay, in: 0...9999)
+                Stepper("Maximum reviews/day: \(draft.reviewsPerDay)", value: $draft.reviewsPerDay, in: 0...9999, step: 10)
             }
-            .pickerStyle(.segmented)
-            Stepper("New moves/day: \(draft.newPerDay)", value: $draft.newPerDay, in: 0...9999)
-            Stepper("Maximum reviews/day: \(draft.reviewsPerDay)", value: $draft.reviewsPerDay, in: 0...9999, step: 10)
+            .disabled(draft.useDefaultLimits)
+            .foregroundStyle(draft.useDefaultLimits ? .secondary : .primary)
         } header: {
             Text("Daily limits")
         } footer: {
-            Text(footer)
+            Text(draft.useDefaultLimits
+                 ? "From Settings. Turn off to set limits for this repertoire."
+                 : "Every day, for this repertoire only. To study more just today, use Study More Today in the overview.")
         }
 
         Section {
-            Picker("This repertoire", selection: $draft.practiceMode) {
-                Text("Default (\(draft.presetPracticeMode.title))").tag(PracticeMode?.none)
-                ForEach(PracticeMode.allCases) { Text($0.title).tag(PracticeMode?.some($0)) }
+            PracticeModePicker(mode: $draft.mode)
+            if draft.practiceMode != nil {
+                Button("Use Default (\(draft.presetPracticeMode.title))") { draft.practiceMode = nil }
             }
-            Picker("Default", selection: $draft.presetPracticeMode) {
-                ForEach(PracticeMode.allCases) { Text($0.title).tag($0) }
-            }
-        } header: {
-            Text("Practice")
         } footer: {
-            Text("Every line starts from the first move. Individual moves: the app plays the moves leading up to the ones you are asked. Complete lines: you play all your moves, every time or once per session. The default applies to all repertoires.")
-        }
-
-        let config = DeckConfig()
-        Section {
-            LabeledContent("Learning steps", value: steps(config.learnSteps))
-            LabeledContent("Relearning steps", value: steps(config.relearnSteps))
-            LabeledContent("Desired retention", value: Format.percent(config.desiredRetention))
-            LabeledContent("Next day starts at", value: "\(SchedTiming.rolloverHour) AM")
-        } header: {
-            Text("Scheduling")
-        } footer: {
-            Text("Anki's defaults with FSRS.")
+            Text(draft.practiceMode == nil ? "The default, set in Settings." : "Only for this repertoire.")
         }
     }
+}
 
-    private func steps(_ minutes: [Double]) -> String {
-        minutes.map { $0 < 60 ? "\(Int($0))m" : "\(Int($0 / 60))h" }.joined(separator: " ")
+/// The three practice modes, each with what it does.
+struct PracticeModePicker: View {
+    @Binding var mode: PracticeMode
+
+    var body: some View {
+        NavigationLink {
+            List {
+                ForEach(PracticeMode.allCases) { option in
+                    Button { mode = option } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(option.title)
+                                Text(option.detail).font(.footnote).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if option == mode { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                        }
+                    }
+                    .tint(.primary)
+                    .accessibilityAddTraits(option == mode ? .isSelected : [])
+                }
+            }
+            .navigationTitle("Practice")
+            .navigationBarTitleDisplayMode(.inline)
+        } label: {
+            LabeledContent("Practice", value: mode.title)
+        }
     }
+}
 
-    private var footer: String {
-        switch draft.scope {
-        case .preset: "The default for all repertoires. A line of new moves that has started is always finished."
-        case .deck: "Only for this repertoire."
-        case .today: "Only for this repertoire, today."
+extension PracticeMode {
+    /// Who plays your moves on the way to the ones you're asked.
+    var detail: String {
+        switch self {
+        case .individualMoves: "The app plays the moves leading up to the ones you're asked."
+        case .completeLinesEveryTime: "You play all your moves on every line."
+        case .completeLinesOncePerSession: "You play your moves the first time they come up; after that the app does."
         }
     }
 }

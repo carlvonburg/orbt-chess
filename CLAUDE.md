@@ -63,8 +63,9 @@ recomputes only the edited subtree and its ancestors.
 ## Training (see OpeningCore/Training/Anki, ported from Anki's rslib scheduler)
 Follow Anki's code, not invented rules. A card is a position where it's your move (one per
 EPD). States, learning steps (1m 10m, relearn 10m), FSRS-6, fuzz, day rollover at 4 AM,
-learn-ahead 20 min, queue order and daily limits (preset / this repertoire / today only)
-are Anki's. Chess additions, kept minimal and listed in `Study.swift`: lines start at move 1
+learn-ahead 20 min, queue order and daily limits are Anki's. The defaults (Anki's preset) are
+edited in Settings; a repertoire's options set its own limits; one-day changes are custom study
+(Study More Today). Chess additions, kept minimal and listed in `Study.swift`: lines start at move 1
 (or take back to where they part from the last line, when shorter) and the practice mode
 decides who plays your earlier moves; one line answers every queued card on it; moves you play that aren't due are reviews ahead (filtered deck); new cards are
 introduced a line at a time (most reached first) and a started line is finished past the

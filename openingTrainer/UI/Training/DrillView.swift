@@ -36,6 +36,8 @@ final class DrillModel {
 
     let document: RepertoireDocument
     let mode: DrillMode
+    /// New moves to add to today's limit before studying (Anki's custom study).
+    let learnMore: Int
     private(set) var session: StudySession?
     private(set) var line: StudyLine?
     private(set) var run: LineRun?
@@ -52,9 +54,10 @@ final class DrillModel {
     /// Cards already answered on the current line (a wrong try answers once).
     @ObservationIgnored private var answeredOnLine: Set<EPD> = []
 
-    init(document: RepertoireDocument, mode: DrillMode) {
+    init(document: RepertoireDocument, mode: DrillMode, learnMore: Int = 0) {
         self.document = document
         self.mode = mode
+        self.learnMore = learnMore
     }
 
     var color: Side { document.color }
@@ -108,6 +111,7 @@ final class DrillModel {
             if interrupted { interrupted = false; continueLine() }
             return
         }
+        if learnMore > 0 { document.extendNewLimitToday(by: learnMore) }
         session = document.studySession(branch: { if case .branch(let id) = mode { id } else { nil } }())
         nextLine()
     }
@@ -301,9 +305,9 @@ struct DrillView: View {
     /// Pushed onto the caller's navigation stack (Study Now) instead of presented full screen.
     private let pushed: Bool
 
-    init(document: RepertoireDocument, mode: DrillMode, pushed: Bool = false,
+    init(document: RepertoireDocument, mode: DrillMode, pushed: Bool = false, learnMore: Int = 0,
          next: (name: String, start: () -> Void)? = nil) {
-        _model = State(initialValue: DrillModel(document: document, mode: mode))
+        _model = State(initialValue: DrillModel(document: document, mode: mode, learnMore: learnMore))
         self.pushed = pushed
         self.next = next
     }

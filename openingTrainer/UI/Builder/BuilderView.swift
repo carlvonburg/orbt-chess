@@ -15,8 +15,9 @@ struct BuilderView: View {
         var id: String { rawValue }
     }
 
-    init(document: RepertoireDocument, start: NodeID? = nil) {
+    init(document: RepertoireDocument, start: NodeID? = nil, showGaps: Bool = false) {
         _model = State(initialValue: BuilderModel(document: document, start: start))
+        _sheet = State(initialValue: showGaps ? .gaps : nil)
     }
 
     private var document: RepertoireDocument { model.document }

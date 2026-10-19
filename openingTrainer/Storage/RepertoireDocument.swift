@@ -395,14 +395,33 @@ final class RepertoireDocument {
 
     /// Anki's custom study "Increase today's new card limit".
     func extendNewLimitToday(by count: Int, timing: SchedTiming = SchedTiming()) {
+        extendLimitsToday(new: count, review: 0, timing: timing)
+    }
+
+    /// Anki's custom study "Increase today's review card limit".
+    func extendReviewLimitToday(by count: Int, timing: SchedTiming = SchedTiming()) {
+        extendLimitsToday(new: 0, review: count, timing: timing)
+    }
+
+    /// Reviews due today beyond today's review limit (what Anki's custom study shows as
+    /// "N more available").
+    func reviewsBeyondLimit(timing: SchedTiming = SchedTiming()) -> Int {
+        let due = sidecar.studyCards.filter { epd, card in
+            (card.queue == .review || card.queue == .dayLearn) && card.due <= Int64(timing.daysElapsed)
+                && trainer.cardEPDSet.contains(epd)
+        }.count
+        return max(0, due - studyCounts(timing: timing).review)
+    }
+
+    private func extendLimitsToday(new: Int, review: Int, timing: SchedTiming) {
         var stats = sidecar.studyStats ?? DeckStudyStats()
-        stats.extendLimits(today: timing.daysElapsed, new: count, review: 0)
+        stats.extendLimits(today: timing.daysElapsed, new: new, review: review)
         sidecar.studyStats = stats
         revision += 1
         scheduleSidecarSave(delay: 0.5)
     }
 
-    /// Daily limits ("This deck" / "Today only") and practice mode for this repertoire.
+    /// Daily limits ("This deck") and practice mode for this repertoire.
     func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?) {
         sidecar.limits = limits.isEmpty ? nil : limits
         sidecar.practiceMode = practiceMode

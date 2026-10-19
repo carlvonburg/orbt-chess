@@ -8,6 +8,7 @@ struct RepertoireOverviewView: View {
     let document: RepertoireDocument
     let editLines: () -> Void
     let study: () -> Void
+    let practice: () -> Void
     @State private var sheet: Sheet?
     @State private var graphs: GraphsContext?
 
@@ -85,10 +86,43 @@ struct RepertoireOverviewView: View {
                 }
                 .buttonStyle(.glassProminent)
             } else {
-                Label(doneText(stats), systemImage: "checkmark.circle")
-                    .foregroundStyle(.secondary)
+                Label(doneText(stats), systemImage: stats.progress.studied > 0 ? "checkmark.circle.fill" : "checkmark.circle")
+                    .foregroundStyle(stats.progress.studied > 0 ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
+            }
+            if stats.progress.cards > 0 {
+                studyMoreMenu(stats)
             }
         }
+    }
+
+    /// Anki's custom study: raise today's limits, or practice every learned move. Only today
+    /// changes; the repertoire's limits stay as they are.
+    private func studyMoreMenu(_ stats: EntryStats) -> some View {
+        let extraReviews = document.reviewsBeyondLimit()
+        return Menu {
+            if stats.progress.notStudied > 0 {
+                Section("\(stats.progress.notStudied) new moves not studied yet") {
+                    ForEach([5, 10, 20], id: \.self) { n in
+                        Button("Learn \(n) More New Moves", systemImage: "sparkles") {
+                            document.extendNewLimitToday(by: n)
+                            study()
+                        }
+                    }
+                }
+            }
+            if extraReviews > 0 {
+                Button("Review \(extraReviews) More Moves", systemImage: "arrow.clockwise") {
+                    document.extendReviewLimitToday(by: extraReviews)
+                    study()
+                }
+            }
+            if stats.progress.studied > 0 {
+                Button("Practice the Whole Repertoire", systemImage: "arrow.trianglehead.2.clockwise", action: practice)
+            }
+        } label: {
+            Text("Study More Today").frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.glass)
     }
 
     private func doneText(_ stats: EntryStats) -> String {

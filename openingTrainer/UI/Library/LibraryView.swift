@@ -11,6 +11,11 @@ enum LibraryRoute: Hashable {
     case overview(String)
     case builder(String)
     case study(String)
+    /// Study with today's new limit raised (Anki's custom study).
+    case learnMore(String)
+    case gaps(String)
+    /// Every studied move, as a branch session over the whole repertoire.
+    case practice(String)
 }
 
 /// Anki's deck list: today's totals, then one row per repertoire. A row opens the overview.
@@ -57,12 +62,19 @@ struct LibraryView: View {
                         destination(id) { doc in
                             RepertoireOverviewView(document: doc,
                                                    editLines: { path.append(.builder(doc.entryID)) },
-                                                   study: { path.append(.study(doc.entryID)) })
+                                                   study: { path.append(.study(doc.entryID)) },
+                                                   practice: { path.append(.practice(doc.entryID)) })
                         }
                     case .builder(let id):
                         destination(id) { BuilderView(document: $0) }
                     case .study(let id):
                         destination(id) { DrillView(document: $0, mode: .study, pushed: true) }
+                    case .learnMore(let id):
+                        destination(id) { DrillView(document: $0, mode: .study, pushed: true, learnMore: TrainingDefaults.learnMoreCount) }
+                    case .gaps(let id):
+                        destination(id) { BuilderView(document: $0, showGaps: true) }
+                    case .practice(let id):
+                        destination(id) { DrillView(document: $0, mode: .branch(RepertoireTree.rootID), pushed: true) }
                     }
                 }
         }
@@ -156,11 +168,9 @@ struct LibraryView: View {
                     SignInBanner()
                 }
                 Section {
-                    TodayCard(counts: stats.values.reduce(into: CardQueues.Counts()) {
-                        $0.new += $1.counts.new
-                        $0.learning += $1.counts.learning
-                        $0.review += $1.counts.review
-                    }, today: today.today, streak: today.streak) { studyAll = true }
+                    TodayCard(entries: library.entries.filter { !$0.needsSetup }.map { ($0, stats[$0.id]!) },
+                              today: today.today, streak: today.streak,
+                              studyAll: { studyAll = true }, open: { path.append($0) })
                 }
                 let shown = visibleEntries(stats)
                 if shown.isEmpty {
@@ -284,39 +294,212 @@ private struct EntrySheet: Identifiable {
 }
 
 /// Today across all repertoires: Anki's due totals and "Studied N cards in M minutes today".
+/// With nothing due it says why (done for now, caught up, nothing studied yet) and offers
+/// what can still be done: Anki's custom study (more new moves, practice) or filling gaps.
 private struct TodayCard: View {
-    let counts: CardQueues.Counts
+    typealias Item = (entry: RepertoireEntry, stats: EntryStats)
+
+    let entries: [Item]
     let today: GraphsContext.Today?
     let streak: Streak
     let studyAll: () -> Void
+    let open: (LibraryRoute) -> Void
+
+    private enum Phase {
+        case due
+        /// No moves saved yet in any repertoire.
+        case empty
+        /// Learning moves come back later today.
+        case doneForNow(count: Int, at: Date)
+        /// Nothing due and nothing studied today.
+        case nothingDue
+        case caughtUp
+    }
+
+    private var counts: CardQueues.Counts {
+        entries.reduce(into: CardQueues.Counts()) {
+            $0.new += $1.stats.counts.new
+            $0.learning += $1.stats.counts.learning
+            $0.review += $1.stats.counts.review
+        }
+    }
+
+    private var studiedToday: Bool { (today?.answerCount ?? 0) > 0 }
+    private var withMoves: [Item] { entries.filter { $0.stats.progress.cards > 0 } }
+    private var unlearned: [Item] {
+        entries.filter { $0.stats.progress.notStudied > 0 }.sorted { $0.stats.progress.notStudied > $1.stats.progress.notStudied }
+    }
+    private var withGaps: [Item] { entries.filter { $0.stats.gaps > 0 }.sorted { $0.stats.gaps > $1.stats.gaps } }
+    private var gapCount: Int { entries.reduce(0) { $0 + $1.stats.gaps } }
+
+    private var phase: Phase {
+        if counts.total > 0 { return .due }
+        if withMoves.isEmpty { return .empty }
+        let learning = entries.flatMap(\.stats.laterLearning).filter { Calendar.current.isDateInToday($0) }
+        if let first = learning.min() { return .doneForNow(count: learning.count, at: first) }
+        if !studiedToday && !unlearned.isEmpty { return .nothingDue }
+        return .caughtUp
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Today").font(.headline)
-                Spacer()
-                HStack(spacing: 10) {
-                    count(counts.new, StudyColors.new)
-                    count(counts.learning, StudyColors.learning)
-                    count(counts.review, StudyColors.review)
+            switch phase {
+            case .due:
+                header { Text("Today") } trailing: { dueCounts }
+                Text(studiedText).font(.footnote).foregroundStyle(.secondary)
+                if streak.current > 0 { streakLabel }
+                Button(action: studyAll) {
+                    Text("Study All").frame(maxWidth: .infinity)
                 }
-                .font(.headline.monospacedDigit())
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(counts.new) new, \(counts.learning) learning, \(counts.review) to review")
+                .buttonStyle(.glassProminent)
+            case .empty:
+                Text("Nothing to study yet").font(.headline)
+                Text("Enter the moves from a book or video, then study them here.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                action("Add Moves", "plus", entries, prominent: true, detail: { _ in nil }) { .builder($0) }
+            case .doneForNow(let count, let at):
+                doneHeader("Done for Now", "checkmark.circle.fill")
+                if studiedToday { studiedLine }
+                Label("\(count) learning \(count == 1 ? "move" : "moves") due at \(at.formatted(date: .omitted, time: .shortened))",
+                      systemImage: "clock")
+                    .font(.footnote).foregroundStyle(.secondary)
+                moreActions
+            case .nothingDue:
+                header { Text("Nothing Due Today") } trailing: { streakBadge }
+                if streak.current > 0 {
+                    Text("Learn a few new moves to keep your \(streak.current)-day streak.")
+                        .font(.footnote).foregroundStyle(.orange)
+                }
+                nextLine
+                action("Learn \(TrainingDefaults.learnMoreCount) New Moves", "sparkles", unlearned, prominent: true,
+                       detail: { "\($0.progress.notStudied) not studied" }) { .learnMore($0) }
+                if !withGaps.isEmpty { gapsAction }
+            case .caughtUp:
+                doneHeader("All Caught Up", "checkmark.seal.fill")
+                if studiedToday { studiedLine }
+                if unlearned.isEmpty && withGaps.isEmpty {
+                    Text("Every move you've saved is learned.").font(.footnote).foregroundStyle(.secondary)
+                }
+                nextLine
+                moreActions
             }
-            Text(studiedText).font(.footnote).foregroundStyle(.secondary)
-            if streak.current > 0 {
-                Label(streakText, systemImage: "flame.fill")
-                    .font(.footnote)
-                    .foregroundStyle(streak.studiedToday ? .orange : .secondary)
-            }
-            Button(action: studyAll) {
-                Text("Study All").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.glassProminent)
-            .disabled(counts.total == 0)
         }
         .padding(.vertical, 4)
+    }
+
+    // MARK: Parts
+
+    private func header(@ViewBuilder _ title: () -> some View, @ViewBuilder trailing: () -> some View) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            title().font(.headline)
+            Spacer()
+            trailing()
+        }
+    }
+
+    private func doneHeader(_ title: String, _ icon: String) -> some View {
+        header { Label(title, systemImage: icon).foregroundStyle(.green) } trailing: { streakBadge }
+    }
+
+    private var dueCounts: some View {
+        HStack(spacing: 10) {
+            count(counts.new, StudyColors.new)
+            count(counts.learning, StudyColors.learning)
+            count(counts.review, StudyColors.review)
+        }
+        .font(.headline.monospacedDigit())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(counts.new) new, \(counts.learning) learning, \(counts.review) to review")
+    }
+
+    @ViewBuilder
+    private var streakBadge: some View {
+        if streak.current > 0 {
+            Label("\(streak.current) \(streak.current == 1 ? "day" : "days")", systemImage: "flame.fill")
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(streak.studiedToday ? .orange : .secondary)
+                .accessibilityLabel(streakText)
+        }
+    }
+
+    private var streakLabel: some View {
+        Label(streakText, systemImage: "flame.fill")
+            .font(.footnote)
+            .foregroundStyle(streak.studiedToday ? .orange : .secondary)
+    }
+
+    private var studiedLine: some View {
+        Text(studiedText).font(.footnote)
+    }
+
+    /// Tomorrow's reviews, or when the next one is due.
+    @ViewBuilder
+    private var nextLine: some View {
+        let tomorrow = entries.reduce(0) { $0 + $1.stats.dueTomorrow }
+        if tomorrow > 0 {
+            Label("\(tomorrow) \(tomorrow == 1 ? "review" : "reviews") tomorrow", systemImage: "calendar")
+                .font(.footnote).foregroundStyle(.secondary)
+        } else if let next = entries.compactMap(\.stats.nextDue).min() {
+            Label("Next review \(next.formatted(.relative(presentation: .named)))", systemImage: "calendar")
+                .font(.footnote).foregroundStyle(.secondary)
+        }
+    }
+
+    /// What can still be done today: new moves and gaps, or else practice and adding lines.
+    @ViewBuilder
+    private var moreActions: some View {
+        HStack(spacing: 8) {
+            if unlearned.isEmpty && withGaps.isEmpty {
+                action("Practice", "arrow.trianglehead.2.clockwise", withMoves.filter { $0.stats.progress.studied > 0 },
+                       detail: { "\($0.progress.studied) moves" }) { .practice($0) }
+                action("Add Lines", "plus", withMoves.sorted { $0.stats.completion < $1.stats.completion },
+                       detail: { "\(Format.percent($0.completion)) built" }) { .builder($0) }
+            } else {
+                if !unlearned.isEmpty {
+                    action("Learn \(TrainingDefaults.learnMoreCount) New", "sparkles", unlearned,
+                           detail: { "\($0.progress.notStudied) not studied" }) { .learnMore($0) }
+                }
+                if !withGaps.isEmpty { gapsAction }
+            }
+        }
+    }
+
+    private var gapsAction: some View {
+        action(gapCount == 1 ? "Fill 1 Gap" : "Fill \(gapCount) Gaps", "puzzlepiece", withGaps, tint: .orange,
+               detail: { $0.gaps == 1 ? "1 gap" : "\($0.gaps) gaps" }) { .gaps($0) }
+    }
+
+    /// A button for one repertoire, or a menu to pick one of several.
+    @ViewBuilder
+    private func action(_ title: String, _ icon: String, _ items: [Item], prominent: Bool = false, tint: Color? = nil,
+                        detail: @escaping (EntryStats) -> String?, route: @escaping (String) -> LibraryRoute) -> some View {
+        let label = Label(title, systemImage: icon)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .foregroundStyle(tint ?? (prominent ? .white : .accentColor))
+            .frame(maxWidth: .infinity)
+        Group {
+            if items.count == 1, let item = items.first {
+                Button { open(route(item.entry.id)) } label: { label }
+            } else {
+                Menu {
+                    ForEach(items, id: \.entry.id) { item in
+                        Button { open(route(item.entry.id)) } label: {
+                            Text(item.entry.name)
+                            if let text = detail(item.stats) { Text(text) }
+                        }
+                    }
+                } label: { label }
+            }
+        }
+        .modifier(GlassButton(prominent: prominent))
+    }
+
+    private struct GlassButton: ViewModifier {
+        let prominent: Bool
+        func body(content: Content) -> some View {
+            if prominent { content.buttonStyle(.glassProminent) } else { content.buttonStyle(.glass) }
+        }
     }
 
     private var studiedText: String {
@@ -365,8 +548,7 @@ struct LibraryRow: View {
                     Text(entry.name).font(.headline).lineLimit(1)
                     Spacer(minLength: 0)
                     if status == nil {
-                        DueCounts(counts: stats.counts, progress: stats.progress)
-                            .layoutPriority(1)
+                        dueStatus.layoutPriority(1)
                     }
                 }
                 if let status {
@@ -378,6 +560,22 @@ struct LibraryRow: View {
                 }
         }
         .padding(.vertical, 4)
+    }
+
+    /// Today's counts; with nothing due after studying, when it's due next or that it's done.
+    @ViewBuilder
+    private var dueStatus: some View {
+        if stats.counts.total == 0 && stats.progress.studied > 0 {
+            if let next = stats.laterLearning.first, Calendar.current.isDateInToday(next) {
+                Label(next.formatted(date: .omitted, time: .shortened), systemImage: "clock")
+                    .font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
+                    .accessibilityLabel("Learning moves due at \(next.formatted(date: .omitted, time: .shortened))")
+            } else {
+                Label("Done", systemImage: "checkmark").font(.subheadline).foregroundStyle(.green)
+            }
+        } else {
+            DueCounts(counts: stats.counts, progress: stats.progress)
+        }
     }
 
     @ViewBuilder
@@ -463,6 +661,10 @@ struct EntryStats {
     var savedMoves = 0
     var progress = Trainer.Progress()
     var counts = CardQueues.Counts()
+    /// Learning moves waiting for a later step today, soonest first.
+    var laterLearning: [Date] = []
+    var dueTomorrow = 0
+    var nextDue: Date?
     /// Learning and review cards waiting today.
     var due: Int { counts.learning + counts.review }
 
@@ -474,6 +676,7 @@ struct EntryStats {
         savedMoves = document.savedMoveCount
         progress = document.learningProgress()
         counts = document.studyCounts()
+        setDue(document.sidecar)
     }
 
     init(entry: RepertoireEntry, document: RepertoireDocument?) {
@@ -488,11 +691,19 @@ struct EntryStats {
         guard let sidecar else { return }
         counts = sidecar.estimatedStudyCounts(config: TrainingDefaults.config, timing: SchedTiming())
         progress = sidecar.estimatedProgress
+        setDue(sidecar)
         guard let s = sidecar.summary else { return }
         completion = s.completion
         gaps = s.gapCount
         // Older summaries have no move count: anything with your moves has saved moves.
         savedMoves = s.savedMoveCount ?? s.cardCount
+    }
+
+    private mutating func setDue(_ sidecar: Sidecar) {
+        let timing = SchedTiming()
+        laterLearning = sidecar.laterLearningDues(timing: timing)
+        dueTomorrow = sidecar.dueTomorrow(timing: timing)
+        nextDue = sidecar.nextDue(timing: timing)
     }
 }
 
@@ -665,8 +876,7 @@ struct RepertoireSettingsSheet: View {
     }
 }
 
-/// Anki's deck options: daily limits (default preset, this repertoire, today only), practice
-/// mode and the scheduling the app uses.
+/// Anki's deck options: this repertoire's daily limits (or the defaults) and practice mode.
 struct StudyOptionsSheet: View {
     @Environment(\.dismiss) private var dismiss
     let document: RepertoireDocument
@@ -674,7 +884,7 @@ struct StudyOptionsSheet: View {
 
     init(document: RepertoireDocument) {
         self.document = document
-        _practice = State(initialValue: DailyPracticeDraft(sidecar: document.sidecar, today: SchedTiming().daysElapsed))
+        _practice = State(initialValue: DailyPracticeDraft(sidecar: document.sidecar))
     }
 
     var body: some View {
@@ -690,7 +900,6 @@ struct StudyOptionsSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", systemImage: "checkmark") {
-                        practice.savePreset()
                         document.updateStudySettings(limits: practice.limits, practiceMode: practice.practiceMode)
                         dismiss()
                     }

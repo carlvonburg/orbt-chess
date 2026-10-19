@@ -79,6 +79,11 @@ struct TrainingTests {
         sidecar.studyCards[ChessPosition.start.play(san: "e4")!.1.epd] = learning
         #expect(sidecar.nextDue(timing: timing) == Date(timeIntervalSince1970: 60_000))
         #expect(sidecar.estimatedProgress.learning == 1 && sidecar.estimatedProgress.young == 1)
+        #expect(sidecar.laterLearningDues(timing: timing) == [Date(timeIntervalSince1970: 60_000)])
+        #expect(sidecar.dueTomorrow(timing: timing) == 0)
+        review.due = 11
+        sidecar.studyCards[ChessPosition.start.epd] = review
+        #expect(sidecar.dueTomorrow(timing: timing) == 1)
     }
 
     @Test func alternativesAreSuspendedAndKeepProgress() {
