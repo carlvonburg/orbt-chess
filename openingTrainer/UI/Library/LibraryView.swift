@@ -16,6 +16,8 @@ enum LibraryRoute: Hashable {
     case gaps(String)
     /// Every studied move, as a branch session over the whole repertoire.
     case practice(String)
+    /// Today's moves of every repertoire that has some, one after another.
+    case studyAll([String])
 }
 
 /// Anki's deck list: today's totals, then one row per repertoire. A row opens the overview.
@@ -29,7 +31,6 @@ struct LibraryView: View {
     @State private var sheet: EntrySheet?
     @State private var errorMessage: String?
     @State private var showSettings = false
-    @State private var studyAll = false
     @State private var today = LibraryTodayModel()
     @AppStorage("library.sort") private var sort = LibrarySort.name
     @AppStorage("library.side") private var sideFilter = LibrarySideFilter.all
@@ -73,6 +74,8 @@ struct LibraryView: View {
                         destination(id) { DrillView(document: $0, mode: .study, pushed: true, learnMore: TrainingDefaults.learnMoreCount) }
                     case .gaps(let id):
                         destination(id) { BuilderView(document: $0, showGaps: true) }
+                    case .studyAll(let ids):
+                        StudyAllView(entries: ids.compactMap { model.library.entry(id: $0) })
                     case .practice(let id):
                         destination(id) { DrillView(document: $0, mode: .branch(RepertoireTree.rootID), pushed: true) }
                     }
@@ -90,11 +93,6 @@ struct LibraryView: View {
             } placeholder: {
                 ProgressView("Opening \(sheet.entry.name)…")
             }
-        }
-        .fullScreenCover(isPresented: $studyAll) {
-            StudyAllView(entries: model.library.entries.filter {
-                !$0.needsSetup && EntryStats(entry: $0, document: model.documents[$0.id]).counts.total > 0
-            })
         }
         .sheet(isPresented: $showNew) {
             NewRepertoireSheet { entry in path = [.overview(entry.id), .builder(entry.id)] }
@@ -161,7 +159,7 @@ struct LibraryView: View {
                 Section {
                     TodayCard(entries: library.entries.filter { !$0.needsSetup }.map { ($0, stats[$0.id]!) },
                               today: today.today, streak: today.streak,
-                              studyAll: { studyAll = true }, open: { path.append($0) })
+                              studyAll: { path.append(.studyAll(studyAllEntries)) }, open: { path.append($0) })
                 }
                 let shown = visibleEntries(stats)
                 if shown.isEmpty {
@@ -193,6 +191,13 @@ struct LibraryView: View {
                 await today.load(model)
             }
         }
+    }
+
+    /// Repertoires with moves due today, in list order.
+    private var studyAllEntries: [String] {
+        model.library.entries.filter {
+            !$0.needsSetup && EntryStats(entry: $0, document: model.documents[$0.id]).counts.total > 0
+        }.map(\.id)
     }
 
     private struct TodayKey: Hashable {
