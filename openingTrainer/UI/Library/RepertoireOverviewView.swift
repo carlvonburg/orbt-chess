@@ -88,9 +88,10 @@ struct RepertoireOverviewView: View {
             } else {
                 Label(doneText(stats), systemImage: stats.progress.studied > 0 ? "checkmark.circle.fill" : "checkmark.circle")
                     .foregroundStyle(stats.progress.studied > 0 ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
-            }
-            if stats.progress.cards > 0 {
-                studyMoreMenu(stats)
+                // Done for today: Study More Today takes Study Now's place.
+                if stats.progress.cards > 0 {
+                    studyMoreMenu(stats)
+                }
             }
         }
     }
@@ -122,7 +123,7 @@ struct RepertoireOverviewView: View {
         } label: {
             Text("Study More Today").frame(maxWidth: .infinity)
         }
-        .buttonStyle(.glass)
+        .buttonStyle(.glassProminent)
     }
 
     private func doneText(_ stats: EntryStats) -> String {

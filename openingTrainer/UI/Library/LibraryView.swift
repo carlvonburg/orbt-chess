@@ -562,20 +562,28 @@ struct LibraryRow: View {
         .padding(.vertical, 4)
     }
 
-    /// Today's counts; with nothing due after studying, when it's due next or that it's done.
+    /// Today's counts; with nothing due after studying, when this repertoire is studied next.
+    /// Never "done": building progress and gaps are shown below.
     @ViewBuilder
     private var dueStatus: some View {
         if stats.counts.total == 0 && stats.progress.studied > 0 {
-            if let next = stats.laterLearning.first, Calendar.current.isDateInToday(next) {
-                Label(next.formatted(date: .omitted, time: .shortened), systemImage: "clock")
+            if let next = stats.nextDue {
+                let text = Self.nextStudyText(next)
+                Label(text, systemImage: Calendar.current.isDateInToday(next) ? "clock" : "calendar")
                     .font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
-                    .accessibilityLabel("Learning moves due at \(next.formatted(date: .omitted, time: .shortened))")
-            } else {
-                Label("Done", systemImage: "checkmark").font(.subheadline).foregroundStyle(.green)
+                    .accessibilityLabel("Next study \(text)")
             }
         } else {
             DueCounts(counts: stats.counts, progress: stats.progress)
         }
+    }
+
+    /// A time today, "Tomorrow", or "In N days".
+    static func nextStudyText(_ date: Date, now: Date = .now) -> String {
+        let calendar = Calendar.current
+        if calendar.isDate(date, inSameDayAs: now) { return date.formatted(date: .omitted, time: .shortened) }
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: date)).day ?? 0
+        return days <= 1 ? "Tomorrow" : "In \(days) days"
     }
 
     @ViewBuilder
