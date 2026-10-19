@@ -402,7 +402,10 @@ private struct CardCountsCard: View {
             ("Relearning", c.relearn, StudyColors.relearningGroup), ("Young", c.young, StudyColors.young),
             ("Mature", c.mature, StudyColors.mature), ("Suspended", c.suspended, StudyColors.suspended),
         ]
-        StatCard(title: "Move Counts", subtitle: "\(c.total) moves. Mature: shown again in 21 days or more.") {
+        let suspended = c.suspended > 0
+            ? " Suspended: your moves below alternative moves. They keep their progress and are studied again if their line becomes the main line."
+            : ""
+        StatCard(title: "Move Counts", subtitle: "\(c.total) moves. Mature: shown again in 21 days or more.\(suspended)") {
             HStack(spacing: 16) {
                 Chart(Array(items.enumerated()), id: \.offset) { _, item in
                     SectorMark(angle: .value("Moves", item.1), innerRadius: .ratio(0.6), angularInset: 1)

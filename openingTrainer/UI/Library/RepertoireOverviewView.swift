@@ -1,8 +1,8 @@
 import OpeningCore
 import SwiftUI
 
-/// Anki's deck overview for one repertoire: building progress, today's counts with Study Now
-/// and Options, and a short version of its statistics.
+/// Anki's deck overview for one repertoire: building progress, today's counts and Options,
+/// and a short version of its statistics. The study action is pinned at the bottom (iOS 26).
 struct RepertoireOverviewView: View {
     @Environment(AppModel.self) private var app
     let document: RepertoireDocument
@@ -22,8 +22,10 @@ struct RepertoireOverviewView: View {
         List {
             buildSection(stats)
             studySection(stats)
-            statisticsSection(stats)
         }
+        .safeAreaBar(edge: .bottom) { studyBar(stats) }
+        // A detail screen with its own actions at the bottom, like the study screen.
+        .toolbarVisibility(.hidden, for: .tabBar)
         .navigationTitle(document.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -48,21 +50,20 @@ struct RepertoireOverviewView: View {
     private func buildSection(_ stats: EntryStats) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
-                Text("\(Format.percent(stats.completion)) complete").font(.headline.monospacedDigit())
+                HStack(alignment: .firstTextBaseline) {
+                    Text("\(Format.percent(stats.completion)) complete").font(.headline.monospacedDigit())
+                    Spacer()
+                    if stats.gaps > 0 {
+                        Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps.formatted()) gaps")
+                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(.orange)
+                    }
+                }
                 CompletionBar(value: stats.completion, tint: .green)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
-            if stats.gaps > 0 {
-                LabeledContent {
-                    Text(stats.gaps.formatted()).foregroundStyle(.orange)
-                } label: {
-                    Text("Gaps").foregroundStyle(.orange)
-                }
-            }
-            Button(action: editLines) {
-                Text("Browse / Edit").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.glassProminent)
+        } header: {
+            Text("Build")
         }
     }
 
@@ -70,29 +71,126 @@ struct RepertoireOverviewView: View {
 
     private func studySection(_ stats: EntryStats) -> some View {
         Section {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Study").font(.headline)
-                Spacer()
-                Button("Options", systemImage: "slider.horizontal.3") { sheet = .options }
-                    .font(.subheadline)
-                    .buttonStyle(.borderless)
+            // Like Build: how far along, then the numbers.
+            VStack(alignment: .leading, spacing: 8) {
+                Text("\(stats.progress.studied.formatted()) of \(stats.progress.cards.formatted()) moves studied")
+                    .font(.headline.monospacedDigit())
+                StudiedBar(progress: stats.progress)
+                FlowLayout {
+                    legend(stats.progress.learning, "learning", StudyColors.learningGroup)
+                    legend(stats.progress.young, "young", StudyColors.young)
+                    legend(stats.progress.mature, "mature", StudyColors.mature)
+                    if stats.progress.suspended > 0 {
+                        legend(stats.progress.suspended, "suspended", StudyColors.suspended)
+                    }
+                }
+                .font(.caption)
             }
             if stats.counts.total > 0 {
-                countRow("New", stats.counts.new, StudyColors.new)
-                countRow("Learning", stats.counts.learning, StudyColors.learning)
-                countRow("To Review", stats.counts.review, StudyColors.review)
-                Button(action: study) {
-                    Text("Study Now").frame(maxWidth: .infinity)
+                // One line when it fits, else the counts below the label (narrow or large text).
+                ViewThatFits(in: .horizontal) {
+                    HStack {
+                        Text("Due today")
+                        Spacer(minLength: 12)
+                        HStack(spacing: 10) { dueCounts(stats.counts) }.fixedSize()
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Due today")
+                        FlowLayout(spacing: 10) { dueCounts(stats.counts) }
+                    }
                 }
-                .buttonStyle(.glassProminent)
             } else {
                 Label(doneText(stats), systemImage: stats.progress.studied > 0 ? "checkmark.circle.fill" : "checkmark.circle")
                     .foregroundStyle(stats.progress.studied > 0 ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
-                // Done for today: Study More Today takes Study Now's place.
-                if stats.progress.cards > 0 {
-                    studyMoreMenu(stats)
+            }
+            if let graphs {
+                let today = graphs.today()
+                LabeledContent("Today", value: today.answerCount == 0 ? "Not studied"
+                               : "\(today.answerCount) \(today.answerCount == 1 ? "move" : "moves") · \(Int((Double(today.answerMillis) / 60_000).rounded())) min")
+                if let retention = graphs.trueRetention()[.month]?.total {
+                    LabeledContent("True retention (month)", value: Format.percent(retention))
                 }
             }
+            Button {
+                app.statisticsScope = .repertoire(document.entryID)
+                app.selectedTab = .statistics
+            } label: {
+                HStack {
+                    Label("Statistics", systemImage: "chart.bar")
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .tint(.primary)
+        } header: {
+            HStack {
+                Text("Study")
+                Spacer()
+                Button("Options", systemImage: "slider.horizontal.3") { sheet = .options }
+                    .labelStyle(.titleAndIcon)
+                    .font(.subheadline)
+                    .textCase(nil)
+            }
+        }
+    }
+
+    private func legend(_ value: Int, _ label: String, _ color: Color) -> some View {
+        HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 7, height: 7)
+            Text("\(value.formatted()) \(label)").foregroundStyle(.secondary)
+        }
+    }
+
+    /// Only the counts above zero, in Anki's colors.
+    @ViewBuilder
+    private func dueCounts(_ counts: CardQueues.Counts) -> some View {
+        if counts.new > 0 { due(counts.new, "new", StudyColors.new) }
+        if counts.learning > 0 { due(counts.learning, "learning", StudyColors.learning) }
+        if counts.review > 0 { due(counts.review, "review", StudyColors.review) }
+    }
+
+    private func due(_ value: Int, _ label: String, _ color: Color) -> some View {
+        Text("\(value.formatted()) \(label)")
+            .foregroundStyle(color)
+            .fontWeight(.semibold)
+            .monospacedDigit()
+            .fixedSize()
+    }
+
+    /// The actions, pinned at the bottom, the main one first: Browse / Edit while there are
+    /// gaps (or nothing of yours to study), else studying (Study Now while moves are due,
+    /// Study More Today once done for today).
+    private func studyBar(_ stats: EntryStats) -> some View {
+        let buildFirst = stats.gaps > 0 || stats.progress.cards == 0
+        return VStack(spacing: 12) {
+            if stats.progress.cards > 0 {
+                if !buildFirst { studyButton(stats, prominent: true) }
+                Button("Browse / Edit", action: editLines)
+                    .modifier(GlassButtonStyle(prominent: buildFirst))
+                if buildFirst { studyButton(stats, prominent: false) }
+            } else {
+                Button("Browse / Edit", action: editLines).buttonStyle(.glassProminent)
+            }
+        }
+        .controlSize(.extraLarge)
+        .buttonSizing(.flexible)
+        .padding()
+    }
+
+    @ViewBuilder
+    private func studyButton(_ stats: EntryStats, prominent: Bool) -> some View {
+        if stats.counts.total > 0 {
+            Button("Study Now", action: study).modifier(GlassButtonStyle(prominent: prominent))
+        } else {
+            studyMoreMenu(stats).modifier(GlassButtonStyle(prominent: prominent))
+        }
+    }
+
+    private struct GlassButtonStyle: ViewModifier {
+        let prominent: Bool
+        func body(content: Content) -> some View {
+            if prominent { content.buttonStyle(.glassProminent) } else { content.buttonStyle(.glass) }
         }
     }
 
@@ -121,9 +219,8 @@ struct RepertoireOverviewView: View {
                 Button("Practice the Whole Repertoire", systemImage: "arrow.trianglehead.2.clockwise", action: practice)
             }
         } label: {
-            Text("Study More Today").frame(maxWidth: .infinity)
+            Text("Study More Today")
         }
-        .buttonStyle(.glassProminent)
     }
 
     private func doneText(_ stats: EntryStats) -> String {
@@ -133,64 +230,5 @@ struct RepertoireOverviewView: View {
             return "Done for now. More moves are due at \(next.formatted(date: .omitted, time: .shortened))."
         }
         return "Done for today. Next review \(next.formatted(.relative(presentation: .named)))."
-    }
-
-    private func countRow(_ title: String, _ value: Int, _ color: Color) -> some View {
-        LabeledContent(title) {
-            Text(value.formatted())
-                .foregroundStyle(value > 0 ? color : .secondary)
-                .fontWeight(.semibold)
-                .monospacedDigit()
-        }
-    }
-
-    // MARK: Statistics
-
-    private func statisticsSection(_ stats: EntryStats) -> some View {
-        Section {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Statistics").font(.headline)
-                    Spacer()
-                    Text("\(stats.progress.cards.formatted()) trainable").font(.footnote).foregroundStyle(.secondary)
-                }
-                StudiedBar(progress: stats.progress)
-            }
-            groupRow("Not studied", stats.progress.notStudied, Color(.quaternaryLabel))
-            groupRow("Learning", stats.progress.learning, StudyColors.learningGroup)
-            groupRow("Young", stats.progress.young, StudyColors.young)
-            groupRow("Mature", stats.progress.mature, StudyColors.mature)
-            if stats.progress.suspended > 0 {
-                groupRow("Suspended", stats.progress.suspended, StudyColors.suspended)
-            }
-            if let graphs {
-                let today = graphs.today()
-                LabeledContent("Today", value: today.answerCount == 0 ? "Not studied"
-                               : "\(today.answerCount) \(today.answerCount == 1 ? "move" : "moves") · \(Int((Double(today.answerMillis) / 60_000).rounded())) min")
-                if let retention = graphs.trueRetention()[.month]?.total {
-                    LabeledContent("True retention (month)", value: Format.percent(retention))
-                }
-            }
-            Button("Show More", systemImage: "chart.bar") {
-                app.statisticsScope = .repertoire(document.entryID)
-                app.selectedTab = .statistics
-            }
-        } footer: {
-            if stats.progress.suspended > 0 {
-                Text("Suspended: your moves below alternative moves. They keep their progress and are studied again if their line becomes the main line.")
-            }
-        }
-    }
-
-    private func groupRow(_ title: String, _ value: Int, _ color: Color) -> some View {
-        LabeledContent {
-            Text(value.formatted()).monospacedDigit()
-        } label: {
-            Label {
-                Text(title)
-            } icon: {
-                RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 10, height: 10)
-            }
-        }
     }
 }

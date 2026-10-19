@@ -580,9 +580,12 @@ struct LibraryRow: View {
     @ViewBuilder
     private var progress: some View {
         VStack(alignment: .leading, spacing: 4) {
-            bar("Built") { CompletionBar(value: stats.completion, tint: .green) }
-            if stats.progress.studied > 0 {
-                bar("Studied") { StudiedBar(progress: stats.progress) }
+            // A grid, so the label column is as wide as its longest label at any text size.
+            Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 4) {
+                bar("Built") { CompletionBar(value: stats.completion, tint: .green) }
+                if stats.progress.studied > 0 {
+                    bar("Studied") { StudiedBar(progress: stats.progress) }
+                }
             }
             let notStudied = stats.progress.studied == 0 && stats.progress.cards > 0
             if notStudied || stats.gaps > 0 {
@@ -597,8 +600,8 @@ struct LibraryRow: View {
     }
 
     private func bar(_ title: String, @ViewBuilder _ content: () -> some View) -> some View {
-        HStack {
-            Text(title).font(.caption2).foregroundStyle(.secondary).frame(width: 48, alignment: .leading)
+        GridRow(alignment: .center) {
+            Text(title).font(.caption2).foregroundStyle(.secondary).fixedSize()
             content()
         }
     }

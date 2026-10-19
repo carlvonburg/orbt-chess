@@ -85,7 +85,7 @@ struct StudyFinishedView: View {
                 Text("\(progress.studied) of \(progress.cards) moves").font(.subheadline).foregroundStyle(.secondary)
             }
             StudiedBar(progress: progress, height: 8)
-            HStack(spacing: 12) {
+            FlowLayout {
                 legend(progress.learning, "learning", StudyColors.learningGroup)
                 legend(progress.young, "young", StudyColors.young)
                 legend(progress.mature, "mature", StudyColors.mature)
