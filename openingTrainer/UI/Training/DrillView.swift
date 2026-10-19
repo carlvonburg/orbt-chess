@@ -338,6 +338,7 @@ struct DrillView: View {
         .task { model.start() }
         // Browsing pushes the builder on top; training goes on when it's popped.
         .onDisappear { if browsing == nil { model.stop() } }
+        .checksCoverage(model.document)
         .sheet(item: $analysis) { request in
             SafariView(url: request.url).ignoresSafeArea()
         }

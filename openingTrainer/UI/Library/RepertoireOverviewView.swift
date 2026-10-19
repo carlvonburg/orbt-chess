@@ -1,7 +1,7 @@
 import OpeningCore
 import SwiftUI
 
-/// Anki's deck overview for one repertoire: building progress, today's counts and Options,
+/// Anki's deck overview for one repertoire: coverage progress, today's counts and Options,
 /// and a short version of its statistics. The study action is pinned at the bottom (iOS 26).
 struct RepertoireOverviewView: View {
     @Environment(AppModel.self) private var app
@@ -20,10 +20,11 @@ struct RepertoireOverviewView: View {
     var body: some View {
         let stats = EntryStats(document: document)
         List {
-            buildSection(stats)
+            coverageSection(stats)
             studySection(stats)
         }
         .safeAreaBar(edge: .bottom) { studyBar(stats) }
+        .checksCoverage(document)
         // A detail screen with its own actions at the bottom, like the study screen.
         .toolbarVisibility(.hidden, for: .tabBar)
         .navigationTitle(document.name)
@@ -45,9 +46,9 @@ struct RepertoireOverviewView: View {
         }
     }
 
-    // MARK: Build
+    // MARK: Coverage
 
-    private func buildSection(_ stats: EntryStats) -> some View {
+    private func coverageSection(_ stats: EntryStats) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
@@ -60,10 +61,11 @@ struct RepertoireOverviewView: View {
                     }
                 }
                 CompletionBar(value: stats.completion, tint: .green)
+                CoverageCheckStatus(document: document)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
         } header: {
-            Text("Build")
+            Text("Coverage")
         }
     }
 
@@ -71,7 +73,7 @@ struct RepertoireOverviewView: View {
 
     private func studySection(_ stats: EntryStats) -> some View {
         Section {
-            // Like Build: how far along, then the numbers.
+            // Like Coverage: how far along, then the numbers.
             VStack(alignment: .leading, spacing: 8) {
                 Text("\(stats.progress.studied.formatted()) of \(stats.progress.cards.formatted()) moves studied")
                     .font(.headline.monospacedDigit())

@@ -131,29 +131,29 @@ final class RepertoireDocument {
 
     /// Fetches stats for the position on screen, ahead of the coverage check.
     func requestStats(for epd: EPD) {
-        queue.request(epd, sidecar.database, priority: 2)
+        queue.focus(epd, sidecar.database)
     }
 
-    /// Set while the repertoire is open in the builder. Only then is the coverage check run,
-    /// so opening the Train tab never starts fetching.
-    @ObservationIgnored private var checksCoverage = false
+    /// How many screens of this repertoire are showing (overview, builder, study). The
+    /// coverage check runs while any is, so the library and the other tabs never fetch.
+    @ObservationIgnored private var coverageViewers = 0
 
     /// Starts the background coverage check. It only asks for opponent-to-move positions
     /// you would meet at least once in N games (N = your target), most frequent first, and
     /// each answer tells which positions below are frequent enough to need a request. So
     /// the number of requests depends on the target, not on the size of the PGN.
     func startCoverageCheck() {
-        checksCoverage = true
+        coverageViewers += 1
         checkCoverage()
     }
 
     func stopCoverageCheck() {
-        checksCoverage = false
-        queue.cancelAll(for: sidecar.database)
+        coverageViewers = max(coverageViewers - 1, 0)
+        if coverageViewers == 0 { queue.cancelAll(for: sidecar.database) }
     }
 
     private func checkCoverage() {
-        guard checksCoverage else { return }
+        guard coverageViewers > 0 else { return }
         for (epd, reach) in coverage.pendingPositions(tree: tree) {
             queue.request(epd, sidecar.database, priority: reach)
         }
@@ -279,6 +279,7 @@ final class RepertoireDocument {
         sidecar.settingsModified = .now
         store.load(database)
         recomputeCoverage()
+        checkCoverage()
         scheduleSidecarSave(delay: 0.5)
     }
 

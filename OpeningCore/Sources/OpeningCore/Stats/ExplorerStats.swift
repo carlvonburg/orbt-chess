@@ -152,11 +152,6 @@ public enum ExplorerDatabase: Codable, Sendable, Hashable {
         }
     }
 
-    /// How long cached stats stay fresh.
-    public var maxAge: TimeInterval {
-        switch self {
-        case .masters: .infinity
-        case .lichess: 90 * 24 * 3600
-        }
-    }
+    /// How long cached stats stay fresh. Indefinitely for now, for both.
+    public var maxAge: TimeInterval { .infinity }
 }

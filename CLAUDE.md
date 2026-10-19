@@ -78,10 +78,11 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
 ## Conventions
 - Code in OpeningCore is pure Swift, `Sendable` value types, no UIKit/SwiftUI.
 - App code is MainActor by default (`SWIFT_DEFAULT_ACTOR_ISOLATION`).
-- Explorer: one request at a time, one every 3.5 s (Lichess allows ~20/min per user, measured), a 429 bans for 60 s (kept across launches) and slows the pace for good; re-login on 401.
-- Fetch policy: the position on screen first; plus a background coverage check only while a
-  repertoire is open in the builder, limited to opponent-to-move positions above the target
+- Explorer: the position on screen is fetched directly after 300 ms on screen (no queue). The coverage check is a separate queue, one request at a time, one every 1.2 s (Lichess allows ~20/min per user, measured, so expect 429s). A 429 from either pauses both for 60 s (kept across launches) and slows the coverage pace for good; re-login on 401.
+- Fetch policy: the position on screen first; plus a background coverage check only while one of
+  the repertoire's screens is showing (overview, builder, study), limited to opponent-to-move positions above the target
   (bounded by the target, not PGN size: the 3.8k-move Berlin test PGN needs 136 requests at
   1-in-400 and 156 at 1-in-500, about 8-9 minutes at 3.5 s).
   Never fetch every position of a PGN.
+  Cached stats never expire for now (`ExplorerDatabase.maxAge`).
 - Build: `xcodebuild -project openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' build`

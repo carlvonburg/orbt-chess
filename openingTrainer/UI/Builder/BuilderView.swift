@@ -65,8 +65,7 @@ struct BuilderView: View {
         .navigationDestination(item: $drill) { request in
             DrillView(document: document, mode: request.mode, pushed: true)
         }
-        .onAppear { document.startCoverageCheck() }
-        .onDisappear { document.stopCoverageCheck() }
+        .checksCoverage(document)
         .onChange(of: model.current, initial: true) { requestStats() }
         .onChange(of: model.draft) { requestStats() }
         .alert("Could not save", isPresented: .constant(document.saveError != nil)) {
@@ -817,6 +816,14 @@ struct StatsUnavailableNote: View {
         .font(.footnote)
         .foregroundStyle(.secondary)
         .padding(.vertical, 8)
+    }
+}
+
+extension View {
+    /// Runs the background coverage check of `document` while this view is on screen.
+    func checksCoverage(_ document: RepertoireDocument) -> some View {
+        onAppear { document.startCoverageCheck() }
+            .onDisappear { document.stopCoverageCheck() }
     }
 }
 
