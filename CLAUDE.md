@@ -65,8 +65,8 @@ Follow Anki's code, not invented rules. A card is a position where it's your mov
 EPD). States, learning steps (1m 10m, relearn 10m), FSRS-6, fuzz, day rollover at 4 AM,
 learn-ahead 20 min, queue order and daily limits (preset / this repertoire / today only)
 are Anki's. Chess additions, kept minimal and listed in `Study.swift`: lines start at move 1
-and the practice mode decides who plays your earlier moves; one line answers every queued
-card on it; moves you play that aren't due are reviews ahead (filtered deck); new cards are
+(or take back to where they part from the last line, when shorter) and the practice mode
+decides who plays your earlier moves; one line answers every queued card on it; moves you play that aren't due are reviews ahead (filtered deck); new cards are
 introduced a line at a time (most reached first) and a started line is finished past the
 daily limit; reviews due the same day are ordered by reach. Grading is Again/Good only
 (wrong, hint or browsing = Again). Ported files keep Anki's AGPL header.

@@ -253,12 +253,30 @@ final class DrillModel {
             feedback = .none
             return
         }
+        let previous = run
         line = next
-        run = LineRun(trainer: document.trainer, nodes: next.nodes)
         answeredOnLine = []
         feedback = .none
         showHint = false
-        continueLine()
+        // Take moves back to where the lines part when that's shorter than replaying from move 1.
+        guard var previous, let start = next.resumeIndex(from: previous.nodes, shown: previous.index) else {
+            run = LineRun(trainer: document.trainer, nodes: next.nodes)
+            continueLine()
+            return
+        }
+        autoplay = Task { [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(for: .milliseconds(300))
+            while previous.index > start {
+                guard !Task.isCancelled else { return }
+                previous.takeBack()
+                self.run = previous
+                try? await Task.sleep(for: .milliseconds(250))
+            }
+            guard !Task.isCancelled else { return }
+            self.run = LineRun(trainer: self.document.trainer, nodes: next.nodes, index: start)
+            self.continueLine()
+        }
     }
 }
 

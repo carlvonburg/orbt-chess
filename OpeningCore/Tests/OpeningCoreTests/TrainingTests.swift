@@ -197,6 +197,28 @@ struct TrainingTests {
         #expect(c.roles[0] == .auto && c.roles[2] == .answer(.reviewAhead))
     }
 
+    @Test func nextLineTakesBackWhenShorter() throws {
+        var tree = RepertoireTree()
+        tree.add("e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3")
+        tree.add("e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3")
+        tree.add("e4 e5 Nf3")
+        let previous = tree.path(to: tree.find("e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3")!)
+        let dragon = tree.path(to: tree.find("e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3")!)
+        let e5 = tree.path(to: tree.find("e4 e5 Nf3")!)
+        func line(_ nodes: [NodeID], asked: Int) -> StudyLine {
+            var roles: [Int: MoveRole] = [:]
+            for i in stride(from: 0, to: nodes.count - 1, by: 2) { roles[i] = i == asked ? .answer(.queued) : .auto }
+            return StudyLine(nodes: nodes, roles: roles, target: tree[nodes[asked]]!.epd)
+        }
+        // parts after 9 moves, 2 to take back: take back to move 9
+        #expect(line(dragon, asked: 10).resumeIndex(from: previous, shown: 11) == 9)
+        // parts after 1 move: replay from move 1
+        #expect(line(e5, asked: 2).resumeIndex(from: previous, shown: 11) == nil)
+        // a move you play before the split must be replayed: to move 4 is 7 back, 4 forward
+        #expect(line(dragon, asked: 4).resumeIndex(from: previous, shown: 11) == nil)
+        #expect(line(dragon, asked: 8).resumeIndex(from: previous, shown: 11) == 8)
+    }
+
     @Test func lineRunAndAlternatives() throws {
         let tree = whiteTree()
         let trainer = Trainer(tree: tree, color: .white)

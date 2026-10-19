@@ -194,9 +194,10 @@ public struct LineRun: Sendable {
     /// Index into `nodes` of the position on the board.
     public private(set) var index = 0
 
-    public init(trainer: Trainer, nodes: [NodeID]) {
+    public init(trainer: Trainer, nodes: [NodeID], index: Int = 0) {
         self.trainer = trainer
         self.nodes = nodes
+        self.index = min(max(index, 0), max(nodes.count - 1, 0))
     }
 
     public var currentNode: NodeID { nodes[index] }
@@ -218,6 +219,11 @@ public struct LineRun: Sendable {
         guard !isFinished else { return nil }
         index += 1
         return trainer.tree[currentNode]?.move
+    }
+
+    /// Takes back the last move on the board.
+    public mutating func takeBack() {
+        if index > 0 { index -= 1 }
     }
 
     /// Checks the user's move; advances when it is the expected one.

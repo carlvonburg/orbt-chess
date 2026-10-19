@@ -1,7 +1,8 @@
 import Foundation
 
 /// Who plays your moves on the way to the move being asked (Chessbook's practice options).
-/// Every line starts from the initial position and shows every move.
+/// Every line starts from the initial position and shows every move; the next line takes moves
+/// back to where it parts from the last one when that is shorter than replaying from move 1.
 public enum PracticeMode: String, Codable, CaseIterable, Identifiable, Sendable {
     /// The app plays all moves up to the ones being asked.
     case individualMoves
@@ -53,6 +54,19 @@ public struct StudyLine: Sendable, Equatable {
     public let roles: [Int: MoveRole]
     /// The queued card the line was built for.
     public let target: EPD
+
+    /// Where to start this line when the board shows `previous[shown]`: the index to take
+    /// moves back to, when that is fewer moves than replaying from move 1 to the same point.
+    /// Nil starts from move 1. The point is where the lines part, or earlier if one of your
+    /// moves before it is asked or practiced (you play it, so it must be replayed).
+    public func resumeIndex(from previous: [NodeID], shown: Int) -> Int? {
+        guard shown < previous.count else { return nil }
+        let shared = zip(nodes, previous[...shown]).prefix { $0 == $1 }.count
+        guard shared > 0 else { return nil }
+        var start = shared - 1
+        if let played = roles.filter({ $0.value != .auto }).keys.min() { start = min(start, played) }
+        return shown - start < start ? start : nil
+    }
 }
 
 /// A study session over Anki's queue: picks the next card, builds a line to it, and keeps
