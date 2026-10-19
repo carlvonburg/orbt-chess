@@ -169,7 +169,7 @@ struct LibraryView: View {
                         Label("No matching repertoires", systemImage: "line.3.horizontal.decrease.circle")
                     } actions: {
                         Button("Clear Filters") { clearFilters() }
-                            .buttonStyle(.glass)
+                            .buttonStyle(.bordered)
                     }
                 }
                 // Grouped by side, as Chessbook does; the sort applies within each group.
@@ -339,15 +339,15 @@ private struct TodayCard: View {
                 header { Text("Today") } trailing: { dueCounts }
                 Text(studiedText).font(.footnote).foregroundStyle(.secondary)
                 if streak.current > 0 { streakLabel }
-                Button(action: studyAll) {
-                    Text("Study All").frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.glassProminent)
+                Button("Study All", action: studyAll)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .buttonSizing(.flexible)
             case .empty:
                 Text("Nothing to study yet").font(.headline)
                 Text("Enter the moves from a book or video, then study them here.")
                     .font(.footnote).foregroundStyle(.secondary)
-                action("Add Moves", "plus", entries, prominent: true, detail: { _ in nil }) { .builder($0) }
+                action("Add Moves", entries, prominent: true, detail: { _ in nil }) { .builder($0) }
             case .doneForNow(let count, let at):
                 doneHeader("Done for Now", "checkmark.circle.fill")
                 if studiedToday { studiedLine }
@@ -362,7 +362,7 @@ private struct TodayCard: View {
                         .font(.footnote).foregroundStyle(.orange)
                 }
                 nextLine
-                action("Learn \(TrainingDefaults.learnMoreCount) New Moves", "sparkles", unlearned, prominent: true,
+                action("Learn \(TrainingDefaults.learnMoreCount) New Moves", unlearned, prominent: true,
                        detail: { "\($0.progress.notStudied) not studied" }) { .learnMore($0) }
                 if !withGaps.isEmpty { gapsAction }
             case .caughtUp:
@@ -441,13 +441,13 @@ private struct TodayCard: View {
     private var moreActions: some View {
         HStack(spacing: 8) {
             if unlearned.isEmpty && withGaps.isEmpty {
-                action("Practice", "arrow.trianglehead.2.clockwise", withMoves.filter { $0.stats.progress.studied > 0 },
+                action("Practice", withMoves.filter { $0.stats.progress.studied > 0 },
                        detail: { "\($0.progress.studied) moves" }) { .practice($0) }
-                action("Add Lines", "plus", withMoves.sorted { $0.stats.completion < $1.stats.completion },
+                action("Add Lines", withMoves.sorted { $0.stats.completion < $1.stats.completion },
                        detail: { "\(Format.percent($0.completion)) built" }) { .builder($0) }
             } else {
                 if !unlearned.isEmpty {
-                    action("Learn \(TrainingDefaults.learnMoreCount) New", "sparkles", unlearned,
+                    action("Learn \(TrainingDefaults.learnMoreCount) New", unlearned,
                            detail: { "\($0.progress.notStudied) not studied" }) { .learnMore($0) }
                 }
                 if !withGaps.isEmpty { gapsAction }
@@ -456,19 +456,18 @@ private struct TodayCard: View {
     }
 
     private var gapsAction: some View {
-        action(gapCount == 1 ? "Fill 1 Gap" : "Fill \(gapCount) Gaps", "puzzlepiece", withGaps, tint: .orange,
+        action(gapCount == 1 ? "Fill 1 Gap" : "Fill \(gapCount) Gaps", withGaps, tint: .orange,
                detail: { $0.gaps == 1 ? "1 gap" : "\($0.gaps) gaps" }) { .gaps($0) }
     }
 
     /// A button for one repertoire, or a menu to pick one of several.
     @ViewBuilder
-    private func action(_ title: String, _ icon: String, _ items: [Item], prominent: Bool = false, tint: Color? = nil,
+    private func action(_ title: String, _ items: [Item], prominent: Bool = false, tint: Color? = nil,
                         detail: @escaping (EntryStats) -> String?, route: @escaping (String) -> LibraryRoute) -> some View {
-        let label = Label(title, systemImage: icon)
+        // Text only: two buttons share the card's width, and an icon would cut the title.
+        let label = Text(title)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
-            .foregroundStyle(tint ?? (prominent ? .white : .accentColor))
-            .frame(maxWidth: .infinity)
         Group {
             if items.count == 1, let item = items.first {
                 Button { open(route(item.entry.id)) } label: { label }
@@ -483,13 +482,17 @@ private struct TodayCard: View {
                 } label: { label }
             }
         }
-        .modifier(GlassButton(prominent: prominent))
+        // Standard styles in content; Liquid Glass is for toolbars and bars above the content.
+        .modifier(CardButtonStyle(prominent: prominent))
+        .tint(tint)
+        .controlSize(.large)
+        .buttonSizing(.flexible)
     }
 
-    private struct GlassButton: ViewModifier {
+    private struct CardButtonStyle: ViewModifier {
         let prominent: Bool
         func body(content: Content) -> some View {
-            if prominent { content.buttonStyle(.glassProminent) } else { content.buttonStyle(.glass) }
+            if prominent { content.buttonStyle(.borderedProminent) } else { content.buttonStyle(.bordered) }
         }
     }
 
@@ -725,7 +728,7 @@ struct SignInBanner: View {
                     if await model.auth.signIn(using: webAuth) { model.queue.resume() }
                 }
             }
-            .buttonStyle(.glassProminent)
+            .buttonStyle(.borderedProminent)
             if let error = model.auth.lastError {
                 Text(error).font(.footnote).foregroundStyle(.red)
             }
