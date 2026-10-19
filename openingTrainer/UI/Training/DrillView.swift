@@ -46,6 +46,10 @@ final class DrillModel {
     private(set) var showHint = false
     /// Cards answered in this session.
     private(set) var answeredCount = 0
+    /// Of those, answered Good.
+    private(set) var correctCount = 0
+    /// Time spent answering: the sum of each answer's time, as in the review log.
+    private(set) var studiedMillis = 0
 
     /// Observed: `isUserTurn` depends on it, so the board unlocks when autoplay ends.
     private var autoplay: Task<Void, Never>?
@@ -176,8 +180,17 @@ final class DrillModel {
 
     /// Anki's custom study "Increase today's new card limit".
     func increaseNewLimit(by count: Int) {
+        extendLimits { document.extendNewLimitToday(by: count, timing: $0) }
+    }
+
+    /// Anki's custom study "Increase today's review card limit".
+    func increaseReviewLimit(by count: Int) {
+        extendLimits { document.extendReviewLimitToday(by: count, timing: $0) }
+    }
+
+    private func extendLimits(_ extend: (SchedTiming) -> Void) {
         let timing = SchedTiming()
-        document.extendNewLimitToday(by: count, timing: timing)
+        extend(timing)
         session?.rebuild(cards: document.sidecar.studyCards, limits: document.remainingLimits(timing), timing: timing,
                          learnAheadSecs: document.deckConfig.learnAheadSecs)
         finished = false
@@ -207,6 +220,8 @@ final class DrillModel {
         self.session = session
         answeredOnLine.insert(epd)
         answeredCount += 1
+        if rating == .good { correctCount += 1 }
+        studiedMillis += taken
     }
 
     private func continueLine() {
@@ -331,7 +346,7 @@ struct DrillView: View {
     private var content: some View {
         VStack(spacing: 12) {
             if model.finished {
-                finishedView.padding()
+                StudyFinishedView(model: model, next: next)
             } else {
                 // Edge to edge on a phone, as in the builder.
                 BoardView(position: model.position, orientation: model.color, lastMove: model.lastMove,
@@ -425,45 +440,6 @@ struct DrillView: View {
         }
         .font(.headline)
         .animation(.default, value: model.feedback)
-    }
-
-    private var finishedView: some View {
-        ContentUnavailableView {
-            Label(model.answeredCount > 0 ? "Congratulations!" : "Nothing to study", systemImage: "checkmark.seal.fill")
-        } description: {
-            VStack(spacing: 8) {
-                Text(model.answeredCount > 0
-                     ? "You have finished \(model.document.name) for now."
-                     : model.isFiltered ? "There are no moves in this branch yet." : "No moves are due right now.")
-                if let due = model.nextLearningDue {
-                    Text("More moves you are learning are due at \(due.formatted(date: .omitted, time: .shortened)).")
-                }
-            }
-        } actions: {
-            VStack(spacing: 12) {
-                if model.nextLearningDue != nil {
-                    Button("Check Again") { model.checkAgain() }
-                        .buttonStyle(.glass)
-                }
-                if !model.isFiltered {
-                    Menu("Study More New Moves") {
-                        ForEach([5, 10, 20], id: \.self) { n in
-                            Button("Increase Today's Limit by \(n)") { model.increaseNewLimit(by: n) }
-                        }
-                    }
-                    .buttonStyle(.glass)
-                }
-                if let next {
-                    Button("Continue with \(next.name)") { next.start() }
-                        .buttonStyle(.glassProminent)
-                    Button("Done") { dismiss() }
-                        .buttonStyle(.glass)
-                } else {
-                    Button("Done") { dismiss() }
-                        .buttonStyle(.glassProminent)
-                }
-            }
-        }
     }
 }
 

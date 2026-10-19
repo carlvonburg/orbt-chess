@@ -149,16 +149,7 @@ struct LibraryView: View {
         if !library.isLoaded {
             ProgressView()
         } else if library.entries.isEmpty {
-            ContentUnavailableView {
-                Label("No repertoires yet", systemImage: "book.closed")
-            } description: {
-                Text("Create a new repertoire, or import a PGN you already have. It's copied into the app's folder and every edit is saved to it.")
-            } actions: {
-                Button("New Repertoire") { showNew = true }
-                    .buttonStyle(.glassProminent)
-                Button("Import PGN…") { showImport = true }
-                    .buttonStyle(.glass)
-            }
+            WelcomeView(usesICloud: library.usesICloud, newRepertoire: { showNew = true }, importPGN: { showImport = true })
         } else {
             let stats = Dictionary(uniqueKeysWithValues: library.entries.map {
                 ($0.id, EntryStats(entry: $0, document: model.documents[$0.id]))
