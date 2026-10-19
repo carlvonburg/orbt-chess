@@ -115,9 +115,13 @@ struct CoverageTests {
 
         stats.set("e4 e5 Nf3", [("Nc6", 1000)])
         let e5nf3 = tree.find("e4 e5 Nf3")!
-        engine.statsArrived(for: tree[e5nf3]!.epd, tree: tree, stats: stats.lookup)
+        let changed = engine.statsArrived(for: tree[e5nf3]!.epd, tree: tree, stats: stats.lookup)
+        #expect(changed)
         #expect(engine.root!.gapCount == 3)
         #expect(engine.root!.pendingCount == 0)
+        // The same answer again changes nothing.
+        let changedAgain = engine.statsArrived(for: tree[e5nf3]!.epd, tree: tree, stats: stats.lookup)
+        #expect(!changedAgain)
 
         stats.set("e4 e5 Nf3 Nc6 Bb5", [("a6", 5)])
         let leaf = tree.add("e4 e5 Nf3 Nc6 Bb5")

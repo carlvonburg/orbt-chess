@@ -151,14 +151,18 @@ public struct CoverageEngine: Sendable {
     }
 
     /// Call when explorer stats for `epd` arrived.
-    public mutating func statsArrived(for epd: EPD, tree: RepertoireTree, stats: StatsLookup) {
-        guard let ids = tree.epdIndex[epd] else { return }
+    /// Returns whether the repertoire's totals (completion or gap count) changed.
+    @discardableResult
+    public mutating func statsArrived(for epd: EPD, tree: RepertoireTree, stats: StatsLookup) -> Bool {
+        guard let ids = tree.epdIndex[epd] else { return false }
+        let before = (root?.completion, root?.gapCount)
         for id in ids where info[id] != nil {
             computeSubtree(id, reach: info[id]?.reach, mode: mode(of: id, tree: tree), tree: tree, stats: stats)
             refreshAncestors(of: id, tree: tree, stats: stats)
         }
         // Missing replies that lead into this position may now have a different status.
         propagateTranspositions(tree: tree, stats: stats)
+        return root?.completion != before.0 || root?.gapCount != before.1
     }
 
     /// Call after the excluded moves at `epd` changed in `settings`.

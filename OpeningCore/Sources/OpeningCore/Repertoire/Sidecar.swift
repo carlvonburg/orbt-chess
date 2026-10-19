@@ -19,6 +19,7 @@ public struct Sidecar: Codable, Sendable, Equatable {
         public var suspendedCount: Int?
         public var dueCount: Int
         public var configKey: String
+        /// Not read; kept because earlier builds require it to decode the summary.
         public var computedAt: Date
 
         public init(completion: Double, gapCount: Int, cardCount: Int, matureCount: Int, savedMoveCount: Int? = nil,

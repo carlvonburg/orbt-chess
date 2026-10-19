@@ -52,7 +52,10 @@ enum ExplorerClient {
 }
 
 /// Cloud evaluations from lichess.org (no token needed). 404 means no eval stored.
+/// Answers, including "none", are kept in memory for the session.
 enum CloudEvalClient {
+    private static var cache: [EPD: Eval?] = [:]
+
     struct Eval: Decodable, Sendable {
         struct PV: Decodable, Sendable {
             let moves: String
@@ -64,11 +67,22 @@ enum CloudEvalClient {
     }
 
     static func fetch(_ epd: EPD) async -> Eval? {
+        if let cached = cache[epd] { return cached }
         var components = URLComponents(string: "https://lichess.org/api/cloud-eval")!
         components.queryItems = [URLQueryItem(name: "fen", value: epd.queryFEN), URLQueryItem(name: "multiPv", value: "5")]
-        guard let (data, response) = try? await URLSession.shared.data(from: components.url!),
-              (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
-        return try? JSONDecoder().decode(Eval.self, from: data)
+        guard let (data, response) = try? await URLSession.shared.data(from: components.url!) else { return nil }
+        switch (response as? HTTPURLResponse)?.statusCode {
+        case 200:
+            let eval = try? JSONDecoder().decode(Eval.self, from: data)
+            cache[epd] = eval
+            return eval
+        case 404:
+            cache[epd] = .some(nil)
+            return nil
+        default:
+            // Rate limited or a server error: ask again next time.
+            return nil
+        }
     }
 }
 

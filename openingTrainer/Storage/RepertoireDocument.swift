@@ -116,7 +116,10 @@ final class RepertoireDocument {
     // MARK: Stats
 
     func stats(_ epd: EPD) -> ExplorerStats? {
-        store.stats(epd, sidecar.database)
+        // The store's cache isn't observed; reading `revision`, which `statsArrived` bumps,
+        // redraws views as soon as the stats come in.
+        _ = revision
+        return store.stats(epd, sidecar.database)
     }
 
     /// The opening name of a node, or of its nearest ancestor, from stats already loaded.
@@ -164,10 +167,11 @@ final class RepertoireDocument {
 
     private func statsArrived(_ epd: EPD, _ database: ExplorerDatabase) {
         guard database == sidecar.database else { return }
-        coverage.statsArrived(for: epd, tree: tree, stats: lookup)
+        let totalsChanged = coverage.statsArrived(for: epd, tree: tree, stats: lookup)
         revision += 1
         checkCoverage()
-        scheduleSidecarSave(delay: 5)
+        // The sidecar's summary (shown in the library) only holds the totals.
+        if totalsChanged { saveSidecar() }
     }
 
     private var lookup: CoverageEngine.StatsLookup {

@@ -391,6 +391,7 @@ struct NodeHeader: View {
 /// repertoire that the explorer does not list. `saved` is the node when the position is in the
 /// repertoire, nil for a draft.
 struct RepliesPanel: View {
+    @Environment(AppModel.self) private var app
     let model: BuilderModel
     let replies: [ReplyInfo]?
     let saved: RepertoireNode?
@@ -432,10 +433,38 @@ struct RepliesPanel: View {
                         .builderRow()
                     }
                 }
-                StatsUnavailableNote()
-                    .builderRow(separator: false)
+                if model.document.stats(saved?.epd ?? model.position.epd) != nil {
+                    Text("No games in this position.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                        .builderRow(separator: false)
+                } else if app.isLoadingStats {
+                    // Stand-ins until the stats come in; your saved replies are already above.
+                    ForEach(0..<4, id: \.self) { _ in
+                        ReplyPlaceholderRow().builderRow()
+                    }
+                } else {
+                    StatsUnavailableNote()
+                        .builderRow(separator: false)
+                }
             }
         }
+    }
+}
+
+/// Stands in for an explorer reply while the stats load, laid out like `ReplyRow`.
+struct ReplyPlaceholderRow: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("Nf6").font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
+            Spacer()
+            Text("1 in 100").font(.caption.monospacedDigit()).frame(width: 74, alignment: .trailing)
+            RoundedRectangle(cornerRadius: 3).fill(.quaternary).frame(width: 64, height: 8)
+            Text("1.2M").font(.caption2.monospacedDigit()).frame(width: 40, alignment: .trailing)
+        }
+        .redacted(reason: .placeholder)
+        .padding(.vertical, 9)
+        .accessibilityHidden(true)
     }
 }
 
@@ -520,6 +549,7 @@ struct YourMovePanel: View {
 /// the heading reads "Your Moves" and the other moves stay hidden behind "Add Alternative Move".
 /// Tapping a row plays the move on the board (or opens a saved move).
 struct CandidatesSection: View {
+    @Environment(AppModel.self) private var app
     let model: BuilderModel
     let epd: EPD
     let title: String
@@ -538,6 +568,7 @@ struct CandidatesSection: View {
             .sorted { ($0.1?.games ?? -1) > ($1.1?.games ?? -1) }
         let otherRows = explorer.filter { !isSaved($0.uci) }.prefix(max(0, 12 - savedRows.count))
         let collapsed = !saved.isEmpty && !showOthers
+        let loading = stats == nil && app.isLoadingStats
         Text(saved.isEmpty ? title : "Your Moves").font(.headline).padding(.top, 8)
             .builderRow(separator: false)
             .task(id: epd) {
@@ -546,7 +577,7 @@ struct CandidatesSection: View {
                 eval = await CloudEvalClient.fetch(epd)
             }
         ForEach(savedRows, id: \.0.uci) { played, move in
-            row(uci: played.uci, san: played.san, move: move, total: stats?.total ?? 0)
+            row(uci: played.uci, san: played.san, move: move, total: stats?.total ?? 0, loading: loading)
                 .builderRow()
                 .listRowBackground(Color.green.opacity(0.08))
         }
@@ -563,8 +594,18 @@ struct CandidatesSection: View {
                 row(uci: move.uci, san: move.san, move: move, total: stats?.total ?? 0)
                     .builderRow()
             }
-            if explorer.isEmpty {
+            if loading {
+                // Stand-ins until the stats come in; your saved moves are already above.
+                ForEach(0..<4, id: \.self) { _ in
+                    CandidatePlaceholderRow().builderRow()
+                }
+            } else if stats == nil {
                 StatsUnavailableNote()
+                    .builderRow(separator: false)
+            } else if explorer.isEmpty {
+                Text("No games in this position.")
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .padding(.vertical, 8)
                     .builderRow(separator: false)
             }
         }
@@ -575,14 +616,14 @@ struct CandidatesSection: View {
         return savedAt.children.compactMap { model.tree[$0]?.move }
     }
 
-    private func row(uci: String, san: String, move: ExplorerMove?, total: Int) -> some View {
+    private func row(uci: String, san: String, move: ExplorerMove?, total: Int, loading: Bool = false) -> some View {
         let saved = savedAt.flatMap { parent in
             parent.children.firstIndex { model.tree[$0]?.move?.uci == uci }.map { index in
                 SavedMove(id: parent.children[index], index: index, siblings: parent.children.count,
                           note: model.tree[parent.children[index]]?.note ?? "")
             }
         }
-        return CandidateRow(san: san, move: move, total: total, eval: eval?.text(for: uci), saved: saved,
+        return CandidateRow(san: san, move: move, total: total, eval: eval?.text(for: uci), loading: loading, saved: saved,
                             select: { if let saved { model.go(to: saved.id) } else { select(uci) } })
             .deletable(saved?.id, model: model,
                        promote: saved.flatMap { saved in saved.index > 0 ? { model.document.promote(saved.id) } : nil })
@@ -710,6 +751,8 @@ struct CandidateRow: View {
     let move: ExplorerMove?
     let total: Int
     let eval: String?
+    /// Stats not in yet: placeholders where they will be.
+    var loading = false
     let saved: SavedMove?
     let select: () -> Void
 
@@ -728,6 +771,8 @@ struct CandidateRow: View {
                             .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
                             .lineLimit(1)
                             .frame(width: 76, alignment: .trailing)
+                    } else if loading {
+                        StatsPlaceholder()
                     } else {
                         Spacer()
                     }
@@ -747,6 +792,31 @@ struct CandidateRow: View {
         }
         .buttonStyle(.plain)
         .padding(.vertical, 8)
+    }
+}
+
+/// The score bar and game counts of a candidate, greyed out while its stats load.
+private struct StatsPlaceholder: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 3).fill(.quaternary).frame(height: 8)
+        Text("1.2M · 45%")
+            .font(.caption2.monospacedDigit())
+            .frame(width: 76, alignment: .trailing)
+            .redacted(reason: .placeholder)
+    }
+}
+
+/// Stands in for an explorer candidate while the stats load.
+struct CandidatePlaceholderRow: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Text("Nf3").font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
+                .redacted(reason: .placeholder)
+            Color.clear.frame(width: 40, height: 1)
+            StatsPlaceholder()
+        }
+        .padding(.vertical, 8)
+        .accessibilityHidden(true)
     }
 }
 
@@ -790,6 +860,18 @@ struct DraftPanel: View {
 
     private var openingName: String? {
         model.document.stats(model.position.epd)?.opening?.name ?? model.document.openingName(at: model.current)
+    }
+}
+
+extension AppModel {
+    /// Stats for the position on screen are on their way: signed in, and not paused by
+    /// Lichess or offline.
+    var isLoadingStats: Bool {
+        guard auth.isSignedIn else { return false }
+        switch queue.state {
+        case .needsLogin, .offline, .rateLimited: return false
+        case .idle, .fetching: return true
+        }
     }
 }
 
