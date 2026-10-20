@@ -3525,7 +3525,7 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     
     func sidecarSaved(data: Data) 
     
-    func sidecarToSave(timing: SchedTiming, now: Timestamp)  -> Data?
+    func sidecarToSave(timing: SchedTiming)  -> Data?
     
     /**
      * A screen of this repertoire appeared: the coverage check runs while any is showing.
@@ -4368,13 +4368,12 @@ open func sidecarSaved(data: Data)  {try! rustCall() {
 }
 }
     
-open func sidecarToSave(timing: SchedTiming, now: Timestamp) -> Data?  {
+open func sidecarToSave(timing: SchedTiming) -> Data?  {
     return try!  FfiConverterOptionData.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_repertoiredoc_sidecar_to_save(
             self.uniffiCloneHandle(),
-        FfiConverterTypeSchedTiming_lower(timing),
-        FfiConverterTypeTimestamp_lower(now),uniffiCallStatus
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
     )
 })
 }
@@ -8170,7 +8169,6 @@ public func FfiConverterTypeStudyLineRecord_lower(_ value: StudyLineRecord) -> R
 public struct Summary: Equatable, Hashable {
     public var cardCount: Int64
     public var completion: Double
-    public var computedAt: Timestamp
     public var configKey: String
     public var dueCount: Int64
     public var gapCount: Int64
@@ -8180,10 +8178,9 @@ public struct Summary: Equatable, Hashable {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(cardCount: Int64, completion: Double, computedAt: Timestamp, configKey: String, dueCount: Int64, gapCount: Int64, matureCount: Int64, savedMoveCount: Int64?, suspendedCount: Int64?) {
+    public init(cardCount: Int64, completion: Double, configKey: String, dueCount: Int64, gapCount: Int64, matureCount: Int64, savedMoveCount: Int64?, suspendedCount: Int64?) {
         self.cardCount = cardCount
         self.completion = completion
-        self.computedAt = computedAt
         self.configKey = configKey
         self.dueCount = dueCount
         self.gapCount = gapCount
@@ -8210,7 +8207,6 @@ public struct FfiConverterTypeSummary: FfiConverterRustBuffer {
             try Summary(
                 cardCount: FfiConverterInt64.read(from: &buf), 
                 completion: FfiConverterDouble.read(from: &buf), 
-                computedAt: FfiConverterTypeTimestamp.read(from: &buf), 
                 configKey: FfiConverterString.read(from: &buf), 
                 dueCount: FfiConverterInt64.read(from: &buf), 
                 gapCount: FfiConverterInt64.read(from: &buf), 
@@ -8223,7 +8219,6 @@ public struct FfiConverterTypeSummary: FfiConverterRustBuffer {
     public static func write(_ value: Summary, into buf: inout [UInt8]) {
         FfiConverterInt64.write(value.cardCount, into: &buf)
         FfiConverterDouble.write(value.completion, into: &buf)
-        FfiConverterTypeTimestamp.write(value.computedAt, into: &buf)
         FfiConverterString.write(value.configKey, into: &buf)
         FfiConverterInt64.write(value.dueCount, into: &buf)
         FfiConverterInt64.write(value.gapCount, into: &buf)
@@ -13234,7 +13229,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_sidecar_saved() != 1946) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_repertoiredoc_sidecar_to_save() != 8739) {
+    if (uniffi_opening_core_checksum_method_repertoiredoc_sidecar_to_save() != 27786) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_start_coverage_check() != 23033) {

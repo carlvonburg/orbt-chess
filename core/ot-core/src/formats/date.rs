@@ -1,5 +1,4 @@
-//! ISO 8601 dates in UTC with milliseconds ("2026-10-20T10:04:12.515Z"), as the Swift build
-//! wrote them. No timezone database: these are instants, and only UTC is written.
+//! ISO 8601 dates in UTC with milliseconds ("2026-10-20T10:04:12.515Z"). No timezone database: these are instants, and only UTC is written.
 
 use std::fmt;
 

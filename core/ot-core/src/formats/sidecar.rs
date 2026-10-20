@@ -18,14 +18,12 @@ fn default_version() -> i64 {
     1
 }
 
-/// Fields are declared in key order, so the JSON keys come out sorted like the Swift build's.
+/// Fields are declared in key order, so the JSON keys come out sorted.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Summary {
     pub card_count: i64,
     pub completion: f64,
-    /// Not read; kept because earlier builds require it to decode the summary.
-    pub computed_at: Timestamp,
     pub config_key: String,
     pub due_count: i64,
     pub gap_count: i64,
@@ -99,9 +97,9 @@ impl Sidecar {
         serde_json::from_slice(data)
     }
 
-    /// The file's bytes, exactly as the Swift build wrote them.
+    /// The file's bytes.
     pub fn encoded(&self) -> Vec<u8> {
-        super::apple_json::to_vec_pretty(self)
+        serde_json::to_vec_pretty(self).expect("serializes")
     }
 
     pub fn coverage_settings(&self) -> CoverageSettings {

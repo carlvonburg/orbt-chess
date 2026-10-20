@@ -1,8 +1,7 @@
 //! The repertoire's files besides the PGN: the sidecar `<Name>.otrep.json` and the review log
-//! `<Name>.otlog.jsonl`. They are written byte for byte as the Swift build wrote them
-//! (`apple_json`), so existing files open unchanged and an unchanged file is never rewritten.
+//! `<Name>.otlog.jsonl`. Keys are sorted, so the output is deterministic and an unchanged file
+//! is never rewritten.
 
-pub mod apple_json;
 mod date;
 pub mod revlog;
 mod sidecar;

@@ -1,39 +1,45 @@
 # Golden fixtures
 
-Reference outputs of the Swift core (`OpeningCore`), which the Rust core must reproduce.
-Written by `OpeningCore/Tests/OpeningCoreTests/GoldenFixtureTests.swift` (helpers in
-`GoldenSupport.swift`). Do not edit by hand.
+Outputs recorded from the Swift core (`OpeningCore`, since deleted) that the Rust core
+reproduces. Do not edit by hand.
 
-**The Swift core has been deleted** (after the app moved to the Rust core), so these files
-are now fixed test data and `regenerate.sh` no longer works as it is. To regenerate them,
-check out the last commit that still has `apple/OpeningCore` (`git log -- apple/OpeningCore`)
-in a separate worktree and run the script there.
+Files over 1 MB are gzipped (`name.json` → `name.json.gz`). Paths in this README name the
+uncompressed file: read `<path>.gz` when `<path>` is absent (`golden::bytes` does). This
+includes byte-exact files such as `inputs/semislav.pgn.gz` and `pgn/semislav.written.pgn.gz`.
 
-## Regenerate (from a checkout that still has the Swift core)
+## Re-recording
+
+After an intended change, tests that support it write the Rust output into their fixture:
 
 ```bash
-core/fixtures/regenerate.sh
+OT_REBASE_GOLDENS=1 cargo test -p ot-core --test golden_scheduler --test golden_study
 ```
 
-It runs `OT_WRITE_GOLDENS=1 swift test --filter GoldenFixtureTests` in `OpeningCore`, which
-writes every file plain, then gzips each file over 1 MB in place with `gzip -9 -n`
-(`name.json` → `name.json.gz`, the plain file removed; small files stay plain). Paths in this
-README name the uncompressed file: read `<path>.gz` when `<path>` is absent (Rust: flate2's
-`GzDecoder`). This includes byte-exact files such as `inputs/semislav.pgn.gz` and
-`pgn/semislav.written.pgn.gz` — compare after decompressing. `-n` leaves out the name and
-time, so reruns are byte-identical.
+Check the diff before committing. `scheduler/answers.json`, `queue/queues.json` (the
+`berlin_filtered` days) and `session/*.json` were re-recorded this way when fuzz and the
+filtered shuffle moved to Anki's `StdRng`; everything else is still the Swift output.
 
-The two large inputs were read from `testData/` (then next to the repo, now in it; override
-with `OT_TESTDATA=<dir>`); they are copied into `inputs/`. Plain `swift test` skips the suite.
-A rerun rewrites every file; with unchanged Swift sources the output is byte-identical
-(see "Unordered fields" for the one place where Swift's order is not deterministic and how
-the fixtures avoid it).
+## Where the core differs from the recording
+
+- chesskit-swift kept castling rights after a rook was captured on its home square (e.g.
+  `KQkq` after `Rxa8`); shakmaty drops them, as FEN requires. This changes 22 of ~9,500
+  positions, all in the Semi-Slav. The tests map the fixtures' keys with
+  `golden::legacy_epds`.
+- chesskit-swift kept the ep square after an en-passant capture and counted the halfmove
+  clock up (`b - f6 1 17`); shakmaty clears it and resets the clock (`b - - 0 17`). Only the
+  FEN differs; the EPD is the same.
+- FSRS comes from the fsrs crate (f32, as in Anki), the Swift copy used f64: memory states
+  differ around the 6th significant digit and are compared with a tolerance.
+- Sidecars were written with Foundation's formatting (`"key" : value`) and a summary
+  `computedAt`; they are compared as values, without it.
+- Where Swift iterated a `Set` or `Dictionary`, the core breaks ties by EPD or node id (see
+  "Unordered fields").
 
 ## Conventions
 
-- JSON is written by Swift's `JSONEncoder` with sorted keys and unescaped slashes; pretty
-  printed except files marked *compact*. Compare parsed values, not bytes (except `.pgn`,
-  `.otrep.json` and `.otlog.jsonl`, which are byte-exact file formats).
+- JSON was written by Swift's `JSONEncoder` with sorted keys and unescaped slashes; pretty
+  printed except files marked *compact*. Compare parsed values, not bytes (except `.pgn` and
+  `.otlog.jsonl`, which are byte-exact file formats).
 - Ids (`NodeID`, card ids, timestamps) are integers. Doubles are printed in Swift's shortest
   round-trip form; a whole double prints without a fraction (`1`, not `1.0`), so parse every
   number as f64 where the schema says double. Compare doubles exactly unless a field is noted.
@@ -175,7 +181,8 @@ revlogKind, leeched}`; `memory` = `{stability, difficulty}` or null. `config` li
 mixed with lateness) for 10 EPDs (different card ids → different fuzz), review on time / late
 / early filtered / branch session / without memory, relearn, leech tag/suspend/threshold,
 steps across the rollover, day-learn, step and FSRS short-term configs, retention 0.8 with max
-interval 30, retention 0.97. Fuzz is always on (seeded by card id + reps).
+interval 30, retention 0.97. Fuzz is always on (seeded by card id + reps). Re-recorded from
+the Rust core (see "Re-recording").
 
 ### `scheduler/vectors.json`
 Unit vectors: `fuzzFactor` (`{seed (decimal string, u64), factor}`), `learningIntervalWithFuzz`
@@ -185,8 +192,8 @@ minimumReviewFuzzInterval}`), `fuzzSeed {cardID, reps, seed}`, `fsrsNextStates {
 desiredRetention, daysElapsed, again|hard|good|easy: {memory, interval}}`, `retrievability`,
 `learningSteps {steps, remaining, again, hard, good, current, remainingForGood,
 remainingForFailed}`, `intervalKind {kind, secsUntilRollover, converted, revlog}`,
-`leechThreshold {lapses, threshold, met}`. FSRS doubles: compare with a 1e-9 relative tolerance
-if the Rust fsrs crate computes in f32 (Swift uses f64) — that difference belongs in DEVIATIONS.md.
+`leechThreshold {lapses, threshold, met}`. `fuzzFactor` and `learningIntervalWithFuzz` hold the
+Swift generator's draws: only their ranges are checked.
 
 ### `queue/queues.json` (compact)
 - `anki_basic`: AnkiSchedulerTests.queueOrderAndCounts plus a deliberate tie;
@@ -199,9 +206,6 @@ if the Rust fsrs crate computes in f32 (Swift uses f64) — that difference belo
   {limits, learnAheadSecs, steps}}}`; ops `build`, `remove {epd}`, `answered {epd, card, timing}`
   (the card from `Scheduler().answer`), `updateLearningCutoff {now}`.
 - `berlin_filtered`: `CardQueues(filtered:cards:timing:)` for three days (shuffle seeded by the day).
-- `splitmix64` (first 8 outputs for seed 12345, decimal strings) and `shuffle_0_to_19_day100`:
-  Swift's `shuffle(using:)` with SplitMix64 — the Rust port must reproduce Swift's
-  Fisher–Yates and `random(in:using:)` (Lemire's multiply-shift) to match filtered order.
 - `intersperse`, `remainingLimits` vectors.
 
 A *queue* snapshot is `{counts, currentDay, learnAheadSecs, currentLearningCutoff, main: [{epd,

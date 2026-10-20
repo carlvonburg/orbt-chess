@@ -441,7 +441,6 @@ pub struct OutlineItem {
 pub struct Summary {
     pub card_count: i64,
     pub completion: f64,
-    pub computed_at: Timestamp,
     pub config_key: String,
     pub due_count: i64,
     pub gap_count: i64,

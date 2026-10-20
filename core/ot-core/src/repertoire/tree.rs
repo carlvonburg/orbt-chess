@@ -1,7 +1,7 @@
 use std::collections::{BTreeSet, HashMap};
 
 use super::comment;
-use crate::chess::{ChessPosition, Epd, PieceKind, PlayedMove, Side, san};
+use crate::chess::{ChessPosition, Epd, PlayedMove, Side, san};
 use crate::pgn::{self, PgnGame, PgnMove, PgnTag};
 
 /// Node ids are sequential and never reused; a deleted node leaves a hole. They are not
@@ -294,56 +294,6 @@ impl RepertoireTree {
             .into_iter()
             .filter(|&n| self.get(n).is_some_and(|n| n.children.is_empty()))
             .collect()
-    }
-
-    /// The keys the Swift build (chesskit-swift) used, where they differ from `epd`: it kept
-    /// castling rights when a rook was captured on its home square, and dropped them only
-    /// when the king or that rook moved. Used to carry cards and exclusions in existing sidecars
-    /// over to the correct keys.
-    pub fn legacy_epds(&self) -> HashMap<NodeId, Epd> {
-        fn castling(epd: &Epd) -> String {
-            epd.as_str().split(' ').nth(2).unwrap_or("-").to_owned()
-        }
-        let mut result = HashMap::new();
-        let mut stack = vec![(Self::ROOT, castling(&self.root().epd))];
-        while let Some((id, rights)) = stack.pop() {
-            let Some(node) = self.get(id) else { continue };
-            if castling(&node.epd) != rights {
-                let mut fields: Vec<&str> = node.epd.as_str().split(' ').collect();
-                fields[2] = &rights;
-                result.insert(id, Epd::new(fields.join(" ")));
-            }
-            for &child in &node.children {
-                let Some(mv) = self.get(child).and_then(|c| c.mv.as_ref()) else {
-                    continue;
-                };
-                // chesskit-swift's invalidateCastling: any move of a king, or a rook of the
-                // mover's color leaving its rook's start square.
-                let from = mv.from();
-                let lost: &[char] = match node.position.piece_at(from) {
-                    Some(p) if p.kind == PieceKind::King => match p.side {
-                        Side::White => &['K', 'Q'],
-                        Side::Black => &['k', 'q'],
-                    },
-                    Some(p) if p.kind == PieceKind::Rook => {
-                        match (p.side, from.to_string().as_str()) {
-                            (Side::White, "a1") => &['Q'],
-                            (Side::White, "h1") => &['K'],
-                            (Side::Black, "a8") => &['q'],
-                            (Side::Black, "h8") => &['k'],
-                            _ => &[],
-                        }
-                    }
-                    _ => &[],
-                };
-                let mut next: String = rights.chars().filter(|c| !lost.contains(c)).collect();
-                if next.is_empty() || next == "-" {
-                    next = "-".to_owned();
-                }
-                stack.push((child, next));
-            }
-        }
-        result
     }
 
     // Edits

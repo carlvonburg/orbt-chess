@@ -140,14 +140,14 @@ impl ExplorerSpeed {
 
 /// Which explorer database a repertoire measures coverage against.
 ///
-/// JSON keeps the shape Swift's synthesized Codable wrote: `{"masters":{}}` or
+/// In JSON: `{"masters":{}}` or
 /// `{"lichess":{"speeds":[...],"ratings":[...]}}`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ExplorerDatabase {
     Masters {},
     /// `ratings` are Lichess bucket lower bounds: 0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500.
-    // Fields in key order, so the JSON keys come out sorted like the Swift build's.
+    // Fields in key order, so the JSON keys come out sorted.
     Lichess {
         ratings: Vec<i64>,
         speeds: Vec<ExplorerSpeed>,

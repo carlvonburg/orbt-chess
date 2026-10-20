@@ -90,7 +90,7 @@ int_enum!(CardQueue {
 
 pub(crate) use int_enum;
 
-/// Fields are in key order, so JSON keys come out sorted like the Swift build's.
+/// Fields are in key order, so JSON keys come out sorted.
 /// The study state of one card: a position where it's your move. A card that was never
 /// studied is New and has no stored `Card`.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

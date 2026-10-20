@@ -115,7 +115,6 @@ impl Repertoire {
             progress_cache: None,
             counts_cache: None,
         };
-        doc.migrate_legacy_keys();
         // The file repeats lines under every move order (e.g. a Chessbook export): write the
         // compact version, so later loads are fast.
         if doc.tree.merged_transpositions > 0 {
@@ -124,28 +123,6 @@ impl Repertoire {
         doc.recompute_coverage_inner(stats);
         let changes = doc_changes(&mut doc);
         Ok((doc, changes))
-    }
-
-    /// Cards and exclusions the Swift build stored under chesskit-swift's EPD (castling rights
-    /// kept after a rook was captured on its home square) move to the correct key.
-    fn migrate_legacy_keys(&mut self) {
-        let mut moved = false;
-        for (id, old) in self.tree.legacy_epds() {
-            let new = self.tree[id].epd.clone();
-            if let Some(card) = self.sidecar.study_cards.remove(&old) {
-                self.sidecar.study_cards.entry(new.clone()).or_insert(card);
-                moved = true;
-            }
-            if let Some(excluded) = self.sidecar.excluded_moves.as_mut()
-                && let Some(moves) = excluded.remove(&old)
-            {
-                excluded.entry(new).or_insert(moves);
-                moved = true;
-            }
-        }
-        if moved {
-            self.request_sidecar_save(save_delay::SIDECAR_AFTER_SETTINGS_MS);
-        }
     }
 
     // Reading
@@ -698,14 +675,13 @@ impl Repertoire {
     }
 
     /// The sidecar to write (with a fresh summary for the library), or None when unchanged.
-    pub fn sidecar_to_save(&mut self, timing: &SchedTiming, now: Timestamp) -> Option<Vec<u8>> {
+    pub fn sidecar_to_save(&mut self, timing: &SchedTiming) -> Option<Vec<u8>> {
         let progress = self.learning_progress(RepertoireTree::ROOT);
         let due_count = self.study_counts(timing).review;
         let root = self.coverage.root();
         self.sidecar.summary = Some(Summary {
             card_count: progress.cards,
             completion: root.map_or(0.0, |r| r.completion),
-            computed_at: now,
             config_key: self.sidecar.config_key(),
             due_count,
             gap_count: root.map_or(0, |r| r.gap_count),
@@ -765,7 +741,6 @@ impl Repertoire {
     }
 
     fn after_remote_tree(&mut self, stats: &dyn StatsSource, remote_text: &str) {
-        self.migrate_legacy_keys();
         self.tree_did_change();
         self.undo.clear();
         self.coverage.recompute_all(&self.tree, stats);

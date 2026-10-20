@@ -560,8 +560,8 @@ impl RepertoireDoc {
         self.lock().pgn_saved(text)
     }
 
-    pub fn sidecar_to_save(&self, timing: SchedTiming, now: Timestamp) -> Option<Vec<u8>> {
-        self.lock().sidecar_to_save(&timing, now)
+    pub fn sidecar_to_save(&self, timing: SchedTiming) -> Option<Vec<u8>> {
+        self.lock().sidecar_to_save(&timing)
     }
 
     pub fn sidecar_saved(&self, data: Vec<u8>) {

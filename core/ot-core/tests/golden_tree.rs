@@ -103,7 +103,7 @@ fn tree_matches_swift() {
         let mut actual = tree_json(&tree);
         // chesskit-swift kept castling rights after a rook was captured on its home square,
         // so a few EPDs differ; legacy_epds_reproduce_the_swift_keys checks them instead.
-        let legacy = tree.legacy_epds();
+        let legacy = golden::legacy_epds(&tree);
         if !legacy.is_empty() {
             let obj = expected.as_object_mut().unwrap();
             obj.remove("epdIndex");
@@ -123,7 +123,7 @@ fn tree_matches_swift() {
             }
         }
         // chesskit-swift keeps the ep square and counts the halfmove clock up after an en
-        // passant capture; shakmaty clears and resets them. The EPD is the same (DEVIATIONS.md).
+        // passant capture; shakmaty clears and resets them. The EPD is the same (core/fixtures/README.md).
         for (e, a) in expected["nodes"]
             .as_array_mut()
             .unwrap()
@@ -149,7 +149,7 @@ fn legacy_epds_reproduce_the_swift_keys() {
     for name in golden::inputs() {
         let tree = RepertoireTree::from_pgn(&input(&name));
         let expected = golden::json(&format!("tree/{name}.tree.json"));
-        let legacy = tree.legacy_epds();
+        let legacy = golden::legacy_epds(&tree);
         for (node, e) in tree.nodes().zip(expected["nodes"].as_array().unwrap()) {
             let swift = e["epd"].as_str().unwrap();
             let key = legacy.get(&node.id).unwrap_or(&node.epd);

@@ -10,7 +10,10 @@
 
 use std::collections::HashMap;
 
-use super::{Card, CardQueue, RemainingLimits, SchedTiming, SplitMix64};
+use rand::prelude::*;
+use rand::rngs::StdRng;
+
+use super::{Card, CardQueue, RemainingLimits, SchedTiming};
 use crate::chess::Epd;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -189,7 +192,8 @@ impl CardQueues {
         timing: &SchedTiming,
         learn_ahead_secs: i64,
     ) -> CardQueues {
-        let mut rng = SplitMix64::new((timing.days_elapsed as u64).wrapping_mul(2_654_435_761));
+        // Anki shuffles with SQL's random(); seeding by day keeps the order for the day.
+        let mut rng = StdRng::seed_from_u64(timing.days_elapsed as u64);
         let mut learning = Vec::new();
         let mut main = Vec::new();
         for epd in epds {
@@ -212,7 +216,7 @@ impl CardQueues {
                 kind,
             });
         }
-        swift_shuffle(&mut main, &mut rng);
+        main.shuffle(&mut rng);
         let count = |kind| main.iter().filter(|e| e.kind == kind).count() as i64;
         let counts = Counts {
             new: count(MainKind::New),
@@ -375,19 +379,6 @@ impl CardQueues {
             .iter()
             .filter(|e| e.due > last_ahead && e.due <= new_ahead)
             .count() as i64;
-    }
-}
-
-/// Swift's `shuffle(using:)`: Fisher-Yates from the front, with `Int.random(in:using:)`
-/// (Lemire's multiply-shift), so filtered decks keep the order the Swift build showed.
-pub(crate) fn swift_shuffle<T>(items: &mut [T], rng: &mut SplitMix64) {
-    let mut amount = items.len() as u64;
-    let mut current = 0;
-    while amount > 1 {
-        let random = rng.next_below(amount);
-        amount -= 1;
-        items.swap(current, current + random as usize);
-        current += 1;
     }
 }
 

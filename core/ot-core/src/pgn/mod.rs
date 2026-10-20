@@ -1,6 +1,6 @@
 //! PGN as written in the file, before any move is validated (see `repertoire` for that).
 //!
-//! The parser and writer are ports of the Swift ones, not pgn-reader: comment placement
+//! Our own parser and writer, not pgn-reader: comment placement
 //! (pre-comments after "(", "%" escape lines, glyphs as NAGs) and the writer's output are
 //! the file format contract, and a re-save must not reformat existing repertoires.
 

@@ -474,27 +474,3 @@ fn card_id_is_fnv_of_the_epd() {
     }
     assert_eq!(id, (h & 0x7fff_ffff_ffff_ffff) as i64);
 }
-
-#[test]
-fn splitmix64_and_swift_shuffle_match_the_swift_build() {
-    // core/fixtures/queue/queues.json: splitmix64 and shuffle_0_to_19_day100
-    let mut rng = SplitMix64::new(12345);
-    let first: Vec<u64> = (0..3).map(|_| rng.next_u64()).collect();
-    assert_eq!(
-        first,
-        [
-            2454886589211414944,
-            3778200017661327597,
-            2205171434679333405
-        ]
-    );
-    let mut items: Vec<i64> = (0..20).collect();
-    let mut rng = SplitMix64::new(100u64.wrapping_mul(2_654_435_761));
-    super::queue::swift_shuffle(&mut items, &mut rng);
-    assert_eq!(
-        items,
-        [
-            18, 14, 8, 4, 5, 0, 10, 13, 12, 7, 9, 16, 11, 1, 3, 6, 19, 15, 17, 2
-        ]
-    );
-}

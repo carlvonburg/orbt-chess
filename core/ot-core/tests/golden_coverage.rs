@@ -109,7 +109,7 @@ fn stats_map(v: &Value, tree: &RepertoireTree) -> HashMap<Epd, ExplorerStats> {
             )
         })
         .collect();
-    for (id, legacy) in tree.legacy_epds() {
+    for (id, legacy) in golden::legacy_epds(tree) {
         if let Some(s) = map.get(&legacy).cloned() {
             map.insert(tree[id].epd.clone(), s);
         }
@@ -126,13 +126,11 @@ fn check_recompute(label: &str, tree: &RepertoireTree, fixture: &Value) {
     });
     let mut actual = engine_json(&engine, tree);
     // Pending positions are keyed by EPD; drop the few with Swift-only keys from both sides.
-    let legacy: HashSet<String> = tree
-        .legacy_epds()
+    let legacy: HashSet<String> = golden::legacy_epds(tree)
         .values()
         .map(|e| e.as_str().to_owned())
         .collect();
-    let renamed: HashSet<String> = tree
-        .legacy_epds()
+    let renamed: HashSet<String> = golden::legacy_epds(tree)
         .keys()
         .map(|&id| tree[id].epd.as_str().to_owned())
         .collect();

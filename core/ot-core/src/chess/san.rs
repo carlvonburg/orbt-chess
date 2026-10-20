@@ -1,7 +1,7 @@
 //! Loose SAN handling for moves typed in books, PGN files and other programs.
 
 fn trim(s: &str) -> &str {
-    // Swift's `.whitespaces`: spaces and tabs, not line breaks.
+    // Spaces and tabs, not line breaks.
     s.trim_matches(|c: char| c.is_whitespace() && c != '\n' && c != '\r')
 }
 

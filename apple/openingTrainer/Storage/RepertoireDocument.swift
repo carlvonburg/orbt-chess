@@ -308,7 +308,7 @@ final class RepertoireDocument {
 
     private func saveSidecar() {
         saveRevlog()
-        guard let data = core.sidecarToSave(timing: SchedTiming(), now: .of(.now)) else { return }
+        guard let data = core.sidecarToSave(timing: SchedTiming()) else { return }
         do {
             try FileAccess.write(data, to: sidecarURL, presenter: presenters.last)
             core.sidecarSaved(data: data)

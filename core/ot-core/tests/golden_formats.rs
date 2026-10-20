@@ -1,4 +1,4 @@
-//! Card ids, sidecars, review logs and tree edits against the Swift core's fixtures.
+//! Card ids, sidecars, review logs and tree edits against the fixtures.
 
 mod golden;
 
@@ -30,33 +30,32 @@ const SIDECARS: [&str; 6] = [
     "full_synced",
 ];
 
-fn sidecar(name: &str) -> (Vec<u8>, Sidecar) {
+fn sidecar(name: &str) -> (Value, Sidecar) {
     let bytes = golden::bytes(&format!("misc/sidecar_{name}.otrep.json"));
     let s = Sidecar::decode(&bytes).unwrap_or_else(|e| panic!("{name}: {e}"));
-    (bytes, s)
+    let mut value: Value = serde_json::from_slice(&bytes).unwrap();
+    // Dropped from the summary since the fixtures were recorded.
+    if let Some(summary) = value.get_mut("summary").and_then(Value::as_object_mut) {
+        summary.remove("computedAt");
+    }
+    (value, s)
+}
+
+/// The sidecar's JSON, compared as values: the fixtures use Foundation's formatting.
+fn encoded(s: &Sidecar) -> Value {
+    serde_json::from_slice(&s.encoded()).unwrap()
 }
 
 #[test]
-fn sidecars_round_trip_byte_for_byte() {
+fn sidecars_round_trip() {
     for name in SIDECARS {
-        let (bytes, s) = sidecar(name);
-        let encoded = s.encoded();
-        if encoded != bytes {
-            let (a, b) = (
-                String::from_utf8_lossy(&bytes),
-                String::from_utf8_lossy(&encoded),
-            );
-            let line = a
-                .lines()
-                .zip(b.lines())
-                .position(|(x, y)| x != y)
-                .unwrap_or(0);
-            panic!(
-                "{name} differs at line {line}:\n  swift {:?}\n  rust  {:?}",
-                a.lines().nth(line),
-                b.lines().nth(line)
-            );
-        }
+        let (value, s) = sidecar(name);
+        golden::assert_same(name, &value, &encoded(&s), 0.0);
+        let again = Sidecar::decode(&s.encoded()).unwrap();
+        assert!(
+            again.encoded() == s.encoded(),
+            "{name} re-encodes to the same bytes"
+        );
     }
 }
 
@@ -64,8 +63,8 @@ fn sidecars_round_trip_byte_for_byte() {
 fn sidecar_merge_sync_and_estimates_match_swift() {
     let (_, full) = sidecar("full");
     let (_, other) = sidecar("other");
-    let (merged_bytes, _) = sidecar("full_merged_other");
-    assert!(full.merged(&other).encoded() == merged_bytes, "merged");
+    let (merged, _) = sidecar("full_merged_other");
+    golden::assert_same("merged", &merged, &encoded(&full.merged(&other)), 0.0);
 
     let info = golden::json("misc/sidecar_info.json");
     let sync = &info["syncSuspension"];
@@ -77,8 +76,8 @@ fn sidecar_merge_sync_and_estimates_match_swift() {
         .collect();
     let mut synced = full.clone();
     assert_eq!(json!(synced.sync_suspension(&active)), sync["changed"]);
-    let (synced_bytes, _) = sidecar("full_synced");
-    assert!(synced.encoded() == synced_bytes, "synced");
+    let (synced_value, _) = sidecar("full_synced");
+    golden::assert_same("synced", &synced_value, &encoded(&synced), 0.0);
 
     let t = &info["timing"];
     let timing = SchedTiming::new(
@@ -87,7 +86,7 @@ fn sidecar_merge_sync_and_estimates_match_swift() {
         t["now"].as_i64().unwrap(),
     );
     for name in ["full", "masters", "minimal"] {
-        let (bytes, s) = sidecar(name);
+        let (value, s) = sidecar(name);
         let e = &info[name];
         let p = s.estimated_progress();
         let c = s.estimated_study_counts(&DeckConfig::default(), &timing);
@@ -101,7 +100,7 @@ fn sidecar_merge_sync_and_estimates_match_swift() {
             "estimatedStudyCounts": {"learning": c.learning, "new": c.new, "review": c.review},
             "laterLearningDues": s.later_learning_dues(&timing),
             "nextDue": s.next_due(&timing),
-            "roundTripEqual": s.encoded() == bytes,
+            "roundTripEqual": golden::diff(name, &value, &encoded(&s), 0.0).is_none(),
         });
         golden::assert_same(name, e, &actual, 0.0);
     }

@@ -23,8 +23,7 @@ struct Keys {
 
 impl Keys {
     fn new(tree: &RepertoireTree) -> Keys {
-        let to_swift = tree
-            .legacy_epds()
+        let to_swift = golden::legacy_epds(tree)
             .into_iter()
             .map(|(id, old)| (tree[id].epd.clone(), old))
             .collect();
@@ -444,13 +443,21 @@ fn queues_match_swift() {
         }
     }
 
-    // berlin_filtered: branch queues, shuffled like Swift's shuffle(using:).
+    // berlin_filtered: branch queues, shuffled by day.
     let filtered = &fixture["berlin_filtered"];
     let fcards = cards_from(&filtered["cards"]);
     let epds = epd_list(&filtered["epds"]);
-    for day in filtered["days"].as_array().unwrap() {
+    let mut rebased = fixture.clone();
+    for (di, day) in filtered["days"].as_array().unwrap().iter().enumerate() {
         let q = CardQueues::filtered(&epds, &fcards, &timing(&day["timing"]), 1200);
+        if golden::rebasing() {
+            rebased["berlin_filtered"]["days"][di]["queue"] = queue_json(&q, true);
+            continue;
+        }
         golden::assert_same("berlin_filtered", &day["queue"], &queue_json(&q, true), 0.0);
+    }
+    if golden::rebasing() {
+        golden::write_json("queue/queues.json", &rebased);
     }
 
     // remainingLimits rows.
@@ -611,6 +618,7 @@ fn simulate(
 fn sessions_match_swift() {
     for name in TREES {
         let fixture = golden::json(&format!("session/{name}.json"));
+        let mut rebased = fixture.clone();
         let (tree, color) = training_tree(name);
         let keys = Keys::new(&tree);
         let trainer = Arc::new(Trainer::new(Arc::new(tree.clone()), color));
@@ -653,10 +661,19 @@ fn sessions_match_swift() {
                 )
             };
             let actual = simulate(session, &initial, &start, &keys);
+            if golden::rebasing() {
+                for (k, v) in actual.as_object().unwrap() {
+                    rebased[key.as_str()][k] = v.clone();
+                }
+                continue;
+            }
             let want = json!({"lines": expected["lines"], "finalCards": expected["finalCards"],
                 "revlog": expected["revlog"], "answered": expected["answered"],
                 "played": expected["played"]});
             golden::assert_same(&format!("{name} {key}"), &want, &actual, 2e-5);
+        }
+        if golden::rebasing() {
+            golden::write_json(&format!("session/{name}.json"), &rebased);
         }
     }
 }

@@ -24,8 +24,7 @@ pub struct Trainer {
     pub card_epd_set: HashSet<Epd>,
 }
 
-/// Returns the first of the maximal elements, like Swift's `max(by:)` (Rust's `max_by`
-/// returns the last).
+/// Returns the first of the maximal elements (Rust's `max_by` returns the last).
 pub(crate) fn first_max_by<T: Copy>(
     items: impl IntoIterator<Item = T>,
     mut less: impl FnMut(&T, &T) -> bool,
@@ -40,7 +39,7 @@ pub(crate) fn first_max_by<T: Copy>(
     best
 }
 
-/// Returns the first of the minimal elements, like Swift's `min(by:)`.
+/// Returns the first of the minimal elements.
 pub(crate) fn first_min_by<T: Copy>(
     items: impl IntoIterator<Item = T>,
     mut less: impl FnMut(&T, &T) -> bool,

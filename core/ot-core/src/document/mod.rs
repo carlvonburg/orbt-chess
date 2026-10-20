@@ -15,7 +15,7 @@ mod tests;
 pub use outline::{OutlineItem, gap_text, outline_children, search};
 pub use repertoire::{Changes, OpenError, Repertoire, StudyDefaults};
 
-/// Delays before saving, by what changed (as the Swift build used them).
+/// Delays before saving, by what changed.
 pub mod save_delay {
     /// After an edit: the PGN is saved shortly after.
     pub const PGN_MS: u32 = 800;

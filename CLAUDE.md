@@ -42,15 +42,15 @@ One folder per platform around a shared core (Android and web would be `android/
     `chess` (shakmaty), `pgn` (our parser and byte-exact writer), `repertoire` (tree,
     transpositions, merge), `explorer` (stats, sans-IO request queue, cache), `coverage`,
     `training` (`anki/` is Anki's scheduler; trainer, study session, line run), `statistics`
-    (Anki's graphs, scoping, chess stats), `formats` (sidecar and revlog, byte-identical to the
-    Swift build), `document` (the open repertoire: edits, undo, save hints, remote merges,
+    (Anki's graphs, scoping, chess stats), `formats` (sidecar and revlog), `document` (the open repertoire: edits, undo, save hints, remote merges,
     outline/search), `builder`, `drill` (state machines behind the two main screens), `lichess`
     (PKCE, analysis URL).
   - `ot-ffi/` — the UniFFI 0.32 bindings: objects (`RepertoireDoc`, `BuilderSession`,
     `DrillSession`, `Explorer`, `Position`, `Graphs`, `LibrarySidecar`) and the core's records
     and enums as remote types. Thin: conversions and locking only.
-  - `fixtures/` — the deleted Swift core's outputs, which the Rust tests compare against.
-    `DEVIATIONS.md` lists where the Rust core differs from it and from Anki/lichess.
+  - `fixtures/` — outputs recorded from the deleted Swift core, which the Rust tests compare
+    against (its README lists where the core differs). `DEVIATIONS.md` lists where the core
+    differs from Anki/lichess.
   - `scripts/check.sh` (fmt, clippy -D warnings, tests, wasm32 check), `scripts/build-apple.sh`.
 - `apple/` — the iPhone, iPad and Mac app (one multiplatform target, not Catalyst):
   - `openingTrainer.xcodeproj`; `openingTrainer/` is the app target (folder-synced group, new

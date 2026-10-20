@@ -563,6 +563,7 @@ dependencies = [
  "flate2",
  "fsrs",
  "getrandom",
+ "rand",
  "serde",
  "serde_json",
  "sha2",

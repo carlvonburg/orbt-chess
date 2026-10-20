@@ -12,6 +12,7 @@ publish = false
 ot-core = { path = "ot-core" }
 shakmaty = "0.30.2"
 fsrs = "6.6.2"
+rand = { version = "0.10.3", default-features = false, features = ["std_rng"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["float_roundtrip"] }
 thiserror = "2.0.21"

@@ -164,12 +164,12 @@ fn answering_counts_saves_and_logs() {
     doc.revlog_appended();
     assert!(doc.revlog_to_append().is_none());
 
-    let bytes = doc.sidecar_to_save(&t, Timestamp(2_000)).unwrap();
+    let bytes = doc.sidecar_to_save(&t).unwrap();
     let saved = Sidecar::decode(&bytes).unwrap();
     let summary = saved.summary.unwrap();
     assert_eq!((summary.card_count, summary.saved_move_count), (3, Some(5)));
     doc.sidecar_saved(bytes.clone());
-    assert!(doc.sidecar_to_save(&t, Timestamp(2_000)).is_none());
+    assert!(doc.sidecar_to_save(&t).is_none());
     // Our own write coming back from disk changes nothing.
     assert_eq!(doc.remote_sidecar(&bytes), Changes::default());
 }
@@ -219,23 +219,6 @@ fn coverage_requests_only_while_a_screen_shows() {
     assert_eq!(requests.first().map(|r| &r.0), Some(&after_e4.epd()));
     assert!(doc.stop_coverage_check());
     assert!(doc.coverage_requests().is_empty());
-}
-
-#[test]
-fn cards_under_old_swift_keys_move_to_the_correct_ones() {
-    // After 3. Bxh8 the Swift build kept Black's kingside castling right in the EPD.
-    let pgn = "1. b3 g6 2. Bb2 a6 3. Bxh8 *";
-    let tree = RepertoireTree::from_pgn(pgn);
-    let (id, old) = tree.legacy_epds().into_iter().next().expect("a legacy key");
-    let new = tree[id].epd.clone();
-    let mut s = Sidecar::decode(&sidecar(Side::Black)).unwrap();
-    let card = crate::training::anki::Card::new(1, 0, 0);
-    s.study_cards.insert(old.clone(), card.clone());
-    let (doc, changes) =
-        Repertoire::open(pgn, &s.encoded(), StudyDefaults::default(), &no_stats()).unwrap();
-    assert!(doc.sidecar().study_cards.contains_key(&new));
-    assert!(!doc.sidecar().study_cards.contains_key(&old));
-    assert!(changes.save_sidecar_after_ms.is_some());
 }
 
 #[test]

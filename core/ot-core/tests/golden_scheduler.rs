@@ -2,7 +2,7 @@
 //!
 //! Each step starts from the Swift card before the answer, so a difference does not carry
 //! into later steps. FSRS runs in f32 in the fsrs crate and in f64 in the Swift copy, so
-//! memory states and the revlog factor are compared with a tolerance (DEVIATIONS.md).
+//! memory states and the revlog factor are compared with a tolerance (core/fixtures/README.md).
 
 mod golden;
 
@@ -126,9 +126,10 @@ fn without_fsrs(v: &Value) -> Value {
 #[test]
 fn answers_match_swift() {
     let fixture = golden::json("scheduler/answers.json");
+    let mut rebased = fixture.clone();
     let mut steps_checked = 0;
     let mut factor_diffs = 0;
-    for scenario in fixture["scenarios"].as_array().unwrap() {
+    for (si, scenario) in fixture["scenarios"].as_array().unwrap().iter().enumerate() {
         let name = scenario["name"].as_str().unwrap();
         let scheduler = Scheduler::new(config(&scenario["config"]));
         let epd = Epd::new(scenario["epd"].as_str().unwrap());
@@ -174,6 +175,12 @@ fn answers_match_swift() {
                 "nextStates": step["nextStates"], "card": step["card"], "revlog": step["revlog"],
                 "fromQueue": step["fromQueue"], "leeched": step["leeched"],
             });
+            if golden::rebasing() {
+                for (k, v) in actual.as_object().unwrap() {
+                    rebased["scenarios"][si]["steps"][i][k] = v.clone();
+                }
+                continue;
+            }
             // The revlog factor is the FSRS difficulty ×1000, rounded: allow ±1.
             let (ef, af) = (&expected["revlog"]["factor"], &actual["revlog"]["factor"]);
             if ef != af {
@@ -193,6 +200,10 @@ fn answers_match_swift() {
             golden::assert_same(&label, &expected, &actual, FSRS_TOL);
             steps_checked += 1;
         }
+    }
+    if golden::rebasing() {
+        golden::write_json("scheduler/answers.json", &rebased);
+        return;
     }
     println!("{steps_checked} steps; revlog factor off by one in {factor_diffs}");
     assert!(steps_checked > 100);

@@ -1,6 +1,5 @@
-// Ported from Anki's scheduler, rslib/src/scheduler (https://github.com/ankitects/anki), by
-// way of the Swift port in OpeningCore/Training/Anki. FSRS comes from the fsrs crate, the
-// version Anki uses.
+// Ported from Anki's scheduler, rslib/src/scheduler (https://github.com/ankitects/anki).
+// FSRS comes from the fsrs crate, the version Anki uses.
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
@@ -23,7 +22,6 @@ mod tests;
 pub use answering::{Answer, Scheduler};
 pub use card::{Card, CardQueue, CardType, MemoryState, RevlogEntry};
 pub use config::{DeckConfig, LeechAction};
-pub use fuzz::SplitMix64;
 pub use interval_kind::IntervalKind;
 pub use limits::{DayLimit, DeckLimits, DeckStudyStats, RemainingLimits};
 pub use queue::{CardQueues, Counts, QueueKind};

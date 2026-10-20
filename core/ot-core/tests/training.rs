@@ -82,7 +82,6 @@ fn summary_round_trip() {
         suspended_count: None,
         due_count: 4,
         config_key: "k".into(),
-        computed_at: Timestamp(2_000),
     });
     let decoded = Sidecar::decode(&sidecar.encoded()).unwrap();
     assert_eq!(decoded.summary.as_ref().unwrap().saved_move_count, Some(25));

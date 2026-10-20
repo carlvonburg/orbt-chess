@@ -3,9 +3,10 @@
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 //
-// Differences: Anki draws the fuzz factor from ChaCha12 (`StdRng`); this uses SplitMix64 with
-// the same seed (card id + reps), so the ranges match but the chosen day can differ. Anki's
-// load balancer is not ported; Anki falls back to this plain fuzz without it.
+// Differences: Anki's load balancer is not ported; Anki falls back to this plain fuzz without it.
+
+use rand::prelude::*;
+use rand::rngs::StdRng;
 
 struct FuzzRange {
     start: f64,
@@ -40,7 +41,8 @@ pub(crate) fn with_review_fuzz(
     match fuzz_factor {
         Some(factor) => {
             let (lower, upper) = constrained_fuzz_bounds(interval, minimum, maximum);
-            (lower as f64 + factor * (1 + upper - lower) as f64).floor() as i64
+            // f32 as in Anki, so the floor lands on the same day.
+            (lower as f32 + factor as f32 * (1 + upper - lower) as f32).floor() as i64
         }
         None => rounded_int(interval).max(minimum).min(maximum),
     }
@@ -106,7 +108,7 @@ pub(crate) fn fuzz_seed(card_id: i64, reps: i64) -> u64 {
 
 /// A fuzz factor in `0..1` from a seed.
 pub(crate) fn fuzz_factor(seed: Option<u64>) -> Option<f64> {
-    seed.map(|s| SplitMix64::new(s).next_unit())
+    seed.map(|s| f64::from(StdRng::seed_from_u64(s).random_range(0.0f32..1.0)))
 }
 
 /// Adds up to 25% to a learning delay, but no more than 5 minutes.
@@ -116,43 +118,5 @@ pub(crate) fn learning_interval_with_fuzz(seed: Option<u64>, secs: i64) -> i64 {
     if secs >= upper_exclusive {
         return secs;
     }
-    let mut rng = SplitMix64::new(seed);
-    secs + (rng.next_u64() % (upper_exclusive - secs) as u64) as i64
-}
-
-#[derive(Clone, Debug)]
-pub struct SplitMix64 {
-    state: u64,
-}
-
-impl SplitMix64 {
-    pub fn new(seed: u64) -> SplitMix64 {
-        SplitMix64 { state: seed }
-    }
-
-    pub fn next_u64(&mut self) -> u64 {
-        self.state = self.state.wrapping_add(0x9E37_79B9_7F4A_7C15);
-        let mut z = self.state;
-        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
-        z ^ (z >> 31)
-    }
-
-    /// Swift's `RandomNumberGenerator.next(upperBound:)`: Lemire's multiply-shift with
-    /// rejection, uniform in `0..upper_bound`.
-    pub fn next_below(&mut self, upper_bound: u64) -> u64 {
-        assert!(upper_bound != 0);
-        let mut m = u128::from(self.next_u64()) * u128::from(upper_bound);
-        if (m as u64) < upper_bound {
-            let t = upper_bound.wrapping_neg() % upper_bound;
-            while (m as u64) < t {
-                m = u128::from(self.next_u64()) * u128::from(upper_bound);
-            }
-        }
-        (m >> 64) as u64
-    }
-
-    pub fn next_unit(&mut self) -> f64 {
-        (self.next_u64() >> 11) as f64 / (1u64 << 53) as f64
-    }
+    StdRng::seed_from_u64(seed).random_range(secs..upper_exclusive)
 }

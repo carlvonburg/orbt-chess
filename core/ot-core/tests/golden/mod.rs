@@ -1,9 +1,12 @@
 //! Reading the golden fixtures in core/fixtures (see its README for the schemas).
 #![allow(dead_code)]
 
+use std::collections::HashMap;
 use std::io::Read;
 use std::path::PathBuf;
 
+use ot_core::chess::{Epd, PieceKind, Side};
+use ot_core::repertoire::{NodeId, RepertoireTree};
 use serde_json::Value;
 
 pub fn dir() -> PathBuf {
@@ -38,6 +41,33 @@ pub fn json(path: &str) -> Value {
     let mut de = serde_json::Deserializer::from_slice(&data);
     de.disable_recursion_limit();
     Value::deserialize(&mut de).unwrap_or_else(|e| panic!("{path}: {e}"))
+}
+
+/// `OT_REBASE_GOLDENS=1`: tests that support it write what the core produces into their
+/// fixture instead of comparing (after an intended change; check the diff before committing).
+pub fn rebasing() -> bool {
+    std::env::var_os("OT_REBASE_GOLDENS").is_some()
+}
+
+/// Writes a fixture back where `json` read it from (gzipped and compact if it was).
+pub fn write_json(path: &str, value: &Value) {
+    use std::io::Write;
+    let compact = !bytes(path).starts_with(b"{\n");
+    let data = if compact {
+        serde_json::to_vec(value)
+    } else {
+        serde_json::to_vec_pretty(value)
+    }
+    .expect("JSON");
+    let plain = dir().join(path);
+    if plain.exists() {
+        std::fs::write(&plain, data).expect("write fixture");
+        return;
+    }
+    let file = std::fs::File::create(dir().join(format!("{path}.gz"))).expect("write fixture");
+    let mut gz = flate2::write::GzEncoder::new(file, flate2::Compression::best());
+    gz.write_all(&data).expect("write fixture");
+    gz.finish().expect("write fixture");
 }
 
 /// Input names (inputs/<name>.pgn), sorted.
@@ -118,4 +148,51 @@ pub fn assert_same(path: &str, expected: &Value, actual: &Value, tol: f64) {
     if let Some(d) = diff(path, expected, actual, tol) {
         panic!("{d}");
     }
+}
+
+/// The EPDs the fixtures use where they differ from the tree's: chesskit-swift kept castling
+/// rights when a rook was captured on its home square, and dropped them only when the king or
+/// that rook moved (a bug; shakmaty is right). The fixtures were recorded with it.
+pub fn legacy_epds(tree: &RepertoireTree) -> HashMap<NodeId, Epd> {
+    fn castling(epd: &Epd) -> String {
+        epd.as_str().split(' ').nth(2).unwrap_or("-").to_owned()
+    }
+    let mut result = HashMap::new();
+    let mut stack = vec![(RepertoireTree::ROOT, castling(&tree.root().epd))];
+    while let Some((id, rights)) = stack.pop() {
+        let Some(node) = tree.get(id) else { continue };
+        if castling(&node.epd) != rights {
+            let mut fields: Vec<&str> = node.epd.as_str().split(' ').collect();
+            fields[2] = &rights;
+            result.insert(id, Epd::new(fields.join(" ")));
+        }
+        for &child in &node.children {
+            let Some(mv) = tree.get(child).and_then(|c| c.mv.as_ref()) else {
+                continue;
+            };
+            // chesskit-swift's invalidateCastling: any move of a king, or a rook of the
+            // mover's color leaving its rook's start square.
+            let from = mv.from();
+            let lost: &[char] = match node.position.piece_at(from) {
+                Some(p) if p.kind == PieceKind::King => match p.side {
+                    Side::White => &['K', 'Q'],
+                    Side::Black => &['k', 'q'],
+                },
+                Some(p) if p.kind == PieceKind::Rook => match (p.side, from.to_string().as_str()) {
+                    (Side::White, "a1") => &['Q'],
+                    (Side::White, "h1") => &['K'],
+                    (Side::Black, "a8") => &['q'],
+                    (Side::Black, "h8") => &['k'],
+                    _ => &[],
+                },
+                _ => &[],
+            };
+            let mut next: String = rights.chars().filter(|c| !lost.contains(c)).collect();
+            if next.is_empty() || next == "-" {
+                next = "-".to_owned();
+            }
+            stack.push((child, next));
+        }
+    }
+    result
 }
