@@ -42,14 +42,6 @@ pub struct AddResult {
     pub changes: Changes,
 }
 
-#[derive(uniffi::Record)]
-pub struct ChapterInfo {
-    pub name: String,
-    pub tags: HashMap<String, String>,
-    /// From a non-standard position: kept verbatim, not part of the tree.
-    pub passthrough: bool,
-}
-
 /// An open repertoire. The platform reads and writes its files; see `Changes`.
 #[derive(uniffi::Object)]
 pub struct RepertoireDoc {
@@ -289,23 +281,6 @@ impl RepertoireDoc {
 
     pub fn saved_move_count(&self) -> i64 {
         self.lock().saved_move_count()
-    }
-
-    pub fn chapters(&self) -> Vec<ChapterInfo> {
-        self.lock()
-            .tree()
-            .chapters
-            .iter()
-            .map(|c| ChapterInfo {
-                name: c.name().to_owned(),
-                tags: c
-                    .tags
-                    .iter()
-                    .map(|t| (t.name.clone(), t.value.clone()))
-                    .collect(),
-                passthrough: c.passthrough.is_some(),
-            })
-            .collect()
     }
 
     // Stats and coverage

@@ -2,31 +2,32 @@
 source: ot-core/tests/snapshot_coverage.rs
 expression: text
 ---
-root: completion 0 gaps 2 (mass 0.510621) pending 0
-nodes by status: {"belowtarget": 1, "gap": 1, "required": 11}
+root: completion 0 gaps 2 (mass 0.360438) pending 0
+nodes by status: {"gap": 2, "required": 10, "transposition": 1}
 2 gaps, the biggest:
-  your move after [d4 d5 c4 c6 Nf3 Nf6 Nc3] mass 0.340414 seen every 3
-  reply Nc3 after [d4 d5 Nf3 Nf6 c4 c6] mass 0.170207 seen every 6
+  your move after [d4 d5 c4 c6 Nf3 Nf6 Nc3] mass 0.240292 seen every 4
+  your move after [d4 d5 c4 c6 Nf3 Nf6 e3] mass 0.120146 seen every 8
 0 pending positions, the most reached:
 
-0 root: required reach 1 completion 0 gaps 2 (mass 0.510621) pending 0 seen every 1
+0 root: required reach 1 completion 0 gaps 2 (mass 0.360438) pending 0 seen every 1
     d4 share 0.833333 reach 0.833333 completion 0 games 1000 required, child 1
-1 d4: required reach 0.833333 completion 0 gaps 2 (mass 0.510621) pending 0 seen every 1
-2 d5: required reach 0.833333 completion 0 gaps 2 (mass 0.510621) pending 0 seen every 1
+1 d4: required reach 0.833333 completion 0 gaps 2 (mass 0.360438) pending 0 seen every 1
+2 d5: required reach 0.833333 completion 0 gaps 2 (mass 0.360438) pending 0 seen every 1
     c4 share 0.588235 reach 0.490196 completion 0 games 1000 required, child 3
     Nf3 share 0.294118 reach 0.245098 completion 0 games 500 required, child 8
-3 c4: required reach 0.490196 completion 0 gaps 1 (mass 0.340414) pending 0 seen every 2
-4 c6: required reach 0.490196 completion 0 gaps 1 (mass 0.340414) pending 0 seen every 2
+3 c4: required reach 0.490196 completion 0 gaps 2 (mass 0.360438) pending 0 seen every 2
+4 c6: required reach 0.490196 completion 0 gaps 2 (mass 0.360438) pending 0 seen every 2
     Nf3 share 0.833333 reach 0.408497 completion 0 games 1000 required, child 5
-5 Nf3: required reach 0.408497 completion 0 gaps 1 (mass 0.340414) pending 0 seen every 2
-6 Nf6: required reach 0.408497 completion 0 gaps 1 (mass 0.340414) pending 0 seen every 2
-    Nc3 share 0.833333 reach 0.340414 completion 0 games 1000 required, child 7
-7 Nc3: gap reach 0.340414 completion 0 gaps 1 (mass 0.340414) pending 0 seen every 3
-8 Nf3: required reach 0.245098 completion 0 gaps 1 (mass 0.170207) pending 0 seen every 4
-9 Nf6: required reach 0.245098 completion 0 gaps 1 (mass 0.170207) pending 0 seen every 4
+5 Nf3: required reach 0.408497 completion 0 gaps 2 (mass 0.360438) pending 0 seen every 2
+6 Nf6: required reach 0.408497 completion 0 gaps 2 (mass 0.360438) pending 0 seen every 2
+    Nc3 share 0.588235 reach 0.240292 completion 0 games 1000 required, child 7
+    e3 share 0.294118 reach 0.120146 completion 0 games 500 required, child 12
+7 Nc3: gap reach 0.240292 completion 0 gaps 1 (mass 0.240292) pending 0 seen every 4
+8 Nf3: required reach 0.245098 completion 0 gaps 0 (mass 0) pending 0 seen every 4
+9 Nf6: required reach 0.245098 completion 0 gaps 0 (mass 0) pending 0 seen every 4
     c4 share 0.833333 reach 0.204248 completion 0 games 1000 required, child 10
-10 c4: required reach 0.204248 completion 0 gaps 1 (mass 0.170207) pending 0 seen every 5
-11 c6: required reach 0.204248 completion 0 gaps 1 (mass 0.170207) pending 0 seen every 5
-    Nc3 share 0.833333 reach 0.170207 completion 0 games 1000 required
-    e3 share 0 reach 0 completion 1 games 0 child 12
-12 e3: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+10 c4: required reach 0.204248 completion 0 gaps 0 (mass 0) pending 0 seen every 5
+11 c6: transposition(6) reach 0.204248 completion 0 gaps 0 (mass 0) pending 0 seen every 5
+    Nc3 share 0.588235 reach 0.120146 completion 0 games 1000 required
+    e3 share 0.294118 reach 0.060073 completion 0 games 500 required
+12 e3: gap reach 0.120146 completion 0 gaps 1 (mass 0.120146) pending 0 seen every 8

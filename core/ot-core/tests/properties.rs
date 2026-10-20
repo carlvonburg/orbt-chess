@@ -131,13 +131,13 @@ fn line() -> impl Strategy<Value = Vec<u8>> {
     prop::collection::vec(choice(), 1..10)
 }
 
-/// Chapters of lines of choices.
-fn repertoire(chapters: std::ops::Range<usize>) -> impl Strategy<Value = Vec<Vec<Vec<u8>>>> {
-    prop::collection::vec(prop::collection::vec(line(), 1..8), chapters)
+/// Games of lines of choices.
+fn repertoire(games: std::ops::Range<usize>) -> impl Strategy<Value = Vec<Vec<Vec<u8>>>> {
+    prop::collection::vec(prop::collection::vec(line(), 1..8), games)
 }
 
-fn tree_of(chapters: &[Vec<Vec<u8>>]) -> RepertoireTree {
-    let games: Vec<PgnGame> = chapters.iter().map(|c| game_of(&legal_lines(c))).collect();
+fn tree_of(games: &[Vec<Vec<u8>>]) -> RepertoireTree {
+    let games: Vec<PgnGame> = games.iter().map(|c| game_of(&legal_lines(c))).collect();
     RepertoireTree::from_pgn(&pgn::write_games(&games))
 }
 
@@ -178,13 +178,13 @@ proptest! {
     }
 
     #[test]
-    fn a_saved_tree_reads_back_the_same(chapters in repertoire(1..2)) {
-        saved_tree_reads_back(&chapters)?;
+    fn a_saved_tree_reads_back_the_same(games in repertoire(1..4)) {
+        saved_tree_reads_back(&games)?;
     }
 
     #[test]
-    fn transposition_targets_are_never_ancestors(chapters in repertoire(1..4)) {
-        let tree = tree_of(&chapters);
+    fn transposition_targets_are_never_ancestors(games in repertoire(1..4)) {
+        let tree = tree_of(&games);
         for node in tree.nodes() {
             let Some(target) = tree.transposition_target(node.id) else {
                 continue;
@@ -201,8 +201,8 @@ proptest! {
     }
 
     #[test]
-    fn is_ancestor_matches_walking_up(chapters in repertoire(1..4), deletes in prop::collection::vec(any::<u32>(), 0..3)) {
-        let mut tree = tree_of(&chapters);
+    fn is_ancestor_matches_walking_up(games in repertoire(1..4), deletes in prop::collection::vec(any::<u32>(), 0..3)) {
+        let mut tree = tree_of(&games);
         for d in deletes {
             let ids: Vec<NodeId> = tree.nodes().map(|n| n.id).collect();
             tree.delete(ids[d as usize % ids.len()]);
@@ -217,8 +217,8 @@ proptest! {
     }
 
     #[test]
-    fn a_chapter_stores_each_positions_lines_once(lines in prop::collection::vec(line(), 1..10)) {
-        let tree = tree_of(&[lines]);
+    fn each_positions_lines_are_stored_once(games in repertoire(1..4)) {
+        let tree = tree_of(&games);
         for ids in holders(&tree).values() {
             // Two nodes may both hold lines only if one is reached through the other
             // (a repetition), never side by side.
@@ -234,34 +234,13 @@ proptest! {
     }
 
     #[test]
-    fn transposed_moves_are_kept(chapters in repertoire(1..2)) {
-        transposed_moves_kept(&chapters)?;
+    fn transposed_moves_are_kept(games in repertoire(1..4)) {
+        transposed_moves_kept(&games)?;
     }
 }
 
-// Known to fail with several chapters: a node is either a holder or a transposition leaf for
-// every chapter at once. When a chapter adds moves at a node that is a transposition leaf
-// in another chapter, that chapter's link to its lines is lost; and a merge can put a node
-// into a chapter only after a transposition into it was checked, so the next load merges
-// differently. Run with `cargo test -- --ignored`.
-proptest! {
-    #![proptest_config(ProptestConfig::with_cases(512))]
-
-    #[test]
-    #[ignore = "multi-chapter transpositions: a node holds lines for all chapters or none"]
-    fn several_chapters_read_back_the_same(chapters in repertoire(2..4)) {
-        saved_tree_reads_back(&chapters)?;
-    }
-
-    #[test]
-    #[ignore = "multi-chapter transpositions: a node holds lines for all chapters or none"]
-    fn several_chapters_keep_transposed_moves(chapters in repertoire(2..4)) {
-        transposed_moves_kept(&chapters)?;
-    }
-}
-
-fn saved_tree_reads_back(chapters: &[Vec<Vec<u8>>]) -> Result<(), TestCaseError> {
-    let tree = tree_of(chapters);
+fn saved_tree_reads_back(games: &[Vec<Vec<u8>>]) -> Result<(), TestCaseError> {
+    let tree = tree_of(games);
     let text = tree.pgn_text();
     let back = RepertoireTree::from_pgn(&text);
     prop_assert_eq!(back.pgn_text(), text);
@@ -271,9 +250,9 @@ fn saved_tree_reads_back(chapters: &[Vec<Vec<u8>>]) -> Result<(), TestCaseError>
 }
 
 /// Every line of the input can still be followed, continuing at transposition targets.
-fn transposed_moves_kept(chapters: &[Vec<Vec<u8>>]) -> Result<(), TestCaseError> {
-    let tree = tree_of(chapters);
-    for line in chapters.iter().flat_map(|c| legal_lines(c)) {
+fn transposed_moves_kept(games: &[Vec<Vec<u8>>]) -> Result<(), TestCaseError> {
+    let tree = tree_of(games);
+    for line in games.iter().flat_map(|c| legal_lines(c)) {
         let mut cursor = RepertoireTree::ROOT;
         for san in &line {
             let next = tree.child_by_san(cursor, san).or_else(|| {

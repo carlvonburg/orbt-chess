@@ -4,4 +4,4 @@
 pub mod comment;
 mod tree;
 
-pub use tree::{Chapter, NodeId, RepertoireNode, RepertoireTree};
+pub use tree::{GameHeader, NodeId, RepertoireNode, RepertoireTree};

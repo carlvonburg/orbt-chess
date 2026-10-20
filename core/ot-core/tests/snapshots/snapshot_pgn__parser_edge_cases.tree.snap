@@ -3,99 +3,96 @@ source: ot-core/tests/snapshot_pgn.rs
 expression: tree_text(&tree)
 ---
 90 nodes, 0 merged transpositions
-chapter 0 "Edge \"quoted\" \\ tag": Event=Edge "quoted" \ tag Site=? Result=1-0
-chapter 1 "": 
-chapter 2 "No result token above": Event=No result token above
-chapter 3 "Promotion": Event=Promotion SetUp=1 FEN=8/4P3/8/8/8/8/k7/4K3 w - - 0 1
-chapter 4 "Black to move start": Event=Black to move start SetUp=1 FEN=rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1
-chapter 5 "En passant and check": Event=En passant and check
-0 root ply 0 ch {0, 1, 2, 5} -> [1, 39] | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -
-1 e4 ply 1 ch {0, 2, 5} <- 0 -> [2, 61, 79] nags [3, 14] comments ["after e4"] | rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -
-2 e5 ply 2 ch {0} <- 1 -> [3] | rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -
-3 Nf3 ply 3 ch {0} <- 2 -> [4] | rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -
-4 Nc6 ply 4 ch {0} <- 3 -> [5] | r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -
-5 Bb5 ply 5 ch {0} <- 4 -> [6] | r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -
-6 a6 ply 6 ch {0} <- 5 -> [7] | r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq -
-7 Ba4 ply 7 ch {0} <- 6 -> [8] | r1bqkbnr/1ppp1ppp/p1n5/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R b KQkq -
-8 Nf6 ply 8 ch {0} <- 7 -> [9] | r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq -
-9 O-O ply 9 ch {0} <- 8 -> [10] | r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 b kq -
-10 Be7 ply 10 ch {0} <- 9 -> [11] | r1bqk2r/1pppbppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 w kq -
-11 Re1 ply 11 ch {0} <- 10 -> [12] | r1bqk2r/1pppbppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQR1K1 b kq -
-12 b5 ply 12 ch {0} <- 11 -> [13] | r1bqk2r/2ppbppp/p1n2n2/1p2p3/B3P3/5N2/PPPP1PPP/RNBQR1K1 w kq -
-13 Bb3 ply 13 ch {0} <- 12 -> [14] | r1bqk2r/2ppbppp/p1n2n2/1p2p3/4P3/1B3N2/PPPP1PPP/RNBQR1K1 b kq -
-14 d6 ply 14 ch {0} <- 13 -> [15] | r1bqk2r/2p1bppp/p1np1n2/1p2p3/4P3/1B3N2/PPPP1PPP/RNBQR1K1 w kq -
-15 c3 ply 15 ch {0} <- 14 -> [16] | r1bqk2r/2p1bppp/p1np1n2/1p2p3/4P3/1BP2N2/PP1P1PPP/RNBQR1K1 b kq -
-16 O-O ply 16 ch {0} <- 15 -> [17] | r1bq1rk1/2p1bppp/p1np1n2/1p2p3/4P3/1BP2N2/PP1P1PPP/RNBQR1K1 w - -
-17 h3 ply 17 ch {0} <- 16 -> [18] comments ["rest of line"] | r1bq1rk1/2p1bppp/p1np1n2/1p2p3/4P3/1BP2N1P/PP1P1PP1/RNBQR1K1 b - -
-18 Nb8 ply 18 ch {0} <- 17 -> [19] nags [2, 18] | rnbq1rk1/2p1bppp/p2p1n2/1p2p3/4P3/1BP2N1P/PP1P1PP1/RNBQR1K1 w - -
-19 d4 ply 19 ch {0} <- 18 -> [20] | rnbq1rk1/2p1bppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP3PP1/RNBQR1K1 b - -
-20 Nbd7 ply 20 ch {0} <- 19 -> [21] | r1bq1rk1/2pnbppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP3PP1/RNBQR1K1 w - -
-21 Nbd2 ply 21 ch {0} <- 20 -> [22] | r1bq1rk1/2pnbppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP1N1PP1/R1BQR1K1 b - -
-22 Bb7 ply 22 ch {0} <- 21 -> [23] | r2q1rk1/1bpnbppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP1N1PP1/R1BQR1K1 w - -
-23 Bc2 ply 23 ch {0} <- 22 -> [24] | r2q1rk1/1bpnbppp/p2p1n2/1p2p3/3PP3/2P2N1P/PPBN1PP1/R1BQR1K1 b - -
-24 Re8 ply 24 ch {0} <- 23 -> [25] | r2qr1k1/1bpnbppp/p2p1n2/1p2p3/3PP3/2P2N1P/PPBN1PP1/R1BQR1K1 w - -
-25 Nf1 ply 25 ch {0} <- 24 -> [26] | r2qr1k1/1bpnbppp/p2p1n2/1p2p3/3PP3/2P2N1P/PPB2PP1/R1BQRNK1 b - -
-26 Bf8 ply 26 ch {0} <- 25 -> [27] | r2qrbk1/1bpn1ppp/p2p1n2/1p2p3/3PP3/2P2N1P/PPB2PP1/R1BQRNK1 w - -
-27 Ng3 ply 27 ch {0} <- 26 -> [28] | r2qrbk1/1bpn1ppp/p2p1n2/1p2p3/3PP3/2P2NNP/PPB2PP1/R1BQR1K1 b - -
-28 g6 ply 28 ch {0} <- 27 -> [29] | r2qrbk1/1bpn1p1p/p2p1np1/1p2p3/3PP3/2P2NNP/PPB2PP1/R1BQR1K1 w - -
-29 a4 ply 29 ch {0} <- 28 -> [30] | r2qrbk1/1bpn1p1p/p2p1np1/1p2p3/P2PP3/2P2NNP/1PB2PP1/R1BQR1K1 b - -
-30 c5 ply 30 ch {0} <- 29 -> [31] | r2qrbk1/1b1n1p1p/p2p1np1/1pp1p3/P2PP3/2P2NNP/1PB2PP1/R1BQR1K1 w - -
-31 d5 ply 31 ch {0} <- 30 -> [32] | r2qrbk1/1b1n1p1p/p2p1np1/1ppPp3/P3P3/2P2NNP/1PB2PP1/R1BQR1K1 b - -
-32 c4 ply 32 ch {0} <- 31 -> [33] | r2qrbk1/1b1n1p1p/p2p1np1/1p1Pp3/P1p1P3/2P2NNP/1PB2PP1/R1BQR1K1 w - -
-33 Bg5 ply 33 ch {0} <- 32 -> [34] | r2qrbk1/1b1n1p1p/p2p1np1/1p1Pp1B1/P1p1P3/2P2NNP/1PB2PP1/R2QR1K1 b - -
-34 h6 ply 34 ch {0} <- 33 -> [35] | r2qrbk1/1b1n1p2/p2p1npp/1p1Pp1B1/P1p1P3/2P2NNP/1PB2PP1/R2QR1K1 w - -
-35 Be3 ply 35 ch {0} <- 34 -> [36] | r2qrbk1/1b1n1p2/p2p1npp/1p1Pp3/P1p1P3/2P1BNNP/1PB2PP1/R2QR1K1 b - -
-36 Nc5 ply 36 ch {0} <- 35 -> [37] | r2qrbk1/1b3p2/p2p1npp/1pnPp3/P1p1P3/2P1BNNP/1PB2PP1/R2QR1K1 w - -
-37 Qd2 ply 37 ch {0} <- 36 -> [38] | r2qrbk1/1b3p2/p2p1npp/1pnPp3/P1p1P3/2P1BNNP/1PBQ1PP1/R3R1K1 b - -
-38 h5 ply 38 ch {0} <- 37 | r2qrbk1/1b3p2/p2p1np1/1pnPp2p/P1p1P3/2P1BNNP/1PBQ1PP1/R3R1K1 w - -
-39 d4 ply 1 ch {0, 1} <- 0 -> [40, 42] nags [6] pre ["pre variation"] | rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -
-40 d5 ply 2 ch {0, 1} <- 39 -> [41] | rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -
-41 c4 ply 3 ch {0, 1} <- 40 -> [45] | rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq -
-42 Nf6 ply 2 ch {0} <- 39 -> [43] | rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -
-43 c4 ply 3 ch {0} <- 42 -> [44] | rnbqkb1r/pppppppp/5n2/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq -
-44 g6 ply 4 ch {0} <- 43 | rnbqkb1r/pppppp1p/5np1/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq -
-45 dxc4 ply 4 ch {1} <- 41 -> [46] | rnbqkbnr/ppp1pppp/8/8/2pP4/8/PP2PPPP/RNBQKBNR w KQkq -
-46 e4 ply 5 ch {1} <- 45 -> [47] | rnbqkbnr/ppp1pppp/8/8/2pPP3/8/PP3PPP/RNBQKBNR b KQkq -
-47 b5 ply 6 ch {1} <- 46 -> [48] | rnbqkbnr/p1p1pppp/8/1p6/2pPP3/8/PP3PPP/RNBQKBNR w KQkq -
-48 a4 ply 7 ch {1} <- 47 -> [49] | rnbqkbnr/p1p1pppp/8/1p6/P1pPP3/8/1P3PPP/RNBQKBNR b KQkq -
-49 c6 ply 8 ch {1} <- 48 -> [50] | rnbqkbnr/p3pppp/2p5/1p6/P1pPP3/8/1P3PPP/RNBQKBNR w KQkq -
-50 axb5 ply 9 ch {1} <- 49 -> [51] | rnbqkbnr/p3pppp/2p5/1P6/2pPP3/8/1P3PPP/RNBQKBNR b KQkq -
-51 cxb5 ply 10 ch {1} <- 50 -> [52] | rnbqkbnr/p3pppp/8/1p6/2pPP3/8/1P3PPP/RNBQKBNR w KQkq -
-52 Qf3 ply 11 ch {1} <- 51 -> [53] | rnbqkbnr/p3pppp/8/1p6/2pPP3/5Q2/1P3PPP/RNB1KBNR b KQkq -
-53 Nc6 ply 12 ch {1} <- 52 -> [54] | r1bqkbnr/p3pppp/2n5/1p6/2pPP3/5Q2/1P3PPP/RNB1KBNR w KQkq -
-54 Qxf7+ ply 13 ch {1} <- 53 -> [55] | r1bqkbnr/p3pQpp/2n5/1p6/2pPP3/8/1P3PPP/RNB1KBNR b KQkq -
-55 Kd7 ply 14 ch {1} <- 54 -> [56] | r1bq1bnr/p2kpQpp/2n5/1p6/2pPP3/8/1P3PPP/RNB1KBNR w KQ -
-56 Qf5+ ply 15 ch {1} <- 55 -> [57] | r1bq1bnr/p2kp1pp/2n5/1p3Q2/2pPP3/8/1P3PPP/RNB1KBNR b KQ -
-57 Ke8 ply 16 ch {1} <- 56 -> [58] | r1bqkbnr/p3p1pp/2n5/1p3Q2/2pPP3/8/1P3PPP/RNB1KBNR w KQ -
-58 Qh5+ ply 17 ch {1} <- 57 -> [59] | r1bqkbnr/p3p1pp/2n5/1p5Q/2pPP3/8/1P3PPP/RNB1KBNR b KQ -
-59 g6 ply 18 ch {1} <- 58 -> [60] | r1bqkbnr/p3p2p/2n3p1/1p5Q/2pPP3/8/1P3PPP/RNB1KBNR w KQ -
-60 Qxb5 ply 19 ch {1} <- 59 | r1bqkbnr/p3p2p/2n3p1/1Q6/2pPP3/8/1P3PPP/RNB1KBNR b KQ -
-61 d5 ply 2 ch {2} <- 1 -> [62] | rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -
-62 exd5 ply 3 ch {2} <- 61 -> [63] | rnbqkbnr/ppp1pppp/8/3P4/8/8/PPPP1PPP/RNBQKBNR b KQkq -
-63 Qxd5 ply 4 ch {2} <- 62 -> [64] | rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq -
-64 Nc3 ply 5 ch {2} <- 63 -> [65] | rnb1kbnr/ppp1pppp/8/3q4/8/2N5/PPPP1PPP/R1BQKBNR b KQkq -
-65 Qa5 ply 6 ch {2} <- 64 -> [66] | rnb1kbnr/ppp1pppp/8/q7/8/2N5/PPPP1PPP/R1BQKBNR w KQkq -
-66 d4 ply 7 ch {2} <- 65 -> [67] | rnb1kbnr/ppp1pppp/8/q7/3P4/2N5/PPP2PPP/R1BQKBNR b KQkq -
-67 c6 ply 8 ch {2} <- 66 -> [68] | rnb1kbnr/pp2pppp/2p5/q7/3P4/2N5/PPP2PPP/R1BQKBNR w KQkq -
-68 Nf3 ply 9 ch {2} <- 67 -> [69] | rnb1kbnr/pp2pppp/2p5/q7/3P4/2N2N2/PPP2PPP/R1BQKB1R b KQkq -
-69 Bf5 ply 10 ch {2} <- 68 -> [70] | rn2kbnr/pp2pppp/2p5/q4b2/3P4/2N2N2/PPP2PPP/R1BQKB1R w KQkq -
-70 Bc4 ply 11 ch {2} <- 69 -> [71] | rn2kbnr/pp2pppp/2p5/q4b2/2BP4/2N2N2/PPP2PPP/R1BQK2R b KQkq -
-71 e6 ply 12 ch {2} <- 70 -> [72] | rn2kbnr/pp3ppp/2p1p3/q4b2/2BP4/2N2N2/PPP2PPP/R1BQK2R w KQkq -
-72 Bd2 ply 13 ch {2} <- 71 -> [73] | rn2kbnr/pp3ppp/2p1p3/q4b2/2BP4/2N2N2/PPPB1PPP/R2QK2R b KQkq -
-73 Nd7 ply 14 ch {2} <- 72 -> [74] | r3kbnr/pp1n1ppp/2p1p3/q4b2/2BP4/2N2N2/PPPB1PPP/R2QK2R w KQkq -
-74 Qe2 ply 15 ch {2} <- 73 -> [75] | r3kbnr/pp1n1ppp/2p1p3/q4b2/2BP4/2N2N2/PPPBQPPP/R3K2R b KQkq -
-75 Bb4 ply 16 ch {2} <- 74 -> [76] | r3k1nr/pp1n1ppp/2p1p3/q4b2/1bBP4/2N2N2/PPPBQPPP/R3K2R w KQkq -
-76 O-O-O ply 17 ch {2} <- 75 -> [77] | r3k1nr/pp1n1ppp/2p1p3/q4b2/1bBP4/2N2N2/PPPBQPPP/2KR3R b kq -
-77 Ngf6 ply 18 ch {2} <- 76 -> [78] | r3k2r/pp1n1ppp/2p1pn2/q4b2/1bBP4/2N2N2/PPPBQPPP/2KR3R w kq -
-78 Kb1 ply 19 ch {2} <- 77 | r3k2r/pp1n1ppp/2p1pn2/q4b2/1bBP4/2N2N2/PPPBQPPP/1K1R3R b kq -
-79 Nf6 ply 2 ch {5} <- 1 -> [80] | rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -
-80 e5 ply 3 ch {5} <- 79 -> [81] | rnbqkb1r/pppppppp/5n2/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq -
-81 d5 ply 4 ch {5} <- 80 -> [82] | rnbqkb1r/ppp1pppp/5n2/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6
-82 exd6 ply 5 ch {5} <- 81 -> [83] | rnbqkb1r/ppp1pppp/3P1n2/8/8/8/PPPP1PPP/RNBQKBNR b KQkq -
-83 cxd6 ply 6 ch {5} <- 82 -> [84] | rnbqkb1r/pp2pppp/3p1n2/8/8/8/PPPP1PPP/RNBQKBNR w KQkq -
-84 d4 ply 7 ch {5} <- 83 -> [85] | rnbqkb1r/pp2pppp/3p1n2/8/3P4/8/PPP2PPP/RNBQKBNR b KQkq -
-85 Qa5+ ply 8 ch {5} <- 84 -> [86] | rnb1kb1r/pp2pppp/3p1n2/q7/3P4/8/PPP2PPP/RNBQKBNR w KQkq -
-86 Bd2 ply 9 ch {5} <- 85 -> [87, 88] | rnb1kb1r/pp2pppp/3p1n2/q7/3P4/8/PPPB1PPP/RN1QKBNR b KQkq -
-87 Qb6 ply 10 ch {5} <- 86 | rnb1kb1r/pp2pppp/1q1p1n2/8/3P4/8/PPPB1PPP/RN1QKBNR w KQkq -
-88 Qd5 ply 10 ch {5} <- 86 -> [89] | rnb1kb1r/pp2pppp/3p1n2/3q4/3P4/8/PPPB1PPP/RN1QKBNR w KQkq -
-89 Nf3 ply 11 ch {5} <- 88 | rnb1kb1r/pp2pppp/3p1n2/3q4/3P4/5N2/PPPB1PPP/RN1QKB1R b KQkq -
+header: Event=Edge "quoted" \ tag Site=? Result=1-0
+other game: "Promotion"
+other game: "Black to move start"
+0 root ply 0 -> [1, 39] | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -
+1 e4 ply 1 <- 0 -> [2, 61, 79] nags [3, 14] comments ["after e4"] | rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -
+2 e5 ply 2 <- 1 -> [3] | rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -
+3 Nf3 ply 3 <- 2 -> [4] | rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -
+4 Nc6 ply 4 <- 3 -> [5] | r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -
+5 Bb5 ply 5 <- 4 -> [6] | r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -
+6 a6 ply 6 <- 5 -> [7] | r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq -
+7 Ba4 ply 7 <- 6 -> [8] | r1bqkbnr/1ppp1ppp/p1n5/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R b KQkq -
+8 Nf6 ply 8 <- 7 -> [9] | r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq -
+9 O-O ply 9 <- 8 -> [10] | r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 b kq -
+10 Be7 ply 10 <- 9 -> [11] | r1bqk2r/1pppbppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 w kq -
+11 Re1 ply 11 <- 10 -> [12] | r1bqk2r/1pppbppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQR1K1 b kq -
+12 b5 ply 12 <- 11 -> [13] | r1bqk2r/2ppbppp/p1n2n2/1p2p3/B3P3/5N2/PPPP1PPP/RNBQR1K1 w kq -
+13 Bb3 ply 13 <- 12 -> [14] | r1bqk2r/2ppbppp/p1n2n2/1p2p3/4P3/1B3N2/PPPP1PPP/RNBQR1K1 b kq -
+14 d6 ply 14 <- 13 -> [15] | r1bqk2r/2p1bppp/p1np1n2/1p2p3/4P3/1B3N2/PPPP1PPP/RNBQR1K1 w kq -
+15 c3 ply 15 <- 14 -> [16] | r1bqk2r/2p1bppp/p1np1n2/1p2p3/4P3/1BP2N2/PP1P1PPP/RNBQR1K1 b kq -
+16 O-O ply 16 <- 15 -> [17] | r1bq1rk1/2p1bppp/p1np1n2/1p2p3/4P3/1BP2N2/PP1P1PPP/RNBQR1K1 w - -
+17 h3 ply 17 <- 16 -> [18] comments ["rest of line"] | r1bq1rk1/2p1bppp/p1np1n2/1p2p3/4P3/1BP2N1P/PP1P1PP1/RNBQR1K1 b - -
+18 Nb8 ply 18 <- 17 -> [19] nags [2, 18] | rnbq1rk1/2p1bppp/p2p1n2/1p2p3/4P3/1BP2N1P/PP1P1PP1/RNBQR1K1 w - -
+19 d4 ply 19 <- 18 -> [20] | rnbq1rk1/2p1bppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP3PP1/RNBQR1K1 b - -
+20 Nbd7 ply 20 <- 19 -> [21] | r1bq1rk1/2pnbppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP3PP1/RNBQR1K1 w - -
+21 Nbd2 ply 21 <- 20 -> [22] | r1bq1rk1/2pnbppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP1N1PP1/R1BQR1K1 b - -
+22 Bb7 ply 22 <- 21 -> [23] | r2q1rk1/1bpnbppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP1N1PP1/R1BQR1K1 w - -
+23 Bc2 ply 23 <- 22 -> [24] | r2q1rk1/1bpnbppp/p2p1n2/1p2p3/3PP3/2P2N1P/PPBN1PP1/R1BQR1K1 b - -
+24 Re8 ply 24 <- 23 -> [25] | r2qr1k1/1bpnbppp/p2p1n2/1p2p3/3PP3/2P2N1P/PPBN1PP1/R1BQR1K1 w - -
+25 Nf1 ply 25 <- 24 -> [26] | r2qr1k1/1bpnbppp/p2p1n2/1p2p3/3PP3/2P2N1P/PPB2PP1/R1BQRNK1 b - -
+26 Bf8 ply 26 <- 25 -> [27] | r2qrbk1/1bpn1ppp/p2p1n2/1p2p3/3PP3/2P2N1P/PPB2PP1/R1BQRNK1 w - -
+27 Ng3 ply 27 <- 26 -> [28] | r2qrbk1/1bpn1ppp/p2p1n2/1p2p3/3PP3/2P2NNP/PPB2PP1/R1BQR1K1 b - -
+28 g6 ply 28 <- 27 -> [29] | r2qrbk1/1bpn1p1p/p2p1np1/1p2p3/3PP3/2P2NNP/PPB2PP1/R1BQR1K1 w - -
+29 a4 ply 29 <- 28 -> [30] | r2qrbk1/1bpn1p1p/p2p1np1/1p2p3/P2PP3/2P2NNP/1PB2PP1/R1BQR1K1 b - -
+30 c5 ply 30 <- 29 -> [31] | r2qrbk1/1b1n1p1p/p2p1np1/1pp1p3/P2PP3/2P2NNP/1PB2PP1/R1BQR1K1 w - -
+31 d5 ply 31 <- 30 -> [32] | r2qrbk1/1b1n1p1p/p2p1np1/1ppPp3/P3P3/2P2NNP/1PB2PP1/R1BQR1K1 b - -
+32 c4 ply 32 <- 31 -> [33] | r2qrbk1/1b1n1p1p/p2p1np1/1p1Pp3/P1p1P3/2P2NNP/1PB2PP1/R1BQR1K1 w - -
+33 Bg5 ply 33 <- 32 -> [34] | r2qrbk1/1b1n1p1p/p2p1np1/1p1Pp1B1/P1p1P3/2P2NNP/1PB2PP1/R2QR1K1 b - -
+34 h6 ply 34 <- 33 -> [35] | r2qrbk1/1b1n1p2/p2p1npp/1p1Pp1B1/P1p1P3/2P2NNP/1PB2PP1/R2QR1K1 w - -
+35 Be3 ply 35 <- 34 -> [36] | r2qrbk1/1b1n1p2/p2p1npp/1p1Pp3/P1p1P3/2P1BNNP/1PB2PP1/R2QR1K1 b - -
+36 Nc5 ply 36 <- 35 -> [37] | r2qrbk1/1b3p2/p2p1npp/1pnPp3/P1p1P3/2P1BNNP/1PB2PP1/R2QR1K1 w - -
+37 Qd2 ply 37 <- 36 -> [38] | r2qrbk1/1b3p2/p2p1npp/1pnPp3/P1p1P3/2P1BNNP/1PBQ1PP1/R3R1K1 b - -
+38 h5 ply 38 <- 37 | r2qrbk1/1b3p2/p2p1np1/1pnPp2p/P1p1P3/2P1BNNP/1PBQ1PP1/R3R1K1 w - -
+39 d4 ply 1 <- 0 -> [40, 42] nags [6] pre ["pre variation"] | rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -
+40 d5 ply 2 <- 39 -> [41] | rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -
+41 c4 ply 3 <- 40 -> [45] | rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq -
+42 Nf6 ply 2 <- 39 -> [43] | rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -
+43 c4 ply 3 <- 42 -> [44] | rnbqkb1r/pppppppp/5n2/8/2PP4/8/PP2PPPP/RNBQKBNR b KQkq -
+44 g6 ply 4 <- 43 | rnbqkb1r/pppppp1p/5np1/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq -
+45 dxc4 ply 4 <- 41 -> [46] | rnbqkbnr/ppp1pppp/8/8/2pP4/8/PP2PPPP/RNBQKBNR w KQkq -
+46 e4 ply 5 <- 45 -> [47] | rnbqkbnr/ppp1pppp/8/8/2pPP3/8/PP3PPP/RNBQKBNR b KQkq -
+47 b5 ply 6 <- 46 -> [48] | rnbqkbnr/p1p1pppp/8/1p6/2pPP3/8/PP3PPP/RNBQKBNR w KQkq -
+48 a4 ply 7 <- 47 -> [49] | rnbqkbnr/p1p1pppp/8/1p6/P1pPP3/8/1P3PPP/RNBQKBNR b KQkq -
+49 c6 ply 8 <- 48 -> [50] | rnbqkbnr/p3pppp/2p5/1p6/P1pPP3/8/1P3PPP/RNBQKBNR w KQkq -
+50 axb5 ply 9 <- 49 -> [51] | rnbqkbnr/p3pppp/2p5/1P6/2pPP3/8/1P3PPP/RNBQKBNR b KQkq -
+51 cxb5 ply 10 <- 50 -> [52] | rnbqkbnr/p3pppp/8/1p6/2pPP3/8/1P3PPP/RNBQKBNR w KQkq -
+52 Qf3 ply 11 <- 51 -> [53] | rnbqkbnr/p3pppp/8/1p6/2pPP3/5Q2/1P3PPP/RNB1KBNR b KQkq -
+53 Nc6 ply 12 <- 52 -> [54] | r1bqkbnr/p3pppp/2n5/1p6/2pPP3/5Q2/1P3PPP/RNB1KBNR w KQkq -
+54 Qxf7+ ply 13 <- 53 -> [55] | r1bqkbnr/p3pQpp/2n5/1p6/2pPP3/8/1P3PPP/RNB1KBNR b KQkq -
+55 Kd7 ply 14 <- 54 -> [56] | r1bq1bnr/p2kpQpp/2n5/1p6/2pPP3/8/1P3PPP/RNB1KBNR w KQ -
+56 Qf5+ ply 15 <- 55 -> [57] | r1bq1bnr/p2kp1pp/2n5/1p3Q2/2pPP3/8/1P3PPP/RNB1KBNR b KQ -
+57 Ke8 ply 16 <- 56 -> [58] | r1bqkbnr/p3p1pp/2n5/1p3Q2/2pPP3/8/1P3PPP/RNB1KBNR w KQ -
+58 Qh5+ ply 17 <- 57 -> [59] | r1bqkbnr/p3p1pp/2n5/1p5Q/2pPP3/8/1P3PPP/RNB1KBNR b KQ -
+59 g6 ply 18 <- 58 -> [60] | r1bqkbnr/p3p2p/2n3p1/1p5Q/2pPP3/8/1P3PPP/RNB1KBNR w KQ -
+60 Qxb5 ply 19 <- 59 | r1bqkbnr/p3p2p/2n3p1/1Q6/2pPP3/8/1P3PPP/RNB1KBNR b KQ -
+61 d5 ply 2 <- 1 -> [62] | rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -
+62 exd5 ply 3 <- 61 -> [63] | rnbqkbnr/ppp1pppp/8/3P4/8/8/PPPP1PPP/RNBQKBNR b KQkq -
+63 Qxd5 ply 4 <- 62 -> [64] | rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq -
+64 Nc3 ply 5 <- 63 -> [65] | rnb1kbnr/ppp1pppp/8/3q4/8/2N5/PPPP1PPP/R1BQKBNR b KQkq -
+65 Qa5 ply 6 <- 64 -> [66] | rnb1kbnr/ppp1pppp/8/q7/8/2N5/PPPP1PPP/R1BQKBNR w KQkq -
+66 d4 ply 7 <- 65 -> [67] | rnb1kbnr/ppp1pppp/8/q7/3P4/2N5/PPP2PPP/R1BQKBNR b KQkq -
+67 c6 ply 8 <- 66 -> [68] | rnb1kbnr/pp2pppp/2p5/q7/3P4/2N5/PPP2PPP/R1BQKBNR w KQkq -
+68 Nf3 ply 9 <- 67 -> [69] | rnb1kbnr/pp2pppp/2p5/q7/3P4/2N2N2/PPP2PPP/R1BQKB1R b KQkq -
+69 Bf5 ply 10 <- 68 -> [70] | rn2kbnr/pp2pppp/2p5/q4b2/3P4/2N2N2/PPP2PPP/R1BQKB1R w KQkq -
+70 Bc4 ply 11 <- 69 -> [71] | rn2kbnr/pp2pppp/2p5/q4b2/2BP4/2N2N2/PPP2PPP/R1BQK2R b KQkq -
+71 e6 ply 12 <- 70 -> [72] | rn2kbnr/pp3ppp/2p1p3/q4b2/2BP4/2N2N2/PPP2PPP/R1BQK2R w KQkq -
+72 Bd2 ply 13 <- 71 -> [73] | rn2kbnr/pp3ppp/2p1p3/q4b2/2BP4/2N2N2/PPPB1PPP/R2QK2R b KQkq -
+73 Nd7 ply 14 <- 72 -> [74] | r3kbnr/pp1n1ppp/2p1p3/q4b2/2BP4/2N2N2/PPPB1PPP/R2QK2R w KQkq -
+74 Qe2 ply 15 <- 73 -> [75] | r3kbnr/pp1n1ppp/2p1p3/q4b2/2BP4/2N2N2/PPPBQPPP/R3K2R b KQkq -
+75 Bb4 ply 16 <- 74 -> [76] | r3k1nr/pp1n1ppp/2p1p3/q4b2/1bBP4/2N2N2/PPPBQPPP/R3K2R w KQkq -
+76 O-O-O ply 17 <- 75 -> [77] | r3k1nr/pp1n1ppp/2p1p3/q4b2/1bBP4/2N2N2/PPPBQPPP/2KR3R b kq -
+77 Ngf6 ply 18 <- 76 -> [78] | r3k2r/pp1n1ppp/2p1pn2/q4b2/1bBP4/2N2N2/PPPBQPPP/2KR3R w kq -
+78 Kb1 ply 19 <- 77 | r3k2r/pp1n1ppp/2p1pn2/q4b2/1bBP4/2N2N2/PPPBQPPP/1K1R3R b kq -
+79 Nf6 ply 2 <- 1 -> [80] | rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -
+80 e5 ply 3 <- 79 -> [81] | rnbqkb1r/pppppppp/5n2/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq -
+81 d5 ply 4 <- 80 -> [82] | rnbqkb1r/ppp1pppp/5n2/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6
+82 exd6 ply 5 <- 81 -> [83] | rnbqkb1r/ppp1pppp/3P1n2/8/8/8/PPPP1PPP/RNBQKBNR b KQkq -
+83 cxd6 ply 6 <- 82 -> [84] | rnbqkb1r/pp2pppp/3p1n2/8/8/8/PPPP1PPP/RNBQKBNR w KQkq -
+84 d4 ply 7 <- 83 -> [85] | rnbqkb1r/pp2pppp/3p1n2/8/3P4/8/PPP2PPP/RNBQKBNR b KQkq -
+85 Qa5+ ply 8 <- 84 -> [86] | rnb1kb1r/pp2pppp/3p1n2/q7/3P4/8/PPP2PPP/RNBQKBNR w KQkq -
+86 Bd2 ply 9 <- 85 -> [87, 88] | rnb1kb1r/pp2pppp/3p1n2/q7/3P4/8/PPPB1PPP/RN1QKBNR b KQkq -
+87 Qb6 ply 10 <- 86 | rnb1kb1r/pp2pppp/1q1p1n2/8/3P4/8/PPPB1PPP/RN1QKBNR w KQkq -
+88 Qd5 ply 10 <- 86 -> [89] | rnb1kb1r/pp2pppp/3p1n2/3q4/3P4/8/PPPB1PPP/RN1QKBNR w KQkq -
+89 Nf3 ply 11 <- 88 | rnb1kb1r/pp2pppp/3p1n2/3q4/3P4/5N2/PPPB1PPP/RN1QKB1R b KQkq -

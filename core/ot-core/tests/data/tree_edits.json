@@ -87,15 +87,13 @@
       "text": "  new idea  "
     },
     {
-      "index": 0,
       "name": "Event",
-      "op": "setChapterTag",
+      "op": "setTag",
       "value": "Edited"
     },
     {
-      "index": 0,
       "name": "White",
-      "op": "setChapterTag",
+      "op": "setTag",
       "value": "Me"
     },
     {

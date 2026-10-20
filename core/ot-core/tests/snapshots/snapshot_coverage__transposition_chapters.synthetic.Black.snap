@@ -39,6 +39,7 @@ nodes by status: {"belowtarget": 12, "required": 1}
     g4 share 0.214186 reach 0 completion 0 games 308 
     g3 share 0.196801 reach 0 completion 0 games 283 
     Nc3 share 0 reach 0 completion 1 games 0 child 7
+    e3 share 0 reach 0 completion 1 games 0 child 12
 7 Nc3: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
 8 Nf3: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
 9 Nf6: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
@@ -52,5 +53,4 @@ nodes by status: {"belowtarget": 12, "required": 1}
     a3 share 0.246871 reach 0 completion 0 games 355 
     g4 share 0.214186 reach 0 completion 0 games 308 
     g3 share 0.196801 reach 0 completion 0 games 283 
-    e3 share 0 reach 0 completion 1 games 0 child 12
 12 e3: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -

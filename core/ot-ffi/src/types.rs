@@ -619,7 +619,6 @@ pub struct Node {
     pub nags: Vec<i32>,
     /// The note without embedded commands like `[%cal Ge2e4]`.
     pub note: String,
-    pub chapters: Vec<u32>,
     pub side_to_move: Side,
     /// For a node without moves: where its lines are stored.
     pub transposition_target: Option<NodeId>,
@@ -639,7 +638,6 @@ impl Node {
             pre_comments: n.pre_comments.clone(),
             nags: n.nags.clone(),
             note: n.note(),
-            chapters: n.chapters.iter().map(|&c| c as u32).collect(),
             side_to_move: n.side_to_move(),
             transposition_target: tree.transposition_target(n.id),
         }

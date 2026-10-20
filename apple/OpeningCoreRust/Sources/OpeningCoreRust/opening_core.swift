@@ -3351,8 +3351,6 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     
     func cards()  -> [Epd: Card]
     
-    func chapters()  -> [ChapterInfo]
-    
     func childBySan(id: UInt32, san: String)  -> UInt32?
     
     func childByUci(id: UInt32, uci: String)  -> UInt32?
@@ -3712,15 +3710,6 @@ open func cards() -> [Epd: Card]  {
     return try!  FfiConverterDictionaryTypeEpdTypeCard.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_repertoiredoc_cards(
-            self.uniffiCloneHandle(),uniffiCallStatus
-    )
-})
-}
-    
-open func chapters() -> [ChapterInfo]  {
-    return try!  FfiConverterSequenceTypeChapterInfo.lift(try! rustCall() {
-        uniffiCallStatus in
-    uniffi_opening_core_fn_method_repertoiredoc_chapters(
             self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
@@ -5445,70 +5434,6 @@ public func FfiConverterTypeChanges_lower(_ value: Changes) -> RustBuffer {
 }
 
 
-public struct ChapterInfo: Equatable, Hashable {
-    public var name: String
-    public var tags: [String: String]
-    /**
-     * From a non-standard position: kept verbatim, not part of the tree.
-     */
-    public var passthrough: Bool
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(name: String, tags: [String: String], 
-        /**
-         * From a non-standard position: kept verbatim, not part of the tree.
-         */passthrough: Bool) {
-        self.name = name
-        self.tags = tags
-        self.passthrough = passthrough
-    }
-
-    
-
-    
-}
-
-#if compiler(>=6)
-extension ChapterInfo: Sendable {}
-#endif
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeChapterInfo: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChapterInfo {
-        return
-            try ChapterInfo(
-                name: FfiConverterString.read(from: &buf), 
-                tags: FfiConverterDictionaryStringString.read(from: &buf), 
-                passthrough: FfiConverterBool.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: ChapterInfo, into buf: inout [UInt8]) {
-        FfiConverterString.write(value.name, into: &buf)
-        FfiConverterDictionaryStringString.write(value.tags, into: &buf)
-        FfiConverterBool.write(value.passthrough, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeChapterInfo_lift(_ buf: RustBuffer) throws -> ChapterInfo {
-    return try FfiConverterTypeChapterInfo.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeChapterInfo_lower(_ value: ChapterInfo) -> RustBuffer {
-    return FfiConverterTypeChapterInfo.lower(value)
-}
-
-
 public struct CloudEval: Equatable, Hashable {
     public var depth: UInt32
     public var pvs: [Pv]
@@ -6624,7 +6549,6 @@ public struct Node: Equatable, Hashable {
      * The note without embedded commands like `[%cal Ge2e4]`.
      */
     public var note: String
-    public var chapters: [UInt32]
     public var sideToMove: Side
     /**
      * For a node without moves: where its lines are stored.
@@ -6642,7 +6566,7 @@ public struct Node: Equatable, Hashable {
          */children: [UInt32], comments: [String], preComments: [String], nags: [Int32], 
         /**
          * The note without embedded commands like `[%cal Ge2e4]`.
-         */note: String, chapters: [UInt32], sideToMove: Side, 
+         */note: String, sideToMove: Side, 
         /**
          * For a node without moves: where its lines are stored.
          */transpositionTarget: UInt32?) {
@@ -6657,7 +6581,6 @@ public struct Node: Equatable, Hashable {
         self.preComments = preComments
         self.nags = nags
         self.note = note
-        self.chapters = chapters
         self.sideToMove = sideToMove
         self.transpositionTarget = transpositionTarget
     }
@@ -6689,7 +6612,6 @@ public struct FfiConverterTypeNode: FfiConverterRustBuffer {
                 preComments: FfiConverterSequenceString.read(from: &buf), 
                 nags: FfiConverterSequenceInt32.read(from: &buf), 
                 note: FfiConverterString.read(from: &buf), 
-                chapters: FfiConverterSequenceUInt32.read(from: &buf), 
                 sideToMove: FfiConverterTypeSide.read(from: &buf), 
                 transpositionTarget: FfiConverterOptionUInt32.read(from: &buf)
         )
@@ -6707,7 +6629,6 @@ public struct FfiConverterTypeNode: FfiConverterRustBuffer {
         FfiConverterSequenceString.write(value.preComments, into: &buf)
         FfiConverterSequenceInt32.write(value.nags, into: &buf)
         FfiConverterString.write(value.note, into: &buf)
-        FfiConverterSequenceUInt32.write(value.chapters, into: &buf)
         FfiConverterTypeSide.write(value.sideToMove, into: &buf)
         FfiConverterOptionUInt32.write(value.transpositionTarget, into: &buf)
     }
@@ -11679,31 +11600,6 @@ fileprivate struct FfiConverterSequenceTypeCard: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeChapterInfo: FfiConverterRustBuffer {
-    typealias SwiftType = [ChapterInfo]
-
-    public static func write(_ value: [ChapterInfo], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for item in value {
-            FfiConverterTypeChapterInfo.write(item, into: &buf)
-        }
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ChapterInfo] {
-        let len: Int32 = try readInt(&buf)
-        var seq = [ChapterInfo]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeChapterInfo.read(from: &buf))
-        }
-        return seq
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
 fileprivate struct FfiConverterSequenceTypeCoverageGap: FfiConverterRustBuffer {
     typealias SwiftType = [CoverageGap]
 
@@ -12233,32 +12129,6 @@ fileprivate struct FfiConverterDictionaryInt64TypeReviewCounts: FfiConverterRust
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterDictionaryStringString: FfiConverterRustBuffer {
-    public static func write(_ value: [String: String], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for (key, value) in value {
-            FfiConverterString.write(key, into: &buf)
-            FfiConverterString.write(value, into: &buf)
-        }
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [String: String] {
-        let len: Int32 = try readInt(&buf)
-        var dict = [String: String]()
-        dict.reserveCapacity(Int(len))
-        for _ in 0..<len {
-            let key = try FfiConverterString.read(from: &buf)
-            let value = try FfiConverterString.read(from: &buf)
-            dict[key] = value
-        }
-        return dict
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
 fileprivate struct FfiConverterDictionaryTypeEpdDouble: FfiConverterRustBuffer {
     public static func write(_ value: [Epd: Double], into buf: inout [UInt8]) {
         let len = Int32(value.count)
@@ -12576,7 +12446,7 @@ public func mergeSidecarData(a: Data, b: Data) -> Data?  {
 })
 }
 /**
- * A new, empty repertoire PGN whose chapter is named `name`.
+ * A new, empty repertoire PGN whose game is named `name`.
  */
 public func newRepertoirePgn(name: String) -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
@@ -12945,7 +12815,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_merge_sidecar_data() != 60539) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_new_repertoire_pgn() != 30132) {
+    if (uniffi_opening_core_checksum_func_new_repertoire_pgn() != 33509) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_new_sidecar() != 48299) {
@@ -13075,9 +12945,6 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_cards() != 767) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_opening_core_checksum_method_repertoiredoc_chapters() != 7002) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_child_by_san() != 50956) {

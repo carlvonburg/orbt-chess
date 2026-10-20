@@ -33,7 +33,7 @@ fn games_json(games: &[PgnGame]) -> String {
     serde_json::to_string_pretty(&games).unwrap()
 }
 
-/// The tree's chapters, then one line per node.
+/// The tree's header and other games, then one line per node.
 fn tree_text(tree: &RepertoireTree) -> String {
     let mut out = String::new();
     writeln!(
@@ -46,17 +46,20 @@ fn tree_text(tree: &RepertoireTree) -> String {
     for warning in &tree.load_warnings {
         writeln!(out, "warning: {warning}").unwrap();
     }
-    for (i, c) in tree.chapters.iter().enumerate() {
-        let tags: Vec<String> = c
+    if let Some(h) = &tree.header {
+        let tags: Vec<String> = h
             .tags
             .iter()
             .map(|t| format!("{}={}", t.name, t.value))
             .collect();
-        writeln!(out, "chapter {i} {:?}: {}", c.name(), tags.join(" ")).unwrap();
+        writeln!(out, "header: {}", tags.join(" ")).unwrap();
+    }
+    for g in &tree.other_games {
+        writeln!(out, "other game: {:?}", g.tag("Event").unwrap_or("")).unwrap();
     }
     for n in tree.nodes() {
         let san = n.mv.as_ref().map_or("root", |m| m.san.as_str());
-        write!(out, "{} {san} ply {} ch {:?}", n.id, n.ply, n.chapters).unwrap();
+        write!(out, "{} {san} ply {}", n.id, n.ply).unwrap();
         if let Some(p) = n.parent {
             write!(out, " <- {p}").unwrap();
         }
@@ -116,12 +119,12 @@ fn real_repertoires() {
         let positions: HashSet<_> = tree.nodes().map(|n| n.epd.clone()).collect();
         let leaves = tree.leaves(RepertoireTree::ROOT).len();
         let summary = format!(
-            "{} nodes, {} positions, {leaves} leaves, {} merged transpositions, {} chapters\n\
+            "{} nodes, {} positions, {leaves} leaves, {} merged transpositions, {} games\n\
              warnings: {:?}\n",
             tree.count(),
             positions.len(),
             tree.merged_transpositions,
-            tree.chapters.len(),
+            tree.pgn_games().len(),
             tree.load_warnings,
         );
         insta::assert_snapshot!(format!("{name}.summary"), summary);
@@ -197,17 +200,13 @@ fn tree_edits() {
                     tree.set_note(s("text"), id("id"));
                     Value::Null
                 }
-                "setChapterTag" => {
-                    tree.set_chapter_tag(
-                        op["index"].as_u64().unwrap() as usize,
-                        s("name"),
-                        s("value"),
-                    );
+                "setTag" => {
+                    tree.set_tag(s("name"), s("value"));
                     Value::Null
                 }
                 "mergeMoves" => {
                     let games = pgn::parse(s("pgn"));
-                    json!(tree.merge_moves(&games[0].moves, id("at"), None))
+                    json!(tree.merge_moves(&games[0].moves, id("at")))
                 }
                 other => panic!("unknown op {other}"),
             };

@@ -84,12 +84,15 @@ One folder per platform around a shared core (Android and web would be `android/
 
 ## Transpositions (see `repertoire::tree`, `RepertoireTree::merge`)
 Each position's lines are stored once. When a PGN move order reaches a position whose
-lines already exist at another node (same chapter, not an ancestor), that node becomes a
+lines already exist at another node (not an ancestor), that node becomes a
 leaf and its PGN moves are merged into the existing one (`transpositionTarget`). Chessbook
 exports repeat the subtree under every move order (a 1.2 MB Semi-Slav: 189k moves, 5.5k
 positions); such a file is rewritten compactly after opening. Coverage counts a leaf with a
 target as `.transposition`, training lines and branch drills continue through it, and the
 builder shows the target's moves and adds new moves there.
+A repertoire is one game: when a PGN holds several games, those from the standard position
+are merged into one tree (the first game's tags kept, the others' dropped) and saved as one
+game; games from another position (SetUp/FEN) are kept verbatim and written back unchanged.
 
 ## Coverage model (see `core/ot-core/src/coverage`)
 Reach probability p: root 1; own moves keep p; opponent move multiplies by its share at

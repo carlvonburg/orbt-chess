@@ -264,11 +264,11 @@ pub fn new_sidecar(
     s.encoded()
 }
 
-/// A new, empty repertoire PGN whose chapter is named `name`.
+/// A new, empty repertoire PGN whose game is named `name`.
 #[uniffi::export]
 pub fn new_repertoire_pgn(name: String) -> String {
     let mut tree = RepertoireTree::default();
-    tree.set_chapter_tag(0, "Event", &name);
+    tree.set_tag("Event", &name);
     tree.pgn_text()
 }
 
