@@ -3,9 +3,11 @@
 //! Pure Rust: no file or network IO, no async runtime, no OS APIs, so it also builds for
 //! `wasm32-unknown-unknown`. The platform shell does IO and passes bytes and the current time in.
 
+pub mod builder;
 pub mod chess;
 pub mod coverage;
 pub mod document;
+pub mod drill;
 pub mod explorer;
 pub mod formats;
 pub mod lichess;
