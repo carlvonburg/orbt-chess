@@ -1,4 +1,5 @@
 import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 
 struct SettingsView: View {
@@ -73,6 +74,7 @@ struct SettingsView: View {
 
                 Section("About") {
                     LabeledContent("License", value: "AGPL-3.0")
+                    LabeledContent("Core", value: "Rust \(coreVersion())")
                     Link("Lichess opening explorer", destination: URL(string: "https://lichess.org/analysis#explorer")!)
                     Text("Pieces: cburnett (GPLv2+), via Lichess. Rules: chesskit-swift (MIT). Scheduling: ported from Anki (AGPL-3.0) and fsrs-rs (BSD-3-Clause).")
                         .font(.footnote)

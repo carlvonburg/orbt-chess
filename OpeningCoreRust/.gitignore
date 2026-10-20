@@ -1,0 +1,4 @@
+# Built by core/scripts/build-apple.sh
+/OpeningCoreFFI.xcframework
+/.build
+/.swiftpm

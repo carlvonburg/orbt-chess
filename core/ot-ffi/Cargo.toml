@@ -1,0 +1,17 @@
+[package]
+name = "ot-ffi"
+description = "UniFFI bindings for ot-core (Swift now, Kotlin later)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "opening_core"
+# staticlib for the xcframework, cdylib so uniffi-bindgen can read the metadata.
+crate-type = ["lib", "staticlib", "cdylib"]
+
+[dependencies]
+ot-core.workspace = true
+thiserror.workspace = true
+uniffi.workspace = true
