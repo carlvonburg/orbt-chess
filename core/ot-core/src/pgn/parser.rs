@@ -189,8 +189,8 @@ impl Parser {
                         continue;
                     }
                     if let Some((san, nag)) = parse_move_token(&token) {
-                        saw_content = true;
                         if san.is_empty() {
+                            // A lone glyph; before any move there is nothing to attach it to.
                             if let Some(nag) = nag
                                 && cursor != ROOT
                             {
@@ -198,6 +198,7 @@ impl Parser {
                             }
                             continue;
                         }
+                        saw_content = true;
                         let node = arena.len();
                         arena.push(Builder {
                             san,
