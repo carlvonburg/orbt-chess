@@ -7,7 +7,9 @@ use ot_core::document::{Changes, Repertoire, StudyDefaults};
 use ot_core::explorer::{ExplorerDatabase, ExplorerStats};
 use ot_core::formats::Timestamp;
 use ot_core::repertoire::{NodeId, RepertoireTree};
-use ot_core::training::anki::{Card, Counts, DeckLimits, RemainingLimits, RevlogEntry, SchedTiming};
+use ot_core::training::anki::{
+    Card, Counts, DeckLimits, RemainingLimits, RevlogEntry, SchedTiming,
+};
 use ot_core::training::{PracticeMode, Progress};
 
 use crate::explorer::Explorer;
@@ -62,10 +64,15 @@ impl RepertoireDoc {
 
     /// Runs `f` with the document and its database's stats, then queues the coverage
     /// requests it may have made necessary.
-    pub(crate) fn edit<R>(&self, f: impl FnOnce(&mut Repertoire, &dyn StatsSource) -> (R, Changes)) -> (R, Changes) {
+    pub(crate) fn edit<R>(
+        &self,
+        f: impl FnOnce(&mut Repertoire, &dyn StatsSource) -> (R, Changes),
+    ) -> (R, Changes) {
         let mut doc = self.lock();
         let database = doc.database().clone();
-        let (result, changes) = self.explorer.with_stats(&database, |stats| f(&mut doc, stats));
+        let (result, changes) = self
+            .explorer
+            .with_stats(&database, |stats| f(&mut doc, stats));
         let requests = changes.coverage_check.then(|| doc.coverage_requests());
         drop(doc);
         if let Some(requests) = requests {
@@ -105,11 +112,17 @@ pub fn open_repertoire(
     explorer: Arc<Explorer>,
 ) -> Result<Opened, DocumentError> {
     let database = ot_core::formats::Sidecar::decode(&sidecar)
-        .map_err(|e| DocumentError::Unreadable { message: e.to_string() })?
+        .map_err(|e| DocumentError::Unreadable {
+            message: e.to_string(),
+        })?
         .database;
     let (doc, changes) = explorer
-        .with_stats(&database, |stats| Repertoire::open(&pgn_text, &sidecar, defaults, stats))
-        .map_err(|e| DocumentError::Unreadable { message: e.to_string() })?;
+        .with_stats(&database, |stats| {
+            Repertoire::open(&pgn_text, &sidecar, defaults, stats)
+        })
+        .map_err(|e| DocumentError::Unreadable {
+            message: e.to_string(),
+        })?;
     let document = Arc::new(RepertoireDoc {
         inner: Mutex::new(doc),
         explorer: Arc::clone(&explorer),
@@ -198,11 +211,17 @@ impl RepertoireDoc {
     /// Every node, in id order (for the outline and search).
     pub fn all_nodes(&self) -> Vec<Node> {
         let doc = self.lock();
-        doc.tree().nodes().map(|n| Node::from_core(n, doc.tree())).collect()
+        doc.tree()
+            .nodes()
+            .map(|n| Node::from_core(n, doc.tree()))
+            .collect()
     }
 
     pub fn position(&self, id: NodeId) -> Option<Arc<Position>> {
-        self.lock().tree().get(id).map(|n| Arc::new(Position(n.position.clone())))
+        self.lock()
+            .tree()
+            .get(id)
+            .map(|n| Arc::new(Position(n.position.clone())))
     }
 
     pub fn child_by_uci(&self, id: NodeId, uci: String) -> Option<NodeId> {
@@ -263,7 +282,11 @@ impl RepertoireDoc {
             .iter()
             .map(|c| ChapterInfo {
                 name: c.name().to_owned(),
-                tags: c.tags.iter().map(|t| (t.name.clone(), t.value.clone())).collect(),
+                tags: c
+                    .tags
+                    .iter()
+                    .map(|t| (t.name.clone(), t.value.clone()))
+                    .collect(),
                 passthrough: c.passthrough.is_some(),
             })
             .collect()
@@ -381,7 +404,13 @@ impl RepertoireDoc {
         changes
     }
 
-    pub fn set_excluded(&self, uci: String, node: NodeId, excluded: bool, now: Timestamp) -> Changes {
+    pub fn set_excluded(
+        &self,
+        uci: String,
+        node: NodeId,
+        excluded: bool,
+        now: Timestamp,
+    ) -> Changes {
         self.change(|doc, stats| doc.set_excluded(&uci, node, excluded, now, stats))
     }
 
@@ -389,7 +418,12 @@ impl RepertoireDoc {
         self.change(|doc, _| doc.remember_line(ucis))
     }
 
-    pub fn update_study_settings(&self, limits: DeckLimits, practice_mode: Option<PracticeMode>, now: Timestamp) -> Changes {
+    pub fn update_study_settings(
+        &self,
+        limits: DeckLimits,
+        practice_mode: Option<PracticeMode>,
+        now: Timestamp,
+    ) -> Changes {
         self.change(|doc, _| doc.update_study_settings(limits, practice_mode, now))
     }
 
@@ -422,7 +456,11 @@ impl RepertoireDoc {
     }
 
     pub fn suspended_card_epds(&self, root: NodeId) -> Vec<Epd> {
-        self.lock().trainer().suspended_card_epds(root).into_iter().collect()
+        self.lock()
+            .trainer()
+            .suspended_card_epds(root)
+            .into_iter()
+            .collect()
     }
 
     /// The opening branches for per-branch statistics.
@@ -519,7 +557,9 @@ impl RepertoireDoc {
         let database = self.lock().database().clone();
         self.explorer.ensure_loaded(database);
         let mut recomputed = self.change(|doc, stats| doc.recompute_coverage(stats));
-        recomputed.save_sidecar_after_ms = recomputed.save_sidecar_after_ms.or(changes.save_sidecar_after_ms);
+        recomputed.save_sidecar_after_ms = recomputed
+            .save_sidecar_after_ms
+            .or(changes.save_sidecar_after_ms);
         recomputed
     }
 }

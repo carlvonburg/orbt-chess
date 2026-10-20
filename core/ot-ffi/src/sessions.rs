@@ -22,7 +22,14 @@ pub struct BuilderSession {
 }
 
 impl BuilderSession {
-    fn act(&self, f: impl FnOnce(&mut Builder, &mut ot_core::document::Repertoire, &dyn ot_core::coverage::StatsSource) -> Changes) -> Changes {
+    fn act(
+        &self,
+        f: impl FnOnce(
+            &mut Builder,
+            &mut ot_core::document::Repertoire,
+            &dyn ot_core::coverage::StatsSource,
+        ) -> Changes,
+    ) -> Changes {
         let mut b = self.state.lock().expect("builder lock");
         self.doc.edit(|doc, stats| ((), f(&mut b, doc, stats))).1
     }
@@ -110,12 +117,16 @@ impl BuilderSession {
 
     pub fn reach_on_board(&self) -> Option<f64> {
         let b = self.state.lock().expect("builder lock");
-        self.doc.edit(|doc, stats| (b.reach_on_board(doc, stats), Changes::default())).0
+        self.doc
+            .edit(|doc, stats| (b.reach_on_board(doc, stats), Changes::default()))
+            .0
     }
 
     pub fn draft_replies(&self) -> Option<Vec<ReplyInfo>> {
         let b = self.state.lock().expect("builder lock");
-        self.doc.edit(|doc, stats| (b.draft_replies(doc, stats), Changes::default())).0
+        self.doc
+            .edit(|doc, stats| (b.draft_replies(doc, stats), Changes::default()))
+            .0
     }
 
     // Navigation and edits
@@ -136,7 +147,12 @@ impl BuilderSession {
         self.act(|b, doc, stats| b.sibling(doc, offset, stats))
     }
 
-    pub fn play(&self, from: BoardSquare, to: BoardSquare, promotion: Option<PieceKind>) -> Changes {
+    pub fn play(
+        &self,
+        from: BoardSquare,
+        to: BoardSquare,
+        promotion: Option<PieceKind>,
+    ) -> Changes {
         self.act(|b, doc, stats| b.play(doc, from, to, promotion, stats))
     }
 
@@ -177,7 +193,10 @@ pub struct DrillSession {
 }
 
 impl DrillSession {
-    fn act(&self, f: impl FnOnce(&mut Drill, &mut ot_core::document::Repertoire) -> Changes) -> Changes {
+    fn act(
+        &self,
+        f: impl FnOnce(&mut Drill, &mut ot_core::document::Repertoire) -> Changes,
+    ) -> Changes {
         let mut d = self.state.lock().expect("drill lock");
         self.doc.edit(|doc, _| ((), f(&mut d, doc))).1
     }
@@ -278,11 +297,19 @@ impl DrillSession {
     }
 
     pub fn current_node(&self) -> Option<NodeId> {
-        self.state.lock().expect("drill lock").run().map(|r| r.current_node())
+        self.state
+            .lock()
+            .expect("drill lock")
+            .run()
+            .map(|r| r.current_node())
     }
 
     pub fn line(&self) -> Option<StudyLineRecord> {
-        self.state.lock().expect("drill lock").line().map(StudyLineRecord::from)
+        self.state
+            .lock()
+            .expect("drill lock")
+            .line()
+            .map(StudyLineRecord::from)
     }
 
     /// One step of the rewind or autoplay.
@@ -296,7 +323,14 @@ impl DrillSession {
         d.next_line(&doc, &timing);
     }
 
-    pub fn user_moved(&self, from: BoardSquare, to: BoardSquare, promotion: Option<PieceKind>, timing: SchedTiming, now_ms: i64) -> Changes {
+    pub fn user_moved(
+        &self,
+        from: BoardSquare,
+        to: BoardSquare,
+        promotion: Option<PieceKind>,
+        timing: SchedTiming,
+        now_ms: i64,
+    ) -> Changes {
         self.act(|d, doc| d.user_moved(doc, from, to, promotion, &timing, now_ms))
     }
 
@@ -316,7 +350,9 @@ impl DrillSession {
 
     pub fn analysis_moves(&self, timing: SchedTiming, now_ms: i64) -> MovesAndChanges {
         let mut d = self.state.lock().expect("drill lock");
-        let (moves, changes) = self.doc.edit(|doc, _| d.analysis_moves(doc, &timing, now_ms));
+        let (moves, changes) = self
+            .doc
+            .edit(|doc, _| d.analysis_moves(doc, &timing, now_ms));
         MovesAndChanges { moves, changes }
     }
 

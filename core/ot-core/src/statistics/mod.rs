@@ -25,7 +25,12 @@ pub enum GraphRange {
 }
 
 impl GraphRange {
-    pub const ALL: [GraphRange; 4] = [GraphRange::Month, GraphRange::ThreeMonths, GraphRange::Year, GraphRange::All];
+    pub const ALL: [GraphRange; 4] = [
+        GraphRange::Month,
+        GraphRange::ThreeMonths,
+        GraphRange::Year,
+        GraphRange::All,
+    ];
 
     pub fn days(self) -> i64 {
         match self {

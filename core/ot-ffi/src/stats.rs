@@ -8,7 +8,7 @@ use ot_core::explorer::ExplorerDatabase;
 use ot_core::formats::{Sidecar, Summary, Timestamp, revlog};
 use ot_core::repertoire::RepertoireTree;
 use ot_core::statistics::{
-    CardCounts, CardInfo, GraphsContext, Hour, GraphRange, RetentionPeriod, Streak, Today,
+    CardCounts, CardInfo, GraphRange, GraphsContext, Hour, RetentionPeriod, Streak, Today,
     TrueRetention, WeakMove,
 };
 use ot_core::training::anki::{Card, Counts, DeckConfig, RevlogEntry, SchedTiming};
@@ -37,7 +37,14 @@ impl Graphs {
         timing: SchedTiming,
         local_offset_secs: i64,
     ) -> Arc<Graphs> {
-        Arc::new(Graphs(GraphsContext::new(cards, new_count, suspended_new_count, revlog, timing, local_offset_secs)))
+        Arc::new(Graphs(GraphsContext::new(
+            cards,
+            new_count,
+            suspended_new_count,
+            revlog,
+            timing,
+            local_offset_secs,
+        )))
     }
 
     pub fn today(&self) -> Today {
@@ -124,7 +131,11 @@ impl Graphs {
 
 /// Expected recall in games: Σ reach × R over your card positions, divided by Σ reach.
 #[uniffi::export]
-pub fn expected_recall(cards: HashMap<Epd, Card>, reach: HashMap<Epd, f64>, now_secs: f64) -> Option<f64> {
+pub fn expected_recall(
+    cards: HashMap<Epd, Card>,
+    reach: HashMap<Epd, f64>,
+    now_secs: f64,
+) -> Option<f64> {
     ot_core::statistics::expected_recall(&cards, &reach, now_secs)
 }
 
@@ -141,12 +152,13 @@ pub struct LibrarySidecar(Sidecar);
 /// Reads a sidecar for a library row; None when it is not a sidecar.
 #[uniffi::export]
 pub fn library_sidecar(data: Vec<u8>) -> Option<Arc<LibrarySidecar>> {
-    Sidecar::decode(&data).ok().map(|s| Arc::new(LibrarySidecar(s)))
+    Sidecar::decode(&data)
+        .ok()
+        .map(|s| Arc::new(LibrarySidecar(s)))
 }
 
 #[uniffi::export]
 impl LibrarySidecar {
-
     pub fn id(&self) -> String {
         self.0.id.clone()
     }
@@ -187,7 +199,12 @@ impl LibrarySidecar {
         self.0.estimated_progress()
     }
 
-    pub fn estimated_study_counts(&self, new_per_day: i64, reviews_per_day: i64, timing: SchedTiming) -> Counts {
+    pub fn estimated_study_counts(
+        &self,
+        new_per_day: i64,
+        reviews_per_day: i64,
+        timing: SchedTiming,
+    ) -> Counts {
         let config = DeckConfig {
             new_per_day,
             reviews_per_day,
@@ -211,7 +228,14 @@ impl LibrarySidecar {
 
 /// The sidecar of a new repertoire.
 #[uniffi::export]
-pub fn new_sidecar(id: String, color: Side, database: ExplorerDatabase, target_games: i64, min_games: i64, now: Timestamp) -> Vec<u8> {
+pub fn new_sidecar(
+    id: String,
+    color: Side,
+    database: ExplorerDatabase,
+    target_games: i64,
+    min_games: i64,
+    now: Timestamp,
+) -> Vec<u8> {
     let mut s = Sidecar::new(id, color, now);
     s.database = database;
     s.target_games = target_games;
@@ -258,7 +282,9 @@ pub enum SignInError {
 
 impl From<ot_core::lichess::AuthError> for SignInError {
     fn from(e: ot_core::lichess::AuthError) -> SignInError {
-        SignInError::Failed { message: e.to_string() }
+        SignInError::Failed {
+            message: e.to_string(),
+        }
     }
 }
 
@@ -286,7 +312,10 @@ pub fn lichess_callback_scheme() -> String {
 
 /// The code from the redirect, or None when the user declined.
 #[uniffi::export]
-pub fn lichess_parse_callback(url: String, expected_state: String) -> Result<Option<String>, SignInError> {
+pub fn lichess_parse_callback(
+    url: String,
+    expected_state: String,
+) -> Result<Option<String>, SignInError> {
     Ok(ot_core::lichess::parse_callback(&url, &expected_state)?)
 }
 

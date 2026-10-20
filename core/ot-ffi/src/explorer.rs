@@ -66,7 +66,11 @@ pub struct Explorer {
 }
 
 impl Explorer {
-    pub(crate) fn with_stats<R>(&self, database: &ExplorerDatabase, f: impl FnOnce(&dyn ot_core::coverage::StatsSource) -> R) -> R {
+    pub(crate) fn with_stats<R>(
+        &self,
+        database: &ExplorerDatabase,
+        f: impl FnOnce(&dyn ot_core::coverage::StatsSource) -> R,
+    ) -> R {
         self.ensure_loaded(database.clone());
         let inner = self.inner.lock().expect("explorer lock");
         f(&inner.cache.source(database))
@@ -105,7 +109,11 @@ impl Explorer {
 impl Explorer {
     /// `banned_until`: the persisted end of a ban; `base_interval_ms` overrides the pace.
     #[uniffi::constructor]
-    pub fn new(store: Arc<dyn StatsStore>, banned_until: Option<i64>, base_interval_ms: Option<i64>) -> Arc<Explorer> {
+    pub fn new(
+        store: Arc<dyn StatsStore>,
+        banned_until: Option<i64>,
+        base_interval_ms: Option<i64>,
+    ) -> Arc<Explorer> {
         Arc::new(Explorer {
             inner: Mutex::new(Inner {
                 cache: StatsCache::default(),
@@ -123,7 +131,13 @@ impl Explorer {
 
     /// Loads a database's stored stats once.
     pub fn ensure_loaded(&self, database: ExplorerDatabase) {
-        if self.inner.lock().expect("explorer lock").cache.is_loaded(&database) {
+        if self
+            .inner
+            .lock()
+            .expect("explorer lock")
+            .cache
+            .is_loaded(&database)
+        {
             return;
         }
         let entries: Vec<(Epd, ExplorerStats)> = self
@@ -132,12 +146,21 @@ impl Explorer {
             .into_iter()
             .filter_map(|s| Some((s.epd, serde_json::from_slice(&s.json).ok()?)))
             .collect();
-        self.inner.lock().expect("explorer lock").cache.load(&database, entries);
+        self.inner
+            .lock()
+            .expect("explorer lock")
+            .cache
+            .load(&database, entries);
     }
 
     pub fn stats(&self, database: ExplorerDatabase, epd: Epd) -> Option<ExplorerStats> {
         self.ensure_loaded(database.clone());
-        self.inner.lock().expect("explorer lock").cache.get(&database, &epd).cloned()
+        self.inner
+            .lock()
+            .expect("explorer lock")
+            .cache
+            .get(&database, &epd)
+            .cloned()
     }
 
     /// Forgets the stats in memory (after the platform cleared its store).
@@ -146,7 +169,12 @@ impl Explorer {
     }
 
     pub fn state(&self) -> QueueState {
-        self.inner.lock().expect("explorer lock").queue.state().clone()
+        self.inner
+            .lock()
+            .expect("explorer lock")
+            .queue
+            .state()
+            .clone()
     }
 
     /// Coverage requests waiting.
@@ -166,7 +194,11 @@ impl Explorer {
     }
 
     pub fn cancel_all(&self, database: ExplorerDatabase) {
-        self.inner.lock().expect("explorer lock").queue.cancel_all(&database);
+        self.inner
+            .lock()
+            .expect("explorer lock")
+            .queue
+            .cancel_all(&database);
     }
 
     /// After signing in or when the network is back.
@@ -177,7 +209,12 @@ impl Explorer {
 
     /// The requests to send now (with `Authorization: Bearer <token>`), and when to poll again.
     pub fn poll(&self, now_ms: i64, has_token: bool) -> Poll {
-        let p = self.inner.lock().expect("explorer lock").queue.poll(now_ms, has_token);
+        let p = self
+            .inner
+            .lock()
+            .expect("explorer lock")
+            .queue
+            .poll(now_ms, has_token);
         Poll {
             fetches: p
                 .fetches
@@ -224,7 +261,8 @@ impl Explorer {
             if let Some((db, epd, stats)) = &outcome.stats {
                 inner.cache.put(db, epd.clone(), stats.clone());
             }
-            let documents: Vec<Arc<RepertoireDoc>> = inner.documents.iter().filter_map(Weak::upgrade).collect();
+            let documents: Vec<Arc<RepertoireDoc>> =
+                inner.documents.iter().filter_map(Weak::upgrade).collect();
             (outcome, documents)
         };
         if let Some((db, epd, stats)) = &outcome.stats {

@@ -9,11 +9,13 @@ use ot_core::coverage::{CoverageGap, GapKind, NodeCoverage, ReplyInfo, Status};
 use ot_core::document::{Changes, StudyDefaults};
 use ot_core::drill::{DrillMode, Feedback, Phase};
 use ot_core::explorer::queue::{Lane, QueueState};
-use ot_core::explorer::{ExplorerDatabase, ExplorerMove, ExplorerSpeed, ExplorerStats, OpeningName};
+use ot_core::explorer::{
+    ExplorerDatabase, ExplorerMove, ExplorerSpeed, ExplorerStats, OpeningName,
+};
 use ot_core::formats::{Summary, Timestamp};
 use ot_core::repertoire::{NodeId, RepertoireNode, RepertoireTree};
 use ot_core::statistics::{
-    CardCounts, CardInfo, Hour, GraphRange, RetentionPeriod, ReviewCounts, Streak, Today,
+    CardCounts, CardInfo, GraphRange, Hour, RetentionPeriod, ReviewCounts, Streak, Today,
     TrueRetention, WeakMove,
 };
 use ot_core::training::anki::{
@@ -30,13 +32,11 @@ uniffi::custom_type!(Epd, String, {
     try_lift: |text| Ok(Epd::new(text)),
 });
 
-uniffi::custom_type!(BoardSquare, u8, {
-    remote,
-    lower: |square| square.0,
-    try_lift: |index| {
-        if index < 64 { Ok(BoardSquare(index)) } else { Err(uniffi::deps::anyhow::anyhow!("square {index}")) }
-    },
-});
+/// A square, 0...63 with a1 = 0, h8 = 63.
+#[uniffi::remote(Record)]
+pub struct BoardSquare {
+    pub index: u8,
+}
 
 uniffi::custom_type!(Timestamp, i64, {
     remote,
@@ -749,4 +749,5 @@ pub fn lichess_analysis_url(moves: Vec<PlayedMove>, orientation: Side) -> String
     ot_core::lichess::analysis_url(&moves, orientation)
 }
 
-pub(crate) fn _unused(_: DeckLimits, _: QueueKind, _: RemainingLimits, _: Summary, _: SchedTiming) {}
+pub(crate) fn _unused(_: DeckLimits, _: QueueKind, _: RemainingLimits, _: Summary, _: SchedTiming) {
+}

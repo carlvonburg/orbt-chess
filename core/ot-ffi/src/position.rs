@@ -68,7 +68,12 @@ impl Position {
         self.0.is_checkmate()
     }
 
-    pub fn play(&self, from: BoardSquare, to: BoardSquare, promotion: Option<PieceKind>) -> Option<PlayResult> {
+    pub fn play(
+        &self,
+        from: BoardSquare,
+        to: BoardSquare,
+        promotion: Option<PieceKind>,
+    ) -> Option<PlayResult> {
         result(self.0.play(from, to, promotion))
     }
 

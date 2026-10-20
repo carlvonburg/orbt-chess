@@ -35,11 +35,15 @@ impl From<Color> for Side {
 
 /// A square stored as 0...63 with a1 = 0, h8 = 63.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct BoardSquare(pub u8);
+pub struct BoardSquare {
+    pub index: u8,
+}
 
 impl BoardSquare {
     pub fn new(file: u8, rank: u8) -> BoardSquare {
-        BoardSquare(rank * 8 + file)
+        BoardSquare {
+            index: rank * 8 + file,
+        }
     }
 
     /// Parses algebraic notation, e.g. "e4".
@@ -51,11 +55,11 @@ impl BoardSquare {
     }
 
     pub fn file(self) -> u8 {
-        self.0 % 8
+        self.index % 8
     }
 
     pub fn rank(self) -> u8 {
-        self.0 / 8
+        self.index / 8
     }
 
     pub fn is_light(self) -> bool {
@@ -63,13 +67,15 @@ impl BoardSquare {
     }
 
     fn kit(self) -> Square {
-        Square::new(u32::from(self.0))
+        Square::new(u32::from(self.index))
     }
 }
 
 impl From<Square> for BoardSquare {
     fn from(square: Square) -> BoardSquare {
-        BoardSquare(u8::from(square))
+        BoardSquare {
+            index: u8::from(square),
+        }
     }
 }
 

@@ -4679,6 +4679,59 @@ public func FfiConverterTypeBoardPiece_lower(_ value: BoardPiece) -> RustBuffer 
 }
 
 
+/**
+ * A square, 0...63 with a1 = 0, h8 = 63.
+ */
+public struct BoardSquare: Equatable, Hashable {
+    public var index: UInt8
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(index: UInt8) {
+        self.index = index
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension BoardSquare: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBoardSquare: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BoardSquare {
+        return
+            try BoardSquare(
+                index: FfiConverterUInt8.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: BoardSquare, into buf: inout [UInt8]) {
+        FfiConverterUInt8.write(value.index, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBoardSquare_lift(_ buf: RustBuffer) throws -> BoardSquare {
+    return try FfiConverterTypeBoardSquare.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBoardSquare_lower(_ value: BoardSquare) -> RustBuffer {
+    return FfiConverterTypeBoardSquare.lower(value)
+}
+
+
 public struct ButtonCounts: Equatable, Hashable {
     /**
      * Again ... Easy.
@@ -9913,6 +9966,30 @@ fileprivate struct FfiConverterOptionTypeBoardPiece: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeBoardSquare: FfiConverterRustBuffer {
+    typealias SwiftType = BoardSquare?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeBoardSquare.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeBoardSquare.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeCard: FfiConverterRustBuffer {
     typealias SwiftType = Card?
 
@@ -10369,30 +10446,6 @@ fileprivate struct FfiConverterOptionSequenceTypeEpd: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionTypeBoardSquare: FfiConverterRustBuffer {
-    typealias SwiftType = BoardSquare?
-
-    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        guard let value = value else {
-            writeInt(&buf, Int8(0))
-            return
-        }
-        writeInt(&buf, Int8(1))
-        FfiConverterTypeBoardSquare.write(value, into: &buf)
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
-        switch try readInt(&buf) as Int8 {
-        case 0: return nil
-        case 1: return try FfiConverterTypeBoardSquare.read(from: &buf)
-        default: throw UniffiInternalError.unexpectedOptionalTag
-        }
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
 fileprivate struct FfiConverterSequenceUInt32: FfiConverterRustBuffer {
     typealias SwiftType = [UInt32]
 
@@ -10535,6 +10588,31 @@ fileprivate struct FfiConverterSequenceTypeBoardPiece: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeBoardPiece.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeBoardSquare: FfiConverterRustBuffer {
+    typealias SwiftType = [BoardSquare]
+
+    public static func write(_ value: [BoardSquare], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeBoardSquare.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [BoardSquare] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [BoardSquare]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeBoardSquare.read(from: &buf))
         }
         return seq
     }
@@ -10893,31 +10971,6 @@ fileprivate struct FfiConverterSequenceTypeExplorerSpeed: FfiConverterRustBuffer
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterSequenceTypeBoardSquare: FfiConverterRustBuffer {
-    typealias SwiftType = [BoardSquare]
-
-    public static func write(_ value: [BoardSquare], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for item in value {
-            FfiConverterTypeBoardSquare.write(item, into: &buf)
-        }
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [BoardSquare] {
-        let len: Int32 = try readInt(&buf)
-        var seq = [BoardSquare]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeBoardSquare.read(from: &buf))
-        }
-        return seq
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
 fileprivate struct FfiConverterSequenceTypeEpd: FfiConverterRustBuffer {
     typealias SwiftType = [Epd]
 
@@ -11121,46 +11174,6 @@ fileprivate struct FfiConverterDictionaryTypeEpdTypeCard: FfiConverterRustBuffer
         return dict
     }
 }
-
-
-public typealias BoardSquare = UInt8
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeBoardSquare: FfiConverter {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BoardSquare {
-        return try FfiConverterUInt8.read(from: &buf)
-    }
-
-    public static func write(_ value: BoardSquare, into buf: inout [UInt8]) {
-        return FfiConverterUInt8.write(value, into: &buf)
-    }
-
-    public static func lift(_ value: UInt8) throws -> BoardSquare {
-        return try FfiConverterUInt8.lift(value)
-    }
-
-    public static func lower(_ value: BoardSquare) -> UInt8 {
-        return FfiConverterUInt8.lower(value)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeBoardSquare_lift(_ value: UInt8) throws -> BoardSquare {
-    return try FfiConverterTypeBoardSquare.lift(value)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeBoardSquare_lower(_ value: BoardSquare) -> UInt8 {
-    return FfiConverterTypeBoardSquare.lower(value)
-}
-
 
 
 public typealias Epd = String
@@ -11794,10 +11807,10 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_san_loose() != 45020) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_square_from_notation() != 4347) {
+    if (uniffi_opening_core_checksum_func_square_from_notation() != 25550) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_square_notation() != 21066) {
+    if (uniffi_opening_core_checksum_func_square_notation() != 6812) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_documentlistener_changed() != 29813) {
@@ -12088,22 +12101,22 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_position_is_checkmate() != 55555) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_position_is_promotion() != 51084) {
+    if (uniffi_opening_core_checksum_method_position_is_promotion() != 28833) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_position_legal_destinations() != 8448) {
+    if (uniffi_opening_core_checksum_method_position_legal_destinations() != 42774) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_position_legal_moves() != 2609) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_position_piece_at() != 19827) {
+    if (uniffi_opening_core_checksum_method_position_piece_at() != 43901) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_position_pieces() != 29049) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_position_play() != 26439) {
+    if (uniffi_opening_core_checksum_method_position_play() != 26710) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_position_play_san() != 62520) {
@@ -12172,7 +12185,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_buildersession_orientation() != 39036) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_buildersession_play() != 34834) {
+    if (uniffi_opening_core_checksum_method_buildersession_play() != 61698) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_buildersession_play_uci() != 33029) {
@@ -12277,7 +12290,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_drillsession_studied_millis() != 49881) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_drillsession_user_moved() != 29602) {
+    if (uniffi_opening_core_checksum_method_drillsession_user_moved() != 33003) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_drillsession_wrong_timeout() != 50031) {
