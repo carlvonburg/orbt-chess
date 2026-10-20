@@ -296,7 +296,7 @@ struct PracticeModePicker: View {
                 }
             }
             .navigationTitle("Practice")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
         } label: {
             LabeledContent("Practice", value: mode.title)
         }

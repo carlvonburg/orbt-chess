@@ -42,11 +42,11 @@ struct LibraryView: View {
             content
                 .navigationTitle("Repertoires")
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
+                    ToolbarItem(placement: .leadingBar) {
                         Button("Settings", systemImage: "gearshape") { showSettings = true }
                     }
                     if !model.library.entries.isEmpty {
-                        ToolbarItem(placement: .topBarTrailing) { filterMenu }
+                        ToolbarItem(placement: .trailingBar) { filterMenu }
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Menu {
@@ -82,7 +82,7 @@ struct LibraryView: View {
                 }
         }
         .sheet(isPresented: $showSettings) {
-            SettingsView()
+            SettingsView().sheetFrame()
         }
         .sheet(item: $sheet) { sheet in
             OpenDocument(entry: sheet.entry) { doc in
@@ -93,15 +93,18 @@ struct LibraryView: View {
             } placeholder: {
                 ProgressView("Opening \(sheet.entry.name)…")
             }
+            .sheetFrame()
         }
         .sheet(isPresented: $showNew) {
             NewRepertoireSheet { entry in path = [.overview(entry.id), .builder(entry.id)] }
+                .sheetFrame()
         }
         .sheet(item: $setupEntry) { entry in
             SetupSheet(title: "Set up \(entry.name)") { sidecar in
                 try model.library.saveSidecar(sidecar, for: entry)
                 path = [.overview(entry.id)]
             }
+            .sheetFrame()
         }
         .fileImporter(isPresented: $showImport, allowedContentTypes: [.pgn, .plainText]) { result in
             do {
@@ -756,7 +759,7 @@ struct NewRepertoireSheet: View {
             Form {
                 Section("Name") {
                     TextField("e.g. Najdorf", text: $name)
-                        .textInputAutocapitalization(.words)
+                        .wordsAutocapitalization()
                         .onChange(of: name) { name = name.safeRepertoireName }
                 }
                 RepertoireSettingsForm(draft: $draft)
@@ -765,7 +768,7 @@ struct NewRepertoireSheet: View {
                 }
             }
             .navigationTitle("New Repertoire")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }
@@ -803,7 +806,7 @@ struct SetupSheet: View {
                 if let error { Text(error).foregroundStyle(.red) }
             }
             .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }
@@ -844,7 +847,7 @@ struct RepertoireSettingsSheet: View {
             Form {
                 Section("Name") {
                     TextField("Name", text: $name)
-                        .textInputAutocapitalization(.words)
+                        .wordsAutocapitalization()
                         .onChange(of: name) { name = name.safeRepertoireName }
                 }
                 RepertoireSettingsForm(draft: $draft)
@@ -859,7 +862,7 @@ struct RepertoireSettingsSheet: View {
                 }
             }
             .navigationTitle("Repertoire Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }
@@ -904,7 +907,7 @@ struct StudyOptionsSheet: View {
                 DailyPracticeSection(draft: $practice)
             }
             .navigationTitle("\(document.name) Options")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }

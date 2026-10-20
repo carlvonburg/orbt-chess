@@ -50,7 +50,7 @@ struct CardInfoSheet: View {
                 }
             }
             .navigationTitle("Move Info")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", systemImage: "checkmark") { dismiss() }

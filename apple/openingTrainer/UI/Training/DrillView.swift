@@ -181,12 +181,7 @@ struct DrillView: View {
         let node: NodeID
     }
 
-    @State private var analysis: AnalysisRequest?
-
-    private struct AnalysisRequest: Identifiable {
-        let url: URL
-        var id: URL { url }
-    }
+    @State private var analysis: WebPage?
 
     /// The next repertoire when studying all of them: its name and how to go on.
     private let next: (name: String, start: () -> Void)?
@@ -203,7 +198,7 @@ struct DrillView: View {
     var body: some View {
         Group {
             if pushed {
-                content.toolbarVisibility(.hidden, for: .tabBar)
+                content.hidesTabBar()
             } else {
                 NavigationStack { content }
             }
@@ -212,9 +207,7 @@ struct DrillView: View {
         // Browsing pushes the builder on top; training goes on when it's popped.
         .onDisappear { if browsing == nil { model.stop() } }
         .checksCoverage(model.document)
-        .sheet(item: $analysis) { request in
-            SafariView(url: request.url).ignoresSafeArea()
-        }
+        .webPage($analysis)
     }
 
     private var content: some View {
@@ -244,10 +237,10 @@ struct DrillView: View {
         .padding(.vertical)
         .navigationTitle(model.mode.title)
         .navigationSubtitle(model.document.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar {
             if !model.finished {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .trailingBar) {
                     StudyCountsView(counts: model.counts, highlight: model.askedKind)
                         .font(.subheadline.monospacedDigit().weight(.semibold))
                 }
@@ -262,19 +255,18 @@ struct DrillView: View {
                 }
             }
             if !model.finished {
-                ToolbarItem(placement: .bottomBar) {
+                ToolbarItem(placement: .bottomActions) {
                     Button("Hint", systemImage: "lightbulb") { model.hint() }
                         .disabled(!model.isUserTurn)
                 }
-                ToolbarSpacer(.flexible, placement: .bottomBar)
+                ToolbarSpacer(.flexible, placement: .bottomActions)
                 // Both leave the board to look the move up, so both count as Again.
-                ToolbarItemGroup(placement: .bottomBar) {
+                ToolbarItemGroup(placement: .bottomActions) {
                     Button("Browse Repertoire", systemImage: "list.bullet.indent") {
                         if let node = model.browseNode() { browsing = BrowseRequest(node: node) }
                     }
                     Button("Analyze on Lichess", systemImage: "cpu") {
-                        analysis = AnalysisRequest(url: LichessLinks.analysis(moves: model.analysisMoves(),
-                                                                              orientation: model.color))
+                        analysis = WebPage(url: LichessLinks.analysis(moves: model.analysisMoves(), orientation: model.color))
                     }
                 }
             }

@@ -26,19 +26,22 @@ struct RepertoireOverviewView: View {
         .safeAreaBar(edge: .bottom) { studyBar(stats) }
         .checksCoverage(document)
         // A detail screen with its own actions at the bottom, like the study screen.
-        .toolbarVisibility(.hidden, for: .tabBar)
+        .hidesTabBar()
         .navigationTitle(document.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Repertoire Settings", systemImage: "gearshape") { sheet = .settings }
             }
         }
         .sheet(item: $sheet) { sheet in
-            switch sheet {
-            case .settings: RepertoireSettingsSheet(document: document)
-            case .options: StudyOptionsSheet(document: document)
+            Group {
+                switch sheet {
+                case .settings: RepertoireSettingsSheet(document: document)
+                case .options: StudyOptionsSheet(document: document)
+                }
             }
+            .sheetFrame()
         }
         .task(id: document.revision) {
             graphs = Graphs(cards: Array(document.sidecar.studyCards.values), newCount: 0, suspendedNewCount: 0,

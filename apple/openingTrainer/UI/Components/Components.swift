@@ -1,5 +1,7 @@
 import OpeningCoreRust
+#if os(iOS)
 import SafariServices
+#endif
 import SwiftUI
 
 /// The core's learning progress, not Foundation's `Progress`.
@@ -77,6 +79,41 @@ enum Format {
     }
 }
 
+/// A web page to show, e.g. the Lichess analysis board.
+struct WebPage: Identifiable, Equatable {
+    let url: URL
+    var id: URL { url }
+}
+
+extension View {
+    /// Shows `page` in a Safari sheet on iPhone and iPad, and in the default browser on macOS.
+    func webPage(_ page: Binding<WebPage?>) -> some View {
+        modifier(WebPagePresenter(page: page))
+    }
+}
+
+private struct WebPagePresenter: ViewModifier {
+    @Binding var page: WebPage?
+    #if os(macOS)
+    @Environment(\.openURL) private var openURL
+    #endif
+
+    func body(content: Content) -> some View {
+        #if os(iOS)
+        content.sheet(item: $page) { page in
+            SafariView(url: page.url).ignoresSafeArea()
+        }
+        #else
+        content.onChange(of: page) {
+            guard let page else { return }
+            openURL(page.url)
+            self.page = nil
+        }
+        #endif
+    }
+}
+
+#if os(iOS)
 struct SafariView: UIViewControllerRepresentable {
     let url: URL
 
@@ -86,6 +123,7 @@ struct SafariView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
 }
+#endif
 
 enum LichessLinks {
     /// Opens the line in the Lichess analysis board, keeping the move history.

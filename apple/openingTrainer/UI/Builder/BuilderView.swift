@@ -9,9 +9,10 @@ struct BuilderView: View {
     @State private var model: BuilderModel
     @State private var sheet: Sheet?
     @State private var drill: DrillRequest?
+    @State private var analysis: WebPage?
 
     enum Sheet: String, Identifiable {
-        case outline, gaps, note, analysis, settings, cardInfo
+        case outline, gaps, note, settings, cardInfo
         var id: String { rawValue }
     }
 
@@ -58,10 +59,12 @@ struct BuilderView: View {
             }
         }
         .navigationTitle(document.name)
-        .navigationBarTitleDisplayMode(.inline)
+        .inlineNavigationTitle()
         .toolbar { toolbar }
-        .toolbarVisibility(.hidden, for: .tabBar)
-        .sheet(item: $sheet) { sheet in sheetContent(sheet) }
+        .hidesTabBar()
+        .sheet(item: $sheet) { sheet in sheetContent(sheet).sheetFrame() }
+        .webPage($analysis)
+        .background { keyboardShortcuts.opacity(0).accessibilityHidden(true) }
         .navigationDestination(item: $drill) { request in
             DrillView(document: document, mode: request.mode, pushed: true)
         }
@@ -81,6 +84,10 @@ struct BuilderView: View {
             model.play(from: from, to: to, promotion: promotion)
         }
         .frame(maxWidth: 680)
+    }
+
+    private func analyze() {
+        analysis = WebPage(url: LichessLinks.analysis(moves: model.movesToBoard, orientation: model.orientation))
     }
 
     private func requestStats() {
@@ -116,7 +123,7 @@ struct BuilderView: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItem(placement: .trailingBar) {
             Menu("More", systemImage: "ellipsis") {
                 Button("Undo", systemImage: "arrow.uturn.backward") { model.undo() }
                     .disabled(!document.canUndo)
@@ -132,7 +139,7 @@ struct BuilderView: View {
                 Button("Repertoire Settings", systemImage: "gearshape") { sheet = .settings }
             }
         }
-        ToolbarItemGroup(placement: .bottomBar) {
+        ToolbarItemGroup(placement: .bottomActions) {
             Button("Back", systemImage: "chevron.backward") { model.back() }
                 .keyboardShortcut(.leftArrow, modifiers: [])
                 .disabled(model.current == RepertoireTree.rootID && !model.hasDraft)
@@ -140,15 +147,15 @@ struct BuilderView: View {
                 .keyboardShortcut(.rightArrow, modifiers: [])
                 .disabled(!model.canForward)
         }
-        ToolbarSpacer(.flexible, placement: .bottomBar)
+        ToolbarSpacer(.flexible, placement: .bottomActions)
         if model.hasDraft {
             // While a new line is on the board: keep it or drop it.
-            ToolbarItemGroup(placement: .bottomBar) {
-                Button("Analyze on Lichess", systemImage: "cpu") { sheet = .analysis }
+            ToolbarItemGroup(placement: .bottomActions) {
+                Button("Analyze on Lichess", systemImage: "cpu") { analyze() }
                 Button("Discard", systemImage: "xmark", role: .destructive) { model.discardDraft() }
             }
-            ToolbarSpacer(.fixed, placement: .bottomBar)
-            ToolbarItem(placement: .bottomBar) {
+            ToolbarSpacer(.fixed, placement: .bottomActions)
+            ToolbarItem(placement: .bottomActions) {
                 Button { model.saveDraft() } label: {
                     Label(model.draft.count == 1 ? "Save" : "Save \(model.draft.count)", systemImage: "checkmark")
                         .labelStyle(.titleAndIcon)
@@ -156,21 +163,39 @@ struct BuilderView: View {
                 .buttonStyle(.glassProminent)
             }
         } else {
-            ToolbarItemGroup(placement: .bottomBar) {
+            ToolbarItemGroup(placement: .bottomActions) {
                 Button("Biggest Gap", systemImage: "scope") { model.goToBiggestGap() }
                     .disabled(document.coverage.root?.biggestGap == nil)
                 Button("Study Branch", systemImage: "graduationcap") {
                     drill = DrillRequest(mode: .branch(model.current))
                 }
                 .disabled(document.learningProgress(under: model.current).cards == 0)
-                Button("Analyze on Lichess", systemImage: "cpu") { sheet = .analysis }
+                Button("Analyze on Lichess", systemImage: "cpu") { analyze() }
             }
         }
-        ToolbarItem(placement: .keyboard) {
-            HStack {
-                Button("Previous line") { model.sibling(-1) }.keyboardShortcut(.upArrow, modifiers: [])
-                Button("Next line") { model.sibling(1) }.keyboardShortcut(.downArrow, modifiers: [])
-            }
+        #if os(iOS)
+        ToolbarItem(placement: .keyboard) { siblingButtons }
+        #endif
+    }
+
+    /// ↑/↓ switch to the previous/next sibling line.
+    private var siblingButtons: some View {
+        HStack {
+            Button("Previous line") { model.sibling(-1) }.keyboardShortcut(.upArrow, modifiers: [])
+            Button("Next line") { model.sibling(1) }.keyboardShortcut(.downArrow, modifiers: [])
+        }
+    }
+
+    /// Hardware keyboard: ⌘Z undoes (the menu's shortcuts only work while it is open); on
+    /// macOS, which has no keyboard bar, also ↑/↓.
+    private var keyboardShortcuts: some View {
+        HStack {
+            Button("Undo") { model.undo() }
+                .keyboardShortcut("z", modifiers: .command)
+                .disabled(!document.canUndo)
+            #if os(macOS)
+            siblingButtons
+            #endif
         }
     }
 
@@ -185,9 +210,6 @@ struct BuilderView: View {
         case .note:
             NoteSheet(document: document, node: model.current)
                 .presentationDetents([.medium, .large])
-        case .analysis:
-            SafariView(url: LichessLinks.analysis(moves: model.movesToBoard, orientation: model.orientation))
-                .ignoresSafeArea()
         case .settings:
             RepertoireSettingsSheet(document: document)
         case .cardInfo:

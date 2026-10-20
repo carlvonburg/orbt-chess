@@ -1,7 +1,11 @@
 import Charts
 import OpeningCoreRust
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#else
+import AppKit
+#endif
 
 /// Anki's statistics (Today, Future Due, Calendar, Reviews, Card Counts, Intervals,
 /// Difficulty, Stability, Retrievability, Hourly Breakdown, Answer Buttons, True Retention),
@@ -50,7 +54,7 @@ struct StatisticsView: View {
             .navigationTitle("Statistics")
             .navigationSubtitle(scopeTitle)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { filterMenu }
+                ToolbarItem(placement: .trailingBar) { filterMenu }
             }
             .task(id: TaskKey(scope: model.scope, entries: app.library.entries.count)) {
                 await model.load(app)
@@ -110,20 +114,35 @@ enum ChartPalette {
 
     static func color(_ slot: Int) -> Color {
         let pair = slots[slot % slots.count]
+        #if canImport(UIKit)
         return Color(UIColor { traits in
             UIColor(rgb: traits.userInterfaceStyle == .dark ? pair.dark : pair.light)
         })
+        #else
+        return Color(NSColor(name: nil) { appearance in
+            NSColor(rgb: appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? pair.dark : pair.light)
+        })
+        #endif
     }
 
     static let sequential = color(0)
 }
 
+#if canImport(UIKit)
 private extension UIColor {
     convenience init(rgb: UInt32) {
         self.init(red: CGFloat((rgb >> 16) & 0xFF) / 255, green: CGFloat((rgb >> 8) & 0xFF) / 255,
                   blue: CGFloat(rgb & 0xFF) / 255, alpha: 1)
     }
 }
+#else
+private extension NSColor {
+    convenience init(rgb: UInt32) {
+        self.init(srgbRed: CGFloat((rgb >> 16) & 0xFF) / 255, green: CGFloat((rgb >> 8) & 0xFF) / 255,
+                  blue: CGFloat(rgb & 0xFF) / 255, alpha: 1)
+    }
+}
+#endif
 
 // MARK: Cards
 
