@@ -1,0 +1,67 @@
+{
+  "gaps" : [
+
+  ],
+  "nodes" : {
+    "0" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 1,
+      "replies" : [
+
+      ],
+      "seenEvery" : 1,
+      "status" : {
+        "kind" : "required"
+      }
+    }
+  },
+  "pendingPositions" : [
+
+  ],
+  "root" : {
+    "biggestGap" : null,
+    "completion" : 1,
+    "counts" : true,
+    "gapCount" : 0,
+    "gapMass" : 0,
+    "localGaps" : [
+
+    ],
+    "pendingCount" : 0,
+    "reach" : 1,
+    "replies" : [
+
+    ],
+    "seenEvery" : 1,
+    "status" : {
+      "kind" : "required"
+    }
+  },
+  "scheme" : "treestats_missing",
+  "settings" : {
+    "color" : "black",
+    "excluded" : {
+
+    },
+    "minGames" : 25,
+    "targetGames" : 500
+  },
+  "stats" : {
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+
+      ],
+      "white" : 200
+    }
+  }
+}

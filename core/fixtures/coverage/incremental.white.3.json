@@ -1,0 +1,5494 @@
+{
+  "final" : {
+    "gaps" : [
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "b6",
+          "uci" : "b7b6"
+        },
+        "mass" : 0.2593619972260749,
+        "node" : 1,
+        "seenEvery" : 4
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "d6",
+          "uci" : "d7d6"
+        },
+        "mass" : 0.20110957004160887,
+        "node" : 1,
+        "seenEvery" : 5
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "b4",
+          "uci" : "b5b4"
+        },
+        "mass" : 0.1333014811275681,
+        "node" : 11,
+        "seenEvery" : 8
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "e5",
+          "uci" : "e7e5"
+        },
+        "mass" : 0.08623984710941233,
+        "node" : 11,
+        "seenEvery" : 12
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "e6",
+          "uci" : "e7e6"
+        },
+        "mass" : 0.08361204013377926,
+        "node" : 11,
+        "seenEvery" : 12
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "Qd7",
+          "uci" : "d8d7"
+        },
+        "mass" : 0.07310291412892721,
+        "node" : 21,
+        "seenEvery" : 14
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "Qd6",
+          "uci" : "d8d6"
+        },
+        "mass" : 0.05761500859313755,
+        "node" : 21,
+        "seenEvery" : 17
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "f6",
+          "uci" : "f7f6"
+        },
+        "mass" : 0.05398948877209747,
+        "node" : 11,
+        "seenEvery" : 19
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "e6",
+          "uci" : "e7e6"
+        },
+        "mass" : 0.03816219924018573,
+        "node" : 21,
+        "seenEvery" : 26
+      }
+    ],
+    "nodes" : {
+      "0" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "1" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "b6",
+              "uci" : "b7b6"
+            },
+            "mass" : 0.2593619972260749,
+            "node" : 1,
+            "seenEvery" : 4
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "d6",
+              "uci" : "d7d6"
+            },
+            "mass" : 0.20110957004160887,
+            "node" : 1,
+            "seenEvery" : 5
+          }
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+          {
+            "child" : 9,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 515,
+            "reach" : 0.35714285714285715,
+            "required" : true,
+            "san" : "b5",
+            "share" : 0.35714285714285715,
+            "transposesTo" : null,
+            "uci" : "b7b5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 374,
+            "reach" : 0.2593619972260749,
+            "required" : true,
+            "san" : "b6",
+            "share" : 0.2593619972260749,
+            "transposesTo" : null,
+            "uci" : "b7b6"
+          },
+          {
+            "child" : 3,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 263,
+            "reach" : 0.1823855755894591,
+            "required" : true,
+            "san" : "d5",
+            "share" : 0.1823855755894591,
+            "transposesTo" : null,
+            "uci" : "d7d5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 290,
+            "reach" : 0.20110957004160887,
+            "required" : true,
+            "san" : "d6",
+            "share" : 0.20110957004160887,
+            "transposesTo" : null,
+            "uci" : "d7d6"
+          }
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "11" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b4",
+            "uci" : "b5b4"
+          },
+          "mass" : 0.1333014811275681,
+          "node" : 11,
+          "seenEvery" : 8
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 0.35714285714285715,
+        "localGaps" : [
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "b4",
+              "uci" : "b5b4"
+            },
+            "mass" : 0.1333014811275681,
+            "node" : 11,
+            "seenEvery" : 8
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "e6",
+              "uci" : "e7e6"
+            },
+            "mass" : 0.08361204013377926,
+            "node" : 11,
+            "seenEvery" : 12
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "e5",
+              "uci" : "e7e5"
+            },
+            "mass" : 0.08623984710941233,
+            "node" : 11,
+            "seenEvery" : 12
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "f6",
+              "uci" : "f7f6"
+            },
+            "mass" : 0.05398948877209747,
+            "node" : 11,
+            "seenEvery" : 19
+          }
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.35714285714285715,
+        "replies" : [
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 558,
+            "reach" : 0.1333014811275681,
+            "required" : true,
+            "san" : "b4",
+            "share" : 0.3732441471571906,
+            "transposesTo" : null,
+            "uci" : "b5b4"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 350,
+            "reach" : 0.08361204013377926,
+            "required" : true,
+            "san" : "e6",
+            "share" : 0.23411371237458195,
+            "transposesTo" : null,
+            "uci" : "e7e6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 361,
+            "reach" : 0.08623984710941233,
+            "required" : true,
+            "san" : "e5",
+            "share" : 0.24147157190635452,
+            "transposesTo" : null,
+            "uci" : "e7e5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 226,
+            "reach" : 0.05398948877209747,
+            "required" : true,
+            "san" : "f6",
+            "share" : 0.15117056856187291,
+            "transposesTo" : null,
+            "uci" : "f7f6"
+          }
+        ],
+        "seenEvery" : 3,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "15" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.3262316910785619,
+        "replies" : [
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 544,
+            "reach" : 0.13107093053673388,
+            "required" : true,
+            "san" : "g6",
+            "share" : 0.4017725258493353,
+            "transposesTo" : null,
+            "uci" : "g7g6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 377,
+            "reach" : 0.09083408237564095,
+            "required" : true,
+            "san" : "g5",
+            "share" : 0.27843426883308714,
+            "transposesTo" : null,
+            "uci" : "g7g5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 320,
+            "reach" : 0.07710054737454934,
+            "required" : true,
+            "san" : "b6",
+            "share" : 0.2363367799113737,
+            "transposesTo" : null,
+            "uci" : "b7b6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 113,
+            "reach" : 0.027226130791637736,
+            "required" : true,
+            "san" : "b5",
+            "share" : 0.08345642540620384,
+            "transposesTo" : null,
+            "uci" : "b7b5"
+          }
+        ],
+        "seenEvery" : 3,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "17" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.22503328894806923,
+        "replies" : [
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 451,
+            "reach" : 0.0759087608942253,
+            "required" : true,
+            "san" : "b6",
+            "share" : 0.337322363500374,
+            "transposesTo" : null,
+            "uci" : "b7b6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 370,
+            "reach" : 0.062275480112779065,
+            "required" : true,
+            "san" : "b5",
+            "share" : 0.27673896783844426,
+            "transposesTo" : null,
+            "uci" : "b7b5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 365,
+            "reach" : 0.061433919570714486,
+            "required" : true,
+            "san" : "c5",
+            "share" : 0.27299925205684367,
+            "transposesTo" : null,
+            "uci" : "c6c5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 151,
+            "reach" : 0.025415128370350377,
+            "required" : true,
+            "san" : "g6",
+            "share" : 0.11293941660433807,
+            "transposesTo" : null,
+            "uci" : "g7g6"
+          }
+        ],
+        "seenEvery" : 4,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "18" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.35714285714285715,
+        "replies" : [
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 436,
+            "reach" : 0.12146200133719634,
+            "required" : true,
+            "san" : "e6",
+            "share" : 0.34009360374414976,
+            "transposesTo" : null,
+            "uci" : "e7e6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 321,
+            "reach" : 0.08942500557165144,
+            "required" : true,
+            "san" : "e5",
+            "share" : 0.250390015600624,
+            "transposesTo" : null,
+            "uci" : "e7e5"
+          },
+          {
+            "child" : 19,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 368,
+            "reach" : 0.1025183864497437,
+            "required" : true,
+            "san" : "f6",
+            "share" : 0.2870514820592824,
+            "transposesTo" : null,
+            "uci" : "f7f6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 157,
+            "reach" : 0.04373746378426566,
+            "required" : true,
+            "san" : "f5",
+            "share" : 0.12246489859594384,
+            "transposesTo" : null,
+            "uci" : "f7f5"
+          }
+        ],
+        "seenEvery" : 3,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "19" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.1025183864497437,
+        "replies" : [
+
+        ],
+        "seenEvery" : 10,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "2" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+          {
+            "child" : 4,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 490,
+            "reach" : 0.3262316910785619,
+            "required" : true,
+            "san" : "f6",
+            "share" : 0.3262316910785619,
+            "transposesTo" : null,
+            "uci" : "f7f6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 481,
+            "reach" : 0.3202396804260985,
+            "required" : true,
+            "san" : "f5",
+            "share" : 0.3202396804260985,
+            "transposesTo" : null,
+            "uci" : "f7f5"
+          },
+          {
+            "child" : 6,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 338,
+            "reach" : 0.22503328894806923,
+            "required" : true,
+            "san" : "c6",
+            "share" : 0.22503328894806923,
+            "transposesTo" : null,
+            "uci" : "c7c6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 193,
+            "reach" : 0.1284953395472703,
+            "required" : true,
+            "san" : "c5",
+            "share" : 0.1284953395472703,
+            "transposesTo" : null,
+            "uci" : "c7c5"
+          }
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "21" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "Qd7",
+            "uci" : "d8d7"
+          },
+          "mass" : 0.07310291412892721,
+          "node" : 21,
+          "seenEvery" : 14
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 3,
+        "gapMass" : 0.1688801219622505,
+        "localGaps" : [
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "Qd7",
+              "uci" : "d8d7"
+            },
+            "mass" : 0.07310291412892721,
+            "node" : 21,
+            "seenEvery" : 14
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "Qd6",
+              "uci" : "d8d6"
+            },
+            "mass" : 0.05761500859313755,
+            "node" : 21,
+            "seenEvery" : 17
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "e6",
+              "uci" : "e7e6"
+            },
+            "mass" : 0.03816219924018573,
+            "node" : 21,
+            "seenEvery" : 26
+          }
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.1823855755894591,
+        "replies" : [
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 590,
+            "reach" : 0.07310291412892721,
+            "required" : true,
+            "san" : "Qd7",
+            "share" : 0.4008152173913043,
+            "transposesTo" : null,
+            "uci" : "d8d7"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 465,
+            "reach" : 0.05761500859313755,
+            "required" : true,
+            "san" : "Qd6",
+            "share" : 0.31589673913043476,
+            "transposesTo" : null,
+            "uci" : "d8d6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 308,
+            "reach" : 0.03816219924018573,
+            "required" : true,
+            "san" : "e6",
+            "share" : 0.20923913043478262,
+            "transposesTo" : null,
+            "uci" : "e7e6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 109,
+            "reach" : 0.013505453627208586,
+            "required" : false,
+            "san" : "e5",
+            "share" : 0.07404891304347826,
+            "transposesTo" : null,
+            "uci" : "e7e5"
+          }
+        ],
+        "seenEvery" : 5,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "3" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "Qd7",
+            "uci" : "d8d7"
+          },
+          "mass" : 0.07310291412892721,
+          "node" : 21,
+          "seenEvery" : 14
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 3,
+        "gapMass" : 0.1688801219622505,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.1823855755894591,
+        "replies" : [
+
+        ],
+        "seenEvery" : 5,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "4" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.3262316910785619,
+        "replies" : [
+
+        ],
+        "seenEvery" : 3,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "6" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.22503328894806923,
+        "replies" : [
+
+        ],
+        "seenEvery" : 4,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "9" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b4",
+            "uci" : "b5b4"
+          },
+          "mass" : 0.1333014811275681,
+          "node" : 11,
+          "seenEvery" : 8
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 0.35714285714285715,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.35714285714285715,
+        "replies" : [
+
+        ],
+        "seenEvery" : 3,
+        "status" : {
+          "kind" : "required"
+        }
+      }
+    },
+    "pendingPositions" : [
+
+    ],
+    "root" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "b6",
+          "uci" : "b7b6"
+        },
+        "mass" : 0.2593619972260749,
+        "node" : 1,
+        "seenEvery" : 4
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 9,
+      "gapMass" : 0.9864945463727914,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 1,
+      "replies" : [
+
+      ],
+      "seenEvery" : 1,
+      "status" : {
+        "kind" : "required"
+      }
+    }
+  },
+  "finalFull" : {
+    "gaps" : [
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "b6",
+          "uci" : "b7b6"
+        },
+        "mass" : 0.2593619972260749,
+        "node" : 1,
+        "seenEvery" : 4
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "d6",
+          "uci" : "d7d6"
+        },
+        "mass" : 0.20110957004160887,
+        "node" : 1,
+        "seenEvery" : 5
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "b4",
+          "uci" : "b5b4"
+        },
+        "mass" : 0.1333014811275681,
+        "node" : 11,
+        "seenEvery" : 8
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "e5",
+          "uci" : "e7e5"
+        },
+        "mass" : 0.08623984710941233,
+        "node" : 11,
+        "seenEvery" : 12
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "e6",
+          "uci" : "e7e6"
+        },
+        "mass" : 0.08361204013377926,
+        "node" : 11,
+        "seenEvery" : 12
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "Qd7",
+          "uci" : "d8d7"
+        },
+        "mass" : 0.07310291412892721,
+        "node" : 21,
+        "seenEvery" : 14
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "Qd6",
+          "uci" : "d8d6"
+        },
+        "mass" : 0.05761500859313755,
+        "node" : 21,
+        "seenEvery" : 17
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "f6",
+          "uci" : "f7f6"
+        },
+        "mass" : 0.05398948877209747,
+        "node" : 11,
+        "seenEvery" : 19
+      },
+      {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "e6",
+          "uci" : "e7e6"
+        },
+        "mass" : 0.03816219924018573,
+        "node" : 21,
+        "seenEvery" : 26
+      }
+    ],
+    "nodes" : {
+      "0" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "1" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "b6",
+              "uci" : "b7b6"
+            },
+            "mass" : 0.2593619972260749,
+            "node" : 1,
+            "seenEvery" : 4
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "d6",
+              "uci" : "d7d6"
+            },
+            "mass" : 0.20110957004160887,
+            "node" : 1,
+            "seenEvery" : 5
+          }
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+          {
+            "child" : 9,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 515,
+            "reach" : 0.35714285714285715,
+            "required" : true,
+            "san" : "b5",
+            "share" : 0.35714285714285715,
+            "transposesTo" : null,
+            "uci" : "b7b5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 374,
+            "reach" : 0.2593619972260749,
+            "required" : true,
+            "san" : "b6",
+            "share" : 0.2593619972260749,
+            "transposesTo" : null,
+            "uci" : "b7b6"
+          },
+          {
+            "child" : 3,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 263,
+            "reach" : 0.1823855755894591,
+            "required" : true,
+            "san" : "d5",
+            "share" : 0.1823855755894591,
+            "transposesTo" : null,
+            "uci" : "d7d5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 290,
+            "reach" : 0.20110957004160887,
+            "required" : true,
+            "san" : "d6",
+            "share" : 0.20110957004160887,
+            "transposesTo" : null,
+            "uci" : "d7d6"
+          }
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "11" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b4",
+            "uci" : "b5b4"
+          },
+          "mass" : 0.1333014811275681,
+          "node" : 11,
+          "seenEvery" : 8
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 0.35714285714285715,
+        "localGaps" : [
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "b4",
+              "uci" : "b5b4"
+            },
+            "mass" : 0.1333014811275681,
+            "node" : 11,
+            "seenEvery" : 8
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "e6",
+              "uci" : "e7e6"
+            },
+            "mass" : 0.08361204013377926,
+            "node" : 11,
+            "seenEvery" : 12
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "e5",
+              "uci" : "e7e5"
+            },
+            "mass" : 0.08623984710941233,
+            "node" : 11,
+            "seenEvery" : 12
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "f6",
+              "uci" : "f7f6"
+            },
+            "mass" : 0.05398948877209747,
+            "node" : 11,
+            "seenEvery" : 19
+          }
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.35714285714285715,
+        "replies" : [
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 558,
+            "reach" : 0.1333014811275681,
+            "required" : true,
+            "san" : "b4",
+            "share" : 0.3732441471571906,
+            "transposesTo" : null,
+            "uci" : "b5b4"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 350,
+            "reach" : 0.08361204013377926,
+            "required" : true,
+            "san" : "e6",
+            "share" : 0.23411371237458195,
+            "transposesTo" : null,
+            "uci" : "e7e6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 361,
+            "reach" : 0.08623984710941233,
+            "required" : true,
+            "san" : "e5",
+            "share" : 0.24147157190635452,
+            "transposesTo" : null,
+            "uci" : "e7e5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 226,
+            "reach" : 0.05398948877209747,
+            "required" : true,
+            "san" : "f6",
+            "share" : 0.15117056856187291,
+            "transposesTo" : null,
+            "uci" : "f7f6"
+          }
+        ],
+        "seenEvery" : 3,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "15" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.3262316910785619,
+        "replies" : [
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 544,
+            "reach" : 0.13107093053673388,
+            "required" : true,
+            "san" : "g6",
+            "share" : 0.4017725258493353,
+            "transposesTo" : null,
+            "uci" : "g7g6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 377,
+            "reach" : 0.09083408237564095,
+            "required" : true,
+            "san" : "g5",
+            "share" : 0.27843426883308714,
+            "transposesTo" : null,
+            "uci" : "g7g5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 320,
+            "reach" : 0.07710054737454934,
+            "required" : true,
+            "san" : "b6",
+            "share" : 0.2363367799113737,
+            "transposesTo" : null,
+            "uci" : "b7b6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 113,
+            "reach" : 0.027226130791637736,
+            "required" : true,
+            "san" : "b5",
+            "share" : 0.08345642540620384,
+            "transposesTo" : null,
+            "uci" : "b7b5"
+          }
+        ],
+        "seenEvery" : 3,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "17" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.22503328894806923,
+        "replies" : [
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 451,
+            "reach" : 0.0759087608942253,
+            "required" : true,
+            "san" : "b6",
+            "share" : 0.337322363500374,
+            "transposesTo" : null,
+            "uci" : "b7b6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 370,
+            "reach" : 0.062275480112779065,
+            "required" : true,
+            "san" : "b5",
+            "share" : 0.27673896783844426,
+            "transposesTo" : null,
+            "uci" : "b7b5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 365,
+            "reach" : 0.061433919570714486,
+            "required" : true,
+            "san" : "c5",
+            "share" : 0.27299925205684367,
+            "transposesTo" : null,
+            "uci" : "c6c5"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 151,
+            "reach" : 0.025415128370350377,
+            "required" : true,
+            "san" : "g6",
+            "share" : 0.11293941660433807,
+            "transposesTo" : null,
+            "uci" : "g7g6"
+          }
+        ],
+        "seenEvery" : 4,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "18" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.35714285714285715,
+        "replies" : [
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 436,
+            "reach" : 0.12146200133719634,
+            "required" : true,
+            "san" : "e6",
+            "share" : 0.34009360374414976,
+            "transposesTo" : null,
+            "uci" : "e7e6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 321,
+            "reach" : 0.08942500557165144,
+            "required" : true,
+            "san" : "e5",
+            "share" : 0.250390015600624,
+            "transposesTo" : null,
+            "uci" : "e7e5"
+          },
+          {
+            "child" : 19,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 368,
+            "reach" : 0.1025183864497437,
+            "required" : true,
+            "san" : "f6",
+            "share" : 0.2870514820592824,
+            "transposesTo" : null,
+            "uci" : "f7f6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 157,
+            "reach" : 0.04373746378426566,
+            "required" : true,
+            "san" : "f5",
+            "share" : 0.12246489859594384,
+            "transposesTo" : null,
+            "uci" : "f7f5"
+          }
+        ],
+        "seenEvery" : 3,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "19" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.1025183864497437,
+        "replies" : [
+
+        ],
+        "seenEvery" : 10,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "2" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+          {
+            "child" : 4,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 490,
+            "reach" : 0.3262316910785619,
+            "required" : true,
+            "san" : "f6",
+            "share" : 0.3262316910785619,
+            "transposesTo" : null,
+            "uci" : "f7f6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 481,
+            "reach" : 0.3202396804260985,
+            "required" : true,
+            "san" : "f5",
+            "share" : 0.3202396804260985,
+            "transposesTo" : null,
+            "uci" : "f7f5"
+          },
+          {
+            "child" : 6,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 338,
+            "reach" : 0.22503328894806923,
+            "required" : true,
+            "san" : "c6",
+            "share" : 0.22503328894806923,
+            "transposesTo" : null,
+            "uci" : "c7c6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 193,
+            "reach" : 0.1284953395472703,
+            "required" : true,
+            "san" : "c5",
+            "share" : 0.1284953395472703,
+            "transposesTo" : null,
+            "uci" : "c7c5"
+          }
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "21" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "Qd7",
+            "uci" : "d8d7"
+          },
+          "mass" : 0.07310291412892721,
+          "node" : 21,
+          "seenEvery" : 14
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 3,
+        "gapMass" : 0.1688801219622505,
+        "localGaps" : [
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "Qd7",
+              "uci" : "d8d7"
+            },
+            "mass" : 0.07310291412892721,
+            "node" : 21,
+            "seenEvery" : 14
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "Qd6",
+              "uci" : "d8d6"
+            },
+            "mass" : 0.05761500859313755,
+            "node" : 21,
+            "seenEvery" : 17
+          },
+          {
+            "kind" : {
+              "kind" : "missingReply",
+              "san" : "e6",
+              "uci" : "e7e6"
+            },
+            "mass" : 0.03816219924018573,
+            "node" : 21,
+            "seenEvery" : 26
+          }
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.1823855755894591,
+        "replies" : [
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 590,
+            "reach" : 0.07310291412892721,
+            "required" : true,
+            "san" : "Qd7",
+            "share" : 0.4008152173913043,
+            "transposesTo" : null,
+            "uci" : "d8d7"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 465,
+            "reach" : 0.05761500859313755,
+            "required" : true,
+            "san" : "Qd6",
+            "share" : 0.31589673913043476,
+            "transposesTo" : null,
+            "uci" : "d8d6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 308,
+            "reach" : 0.03816219924018573,
+            "required" : true,
+            "san" : "e6",
+            "share" : 0.20923913043478262,
+            "transposesTo" : null,
+            "uci" : "e7e6"
+          },
+          {
+            "child" : null,
+            "completion" : 0,
+            "excluded" : false,
+            "games" : 109,
+            "reach" : 0.013505453627208586,
+            "required" : false,
+            "san" : "e5",
+            "share" : 0.07404891304347826,
+            "transposesTo" : null,
+            "uci" : "e7e5"
+          }
+        ],
+        "seenEvery" : 5,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "3" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "Qd7",
+            "uci" : "d8d7"
+          },
+          "mass" : 0.07310291412892721,
+          "node" : 21,
+          "seenEvery" : 14
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 3,
+        "gapMass" : 0.1688801219622505,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.1823855755894591,
+        "replies" : [
+
+        ],
+        "seenEvery" : 5,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "4" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.3262316910785619,
+        "replies" : [
+
+        ],
+        "seenEvery" : 3,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "6" : {
+        "biggestGap" : null,
+        "completion" : 0,
+        "counts" : false,
+        "gapCount" : 0,
+        "gapMass" : 0,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.22503328894806923,
+        "replies" : [
+
+        ],
+        "seenEvery" : 4,
+        "status" : {
+          "kind" : "alternative"
+        }
+      },
+      "9" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b4",
+            "uci" : "b5b4"
+          },
+          "mass" : 0.1333014811275681,
+          "node" : 11,
+          "seenEvery" : 8
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 0.35714285714285715,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 0.35714285714285715,
+        "replies" : [
+
+        ],
+        "seenEvery" : 3,
+        "status" : {
+          "kind" : "required"
+        }
+      }
+    },
+    "pendingPositions" : [
+
+    ],
+    "root" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "b6",
+          "uci" : "b7b6"
+        },
+        "mass" : 0.2593619972260749,
+        "node" : 1,
+        "seenEvery" : 4
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 9,
+      "gapMass" : 0.9864945463727914,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 1,
+      "replies" : [
+
+      ],
+      "seenEvery" : 1,
+      "status" : {
+        "kind" : "required"
+      }
+    }
+  },
+  "finalStats" : {
+    "rnbqkbnr/p1pppppp/8/1p6/3N4/8/PPPPPPPP/RNBQKB1R b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e6",
+          "uci" : "e7e6",
+          "white" : 436
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e5",
+          "uci" : "e7e5",
+          "white" : 321
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "f6",
+          "uci" : "f7f6",
+          "white" : 368
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "f5",
+          "uci" : "f7f5",
+          "white" : 157
+        }
+      ],
+      "white" : 1282
+    },
+    "rnbqkbnr/p1pppppp/8/1p6/7N/8/PPPPPPPP/RNBQKB1R b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b4",
+          "uci" : "b5b4",
+          "white" : 558
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e6",
+          "uci" : "e7e6",
+          "white" : 350
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e5",
+          "uci" : "e7e5",
+          "white" : 361
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "f6",
+          "uci" : "f7f6",
+          "white" : 226
+        }
+      ],
+      "white" : 1495
+    },
+    "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/1RBQKBNR b Kkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b6",
+          "uci" : "b7b6",
+          "white" : 451
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b5",
+          "uci" : "b7b5",
+          "white" : 370
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "c5",
+          "uci" : "c6c5",
+          "white" : 365
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "g6",
+          "uci" : "g7g6",
+          "white" : 151
+        }
+      ],
+      "white" : 1337
+    },
+    "rnbqkbnr/ppp1pppp/8/3p4/8/3P1N2/PPP1PPPP/RNBQKB1R b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Qd7",
+          "uci" : "d8d7",
+          "white" : 590
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Qd6",
+          "uci" : "d8d6",
+          "white" : 465
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e6",
+          "uci" : "e7e6",
+          "white" : 308
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e5",
+          "uci" : "e7e5",
+          "white" : 109
+        }
+      ],
+      "white" : 1472
+    },
+    "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "g6",
+          "uci" : "g7g6",
+          "white" : 544
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "g5",
+          "uci" : "g7g5",
+          "white" : 377
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b6",
+          "uci" : "b7b6",
+          "white" : 320
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b5",
+          "uci" : "b7b5",
+          "white" : 113
+        }
+      ],
+      "white" : 1354
+    },
+    "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b5",
+          "uci" : "b7b5",
+          "white" : 515
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b6",
+          "uci" : "b7b6",
+          "white" : 374
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d5",
+          "uci" : "d7d5",
+          "white" : 263
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d6",
+          "uci" : "d7d6",
+          "white" : 290
+        }
+      ],
+      "white" : 1442
+    },
+    "rnbqkbnr/pppppppp/8/8/8/N7/PPPPPPPP/R1BQKBNR b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "f6",
+          "uci" : "f7f6",
+          "white" : 490
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "f5",
+          "uci" : "f7f5",
+          "white" : 481
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "c6",
+          "uci" : "c7c6",
+          "white" : 338
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "c5",
+          "uci" : "c7c5",
+          "white" : 193
+        }
+      ],
+      "white" : 1502
+    }
+  },
+  "finalTree" : {
+    "chapters" : [
+      {
+        "comments" : [
+
+        ],
+        "name" : "Repertoire",
+        "passthrough" : null,
+        "result" : "*",
+        "tags" : [
+          {
+            "name" : "Event",
+            "value" : "Repertoire"
+          },
+          {
+            "name" : "Site",
+            "value" : "?"
+          },
+          {
+            "name" : "Result",
+            "value" : "*"
+          }
+        ]
+      }
+    ],
+    "count" : 13,
+    "epdIndex" : {
+      "rnbqkbnr/p1ppp1pp/5p2/1p6/3N4/8/PPPPPPPP/RNBQKB1R w KQkq -" : [
+        19
+      ],
+      "rnbqkbnr/p1pppppp/8/1p6/3N4/8/PPPPPPPP/RNBQKB1R b KQkq -" : [
+        18
+      ],
+      "rnbqkbnr/p1pppppp/8/1p6/7N/8/PPPPPPPP/RNBQKB1R b KQkq -" : [
+        11
+      ],
+      "rnbqkbnr/p1pppppp/8/1p6/8/5N2/PPPPPPPP/RNBQKB1R w KQkq -" : [
+        9
+      ],
+      "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/1RBQKBNR b Kkq -" : [
+        17
+      ],
+      "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -" : [
+        6
+      ],
+      "rnbqkbnr/ppp1pppp/8/3p4/8/3P1N2/PPP1PPPP/RNBQKB1R b KQkq -" : [
+        21
+      ],
+      "rnbqkbnr/ppp1pppp/8/3p4/8/5N2/PPPPPPPP/RNBQKB1R w KQkq -" : [
+        3
+      ],
+      "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -" : [
+        15
+      ],
+      "rnbqkbnr/ppppp1pp/5p2/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -" : [
+        4
+      ],
+      "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -" : [
+        1
+      ],
+      "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -" : [
+        0
+      ],
+      "rnbqkbnr/pppppppp/8/8/8/N7/PPPPPPPP/R1BQKBNR b KQkq -" : [
+        2
+      ]
+    },
+    "loadWarnings" : [
+
+    ],
+    "mergedTranspositions" : 0,
+    "nodes" : [
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+          1,
+          2
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+        "fen" : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        "id" : 0,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : null,
+        "ply" : 0,
+        "preComments" : [
+
+        ],
+        "san" : null,
+        "sideToMove" : "white",
+        "transpositionTarget" : null,
+        "uci" : null
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+          3,
+          9
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -",
+        "fen" : "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1",
+        "id" : 1,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 0,
+        "ply" : 1,
+        "preComments" : [
+
+        ],
+        "san" : "Nf3",
+        "sideToMove" : "black",
+        "transpositionTarget" : null,
+        "uci" : "g1f3"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+          4,
+          6
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/pppppppp/8/8/8/N7/PPPPPPPP/R1BQKBNR b KQkq -",
+        "fen" : "rnbqkbnr/pppppppp/8/8/8/N7/PPPPPPPP/R1BQKBNR b KQkq - 1 1",
+        "id" : 2,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 0,
+        "ply" : 1,
+        "preComments" : [
+
+        ],
+        "san" : "Na3",
+        "sideToMove" : "black",
+        "transpositionTarget" : null,
+        "uci" : "b1a3"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+          21
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/ppp1pppp/8/3p4/8/5N2/PPPPPPPP/RNBQKB1R w KQkq -",
+        "fen" : "rnbqkbnr/ppp1pppp/8/3p4/8/5N2/PPPPPPPP/RNBQKB1R w KQkq d6 0 2",
+        "id" : 3,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 1,
+        "ply" : 2,
+        "preComments" : [
+
+        ],
+        "san" : "d5",
+        "sideToMove" : "white",
+        "transpositionTarget" : null,
+        "uci" : "d7d5"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+          15
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/ppppp1pp/5p2/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -",
+        "fen" : "rnbqkbnr/ppppp1pp/5p2/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq - 0 2",
+        "id" : 4,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 2,
+        "ply" : 2,
+        "preComments" : [
+
+        ],
+        "san" : "f6",
+        "sideToMove" : "white",
+        "transpositionTarget" : null,
+        "uci" : "f7f6"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+          17
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -",
+        "fen" : "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq - 0 2",
+        "id" : 6,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 2,
+        "ply" : 2,
+        "preComments" : [
+
+        ],
+        "san" : "c6",
+        "sideToMove" : "white",
+        "transpositionTarget" : null,
+        "uci" : "c7c6"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+          11,
+          18
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/p1pppppp/8/1p6/8/5N2/PPPPPPPP/RNBQKB1R w KQkq -",
+        "fen" : "rnbqkbnr/p1pppppp/8/1p6/8/5N2/PPPPPPPP/RNBQKB1R w KQkq b6 0 2",
+        "id" : 9,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 1,
+        "ply" : 2,
+        "preComments" : [
+
+        ],
+        "san" : "b5",
+        "sideToMove" : "white",
+        "transpositionTarget" : null,
+        "uci" : "b7b5"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/p1pppppp/8/1p6/7N/8/PPPPPPPP/RNBQKB1R b KQkq -",
+        "fen" : "rnbqkbnr/p1pppppp/8/1p6/7N/8/PPPPPPPP/RNBQKB1R b KQkq - 1 2",
+        "id" : 11,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 9,
+        "ply" : 3,
+        "preComments" : [
+
+        ],
+        "san" : "Nh4",
+        "sideToMove" : "black",
+        "transpositionTarget" : null,
+        "uci" : "f3h4"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -",
+        "fen" : "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 1 2",
+        "id" : 15,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 4,
+        "ply" : 3,
+        "preComments" : [
+
+        ],
+        "san" : "Nb1",
+        "sideToMove" : "black",
+        "transpositionTarget" : null,
+        "uci" : "a3b1"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/1RBQKBNR b Kkq -",
+        "fen" : "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/1RBQKBNR b Kkq - 1 2",
+        "id" : 17,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 6,
+        "ply" : 3,
+        "preComments" : [
+
+        ],
+        "san" : "Rb1",
+        "sideToMove" : "black",
+        "transpositionTarget" : null,
+        "uci" : "a1b1"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+          19
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/p1pppppp/8/1p6/3N4/8/PPPPPPPP/RNBQKB1R b KQkq -",
+        "fen" : "rnbqkbnr/p1pppppp/8/1p6/3N4/8/PPPPPPPP/RNBQKB1R b KQkq - 1 2",
+        "id" : 18,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 9,
+        "ply" : 3,
+        "preComments" : [
+
+        ],
+        "san" : "Nd4",
+        "sideToMove" : "black",
+        "transpositionTarget" : null,
+        "uci" : "f3d4"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/p1ppp1pp/5p2/1p6/3N4/8/PPPPPPPP/RNBQKB1R w KQkq -",
+        "fen" : "rnbqkbnr/p1ppp1pp/5p2/1p6/3N4/8/PPPPPPPP/RNBQKB1R w KQkq - 0 3",
+        "id" : 19,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 18,
+        "ply" : 4,
+        "preComments" : [
+
+        ],
+        "san" : "f6",
+        "sideToMove" : "white",
+        "transpositionTarget" : null,
+        "uci" : "f7f6"
+      },
+      {
+        "chapters" : [
+          0
+        ],
+        "children" : [
+
+        ],
+        "comments" : [
+
+        ],
+        "epd" : "rnbqkbnr/ppp1pppp/8/3p4/8/3P1N2/PPP1PPPP/RNBQKB1R b KQkq -",
+        "fen" : "rnbqkbnr/ppp1pppp/8/3p4/8/3P1N2/PPP1PPPP/RNBQKB1R b KQkq - 0 2",
+        "id" : 21,
+        "nags" : [
+
+        ],
+        "note" : "",
+        "parent" : 3,
+        "ply" : 3,
+        "preComments" : [
+
+        ],
+        "san" : "d3",
+        "sideToMove" : "black",
+        "transpositionTarget" : null,
+        "uci" : "d2d3"
+      }
+    ],
+    "rereadCount" : 13,
+    "rereadPGNTextEqual" : true
+  },
+  "ops" : [
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 3,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 4,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 5,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 2,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 7,
+      "uci" : "b1a3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/N7/PPPPPPPP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 3,
+      "after" : 1,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 9,
+      "uci" : "d7d5",
+      "updateEPDs" : [
+        "rnbqkbnr/ppp1pppp/8/3p4/8/5N2/PPPPPPPP/RNBQKB1R w KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 10,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 4,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 12,
+      "uci" : "f7f6",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 5,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 14,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 5,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 17,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 5,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 18,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 19,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 20,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 4,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 22,
+      "uci" : "f7f6",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 5,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 24,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 25,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 5,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 26,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 29,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 6,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 32,
+      "uci" : "c7c6",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 7,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 34,
+      "uci" : "d2d4",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/3P4/N7/PPP1PPPP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 5,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 36,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 37,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 5,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 38,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 4,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 40,
+      "uci" : "f7f6",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 5,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 44,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 5,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 47,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 48,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 5,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 49,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 4,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 51,
+      "uci" : "f7f6",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 8,
+      "after" : 6,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 52,
+      "uci" : "f2f4",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/2p5/8/5P2/N7/PPPPP1PP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 2,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 53,
+      "uci" : "b1a3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/N7/PPPPPPPP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 2,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 54,
+      "uci" : "b1a3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/N7/PPPPPPPP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b5",
+            "uci" : "b7b5"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 56,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 9,
+      "after" : 1,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 9,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 58,
+      "uci" : "b7b5",
+      "updateEPDs" : [
+        "rnbqkbnr/p1pppppp/8/1p6/8/5N2/PPPPPPPP/RNBQKB1R w KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 9,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 60,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 6,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 9,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 63,
+      "uci" : "c7c6",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 6,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 9,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 64,
+      "uci" : "c7c6",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 10,
+      "after" : 8,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 9,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 66,
+      "uci" : "c6c5",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/8/2p5/5P2/N7/PPPPP1PP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 10,
+      "after" : 8,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 9,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 67,
+      "uci" : "c6c5",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/8/2p5/5P2/N7/PPPPP1PP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 4,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 9,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 68,
+      "uci" : "f7f6",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "changedAt" : 4,
+      "id" : 5,
+      "missing" : [
+
+      ],
+      "op" : "delete",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 9,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 69,
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 6,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.35714285714285715,
+          "node" : 9,
+          "seenEvery" : 3
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 4,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 70,
+      "uci" : "c7c6",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 11,
+      "after" : 9,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 72,
+      "uci" : "f3h4",
+      "updateEPDs" : [
+        "rnbqkbnr/p1pppppp/8/1p6/7N/8/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 12,
+      "after" : 7,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 76,
+      "uci" : "g7g6",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp2p/5pp1/8/3P4/N7/PPP1PPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 13,
+      "after" : 7,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 80,
+      "uci" : "h7h6",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1p1/5p1p/8/3P4/N7/PPP1PPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 14,
+      "after" : 13,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 81,
+      "uci" : "c1f4",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1p1/5p1p/8/3P1B2/N7/PPP1PPPP/R2QKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 7,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 82,
+      "uci" : "d2d4",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/3P4/N7/PPP1PPPP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 4,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 83,
+      "uci" : "f7f6",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 7,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 86,
+      "uci" : "d2d4",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/3P4/N7/PPP1PPPP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 7,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 89,
+      "uci" : "d2d4",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/3P4/N7/PPP1PPPP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 4,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 90,
+      "uci" : "f7f6",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 7,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 91,
+      "uci" : "d2d4",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/3P4/N7/PPP1PPPP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 13,
+      "after" : 7,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 92,
+      "uci" : "h7h6",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1p1/5p1p/8/3P4/N7/PPP1PPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "changedAt" : 4,
+      "id" : 7,
+      "missing" : [
+
+      ],
+      "op" : "delete",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 93,
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1p1/5p1p/8/3P1B2/N7/PPP1PPPP/R2QKBNR b KQkq -",
+        "rnbqkbnr/ppppp1p1/5p1p/8/3P4/N7/PPP1PPPP/R1BQKBNR w KQkq -",
+        "rnbqkbnr/ppppp1pp/5p2/8/3P4/N7/PPP1PPPP/R1BQKBNR b KQkq -",
+        "rnbqkbnr/ppppp2p/5pp1/8/3P4/N7/PPP1PPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 15,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 94,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 16,
+      "after" : 10,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 95,
+      "uci" : "f4f5",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/8/2p2P2/8/N7/PPPPP1PP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 15,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 96,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 16,
+      "after" : 10,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 97,
+      "uci" : "f4f5",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/8/2p2P2/8/N7/PPPPP1PP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 98,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 99,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "changedAt" : 6,
+      "id" : 8,
+      "missing" : [
+
+      ],
+      "op" : "delete",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 101,
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/2p5/8/5P2/N7/PPPPP1PP/R1BQKBNR b KQkq -",
+        "rnbqkbnr/pp1ppppp/8/2p2P2/8/N7/PPPPP1PP/R1BQKBNR b KQkq -",
+        "rnbqkbnr/pp1ppppp/8/2p5/5P2/N7/PPPPP1PP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 6,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 102,
+      "uci" : "c7c6",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 103,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 17,
+      "after" : 6,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 104,
+      "uci" : "a1b1",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/1RBQKBNR b Kkq -"
+      ]
+    },
+    {
+      "added" : 18,
+      "after" : 9,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 105,
+      "uci" : "f3d4",
+      "updateEPDs" : [
+        "rnbqkbnr/p1pppppp/8/1p6/3N4/8/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 19,
+      "after" : 18,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 106,
+      "uci" : "f7f6",
+      "updateEPDs" : [
+        "rnbqkbnr/p1ppp1pp/5p2/1p6/3N4/8/PPPPPPPP/RNBQKB1R w KQkq -"
+      ]
+    },
+    {
+      "added" : 15,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 107,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 20,
+      "after" : 18,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 7,
+        "gapMass" : 1,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 109,
+      "uci" : "e7e6",
+      "updateEPDs" : [
+        "rnbqkbnr/p1pp1ppp/4p3/1p6/3N4/8/PPPPPPPP/RNBQKB1R w KQkq -"
+      ]
+    },
+    {
+      "added" : 21,
+      "after" : 3,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 110,
+      "uci" : "d2d3",
+      "updateEPDs" : [
+        "rnbqkbnr/ppp1pppp/8/3p4/8/3P1N2/PPP1PPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 20,
+      "after" : 18,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 111,
+      "uci" : "e7e6",
+      "updateEPDs" : [
+        "rnbqkbnr/p1pp1ppp/4p3/1p6/3N4/8/PPPPPPPP/RNBQKB1R w KQkq -"
+      ]
+    },
+    {
+      "added" : 2,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 112,
+      "uci" : "b1a3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/N7/PPPPPPPP/R1BQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 1,
+      "after" : 0,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 114,
+      "uci" : "g1f3",
+      "updateEPDs" : [
+        "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -"
+      ]
+    },
+    {
+      "added" : 15,
+      "after" : 4,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 115,
+      "uci" : "a3b1",
+      "updateEPDs" : [
+        "rnbqkbnr/ppppp1pp/5p2/8/8/8/PPPPPPPP/RNBQKBNR b KQkq -"
+      ]
+    },
+    {
+      "added" : 6,
+      "after" : 2,
+      "missing" : [
+
+      ],
+      "missingInserted" : false,
+      "op" : "addMove",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 116,
+      "uci" : "c7c6",
+      "updateEPDs" : [
+        "rnbqkbnr/pp1ppppp/2p5/8/8/N7/PPPPPPPP/R1BQKBNR w KQkq -"
+      ]
+    },
+    {
+      "changedAt" : 18,
+      "id" : 20,
+      "missing" : [
+
+      ],
+      "op" : "delete",
+      "root" : {
+        "biggestGap" : {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "b6",
+            "uci" : "b7b6"
+          },
+          "mass" : 0.2593619972260749,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        "completion" : 0,
+        "counts" : true,
+        "gapCount" : 9,
+        "gapMass" : 0.9864945463727914,
+        "localGaps" : [
+
+        ],
+        "pendingCount" : 0,
+        "reach" : 1,
+        "replies" : [
+
+        ],
+        "seenEvery" : 1,
+        "status" : {
+          "kind" : "required"
+        }
+      },
+      "step" : 117,
+      "updateEPDs" : [
+        "rnbqkbnr/p1pp1ppp/4p3/1p6/3N4/8/PPPPPPPP/RNBQKB1R w KQkq -"
+      ]
+    }
+  ],
+  "seed" : 3,
+  "settings" : {
+    "color" : "white",
+    "excluded" : {
+
+    },
+    "minGames" : 50,
+    "targetGames" : 40
+  }
+}

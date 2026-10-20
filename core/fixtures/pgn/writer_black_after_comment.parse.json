@@ -1,0 +1,44 @@
+{
+  "games" : [
+    {
+      "comments" : [
+
+      ],
+      "moves" : [
+        {
+          "children" : [
+            {
+              "children" : [
+
+              ],
+              "comments" : [
+
+              ],
+              "nags" : [
+
+              ],
+              "preComments" : [
+
+              ],
+              "san" : "e5"
+            }
+          ],
+          "comments" : [
+            "best"
+          ],
+          "nags" : [
+
+          ],
+          "preComments" : [
+
+          ],
+          "san" : "e4"
+        }
+      ],
+      "result" : "*",
+      "tags" : [
+
+      ]
+    }
+  ]
+}

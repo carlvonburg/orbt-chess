@@ -1,0 +1,3096 @@
+{
+  "gaps" : [
+    {
+      "kind" : {
+        "kind" : "missingMove"
+      },
+      "mass" : 0.05700197043171028,
+      "node" : 60,
+      "seenEvery" : 18
+    }
+  ],
+  "nodes" : {
+    "0" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0.6666666666666667,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 1,
+      "replies" : [
+        {
+          "child" : 1,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.5882352941176471,
+          "required" : true,
+          "san" : "e4",
+          "share" : 0.5882352941176471,
+          "transposesTo" : null,
+          "uci" : "e2e4"
+        },
+        {
+          "child" : 39,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 500,
+          "reach" : 0.29411764705882354,
+          "required" : true,
+          "san" : "d4",
+          "share" : 0.29411764705882354,
+          "transposesTo" : null,
+          "uci" : "d2d4"
+        }
+      ],
+      "seenEvery" : 1,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "1" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.5882352941176471,
+      "replies" : [
+
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "10" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2836782861292666,
+      "replies" : [
+        {
+          "child" : 11,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.23639857177438883,
+          "required" : true,
+          "san" : "Re1",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "f1e1"
+        }
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "11" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.23639857177438883,
+      "replies" : [
+
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "12" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.23639857177438883,
+      "replies" : [
+        {
+          "child" : 13,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.1969988098119907,
+          "required" : true,
+          "san" : "Bb3",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "a4b3"
+        }
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "13" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.1969988098119907,
+      "replies" : [
+
+      ],
+      "seenEvery" : 5,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "14" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.1969988098119907,
+      "replies" : [
+        {
+          "child" : 15,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.1641656748433256,
+          "required" : true,
+          "san" : "c3",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "c2c3"
+        }
+      ],
+      "seenEvery" : 5,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "15" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.1641656748433256,
+      "replies" : [
+
+      ],
+      "seenEvery" : 6,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "16" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.1641656748433256,
+      "replies" : [
+        {
+          "child" : 17,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.13680472903610466,
+          "required" : true,
+          "san" : "h3",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "h2h3"
+        }
+      ],
+      "seenEvery" : 6,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "17" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.13680472903610466,
+      "replies" : [
+
+      ],
+      "seenEvery" : 7,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "18" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.13680472903610466,
+      "replies" : [
+        {
+          "child" : 19,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.11400394086342056,
+          "required" : true,
+          "san" : "d4",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "d2d4"
+        }
+      ],
+      "seenEvery" : 7,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "19" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.11400394086342056,
+      "replies" : [
+
+      ],
+      "seenEvery" : 9,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "2" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.5882352941176471,
+      "replies" : [
+        {
+          "child" : 3,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.4901960784313726,
+          "required" : true,
+          "san" : "Nf3",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "g1f3"
+        }
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "20" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.11400394086342056,
+      "replies" : [
+        {
+          "child" : 21,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.09500328405285047,
+          "required" : true,
+          "san" : "Nbd2",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "b1d2"
+        }
+      ],
+      "seenEvery" : 9,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "21" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.09500328405285047,
+      "replies" : [
+
+      ],
+      "seenEvery" : 11,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "22" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.09500328405285047,
+      "replies" : [
+        {
+          "child" : 23,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.0791694033773754,
+          "required" : true,
+          "san" : "Bc2",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "b3c2"
+        }
+      ],
+      "seenEvery" : 11,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "23" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.0791694033773754,
+      "replies" : [
+
+      ],
+      "seenEvery" : 13,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "24" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.0791694033773754,
+      "replies" : [
+        {
+          "child" : 25,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.0659745028144795,
+          "required" : true,
+          "san" : "Nf1",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "d2f1"
+        }
+      ],
+      "seenEvery" : 13,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "25" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.0659745028144795,
+      "replies" : [
+
+      ],
+      "seenEvery" : 15,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "26" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.0659745028144795,
+      "replies" : [
+        {
+          "child" : 27,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.05497875234539959,
+          "required" : true,
+          "san" : "Ng3",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "f1g3"
+        }
+      ],
+      "seenEvery" : 15,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "27" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.05497875234539959,
+      "replies" : [
+
+      ],
+      "seenEvery" : 18,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "28" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.05497875234539959,
+      "replies" : [
+        {
+          "child" : 29,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.04581562695449966,
+          "required" : true,
+          "san" : "a4",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "a2a4"
+        }
+      ],
+      "seenEvery" : 18,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "29" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.04581562695449966,
+      "replies" : [
+
+      ],
+      "seenEvery" : 22,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "3" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.4901960784313726,
+      "replies" : [
+
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "30" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.04581562695449966,
+      "replies" : [
+        {
+          "child" : 31,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.038179689128749715,
+          "required" : true,
+          "san" : "d5",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "d4d5"
+        }
+      ],
+      "seenEvery" : 22,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "31" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.038179689128749715,
+      "replies" : [
+
+      ],
+      "seenEvery" : 26,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "32" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.038179689128749715,
+      "replies" : [
+        {
+          "child" : 33,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.03181640760729143,
+          "required" : true,
+          "san" : "Bg5",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "c1g5"
+        }
+      ],
+      "seenEvery" : 26,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "33" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.03181640760729143,
+      "replies" : [
+
+      ],
+      "seenEvery" : 31,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "34" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.03181640760729143,
+      "replies" : [
+        {
+          "child" : 35,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.026513673006076193,
+          "required" : true,
+          "san" : "Be3",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "g5e3"
+        }
+      ],
+      "seenEvery" : 31,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "35" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.026513673006076193,
+      "replies" : [
+
+      ],
+      "seenEvery" : 38,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "36" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.026513673006076193,
+      "replies" : [
+        {
+          "child" : 37,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.022094727505063496,
+          "required" : true,
+          "san" : "Qd2",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "d1d2"
+        }
+      ],
+      "seenEvery" : 38,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "37" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.022094727505063496,
+      "replies" : [
+
+      ],
+      "seenEvery" : 45,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "38" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.022094727505063496,
+      "replies" : [
+
+      ],
+      "seenEvery" : 45,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "39" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.29411764705882354,
+      "replies" : [
+
+      ],
+      "seenEvery" : 3,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "4" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.4901960784313726,
+      "replies" : [
+        {
+          "child" : 5,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.40849673202614384,
+          "required" : true,
+          "san" : "Bb5",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "f1b5"
+        }
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "40" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.29411764705882354,
+      "replies" : [
+        {
+          "child" : 41,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.2450980392156863,
+          "required" : true,
+          "san" : "c4",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "c2c4"
+        }
+      ],
+      "seenEvery" : 3,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "41" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2450980392156863,
+      "replies" : [
+
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "42" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.29411764705882354,
+      "replies" : [
+        {
+          "child" : 43,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.2450980392156863,
+          "required" : true,
+          "san" : "c4",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "c2c4"
+        }
+      ],
+      "seenEvery" : 3,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "43" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2450980392156863,
+      "replies" : [
+
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "44" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2450980392156863,
+      "replies" : [
+
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "45" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2450980392156863,
+      "replies" : [
+        {
+          "child" : 46,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.20424836601307192,
+          "required" : true,
+          "san" : "e4",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "e2e4"
+        }
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "46" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.20424836601307192,
+      "replies" : [
+
+      ],
+      "seenEvery" : 5,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "47" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.20424836601307192,
+      "replies" : [
+        {
+          "child" : 48,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.17020697167755994,
+          "required" : true,
+          "san" : "a4",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "a2a4"
+        }
+      ],
+      "seenEvery" : 5,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "48" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.17020697167755994,
+      "replies" : [
+
+      ],
+      "seenEvery" : 6,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "49" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.17020697167755994,
+      "replies" : [
+        {
+          "child" : 50,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.1418391430646333,
+          "required" : true,
+          "san" : "axb5",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "a4b5"
+        }
+      ],
+      "seenEvery" : 6,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "5" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.40849673202614384,
+      "replies" : [
+
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "50" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.1418391430646333,
+      "replies" : [
+
+      ],
+      "seenEvery" : 7,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "51" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.1418391430646333,
+      "replies" : [
+        {
+          "child" : 52,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.11819928588719442,
+          "required" : true,
+          "san" : "Qf3",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "d1f3"
+        }
+      ],
+      "seenEvery" : 7,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "52" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.11819928588719442,
+      "replies" : [
+
+      ],
+      "seenEvery" : 8,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "53" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.11819928588719442,
+      "replies" : [
+        {
+          "child" : 54,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.09849940490599535,
+          "required" : true,
+          "san" : "Qxf7+",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "f3f7"
+        }
+      ],
+      "seenEvery" : 8,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "54" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.09849940490599535,
+      "replies" : [
+
+      ],
+      "seenEvery" : 10,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "55" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.09849940490599535,
+      "replies" : [
+        {
+          "child" : 56,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.0820828374216628,
+          "required" : true,
+          "san" : "Qf5+",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "f7f5"
+        }
+      ],
+      "seenEvery" : 10,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "56" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.0820828374216628,
+      "replies" : [
+
+      ],
+      "seenEvery" : 12,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "57" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.0820828374216628,
+      "replies" : [
+        {
+          "child" : 58,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.06840236451805233,
+          "required" : true,
+          "san" : "Qh5+",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "f5h5"
+        }
+      ],
+      "seenEvery" : 12,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "58" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.06840236451805233,
+      "replies" : [
+
+      ],
+      "seenEvery" : 15,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "59" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.06840236451805233,
+      "replies" : [
+        {
+          "child" : 60,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.05700197043171028,
+          "required" : true,
+          "san" : "Qxb5",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "h5b5"
+        }
+      ],
+      "seenEvery" : 15,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "6" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.40849673202614384,
+      "replies" : [
+        {
+          "child" : 7,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.3404139433551199,
+          "required" : true,
+          "san" : "Ba4",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "b5a4"
+        }
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "60" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.05700197043171028,
+        "node" : 60,
+        "seenEvery" : 18
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.05700197043171028,
+      "localGaps" : [
+        {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.05700197043171028,
+          "node" : 60,
+          "seenEvery" : 18
+        }
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.05700197043171028,
+      "replies" : [
+
+      ],
+      "seenEvery" : 18,
+      "status" : {
+        "kind" : "gap"
+      }
+    },
+    "61" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.5882352941176471,
+      "replies" : [
+        {
+          "child" : 62,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.4901960784313726,
+          "required" : true,
+          "san" : "exd5",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "e4d5"
+        }
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "62" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.4901960784313726,
+      "replies" : [
+
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "63" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.4901960784313726,
+      "replies" : [
+        {
+          "child" : 64,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.40849673202614384,
+          "required" : true,
+          "san" : "Nc3",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "b1c3"
+        }
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "64" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.40849673202614384,
+      "replies" : [
+
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "65" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.40849673202614384,
+      "replies" : [
+        {
+          "child" : 66,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.3404139433551199,
+          "required" : true,
+          "san" : "d4",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "d2d4"
+        }
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "66" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.3404139433551199,
+      "replies" : [
+
+      ],
+      "seenEvery" : 3,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "67" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.3404139433551199,
+      "replies" : [
+        {
+          "child" : 68,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.2836782861292666,
+          "required" : true,
+          "san" : "Nf3",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "g1f3"
+        }
+      ],
+      "seenEvery" : 3,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "68" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2836782861292666,
+      "replies" : [
+
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "69" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2836782861292666,
+      "replies" : [
+        {
+          "child" : 70,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.23639857177438883,
+          "required" : true,
+          "san" : "Bc4",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "f1c4"
+        }
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "7" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.3404139433551199,
+      "replies" : [
+
+      ],
+      "seenEvery" : 3,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "70" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.23639857177438883,
+      "replies" : [
+
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "71" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.23639857177438883,
+      "replies" : [
+        {
+          "child" : 72,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.1969988098119907,
+          "required" : true,
+          "san" : "Bd2",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "c1d2"
+        }
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "72" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.1969988098119907,
+      "replies" : [
+
+      ],
+      "seenEvery" : 5,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "73" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.1969988098119907,
+      "replies" : [
+        {
+          "child" : 74,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.1641656748433256,
+          "required" : true,
+          "san" : "Qe2",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "d1e2"
+        }
+      ],
+      "seenEvery" : 5,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "74" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.1641656748433256,
+      "replies" : [
+
+      ],
+      "seenEvery" : 6,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "75" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.1641656748433256,
+      "replies" : [
+        {
+          "child" : 76,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.13680472903610466,
+          "required" : true,
+          "san" : "O-O-O",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "e1c1"
+        }
+      ],
+      "seenEvery" : 6,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "76" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.13680472903610466,
+      "replies" : [
+
+      ],
+      "seenEvery" : 7,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "77" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.13680472903610466,
+      "replies" : [
+        {
+          "child" : 78,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.11400394086342056,
+          "required" : true,
+          "san" : "Kb1",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "c1b1"
+        }
+      ],
+      "seenEvery" : 7,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "78" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.11400394086342056,
+      "replies" : [
+
+      ],
+      "seenEvery" : 9,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "79" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.5882352941176471,
+      "replies" : [
+        {
+          "child" : 80,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.4901960784313726,
+          "required" : true,
+          "san" : "e5",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "e4e5"
+        }
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "8" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.3404139433551199,
+      "replies" : [
+        {
+          "child" : 9,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.2836782861292666,
+          "required" : true,
+          "san" : "O-O",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "e1g1"
+        }
+      ],
+      "seenEvery" : 3,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "80" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.4901960784313726,
+      "replies" : [
+
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "81" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.4901960784313726,
+      "replies" : [
+        {
+          "child" : 82,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.40849673202614384,
+          "required" : true,
+          "san" : "exd6",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "e5d6"
+        }
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "82" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.40849673202614384,
+      "replies" : [
+
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "83" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.40849673202614384,
+      "replies" : [
+        {
+          "child" : 84,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.3404139433551199,
+          "required" : true,
+          "san" : "d4",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "d2d4"
+        }
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "84" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.3404139433551199,
+      "replies" : [
+
+      ],
+      "seenEvery" : 3,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "85" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.3404139433551199,
+      "replies" : [
+        {
+          "child" : 86,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.2836782861292666,
+          "required" : true,
+          "san" : "Bd2",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "c1d2"
+        }
+      ],
+      "seenEvery" : 3,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "86" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2836782861292666,
+      "replies" : [
+
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "87" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2836782861292666,
+      "replies" : [
+
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "88" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2836782861292666,
+      "replies" : [
+        {
+          "child" : 89,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.23639857177438883,
+          "required" : true,
+          "san" : "Nf3",
+          "share" : 0.8333333333333334,
+          "transposesTo" : null,
+          "uci" : "g1f3"
+        }
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "89" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.23639857177438883,
+      "replies" : [
+
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "9" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.2836782861292666,
+      "replies" : [
+
+      ],
+      "seenEvery" : 4,
+      "status" : {
+        "kind" : "required"
+      }
+    }
+  },
+  "pendingPositions" : [
+
+  ],
+  "root" : {
+    "biggestGap" : {
+      "kind" : {
+        "kind" : "missingMove"
+      },
+      "mass" : 0.05700197043171028,
+      "node" : 60,
+      "seenEvery" : 18
+    },
+    "completion" : 0.6666666666666667,
+    "counts" : true,
+    "gapCount" : 1,
+    "gapMass" : 0.05700197043171028,
+    "localGaps" : [
+
+    ],
+    "pendingCount" : 0,
+    "reach" : 1,
+    "replies" : [
+      {
+        "child" : 1,
+        "completion" : 1,
+        "excluded" : false,
+        "games" : 1000,
+        "reach" : 0.5882352941176471,
+        "required" : true,
+        "san" : "e4",
+        "share" : 0.5882352941176471,
+        "transposesTo" : null,
+        "uci" : "e2e4"
+      },
+      {
+        "child" : 39,
+        "completion" : 0,
+        "excluded" : false,
+        "games" : 500,
+        "reach" : 0.29411764705882354,
+        "required" : true,
+        "san" : "d4",
+        "share" : 0.29411764705882354,
+        "transposesTo" : null,
+        "uci" : "d2d4"
+      }
+    ],
+    "seenEvery" : 1,
+    "status" : {
+      "kind" : "required"
+    }
+  },
+  "scheme" : "treestats",
+  "settings" : {
+    "color" : "black",
+    "excluded" : {
+
+    },
+    "minGames" : 25,
+    "targetGames" : 500
+  },
+  "stats" : {
+    "r1bq1bnr/p2kpQpp/2n5/1p6/2pPP3/8/1P3PPP/RNB1KBNR w KQ -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Qf5+",
+          "uci" : "f7f5",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bq1rk1/2p1bppp/p1np1n2/1p2p3/4P3/1BP2N2/PP1P1PPP/RNBQR1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "h3",
+          "uci" : "h2h3",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bq1rk1/2pnbppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP3PP1/RNBQR1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nbd2",
+          "uci" : "b1d2",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bqk2r/1pppbppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQ1RK1 w kq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Re1",
+          "uci" : "f1e1",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bqk2r/2p1bppp/p1np1n2/1p2p3/4P3/1B3N2/PPPP1PPP/RNBQR1K1 w kq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "c3",
+          "uci" : "c2c3",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bqk2r/2ppbppp/p1n2n2/1p2p3/B3P3/5N2/PPPP1PPP/RNBQR1K1 w kq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bb3",
+          "uci" : "a4b3",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bqkb1r/1ppp1ppp/p1n2n2/4p3/B3P3/5N2/PPPP1PPP/RNBQK2R w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "O-O",
+          "uci" : "e1g1",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bqkbnr/1ppp1ppp/p1n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Ba4",
+          "uci" : "b5a4",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bqkbnr/p3p1pp/2n5/1p3Q2/2pPP3/8/1P3PPP/RNB1KBNR w KQ -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Qh5+",
+          "uci" : "f5h5",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bqkbnr/p3p2p/2n3p1/1p5Q/2pPP3/8/1P3PPP/RNB1KBNR w KQ -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Qxb5",
+          "uci" : "h5b5",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bqkbnr/p3pppp/2n5/1p6/2pPP3/5Q2/1P3PPP/RNB1KBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Qxf7+",
+          "uci" : "f3f7",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bb5",
+          "uci" : "f1b5",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r2q1rk1/1bpnbppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP1N1PP1/R1BQR1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bc2",
+          "uci" : "b3c2",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r2qr1k1/1bpnbppp/p2p1n2/1p2p3/3PP3/2P2N1P/PPBN1PP1/R1BQR1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nf1",
+          "uci" : "d2f1",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r2qrbk1/1b1n1p1p/p2p1np1/1p1Pp3/P1p1P3/2P2NNP/1PB2PP1/R1BQR1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bg5",
+          "uci" : "c1g5",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r2qrbk1/1b1n1p1p/p2p1np1/1pp1p3/P2PP3/2P2NNP/1PB2PP1/R1BQR1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d5",
+          "uci" : "d4d5",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r2qrbk1/1b1n1p2/p2p1npp/1p1Pp1B1/P1p1P3/2P2NNP/1PB2PP1/R2QR1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Be3",
+          "uci" : "g5e3",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r2qrbk1/1b3p2/p2p1np1/1pnPp2p/P1p1P3/2P1BNNP/1PBQ1PP1/R3R1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+
+      ],
+      "white" : 200
+    },
+    "r2qrbk1/1b3p2/p2p1npp/1pnPp3/P1p1P3/2P1BNNP/1PB2PP1/R2QR1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Qd2",
+          "uci" : "d1d2",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r2qrbk1/1bpn1p1p/p2p1np1/1p2p3/3PP3/2P2NNP/PPB2PP1/R1BQR1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "a4",
+          "uci" : "a2a4",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r2qrbk1/1bpn1ppp/p2p1n2/1p2p3/3PP3/2P2N1P/PPB2PP1/R1BQRNK1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Ng3",
+          "uci" : "f1g3",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r3k1nr/pp1n1ppp/2p1p3/q4b2/1bBP4/2N2N2/PPPBQPPP/R3K2R w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "O-O-O",
+          "uci" : "e1c1",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r3k2r/pp1n1ppp/2p1pn2/q4b2/1bBP4/2N2N2/PPPBQPPP/2KR3R w kq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Kb1",
+          "uci" : "c1b1",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "r3kbnr/pp1n1ppp/2p1p3/q4b2/2BP4/2N2N2/PPPB1PPP/R2QK2R w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Qe2",
+          "uci" : "d1e2",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rn2kbnr/pp2pppp/2p5/q4b2/3P4/2N2N2/PPP2PPP/R1BQKB1R w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bc4",
+          "uci" : "f1c4",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rn2kbnr/pp3ppp/2p1p3/q4b2/2BP4/2N2N2/PPP2PPP/R1BQK2R w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bd2",
+          "uci" : "c1d2",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnb1kb1r/pp2pppp/1q1p1n2/8/3P4/8/PPPB1PPP/RN1QKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+
+      ],
+      "white" : 200
+    },
+    "rnb1kb1r/pp2pppp/3p1n2/3q4/3P4/8/PPPB1PPP/RN1QKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nf3",
+          "uci" : "g1f3",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnb1kb1r/pp2pppp/3p1n2/q7/3P4/8/PPP2PPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bd2",
+          "uci" : "c1d2",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnb1kbnr/pp2pppp/2p5/q7/3P4/2N5/PPP2PPP/R1BQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nf3",
+          "uci" : "g1f3",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nc3",
+          "uci" : "b1c3",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnb1kbnr/ppp1pppp/8/q7/8/2N5/PPPP1PPP/R1BQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d4",
+          "uci" : "d2d4",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbq1rk1/2p1bppp/p2p1n2/1p2p3/4P3/1BP2N1P/PP1P1PP1/RNBQR1K1 w - -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d4",
+          "uci" : "d2d4",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkb1r/pp2pppp/3p1n2/8/8/8/PPPP1PPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d4",
+          "uci" : "d2d4",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkb1r/ppp1pppp/5n2/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "exd6",
+          "uci" : "e5d6",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkb1r/pppppp1p/5np1/8/2PP4/8/PP2PPPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+
+      ],
+      "white" : 200
+    },
+    "rnbqkb1r/pppppppp/5n2/8/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "c4",
+          "uci" : "c2c4",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e5",
+          "uci" : "e4e5",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkbnr/p1p1pppp/8/1p6/2pPP3/8/PP3PPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "a4",
+          "uci" : "a2a4",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkbnr/p3pppp/2p5/1p6/P1pPP3/8/1P3PPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "axb5",
+          "uci" : "a4b5",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkbnr/p3pppp/8/1p6/2pPP3/8/1P3PPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Qf3",
+          "uci" : "d1f3",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "c4",
+          "uci" : "c2c4",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "exd5",
+          "uci" : "e4d5",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkbnr/ppp1pppp/8/8/2pP4/8/PP2PPPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e4",
+          "uci" : "e2e4",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nf3",
+          "uci" : "g1f3",
+          "white" : 1000
+        }
+      ],
+      "white" : 1200
+    },
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e4",
+          "uci" : "e2e4",
+          "white" : 1000
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d4",
+          "uci" : "d2d4",
+          "white" : 500
+        }
+      ],
+      "white" : 1700
+    }
+  }
+}

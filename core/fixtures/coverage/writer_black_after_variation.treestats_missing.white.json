@@ -1,0 +1,227 @@
+{
+  "gaps" : [
+    {
+      "kind" : {
+        "kind" : "missingMove"
+      },
+      "mass" : 0.29411764705882354,
+      "node" : 4,
+      "seenEvery" : 3
+    }
+  ],
+  "nodes" : {
+    "0" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.29411764705882354,
+        "node" : 4,
+        "seenEvery" : 3
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.29411764705882354,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 1,
+      "reach" : 1,
+      "replies" : [
+
+      ],
+      "seenEvery" : 1,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "1" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.29411764705882354,
+        "node" : 4,
+        "seenEvery" : 3
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.29411764705882354,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 1,
+      "reach" : 1,
+      "replies" : [
+        {
+          "child" : 2,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 1000,
+          "reach" : 0.5882352941176471,
+          "required" : true,
+          "san" : "e5",
+          "share" : 0.5882352941176471,
+          "transposesTo" : null,
+          "uci" : "e7e5"
+        },
+        {
+          "child" : 4,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 500,
+          "reach" : 0.29411764705882354,
+          "required" : true,
+          "san" : "c5",
+          "share" : 0.29411764705882354,
+          "transposesTo" : null,
+          "uci" : "c7c5"
+        }
+      ],
+      "seenEvery" : 1,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "2" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 1,
+      "reach" : 0.5882352941176471,
+      "replies" : [
+
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "3" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 1,
+      "reach" : 0.5882352941176471,
+      "replies" : [
+
+      ],
+      "seenEvery" : 2,
+      "status" : {
+        "kind" : "pending"
+      }
+    },
+    "4" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 0.29411764705882354,
+        "node" : 4,
+        "seenEvery" : 3
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 0.29411764705882354,
+      "localGaps" : [
+        {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 0.29411764705882354,
+          "node" : 4,
+          "seenEvery" : 3
+        }
+      ],
+      "pendingCount" : 0,
+      "reach" : 0.29411764705882354,
+      "replies" : [
+
+      ],
+      "seenEvery" : 3,
+      "status" : {
+        "kind" : "gap"
+      }
+    }
+  },
+  "pendingPositions" : [
+    {
+      "epd" : "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -",
+      "reach" : 0.5882352941176471
+    }
+  ],
+  "root" : {
+    "biggestGap" : {
+      "kind" : {
+        "kind" : "missingMove"
+      },
+      "mass" : 0.29411764705882354,
+      "node" : 4,
+      "seenEvery" : 3
+    },
+    "completion" : 0,
+    "counts" : true,
+    "gapCount" : 1,
+    "gapMass" : 0.29411764705882354,
+    "localGaps" : [
+
+    ],
+    "pendingCount" : 1,
+    "reach" : 1,
+    "replies" : [
+
+    ],
+    "seenEvery" : 1,
+    "status" : {
+      "kind" : "required"
+    }
+  },
+  "scheme" : "treestats_missing",
+  "settings" : {
+    "color" : "white",
+    "excluded" : {
+
+    },
+    "minGames" : 25,
+    "targetGames" : 500
+  },
+  "stats" : {
+    "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -" : null,
+    "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e5",
+          "uci" : "e7e5",
+          "white" : 1000
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "c5",
+          "uci" : "c7c5",
+          "white" : 500
+        }
+      ],
+      "white" : 1700
+    }
+  }
+}

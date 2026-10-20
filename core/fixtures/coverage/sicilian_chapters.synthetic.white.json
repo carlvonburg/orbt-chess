@@ -1,0 +1,1574 @@
+{
+  "gaps" : [
+    {
+      "kind" : {
+        "kind" : "missingReply",
+        "san" : "d6",
+        "uci" : "d7d6"
+      },
+      "mass" : 0.3370346178967995,
+      "node" : 1,
+      "seenEvery" : 3
+    },
+    {
+      "kind" : {
+        "kind" : "missingReply",
+        "san" : "d5",
+        "uci" : "d7d5"
+      },
+      "mass" : 0.32201175702155455,
+      "node" : 1,
+      "seenEvery" : 3
+    },
+    {
+      "kind" : {
+        "kind" : "missingReply",
+        "san" : "Nh6",
+        "uci" : "g8h6"
+      },
+      "mass" : 0.25473546701502287,
+      "node" : 1,
+      "seenEvery" : 4
+    },
+    {
+      "kind" : {
+        "kind" : "missingReply",
+        "san" : "Nf6",
+        "uci" : "g8f6"
+      },
+      "mass" : 0.08621815806662313,
+      "node" : 1,
+      "seenEvery" : 12
+    }
+  ],
+  "nodes" : {
+    "0" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "d6",
+          "uci" : "d7d6"
+        },
+        "mass" : 0.3370346178967995,
+        "node" : 1,
+        "seenEvery" : 3
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 4,
+      "gapMass" : 1,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 1,
+      "replies" : [
+
+      ],
+      "seenEvery" : 1,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "1" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingReply",
+          "san" : "d6",
+          "uci" : "d7d6"
+        },
+        "mass" : 0.3370346178967995,
+        "node" : 1,
+        "seenEvery" : 3
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 4,
+      "gapMass" : 1,
+      "localGaps" : [
+        {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "d6",
+            "uci" : "d7d6"
+          },
+          "mass" : 0.3370346178967995,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "d5",
+            "uci" : "d7d5"
+          },
+          "mass" : 0.32201175702155455,
+          "node" : 1,
+          "seenEvery" : 3
+        },
+        {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "Nh6",
+            "uci" : "g8h6"
+          },
+          "mass" : 0.25473546701502287,
+          "node" : 1,
+          "seenEvery" : 4
+        },
+        {
+          "kind" : {
+            "kind" : "missingReply",
+            "san" : "Nf6",
+            "uci" : "g8f6"
+          },
+          "mass" : 0.08621815806662313,
+          "node" : 1,
+          "seenEvery" : 12
+        }
+      ],
+      "pendingCount" : 0,
+      "reach" : 1,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 516,
+          "reach" : 0.3370346178967995,
+          "required" : true,
+          "san" : "d6",
+          "share" : 0.3370346178967995,
+          "transposesTo" : null,
+          "uci" : "d7d6"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 493,
+          "reach" : 0.32201175702155455,
+          "required" : true,
+          "san" : "d5",
+          "share" : 0.32201175702155455,
+          "transposesTo" : null,
+          "uci" : "d7d5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 390,
+          "reach" : 0.25473546701502287,
+          "required" : true,
+          "san" : "Nh6",
+          "share" : 0.25473546701502287,
+          "transposesTo" : null,
+          "uci" : "g8h6"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 132,
+          "reach" : 0.08621815806662313,
+          "required" : true,
+          "san" : "Nf6",
+          "share" : 0.08621815806662313,
+          "transposesTo" : null,
+          "uci" : "g8f6"
+        },
+        {
+          "child" : 2,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 0,
+          "reach" : 0,
+          "required" : false,
+          "san" : "c5",
+          "share" : 0,
+          "transposesTo" : null,
+          "uci" : "c7c5"
+        }
+      ],
+      "seenEvery" : 1,
+      "status" : {
+        "kind" : "required"
+      }
+    },
+    "10" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    },
+    "11" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 451,
+          "reach" : 0,
+          "required" : false,
+          "san" : "b5",
+          "share" : 0.3127600554785021,
+          "transposesTo" : null,
+          "uci" : "b7b5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 486,
+          "reach" : 0,
+          "required" : false,
+          "san" : "b6",
+          "share" : 0.33703190013869627,
+          "transposesTo" : null,
+          "uci" : "b7b6"
+        },
+        {
+          "child" : 12,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 215,
+          "reach" : 0,
+          "required" : false,
+          "san" : "d5",
+          "share" : 0.14909847434119278,
+          "transposesTo" : null,
+          "uci" : "d7d5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 290,
+          "reach" : 0,
+          "required" : false,
+          "san" : "d6",
+          "share" : 0.20110957004160887,
+          "transposesTo" : null,
+          "uci" : "d7d6"
+        }
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "12" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "13" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 584,
+          "reach" : 0,
+          "required" : false,
+          "san" : "a5",
+          "share" : 0.4027586206896552,
+          "transposesTo" : null,
+          "uci" : "a7a5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 417,
+          "reach" : 0,
+          "required" : false,
+          "san" : "a6",
+          "share" : 0.28758620689655173,
+          "transposesTo" : null,
+          "uci" : "a7a6"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 204,
+          "reach" : 0,
+          "required" : false,
+          "san" : "b5",
+          "share" : 0.1406896551724138,
+          "transposesTo" : null,
+          "uci" : "b7b5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 245,
+          "reach" : 0,
+          "required" : false,
+          "san" : "b6",
+          "share" : 0.16896551724137931,
+          "transposesTo" : null,
+          "uci" : "b7b6"
+        },
+        {
+          "child" : 14,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 0,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Qxd5",
+          "share" : 0,
+          "transposesTo" : null,
+          "uci" : "d8d5"
+        }
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "14" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "15" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 451,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Bf5",
+          "share" : 0.36726384364820847,
+          "transposesTo" : null,
+          "uci" : "c8f5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 409,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Bg4",
+          "share" : 0.3330618892508143,
+          "transposesTo" : null,
+          "uci" : "c8g4"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 239,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Bd7",
+          "share" : 0.19462540716612378,
+          "transposesTo" : null,
+          "uci" : "c8d7"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 129,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Be6",
+          "share" : 0.10504885993485343,
+          "transposesTo" : null,
+          "uci" : "c8e6"
+        }
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "16" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 475,
+          "reach" : 0,
+          "required" : false,
+          "san" : "b5",
+          "share" : 0.35081240768094535,
+          "transposesTo" : null,
+          "uci" : "b7b5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 438,
+          "reach" : 0,
+          "required" : false,
+          "san" : "b6",
+          "share" : 0.32348596750369274,
+          "transposesTo" : null,
+          "uci" : "b7b6"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 295,
+          "reach" : 0,
+          "required" : false,
+          "san" : "a5",
+          "share" : 0.21787296898079764,
+          "transposesTo" : null,
+          "uci" : "a7a5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 146,
+          "reach" : 0,
+          "required" : false,
+          "san" : "a6",
+          "share" : 0.10782865583456426,
+          "transposesTo" : null,
+          "uci" : "a7a6"
+        },
+        {
+          "child" : 17,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 0,
+          "reach" : 0,
+          "required" : false,
+          "san" : "cxd4",
+          "share" : 0,
+          "transposesTo" : null,
+          "uci" : "c5d4"
+        }
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "17" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "18" : {
+      "biggestGap" : null,
+      "completion" : 0,
+      "counts" : false,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 505,
+          "reach" : 0,
+          "required" : false,
+          "san" : "d6",
+          "share" : 0.39763779527559057,
+          "transposesTo" : null,
+          "uci" : "d7d6"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 318,
+          "reach" : 0,
+          "required" : false,
+          "san" : "d5",
+          "share" : 0.2503937007874016,
+          "transposesTo" : null,
+          "uci" : "d7d5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 333,
+          "reach" : 0,
+          "required" : false,
+          "san" : "f6",
+          "share" : 0.2622047244094488,
+          "transposesTo" : null,
+          "uci" : "f7f6"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 114,
+          "reach" : 0,
+          "required" : false,
+          "san" : "f5",
+          "share" : 0.08976377952755905,
+          "transposesTo" : null,
+          "uci" : "f7f5"
+        }
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "alternative"
+      }
+    },
+    "19" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    },
+    "2" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    },
+    "20" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 480,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Nd4",
+          "share" : 0.3473227206946454,
+          "transposesTo" : null,
+          "uci" : "c6d4"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 482,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Ne5",
+          "share" : 0.34876989869753977,
+          "transposesTo" : null,
+          "uci" : "c6e5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 242,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Na5",
+          "share" : 0.17510853835021709,
+          "transposesTo" : null,
+          "uci" : "c6a5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 178,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Nb4",
+          "share" : 0.1287988422575977,
+          "transposesTo" : null,
+          "uci" : "c6b4"
+        }
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    },
+    "3" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 432,
+          "reach" : 0,
+          "required" : false,
+          "san" : "e6",
+          "share" : 0.2874251497005988,
+          "transposesTo" : null,
+          "uci" : "e7e6"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 385,
+          "reach" : 0,
+          "required" : false,
+          "san" : "e5",
+          "share" : 0.25615435795076513,
+          "transposesTo" : null,
+          "uci" : "e7e5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 390,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Na6",
+          "share" : 0.25948103792415167,
+          "transposesTo" : null,
+          "uci" : "b8a6"
+        },
+        {
+          "child" : 19,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 296,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Nc6",
+          "share" : 0.19693945442448438,
+          "transposesTo" : null,
+          "uci" : "b8c6"
+        },
+        {
+          "child" : 4,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 0,
+          "reach" : 0,
+          "required" : false,
+          "san" : "d6",
+          "share" : 0,
+          "transposesTo" : null,
+          "uci" : "d7d6"
+        }
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    },
+    "4" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    },
+    "5" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 470,
+          "reach" : 0,
+          "required" : false,
+          "san" : "d5",
+          "share" : 0.3715415019762846,
+          "transposesTo" : null,
+          "uci" : "d6d5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 395,
+          "reach" : 0,
+          "required" : false,
+          "san" : "g5",
+          "share" : 0.31225296442687744,
+          "transposesTo" : null,
+          "uci" : "g7g5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 264,
+          "reach" : 0,
+          "required" : false,
+          "san" : "g6",
+          "share" : 0.20869565217391303,
+          "transposesTo" : null,
+          "uci" : "g7g6"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 136,
+          "reach" : 0,
+          "required" : false,
+          "san" : "c4",
+          "share" : 0.1075098814229249,
+          "transposesTo" : null,
+          "uci" : "c5c4"
+        },
+        {
+          "child" : 6,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 0,
+          "reach" : 0,
+          "required" : false,
+          "san" : "cxd4",
+          "share" : 0,
+          "transposesTo" : null,
+          "uci" : "c5d4"
+        }
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    },
+    "6" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    },
+    "7" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 511,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Kd7",
+          "share" : 0.37908011869436203,
+          "transposesTo" : null,
+          "uci" : "e8d7"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 458,
+          "reach" : 0,
+          "required" : false,
+          "san" : "g6",
+          "share" : 0.3397626112759644,
+          "transposesTo" : null,
+          "uci" : "g7g6"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 257,
+          "reach" : 0,
+          "required" : false,
+          "san" : "g5",
+          "share" : 0.19065281899109793,
+          "transposesTo" : null,
+          "uci" : "g7g5"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 122,
+          "reach" : 0,
+          "required" : false,
+          "san" : "b6",
+          "share" : 0.09050445103857567,
+          "transposesTo" : null,
+          "uci" : "b7b6"
+        },
+        {
+          "child" : 8,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 0,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Nf6",
+          "share" : 0,
+          "transposesTo" : null,
+          "uci" : "g8f6"
+        }
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    },
+    "8" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    },
+    "9" : {
+      "biggestGap" : null,
+      "completion" : 1,
+      "counts" : true,
+      "gapCount" : 0,
+      "gapMass" : 0,
+      "localGaps" : [
+
+      ],
+      "pendingCount" : 0,
+      "reach" : 0,
+      "replies" : [
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 418,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Rg8",
+          "share" : 0.31310861423220976,
+          "transposesTo" : null,
+          "uci" : "h8g8"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 441,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Bd7",
+          "share" : 0.3303370786516854,
+          "transposesTo" : null,
+          "uci" : "c8d7"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 351,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Be6",
+          "share" : 0.26292134831460673,
+          "transposesTo" : null,
+          "uci" : "c8e6"
+        },
+        {
+          "child" : null,
+          "completion" : 0,
+          "excluded" : false,
+          "games" : 125,
+          "reach" : 0,
+          "required" : false,
+          "san" : "Bf5",
+          "share" : 0.09363295880149813,
+          "transposesTo" : null,
+          "uci" : "c8f5"
+        },
+        {
+          "child" : 10,
+          "completion" : 1,
+          "excluded" : false,
+          "games" : 0,
+          "reach" : 0,
+          "required" : false,
+          "san" : "a6",
+          "share" : 0,
+          "transposesTo" : null,
+          "uci" : "a7a6"
+        }
+      ],
+      "seenEvery" : null,
+      "status" : {
+        "kind" : "belowTarget"
+      }
+    }
+  },
+  "pendingPositions" : [
+
+  ],
+  "root" : {
+    "biggestGap" : {
+      "kind" : {
+        "kind" : "missingReply",
+        "san" : "d6",
+        "uci" : "d7d6"
+      },
+      "mass" : 0.3370346178967995,
+      "node" : 1,
+      "seenEvery" : 3
+    },
+    "completion" : 0,
+    "counts" : true,
+    "gapCount" : 4,
+    "gapMass" : 1,
+    "localGaps" : [
+
+    ],
+    "pendingCount" : 0,
+    "reach" : 1,
+    "replies" : [
+
+    ],
+    "seenEvery" : 1,
+    "status" : {
+      "kind" : "required"
+    }
+  },
+  "scheme" : "synthetic",
+  "settings" : {
+    "color" : "white",
+    "excluded" : {
+
+    },
+    "minGames" : 50,
+    "targetGames" : 40
+  },
+  "stats" : {
+    "r1bqkbnr/pp1ppppp/2n5/1Bp5/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nd4",
+          "uci" : "c6d4",
+          "white" : 480
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Ne5",
+          "uci" : "c6e5",
+          "white" : 482
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Na5",
+          "uci" : "c6a5",
+          "white" : 242
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nb4",
+          "uci" : "c6b4",
+          "white" : 178
+        }
+      ],
+      "white" : 1382
+    },
+    "rnb1kbnr/pp2pppp/8/2pq4/3P4/2P5/PP3PPP/RNBQKBNR b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bf5",
+          "uci" : "c8f5",
+          "white" : 451
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bg4",
+          "uci" : "c8g4",
+          "white" : 409
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bd7",
+          "uci" : "c8d7",
+          "white" : 239
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Be6",
+          "uci" : "c8e6",
+          "white" : 129
+        }
+      ],
+      "white" : 1228
+    },
+    "rnbqkb1r/pp2pppp/3p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Rg8",
+          "uci" : "h8g8",
+          "white" : 418
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bd7",
+          "uci" : "c8d7",
+          "white" : 441
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Be6",
+          "uci" : "c8e6",
+          "white" : 351
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Bf5",
+          "uci" : "c8f5",
+          "white" : 125
+        }
+      ],
+      "white" : 1335
+    },
+    "rnbqkbnr/pp1ppppp/8/2p5/3PP3/8/PPP2PPP/RNBQKBNR b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b5",
+          "uci" : "b7b5",
+          "white" : 475
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b6",
+          "uci" : "b7b6",
+          "white" : 438
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "a5",
+          "uci" : "a7a5",
+          "white" : 295
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "a6",
+          "uci" : "a7a6",
+          "white" : 146
+        }
+      ],
+      "white" : 1354
+    },
+    "rnbqkbnr/pp1ppppp/8/2p5/4P3/2P5/PP1P1PPP/RNBQKBNR b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b5",
+          "uci" : "b7b5",
+          "white" : 451
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b6",
+          "uci" : "b7b6",
+          "white" : 486
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d5",
+          "uci" : "d7d5",
+          "white" : 215
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d6",
+          "uci" : "d7d6",
+          "white" : 290
+        }
+      ],
+      "white" : 1442
+    },
+    "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e6",
+          "uci" : "e7e6",
+          "white" : 432
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "e5",
+          "uci" : "e7e5",
+          "white" : 385
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Na6",
+          "uci" : "b8a6",
+          "white" : 390
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nc6",
+          "uci" : "b8c6",
+          "white" : 296
+        }
+      ],
+      "white" : 1503
+    },
+    "rnbqkbnr/pp1ppppp/8/8/3pP3/2P5/PP3PPP/RNBQKBNR b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d6",
+          "uci" : "d7d6",
+          "white" : 505
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d5",
+          "uci" : "d7d5",
+          "white" : 318
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "f6",
+          "uci" : "f7f6",
+          "white" : 333
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "f5",
+          "uci" : "f7f5",
+          "white" : 114
+        }
+      ],
+      "white" : 1270
+    },
+    "rnbqkbnr/pp2pppp/3p4/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d5",
+          "uci" : "d6d5",
+          "white" : 470
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "g5",
+          "uci" : "g7g5",
+          "white" : 395
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "g6",
+          "uci" : "g7g6",
+          "white" : 264
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "c4",
+          "uci" : "c5c4",
+          "white" : 136
+        }
+      ],
+      "white" : 1265
+    },
+    "rnbqkbnr/pp2pppp/3p4/8/3NP3/8/PPP2PPP/RNBQKB1R b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Kd7",
+          "uci" : "e8d7",
+          "white" : 511
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "g6",
+          "uci" : "g7g6",
+          "white" : 458
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "g5",
+          "uci" : "g7g5",
+          "white" : 257
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b6",
+          "uci" : "b7b6",
+          "white" : 122
+        }
+      ],
+      "white" : 1348
+    },
+    "rnbqkbnr/pp2pppp/8/2pP4/8/2P5/PP1P1PPP/RNBQKBNR b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "a5",
+          "uci" : "a7a5",
+          "white" : 584
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "a6",
+          "uci" : "a7a6",
+          "white" : 417
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b5",
+          "uci" : "b7b5",
+          "white" : 204
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "b6",
+          "uci" : "b7b6",
+          "white" : 245
+        }
+      ],
+      "white" : 1450
+    },
+    "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -" : {
+      "black" : 0,
+      "draws" : 0,
+      "moves" : [
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d6",
+          "uci" : "d7d6",
+          "white" : 516
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "d5",
+          "uci" : "d7d5",
+          "white" : 493
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nh6",
+          "uci" : "g8h6",
+          "white" : 390
+        },
+        {
+          "averageRating" : null,
+          "black" : 0,
+          "draws" : 0,
+          "san" : "Nf6",
+          "uci" : "g8f6",
+          "white" : 132
+        }
+      ],
+      "white" : 1531
+    }
+  }
+}

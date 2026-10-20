@@ -1,0 +1,146 @@
+{
+  "chapters" : [
+    {
+      "comments" : [
+
+      ],
+      "name" : "",
+      "passthrough" : null,
+      "result" : "*",
+      "tags" : [
+
+      ]
+    }
+  ],
+  "count" : 4,
+  "epdIndex" : {
+    "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -" : [
+      3
+    ],
+    "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -" : [
+      2
+    ],
+    "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -" : [
+      1
+    ],
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -" : [
+      0
+    ]
+  },
+  "loadWarnings" : [
+
+  ],
+  "mergedTranspositions" : 0,
+  "nodes" : [
+    {
+      "chapters" : [
+        0
+      ],
+      "children" : [
+        1
+      ],
+      "comments" : [
+
+      ],
+      "epd" : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+      "fen" : "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+      "id" : 0,
+      "nags" : [
+
+      ],
+      "note" : "",
+      "parent" : null,
+      "ply" : 0,
+      "preComments" : [
+
+      ],
+      "san" : null,
+      "sideToMove" : "white",
+      "transpositionTarget" : null,
+      "uci" : null
+    },
+    {
+      "chapters" : [
+        0
+      ],
+      "children" : [
+        2
+      ],
+      "comments" : [
+
+      ],
+      "epd" : "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "fen" : "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1",
+      "id" : 1,
+      "nags" : [
+
+      ],
+      "note" : "",
+      "parent" : 0,
+      "ply" : 1,
+      "preComments" : [
+
+      ],
+      "san" : "e4",
+      "sideToMove" : "black",
+      "transpositionTarget" : null,
+      "uci" : "e2e4"
+    },
+    {
+      "chapters" : [
+        0
+      ],
+      "children" : [
+        3
+      ],
+      "comments" : [
+
+      ],
+      "epd" : "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -",
+      "fen" : "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2",
+      "id" : 2,
+      "nags" : [
+
+      ],
+      "note" : "",
+      "parent" : 1,
+      "ply" : 2,
+      "preComments" : [
+
+      ],
+      "san" : "e5",
+      "sideToMove" : "white",
+      "transpositionTarget" : null,
+      "uci" : "e7e5"
+    },
+    {
+      "chapters" : [
+        0
+      ],
+      "children" : [
+
+      ],
+      "comments" : [
+
+      ],
+      "epd" : "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -",
+      "fen" : "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
+      "id" : 3,
+      "nags" : [
+
+      ],
+      "note" : "",
+      "parent" : 2,
+      "ply" : 3,
+      "preComments" : [
+
+      ],
+      "san" : "Nf3",
+      "sideToMove" : "black",
+      "transpositionTarget" : null,
+      "uci" : "g1f3"
+    }
+  ],
+  "rereadCount" : 4,
+  "rereadPGNTextEqual" : true
+}

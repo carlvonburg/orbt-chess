@@ -1,0 +1,95 @@
+{
+  "gaps" : [
+    {
+      "kind" : {
+        "kind" : "missingMove"
+      },
+      "mass" : 1,
+      "node" : 0,
+      "seenEvery" : 1
+    }
+  ],
+  "nodes" : {
+    "0" : {
+      "biggestGap" : {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 1,
+        "node" : 0,
+        "seenEvery" : 1
+      },
+      "completion" : 0,
+      "counts" : true,
+      "gapCount" : 1,
+      "gapMass" : 1,
+      "localGaps" : [
+        {
+          "kind" : {
+            "kind" : "missingMove"
+          },
+          "mass" : 1,
+          "node" : 0,
+          "seenEvery" : 1
+        }
+      ],
+      "pendingCount" : 0,
+      "reach" : 1,
+      "replies" : [
+
+      ],
+      "seenEvery" : 1,
+      "status" : {
+        "kind" : "gap"
+      }
+    }
+  },
+  "pendingPositions" : [
+
+  ],
+  "root" : {
+    "biggestGap" : {
+      "kind" : {
+        "kind" : "missingMove"
+      },
+      "mass" : 1,
+      "node" : 0,
+      "seenEvery" : 1
+    },
+    "completion" : 0,
+    "counts" : true,
+    "gapCount" : 1,
+    "gapMass" : 1,
+    "localGaps" : [
+      {
+        "kind" : {
+          "kind" : "missingMove"
+        },
+        "mass" : 1,
+        "node" : 0,
+        "seenEvery" : 1
+      }
+    ],
+    "pendingCount" : 0,
+    "reach" : 1,
+    "replies" : [
+
+    ],
+    "seenEvery" : 1,
+    "status" : {
+      "kind" : "gap"
+    }
+  },
+  "scheme" : "treestats",
+  "settings" : {
+    "color" : "white",
+    "excluded" : {
+
+    },
+    "minGames" : 25,
+    "targetGames" : 500
+  },
+  "stats" : {
+
+  }
+}
