@@ -161,3 +161,30 @@ fn a_long_line_opens_as_a_document_and_trains() {
         assert!(doc.pgn_to_save().is_some_and(|t| t.len() > PLIES));
     });
 }
+
+#[test]
+fn a_long_repeating_line_opens_quickly() {
+    // Knights out and back: every fourth position repeats. Each new node looks for a
+    // transposition among the nodes with its position; that must not walk the whole line
+    // for each of them (it took 38 s for 4000 plies).
+    let cycle = ["Nf3", "Nf6", "Ng1", "Ng8"];
+    let line: Vec<&str> = (0..PLIES / 10).map(|i| cycle[i % 4]).collect();
+    // A second line through the same positions, so the search has nodes to look at.
+    let text = format!(
+        "1. Nc3 Nc6 2. Nb1 Nb8 (2... Nf6 3. Nf3) * 1. {} *",
+        line.join(" ")
+    );
+    on_small_stack(move || {
+        let start = std::time::Instant::now();
+        let sidecar = Sidecar::new("ID".into(), Side::White, Timestamp(1_000)).encoded();
+        let stats = HashMap::<Epd, ExplorerStats>::new();
+        let (mut doc, _) =
+            Repertoire::open(&text, &sidecar, StudyDefaults::default(), &stats).expect("opens");
+        assert_eq!(doc.tree().count(), PLIES / 10 + 7);
+        assert!(doc.tree().load_warnings.is_empty());
+        let timing = SchedTiming::new(100, 1_000_000 + 16 * 3600, 1_000_000);
+        let _ = doc.study_counts(&timing);
+        assert!(doc.pgn_to_save().is_some());
+        assert!(start.elapsed().as_secs() < 30, "took {:?}", start.elapsed());
+    });
+}

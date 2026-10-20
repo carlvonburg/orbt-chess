@@ -201,6 +201,22 @@ proptest! {
     }
 
     #[test]
+    fn is_ancestor_matches_walking_up(chapters in repertoire(1..4), deletes in prop::collection::vec(any::<u32>(), 0..3)) {
+        let mut tree = tree_of(&chapters);
+        for d in deletes {
+            let ids: Vec<NodeId> = tree.nodes().map(|n| n.id).collect();
+            tree.delete(ids[d as usize % ids.len()]);
+        }
+        let ids: Vec<NodeId> = tree.nodes().map(|n| n.id).collect();
+        for &b in &ids {
+            let above: HashSet<NodeId> = tree.path(b).into_iter().filter(|&n| n != b).collect();
+            for &a in &ids {
+                prop_assert_eq!(tree.is_ancestor(a, b), above.contains(&a), "{} {}", a, b);
+            }
+        }
+    }
+
+    #[test]
     fn a_chapter_stores_each_positions_lines_once(lines in prop::collection::vec(line(), 1..10)) {
         let tree = tree_of(&[lines]);
         for ids in holders(&tree).values() {

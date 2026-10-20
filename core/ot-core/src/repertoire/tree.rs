@@ -79,6 +79,12 @@ impl Chapter {
 #[derive(Clone, Debug)]
 pub struct RepertoireTree {
     nodes: Vec<Option<RepertoireNode>>,
+    /// By node id: an ancestor to jump to (skew-binary jump pointers), so `is_ancestor` takes
+    /// O(log depth) steps rather than one per ply.
+    jumps: Vec<NodeId>,
+    /// By node id: how many ancestors have the same position. When every other node with a
+    /// position is an ancestor (a line repeating it), no transposition needs a search.
+    repeats: Vec<u32>,
     count: usize,
     pub chapters: Vec<Chapter>,
     epd_index: HashMap<Epd, Vec<NodeId>>,
@@ -124,6 +130,8 @@ impl RepertoireTree {
         };
         RepertoireTree {
             nodes: vec![Some(root)],
+            jumps: vec![Self::ROOT],
+            repeats: vec![0],
             count: 1,
             chapters: Vec::new(),
             epd_index: HashMap::from([(epd, vec![Self::ROOT])]),
@@ -258,39 +266,46 @@ impl RepertoireTree {
             return None;
         }
         let candidates = self.epd_index.get(&node.epd)?;
-        if candidates.len() < 2 {
-            return None;
+        if candidates.len() <= self.repeats.get(id as usize).map_or(0, |&r| r as usize + 1) {
+            return None; // the others are all above it
         }
-        candidates
-            .iter()
-            .copied()
-            .filter(|&candidate| {
-                let Some(c) = self.get(candidate) else {
-                    return false;
-                };
-                if candidate == id || c.children.is_empty() {
-                    return false;
-                }
-                // Moves are written per chapter, so lines only move to a node of the same chapter.
-                if let Some(chapter) = chapter
-                    && !c.chapters.contains(&chapter)
-                {
-                    return false;
-                }
-                !self.is_ancestor(candidate, id)
-            })
-            .min()
+        // Ids only grow, so the first match is the lowest.
+        candidates.iter().copied().find(|&candidate| {
+            let Some(c) = self.get(candidate) else {
+                return false;
+            };
+            if candidate == id || c.children.is_empty() {
+                return false;
+            }
+            // Moves are written per chapter, so lines only move to a node of the same chapter.
+            if let Some(chapter) = chapter
+                && !c.chapters.contains(&chapter)
+            {
+                return false;
+            }
+            !self.is_ancestor(candidate, id)
+        })
     }
 
+    /// Whether `a` is above `b` (not `b` itself).
     pub fn is_ancestor(&self, a: NodeId, b: NodeId) -> bool {
-        let mut cursor = self.get(b).and_then(|n| n.parent);
-        while let Some(c) = cursor {
-            if c == a {
-                return true;
+        let (Some(above), Some(mut cursor)) = (self.get(a), self.get(b)) else {
+            return false;
+        };
+        // Plies grow by one per move, so `a` is the ancestor of `b` at its ply, if any.
+        while cursor.ply > above.ply {
+            let jump = self
+                .jumps
+                .get(cursor.id as usize)
+                .and_then(|&j| self.get(j))
+                .filter(|j| j.ply >= above.ply);
+            let next = jump.or_else(|| cursor.parent.and_then(|p| self.get(p)));
+            match next {
+                Some(next) if next.ply < cursor.ply => cursor = next,
+                _ => return false,
             }
-            cursor = self.get(c).and_then(|n| n.parent);
         }
-        false
+        cursor.id == a && a != b
     }
 
     /// Leaves under `id` (lines ending there).
@@ -710,6 +725,18 @@ impl RepertoireTree {
         let id = self.nodes.len() as NodeId;
         let parent_ply = self.get(parent).map_or(0, |p| p.ply);
         let epd = position.epd();
+        self.jumps.push(self.jump_for_child_of(parent));
+        // The nearest ancestor with this position is the one with the highest id.
+        let repeats = self
+            .epd_index
+            .get(&epd)
+            .and_then(|ids| {
+                ids.iter()
+                    .rev()
+                    .find(|&&c| c == parent || self.is_ancestor(c, parent))
+            })
+            .map_or(0, |&c| self.repeats.get(c as usize).map_or(0, |r| r + 1));
+        self.repeats.push(repeats);
         self.nodes.push(Some(RepertoireNode {
             id,
             parent: Some(parent),
@@ -729,6 +756,21 @@ impl RepertoireTree {
         }
         self.epd_index.entry(epd).or_default().push(id);
         id
+    }
+}
+
+impl RepertoireTree {
+    /// Myers' skew-binary jump: the parent's jump's jump when the two jumps span the same
+    /// number of plies, else the parent.
+    fn jump_for_child_of(&self, parent: NodeId) -> NodeId {
+        let ply = |id: NodeId| self.get(id).map_or(0, |n| n.ply);
+        let jump = |id: NodeId| self.jumps.get(id as usize).copied().unwrap_or(Self::ROOT);
+        let (p_jump, p_jump_jump) = (jump(parent), jump(jump(parent)));
+        if ply(parent) - ply(p_jump) == ply(p_jump) - ply(p_jump_jump) {
+            p_jump_jump
+        } else {
+            parent
+        }
     }
 }
 
