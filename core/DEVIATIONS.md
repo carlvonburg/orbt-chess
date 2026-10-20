@@ -10,12 +10,17 @@ source it follows (Anki, fsrs-rs, lichess's crates). Each entry says why.
   build around the 6th significant digit; they are written as the shortest decimal of the
   f32 (`2.3065`, not `2.306499958038330`). An interval that lands exactly on .5 days could
   round differently.
-- **Filtered-deck order.** The Swift build shuffled with Swift's `shuffle(using:)`; this uses
-  Fisher-Yates over the same SplitMix64 seed, so the order differs. Anki orders filtered decks
-  randomly too.
 - **Deterministic tie-breaks.** Where Swift iterated a `Set` or `Dictionary` (pending
   positions with equal reach, intraday learning cards with equal due and reps, transposition
   propagation order), ties are broken by EPD or node id. Results only differ among equals.
+- **Castling rights after a rook is captured on its home square.** chesskit-swift kept the
+  right (e.g. `KQkq` after `Rxa8`); shakmaty drops it, as FEN requires. In the fixtures this
+  changes 22 of ~9,500 positions, all in the Semi-Slav. Because EPDs key cards, exclusions and
+  the stats cache, `RepertoireTree::legacy_epds()` reproduces the old keys (verified against
+  every fixture node) so existing sidecars can be carried over to the correct ones.
+- **FEN after an en-passant capture.** chesskit-swift kept the ep square and counted the
+  halfmove clock up (`b - f6 1 17`); shakmaty clears it and resets the clock (`b - - 0 17`).
+  Only the in-memory FEN differs; the EPD is the same.
 - **Tree nodes keep their position** instead of a FEN string that is re-parsed on every
   access. `RepertoireNode::fen()` produces the same FEN.
 

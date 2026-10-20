@@ -138,6 +138,20 @@ impl SplitMix64 {
         z ^ (z >> 31)
     }
 
+    /// Swift's `RandomNumberGenerator.next(upperBound:)`: Lemire's multiply-shift with
+    /// rejection, uniform in `0..upper_bound`.
+    pub fn next_below(&mut self, upper_bound: u64) -> u64 {
+        assert!(upper_bound != 0);
+        let mut m = u128::from(self.next_u64()) * u128::from(upper_bound);
+        if (m as u64) < upper_bound {
+            let t = upper_bound.wrapping_neg() % upper_bound;
+            while (m as u64) < t {
+                m = u128::from(self.next_u64()) * u128::from(upper_bound);
+            }
+        }
+        (m >> 64) as u64
+    }
+
     pub fn next_unit(&mut self) -> f64 {
         (self.next_u64() >> 11) as f64 / (1u64 << 53) as f64
     }

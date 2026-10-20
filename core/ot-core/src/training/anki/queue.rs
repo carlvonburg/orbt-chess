@@ -212,11 +212,7 @@ impl CardQueues {
                 kind,
             });
         }
-        // Fisher-Yates; Anki orders a filtered deck randomly too.
-        for i in (1..main.len()).rev() {
-            let j = (rng.next_u64() % (i as u64 + 1)) as usize;
-            main.swap(i, j);
-        }
+        swift_shuffle(&mut main, &mut rng);
         let count = |kind| main.iter().filter(|e| e.kind == kind).count() as i64;
         let counts = Counts {
             new: count(MainKind::New),
@@ -352,6 +348,19 @@ impl CardQueues {
             .iter()
             .filter(|e| e.due > last_ahead && e.due <= new_ahead)
             .count() as i64;
+    }
+}
+
+/// Swift's `shuffle(using:)`: Fisher-Yates from the front, with `Int.random(in:using:)`
+/// (Lemire's multiply-shift), so filtered decks keep the order the Swift build showed.
+pub(crate) fn swift_shuffle<T>(items: &mut [T], rng: &mut SplitMix64) {
+    let mut amount = items.len() as u64;
+    let mut current = 0;
+    while amount > 1 {
+        let random = rng.next_below(amount);
+        amount -= 1;
+        items.swap(current, current + random as usize);
+        current += 1;
     }
 }
 
