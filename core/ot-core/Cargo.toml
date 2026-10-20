@@ -8,7 +8,6 @@ publish.workspace = true
 
 [dependencies]
 shakmaty.workspace = true
-pgn-reader.workspace = true
 fsrs.workspace = true
 serde.workspace = true
 serde_json.workspace = true

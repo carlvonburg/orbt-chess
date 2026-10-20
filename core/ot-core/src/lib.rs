@@ -3,6 +3,9 @@
 //! Pure Rust: no file or network IO, no async runtime, no OS APIs, so it also builds for
 //! `wasm32-unknown-unknown`. The platform shell does IO and passes bytes and the current time in.
 
+pub mod chess;
+pub mod pgn;
+
 use shakmaty::fen::Fen;
 use shakmaty::{CastlingMode, Chess, Position};
 

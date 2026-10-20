@@ -482,7 +482,6 @@ version = "0.1.0"
 dependencies = [
  "fsrs",
  "getrandom",
- "pgn-reader",
  "serde",
  "serde_json",
  "shakmaty",
@@ -503,17 +502,6 @@ name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
-
-[[package]]
-name = "pgn-reader"
-version = "0.29.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50e9c8c7d9654b31768477ec2712b9e40682ad1dd323db2867dfeefa94651c6a"
-dependencies = [
- "btoi",
- "memchr",
- "shakmaty",
-]
 
 [[package]]
 name = "plain"
