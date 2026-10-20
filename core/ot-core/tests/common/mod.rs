@@ -27,3 +27,45 @@ impl TreeExt for RepertoireTree {
         Some(cursor)
     }
 }
+
+use std::collections::HashMap;
+
+use ot_core::chess::{ChessPosition, Epd};
+use ot_core::explorer::{ExplorerMove, ExplorerStats};
+
+/// Stats keyed by the SAN line that leads to the position.
+#[derive(Default)]
+pub struct FixtureStats {
+    pub by_epd: HashMap<Epd, ExplorerStats>,
+}
+
+impl FixtureStats {
+    pub fn set(&mut self, line: &str, moves: &[(&str, i64)]) {
+        let mut p = ChessPosition::start();
+        for san in line.split_whitespace() {
+            p = p.play_san(san).expect("legal line").1;
+        }
+        let explorer_moves = moves
+            .iter()
+            .map(|&(san, games)| {
+                let played = p.play_san(san).expect("legal move").0;
+                ExplorerMove::new(&played.uci, &played.san, games, 0, 0)
+            })
+            .collect();
+        let total = moves.iter().map(|m| m.1).sum();
+        self.by_epd.insert(
+            p.epd(),
+            ExplorerStats {
+                white: total,
+                draws: 0,
+                black: 0,
+                moves: explorer_moves,
+                opening: None,
+            },
+        );
+    }
+
+    pub fn lookup(&self, epd: &Epd) -> Option<&ExplorerStats> {
+        self.by_epd.get(epd)
+    }
+}

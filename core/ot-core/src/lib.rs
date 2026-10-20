@@ -4,6 +4,8 @@
 //! `wasm32-unknown-unknown`. The platform shell does IO and passes bytes and the current time in.
 
 pub mod chess;
+pub mod coverage;
+pub mod explorer;
 pub mod pgn;
 pub mod repertoire;
 
