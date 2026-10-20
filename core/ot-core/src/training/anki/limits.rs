@@ -23,9 +23,9 @@ pub struct DeckLimits {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub new_limit: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub review_limit: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub new_limit_today: Option<DayLimit>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub review_limit: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub review_limit_today: Option<DayLimit>,
 }
@@ -55,9 +55,9 @@ impl DeckLimits {
 #[serde(rename_all = "camelCase")]
 pub struct DeckStudyStats {
     pub last_day_studied: i64,
+    pub milliseconds_studied: i64,
     pub new_studied: i64,
     pub review_studied: i64,
-    pub milliseconds_studied: i64,
 }
 
 impl DeckStudyStats {

@@ -11,8 +11,8 @@ use crate::chess::Epd;
 /// FSRS memory state: stability in days, difficulty 1...10.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MemoryState {
-    pub stability: f64,
     pub difficulty: f64,
+    pub stability: f64,
 }
 
 /// The f32 FSRS works in, read back as the shortest decimal, so files hold "2.3065" and
@@ -90,36 +90,37 @@ int_enum!(CardQueue {
 
 pub(crate) use int_enum;
 
+/// Fields are in key order, so JSON keys come out sorted like the Swift build's.
 /// The study state of one card: a position where it's your move. A card that was never
 /// studied is New and has no stored `Card`.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Card {
-    pub id: i64,
+    /// Unix seconds when the card was first studied (Anki: card creation).
+    pub added: i64,
     pub ctype: CardType,
-    pub queue: CardQueue,
     /// Learn queue: unix seconds. Review and day-learn queues: day number. New: position.
     pub due: i64,
-    /// Days.
-    pub interval: i64,
     /// Permille, 2500 = 2.5.
     pub ease_factor: i64,
-    pub reps: i64,
+    pub id: i64,
+    /// Days.
+    pub interval: i64,
     pub lapses: i64,
-    pub remaining_steps: i64,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub memory: Option<MemoryState>,
     /// Unix seconds.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_review_time: Option<i64>,
-    /// New-queue position before the card was first studied.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub original_position: Option<i64>,
-    /// Unix seconds when the card was first studied (Anki: card creation).
-    pub added: i64,
     /// Anki's "leech" tag.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub leech: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory: Option<MemoryState>,
+    /// New-queue position before the card was first studied.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub original_position: Option<i64>,
+    pub queue: CardQueue,
+    pub remaining_steps: i64,
+    pub reps: i64,
 }
 
 impl Card {
@@ -194,17 +195,17 @@ impl Card {
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RevlogEntry {
-    /// Milliseconds since 1970 when answered; the key.
-    pub id: i64,
     /// The card's EPD.
     pub cid: Epd,
     /// 1 again, 2 hard, 3 good, 4 easy; 0 for a manual change.
     pub ease: i64,
+    /// FSRS difficulty shifted, ×1000; or the ease factor in permille.
+    pub factor: i64,
+    /// Milliseconds since 1970 when answered; the key.
+    pub id: i64,
     /// After the answer: positive days, negative seconds.
     pub ivl: i64,
     pub last_ivl: i64,
-    /// FSRS difficulty shifted, ×1000; or the ease factor in permille.
-    pub factor: i64,
     /// Answer time in milliseconds, capped.
     pub time: i64,
     #[serde(rename = "type")]
