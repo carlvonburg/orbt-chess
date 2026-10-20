@@ -5,6 +5,7 @@
 
 pub mod chess;
 pub mod pgn;
+pub mod repertoire;
 
 use shakmaty::fen::Fen;
 use shakmaty::{CastlingMode, Chess, Position};
