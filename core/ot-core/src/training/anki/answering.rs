@@ -165,6 +165,23 @@ impl Scheduler {
         }
     }
 
+    #[cfg(test)]
+    pub(crate) fn fsrs_next_states_for_test(
+        &self,
+        memory: Option<super::MemoryState>,
+        desired_retention: f64,
+        days_elapsed: i64,
+    ) -> FsrsStates {
+        self.fsrs
+            .next_states(
+                memory.map(|m| m.to_fsrs()),
+                desired_retention as f32,
+                days_elapsed as u32,
+            )
+            .expect("valid memory state")
+            .into()
+    }
+
     pub fn next_states(
         &self,
         card: Option<&Card>,

@@ -76,7 +76,7 @@ pub enum CardState {
 }
 
 impl CardState {
-    pub(crate) fn interval_kind(&self) -> IntervalKind {
+    pub fn interval_kind(&self) -> IntervalKind {
         match self {
             CardState::New(_) => IntervalKind::Secs(0),
             CardState::Learning(s) => IntervalKind::Secs(s.scheduled_secs),

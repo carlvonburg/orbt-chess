@@ -16,12 +16,15 @@ mod steps;
 mod timing;
 
 #[cfg(test)]
+mod golden_vectors;
+#[cfg(test)]
 mod tests;
 
 pub use answering::{Answer, Scheduler};
 pub use card::{Card, CardQueue, CardType, MemoryState, RevlogEntry};
 pub use config::{DeckConfig, LeechAction};
 pub use fuzz::SplitMix64;
+pub use interval_kind::IntervalKind;
 pub use limits::{DayLimit, DeckLimits, DeckStudyStats, RemainingLimits};
 pub use queue::{CardQueues, Counts, QueueKind};
 pub use states::{

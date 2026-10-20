@@ -5,7 +5,7 @@
 use super::SECS_PER_DAY;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum IntervalKind {
+pub enum IntervalKind {
     Secs(i64),
     Days(i64),
 }
