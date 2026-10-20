@@ -84,11 +84,6 @@ fn tree_text(tree: &RepertoireTree) -> String {
 fn rereads_the_same(name: &str, tree: &RepertoireTree) {
     let reread = RepertoireTree::from_pgn(&tree.pgn_text());
     assert_eq!(reread.count(), tree.count(), "{name}");
-    // Known bug: a pre-comment on a move that two games share is written once per game, so
-    // it doubles on every re-save ("{ pre variation } { pre variation } 1. d4?!").
-    if name == "parser_edge_cases" {
-        return;
-    }
     assert!(
         reread.pgn_text() == tree.pgn_text(),
         "{name}: saved PGN changes on re-save"

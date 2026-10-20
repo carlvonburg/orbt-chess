@@ -13,9 +13,7 @@ use crate::chess::{BoardSquare, ChessPosition, Epd, PieceKind, PlayedMove};
 use crate::document::{Changes, Repertoire};
 use crate::repertoire::NodeId;
 use crate::training::anki::{Counts, QueueKind, Rating, SchedTiming};
-use crate::training::{
-    AnswerKind, LineOutcome, LineRun, MoveRole, StudyLine, StudySession, Trainer,
-};
+use crate::training::{AnswerKind, LineOutcome, LineRun, MoveRole, StudyLine, StudySession};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DrillMode {
@@ -193,23 +191,15 @@ impl Drill {
     pub fn arrows(&self) -> Vec<Arrow> {
         match &self.feedback {
             Feedback::Wrong { expected } | Feedback::NewMove(expected) => {
-                vec![Arrow::new(
-                    expected.from(),
-                    expected.to(),
-                    ArrowStyle::Hint,
-                    0.2,
-                    1.0,
-                )]
+                Arrow::for_move(expected, ArrowStyle::Hint, 0.2, 1.0)
+                    .into_iter()
+                    .collect()
             }
             _ => match self.run.as_ref().and_then(|r| r.expected()) {
                 Some(expected) if self.show_hint => {
-                    vec![Arrow::new(
-                        expected.from(),
-                        expected.to(),
-                        ArrowStyle::Hint,
-                        0.2,
-                        0.6,
-                    )]
+                    Arrow::for_move(expected, ArrowStyle::Hint, 0.2, 0.6)
+                        .into_iter()
+                        .collect()
                 }
                 _ => Vec::new(),
             },
@@ -229,7 +219,12 @@ impl Drill {
                 match &mut self.run {
                     Some(run) if run.index > start => run.take_back(),
                     _ => {
-                        let trainer = self.trainer();
+                        let Some(session) = &self.session else {
+                            self.pending = None;
+                            self.phase = Phase::Idle;
+                            return;
+                        };
+                        let trainer = Arc::clone(&session.trainer);
                         self.run = Some(LineRun::new(trainer, line.nodes.clone(), start));
                         self.pending = None;
                         self.phase = Phase::Autoplay;
@@ -441,10 +436,6 @@ impl Drill {
         changes
     }
 
-    fn trainer(&self) -> Arc<Trainer> {
-        Arc::clone(&self.session.as_ref().expect("started").trainer)
-    }
-
     /// The next line, or Finished. Takes moves back to where the lines part when that is
     /// shorter than replaying from move 1.
     pub fn next_line(&mut self, doc: &Repertoire, timing: &SchedTiming) {
@@ -453,6 +444,7 @@ impl Drill {
             return;
         };
         session.update_learning_cutoff(timing.now);
+        let trainer = Arc::clone(&session.trainer);
         let Some(next) = session.next_line(&cards) else {
             self.line = None;
             self.run = None;
@@ -466,7 +458,6 @@ impl Drill {
         self.answered_on_line.clear();
         self.feedback = Feedback::None;
         self.show_hint = false;
-        let trainer = self.trainer();
         match previous
             .as_ref()
             .and_then(|p| next.resume_index(&p.nodes, p.index).map(|start| (p, start)))
@@ -493,6 +484,7 @@ mod tests {
     use crate::document::StudyDefaults;
     use crate::explorer::ExplorerStats;
     use crate::formats::{Sidecar, Timestamp};
+    use crate::repertoire::RepertoireTree;
 
     fn doc() -> Repertoire {
         let sidecar = Sidecar::new("ID".into(), Side::White, Timestamp(0)).encoded();
@@ -522,6 +514,20 @@ mod tests {
             d.step(0);
         }
         panic!("no user turn: {:?}", d.phase);
+    }
+
+    #[test]
+    fn a_rewind_without_a_session_stops_instead_of_panicking() {
+        let mut d = Drill::new(DrillMode::Study);
+        d.phase = Phase::Rewinding;
+        let line = StudyLine {
+            nodes: vec![RepertoireTree::ROOT],
+            roles: Default::default(),
+            target: ChessPosition::start().epd(),
+        };
+        d.pending = Some((line, 0));
+        d.step(0);
+        assert_eq!(d.phase, Phase::Idle);
     }
 
     #[test]

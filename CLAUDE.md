@@ -54,6 +54,10 @@ One folder per platform around a shared core (Android and web would be `android/
     `INSTA_UPDATE=always cargo test`, then read the diff). `DEVIATIONS.md` lists where the core
     differs from Anki/lichess.
   - `scripts/check.sh` (fmt, clippy -D warnings, tests, wasm32 check), `scripts/build-apple.sh`.
+  - `fuzz/` — cargo-fuzz targets for what the app reads (PGN, sidecar, review log, explorer
+    answers), outside the workspace; `fuzz/run.sh [seconds]` runs them all (nightly).
+    The core must not panic or recurse per ply on any input: the app calls it on small
+    stacks, and a panic or overflow in a non-throwing call crashes it on every launch.
 - `apple/` — the iPhone, iPad and Mac app (one multiplatform target, not Catalyst):
   - `openingTrainer.xcodeproj`; `openingTrainer/` is the app target (folder-synced group, new
     files are picked up automatically): `Lichess/`, `Storage/`, `UI/`. `Config/` holds the

@@ -1,0 +1,49 @@
+# Fuzz targets for files and answers the app reads (cargo-fuzz, nightly):
+#   cargo +nightly fuzz run pgn
+# Kept outside the core's workspace, so `cargo build`/`check.sh` never build them.
+[package]
+name = "ot-fuzz"
+version = "0.0.0"
+edition = "2024"
+license = "AGPL-3.0-or-later"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+ot-core = { path = "../ot-core" }
+
+[profile.release]
+debug = 1
+
+[[bin]]
+name = "pgn"
+path = "fuzz_targets/pgn.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sidecar"
+path = "fuzz_targets/sidecar.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "revlog"
+path = "fuzz_targets/revlog.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "explorer"
+path = "fuzz_targets/explorer.rs"
+test = false
+doc = false
+bench = false

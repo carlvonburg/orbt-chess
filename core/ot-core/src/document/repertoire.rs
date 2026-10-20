@@ -258,7 +258,8 @@ impl Repertoire {
         self.perform(parent, stats, |tree| {
             result = tree.add_move(uci, parent);
             result
-                .map(|id| HashSet::from([tree[id].epd.clone()]))
+                .and_then(|id| tree.get(id))
+                .map(|n| HashSet::from([n.epd.clone()]))
                 .unwrap_or_default()
         });
         (result, doc_changes(self))

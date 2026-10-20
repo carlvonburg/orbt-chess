@@ -79,6 +79,12 @@ impl Chapter {
 #[derive(Clone, Debug)]
 pub struct RepertoireTree {
     nodes: Vec<Option<RepertoireNode>>,
+    /// By node id: an ancestor to jump to (skew-binary jump pointers), so `is_ancestor` takes
+    /// O(log depth) steps rather than one per ply.
+    jumps: Vec<NodeId>,
+    /// By node id: how many ancestors have the same position. When every other node with a
+    /// position is an ancestor (a line repeating it), no transposition needs a search.
+    repeats: Vec<u32>,
     count: usize,
     pub chapters: Vec<Chapter>,
     epd_index: HashMap<Epd, Vec<NodeId>>,
@@ -124,6 +130,8 @@ impl RepertoireTree {
         };
         RepertoireTree {
             nodes: vec![Some(root)],
+            jumps: vec![Self::ROOT],
+            repeats: vec![0],
             count: 1,
             chapters: Vec::new(),
             epd_index: HashMap::from([(epd, vec![Self::ROOT])]),
@@ -242,9 +250,14 @@ impl RepertoireTree {
     }
 
     /// For a node without moves: the node with the same position that holds its lines
-    /// (the first one that has moves). Never an ancestor, so following it cannot loop.
+    /// (the first one that has moves, preferring one in the node's own chapters, where
+    /// loading merged them). Never an ancestor, so following it cannot loop.
     pub fn transposition_target(&self, id: NodeId) -> Option<NodeId> {
-        self.transposition_target_in(id, None)
+        let chapters = &self.get(id)?.chapters;
+        chapters
+            .iter()
+            .find_map(|&chapter| self.transposition_target_in(id, Some(chapter)))
+            .or_else(|| self.transposition_target_in(id, None))
     }
 
     fn transposition_target_in(&self, id: NodeId, chapter: Option<usize>) -> Option<NodeId> {
@@ -253,39 +266,46 @@ impl RepertoireTree {
             return None;
         }
         let candidates = self.epd_index.get(&node.epd)?;
-        if candidates.len() < 2 {
-            return None;
+        if candidates.len() <= self.repeats.get(id as usize).map_or(0, |&r| r as usize + 1) {
+            return None; // the others are all above it
         }
-        candidates
-            .iter()
-            .copied()
-            .filter(|&candidate| {
-                let Some(c) = self.get(candidate) else {
-                    return false;
-                };
-                if candidate == id || c.children.is_empty() {
-                    return false;
-                }
-                // Moves are written per chapter, so lines only move to a node of the same chapter.
-                if let Some(chapter) = chapter
-                    && !c.chapters.contains(&chapter)
-                {
-                    return false;
-                }
-                !self.is_ancestor(candidate, id)
-            })
-            .min()
+        // Ids only grow, so the first match is the lowest.
+        candidates.iter().copied().find(|&candidate| {
+            let Some(c) = self.get(candidate) else {
+                return false;
+            };
+            if candidate == id || c.children.is_empty() {
+                return false;
+            }
+            // Moves are written per chapter, so lines only move to a node of the same chapter.
+            if let Some(chapter) = chapter
+                && !c.chapters.contains(&chapter)
+            {
+                return false;
+            }
+            !self.is_ancestor(candidate, id)
+        })
     }
 
+    /// Whether `a` is above `b` (not `b` itself).
     pub fn is_ancestor(&self, a: NodeId, b: NodeId) -> bool {
-        let mut cursor = self.get(b).and_then(|n| n.parent);
-        while let Some(c) = cursor {
-            if c == a {
-                return true;
+        let (Some(above), Some(mut cursor)) = (self.get(a), self.get(b)) else {
+            return false;
+        };
+        // Plies grow by one per move, so `a` is the ancestor of `b` at its ply, if any.
+        while cursor.ply > above.ply {
+            let jump = self
+                .jumps
+                .get(cursor.id as usize)
+                .and_then(|&j| self.get(j))
+                .filter(|j| j.ply >= above.ply);
+            let next = jump.or_else(|| cursor.parent.and_then(|p| self.get(p)));
+            match next {
+                Some(next) if next.ply < cursor.ply => cursor = next,
+                _ => return false,
             }
-            cursor = self.get(c).and_then(|n| n.parent);
         }
-        false
+        cursor.id == a && a != b
     }
 
     /// Leaves under `id` (lines ending there).
@@ -484,18 +504,16 @@ impl RepertoireTree {
                 0
             }
         });
+        self.mark_existing(moves, id, chapter);
         let mut stack: Vec<(&PgnMove, NodeId)> = moves.iter().rev().map(|m| (m, id)).collect();
         while let Some((pgn_move, parent)) = stack.pop() {
             let Some(parent_node) = self.get(parent) else {
                 continue;
             };
-            let target = if let Some(existing) = self.child_by_san(parent, &pgn_move.san) {
+            let target = if let Some(existing) = self.existing_child(parent, &pgn_move.san) {
                 existing
             } else if let Some((mv, next)) = parent_node.position.play_san(&pgn_move.san) {
-                match self.child_by_uci(parent, &mv.uci) {
-                    Some(existing) => existing,
-                    None => self.insert(mv, next, parent, BTreeSet::new()),
-                }
+                self.insert(mv, next, parent, BTreeSet::new())
             } else {
                 let line: Vec<String> = self.moves(parent).into_iter().map(|m| m.san).collect();
                 let after = if line.is_empty() {
@@ -531,6 +549,30 @@ impl RepertoireTree {
             stack.extend(pgn_move.children.iter().rev().map(|m| (m, continuation)));
         }
         self.count - before
+    }
+
+    /// Adds `chapter` to the nodes the moves pass through that exist already, before merging:
+    /// whether a transposition's lines move to another node depends on that node being in
+    /// the chapter, which must not depend on the order of the variations in the file.
+    fn mark_existing(&mut self, moves: &[PgnMove], id: NodeId, chapter: usize) {
+        let mut stack: Vec<(&PgnMove, NodeId)> = moves.iter().map(|m| (m, id)).collect();
+        while let Some((pgn_move, parent)) = stack.pop() {
+            let Some(child) = self.existing_child(parent, &pgn_move.san) else {
+                continue;
+            };
+            if let Some(node) = self.get_mut(child) {
+                node.chapters.insert(chapter);
+            }
+            stack.extend(pgn_move.children.iter().map(|m| (m, child)));
+        }
+    }
+
+    /// The child reached by `san`, also when written differently ("Ngf3" for "Nf3").
+    fn existing_child(&self, parent: NodeId, san: &str) -> Option<NodeId> {
+        self.child_by_san(parent, san).or_else(|| {
+            let (mv, _) = self.get(parent)?.position.play_san(san)?;
+            self.child_by_uci(parent, &mv.uci)
+        })
     }
 
     /// Union of both trees (used when the file changed elsewhere). Chapters are matched by index.
@@ -576,8 +618,31 @@ impl RepertoireTree {
 
     /// Moves below `id` as PGN, restricted to `chapter` if given.
     pub fn pgn_moves(&self, id: NodeId, chapter: Option<usize>) -> Vec<PgnMove> {
+        // Each frame: the move being built and its children still to visit. A work stack
+        // rather than recursion, because a line nests one level per ply.
+        let mut stack = vec![(PgnMove::default(), self.written_children(id, chapter))];
+        loop {
+            let (_, rest) = stack.last_mut().expect("non-empty until `id` is done");
+            if let Some((child_id, pgn_move)) = rest.next() {
+                stack.push((pgn_move, self.written_children(child_id, chapter)));
+                continue;
+            }
+            let (mut done, _) = stack.pop().expect("non-empty");
+            match stack.last_mut() {
+                Some((parent, _)) => parent.children.push(done),
+                None => return std::mem::take(&mut done.children),
+            }
+        }
+    }
+
+    /// The children of `id` that `chapter` writes, as PGN moves without their children.
+    fn written_children(
+        &self,
+        id: NodeId,
+        chapter: Option<usize>,
+    ) -> std::vec::IntoIter<(NodeId, PgnMove)> {
         let Some(node) = self.get(id) else {
-            return Vec::new();
+            return Vec::new().into_iter();
         };
         node.children
             .iter()
@@ -589,15 +654,48 @@ impl RepertoireTree {
                 {
                     return None;
                 }
-                Some(PgnMove {
+                Some((child_id, child, mv))
+            })
+            .enumerate()
+            .map(|(index, (child_id, child, mv))| {
+                // A pre-comment is read back only at the start of a variation; elsewhere it
+                // becomes the comment of the move (or game) before it. When another chapter
+                // writes this move as a variation, that chapter keeps the comment, and writing
+                // it here too would copy it to this chapter on every save.
+                let pre_comments = if index == 0 && self.starts_variation(child_id) {
+                    Vec::new()
+                } else {
+                    child.pre_comments.clone()
+                };
+                let pgn_move = PgnMove {
                     san: mv.san.clone(),
                     nags: child.nags.clone(),
-                    pre_comments: child.pre_comments.clone(),
+                    pre_comments,
                     comments: child.comments.clone(),
-                    children: self.pgn_moves(child_id, chapter),
-                })
+                    children: Vec::new(),
+                };
+                (child_id, pgn_move)
             })
-            .collect()
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+
+    /// Whether some chapter writes `id` as a variation, i.e. not first among its siblings there.
+    fn starts_variation(&self, id: NodeId) -> bool {
+        let Some(node) = self.get(id) else {
+            return false;
+        };
+        let Some(parent) = node.parent.and_then(|p| self.get(p)) else {
+            return false;
+        };
+        node.chapters.iter().any(|chapter| {
+            parent
+                .children
+                .iter()
+                .filter_map(|&c| self.get(c))
+                .find(|c| c.mv.is_some() && c.chapters.contains(chapter))
+                .is_some_and(|first| first.id != id)
+        })
     }
 
     // Private
@@ -627,6 +725,18 @@ impl RepertoireTree {
         let id = self.nodes.len() as NodeId;
         let parent_ply = self.get(parent).map_or(0, |p| p.ply);
         let epd = position.epd();
+        self.jumps.push(self.jump_for_child_of(parent));
+        // The nearest ancestor with this position is the one with the highest id.
+        let repeats = self
+            .epd_index
+            .get(&epd)
+            .and_then(|ids| {
+                ids.iter()
+                    .rev()
+                    .find(|&&c| c == parent || self.is_ancestor(c, parent))
+            })
+            .map_or(0, |&c| self.repeats.get(c as usize).map_or(0, |r| r + 1));
+        self.repeats.push(repeats);
         self.nodes.push(Some(RepertoireNode {
             id,
             parent: Some(parent),
@@ -646,6 +756,21 @@ impl RepertoireTree {
         }
         self.epd_index.entry(epd).or_default().push(id);
         id
+    }
+}
+
+impl RepertoireTree {
+    /// Myers' skew-binary jump: the parent's jump's jump when the two jumps span the same
+    /// number of plies, else the parent.
+    fn jump_for_child_of(&self, parent: NodeId) -> NodeId {
+        let ply = |id: NodeId| self.get(id).map_or(0, |n| n.ply);
+        let jump = |id: NodeId| self.jumps.get(id as usize).copied().unwrap_or(Self::ROOT);
+        let (p_jump, p_jump_jump) = (jump(parent), jump(jump(parent)));
+        if ply(parent) - ply(p_jump) == ply(p_jump) - ply(p_jump_jump) {
+            p_jump_jump
+        } else {
+            parent
+        }
     }
 }
 

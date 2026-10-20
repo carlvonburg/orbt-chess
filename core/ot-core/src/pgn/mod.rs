@@ -25,7 +25,10 @@ impl PgnTag {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+/// One move and everything after it. A line nests one level per ply, so Clone, Drop,
+/// PartialEq, Hash and Debug are written with an explicit stack: derived ones recurse per ply
+/// and overflow the stack on a long line from a corrupt or hostile file.
+#[derive(Default)]
 pub struct PgnMove {
     pub san: String,
     pub nags: Vec<i32>,
@@ -41,8 +44,122 @@ impl PgnMove {
     pub fn new(san: impl Into<String>) -> PgnMove {
         PgnMove {
             san: san.into(),
-            ..PgnMove::default()
+            nags: Vec::new(),
+            pre_comments: Vec::new(),
+            comments: Vec::new(),
+            children: Vec::new(),
         }
+    }
+
+    /// A copy without the children.
+    fn shallow_clone(&self) -> PgnMove {
+        PgnMove {
+            san: self.san.clone(),
+            nags: self.nags.clone(),
+            pre_comments: self.pre_comments.clone(),
+            comments: self.comments.clone(),
+            children: Vec::with_capacity(self.children.len()),
+        }
+    }
+
+    fn same_fields(&self, other: &PgnMove) -> bool {
+        self.san == other.san
+            && self.nags == other.nags
+            && self.pre_comments == other.pre_comments
+            && self.comments == other.comments
+            && self.children.len() == other.children.len()
+    }
+}
+
+impl Drop for PgnMove {
+    fn drop(&mut self) {
+        let mut stack = std::mem::take(&mut self.children);
+        while let Some(mut m) = stack.pop() {
+            stack.append(&mut m.children);
+        }
+    }
+}
+
+impl Clone for PgnMove {
+    fn clone(&self) -> PgnMove {
+        // Each frame: the source, its copy so far, and the next child to copy.
+        let mut stack: Vec<(&PgnMove, PgnMove, usize)> = vec![(self, self.shallow_clone(), 0)];
+        loop {
+            let (source, _, next) = stack.last_mut().expect("non-empty until the root is done");
+            let source: &PgnMove = source;
+            if let Some(child) = source.children.get(*next) {
+                *next += 1;
+                stack.push((child, child.shallow_clone(), 0));
+                continue;
+            }
+            let (_, done, _) = stack.pop().expect("non-empty");
+            match stack.last_mut() {
+                Some((_, parent, _)) => parent.children.push(done),
+                None => return done,
+            }
+        }
+    }
+}
+
+impl PartialEq for PgnMove {
+    fn eq(&self, other: &PgnMove) -> bool {
+        let mut stack = vec![(self, other)];
+        while let Some((a, b)) = stack.pop() {
+            if !a.same_fields(b) {
+                return false;
+            }
+            stack.extend(a.children.iter().zip(&b.children));
+        }
+        true
+    }
+}
+
+impl Eq for PgnMove {}
+
+impl std::hash::Hash for PgnMove {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let mut stack = vec![self];
+        while let Some(m) = stack.pop() {
+            m.san.hash(state);
+            m.nags.hash(state);
+            m.pre_comments.hash(state);
+            m.comments.hash(state);
+            m.children.len().hash(state);
+            stack.extend(m.children.iter().rev());
+        }
+    }
+}
+
+/// Same output as the derived Debug (without `{:#?}` pretty-printing).
+impl std::fmt::Debug for PgnMove {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        enum Item<'a> {
+            Move(&'a PgnMove),
+            Text(&'static str),
+        }
+        let mut stack = vec![Item::Move(self)];
+        while let Some(item) = stack.pop() {
+            let m = match item {
+                Item::Text(text) => {
+                    f.write_str(text)?;
+                    continue;
+                }
+                Item::Move(m) => m,
+            };
+            write!(
+                f,
+                "PgnMove {{ san: {:?}, nags: {:?}, pre_comments: {:?}, comments: {:?}, children: [",
+                m.san, m.nags, m.pre_comments, m.comments
+            )?;
+            stack.push(Item::Text("] }"));
+            for (index, child) in m.children.iter().enumerate().rev() {
+                stack.push(Item::Move(child));
+                if index > 0 {
+                    stack.push(Item::Text(", "));
+                }
+            }
+        }
+        Ok(())
     }
 }
 

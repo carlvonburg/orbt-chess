@@ -54,7 +54,9 @@ pub fn explorer_request(epd: &Epd, database: &ExplorerDatabase, token: &str) -> 
 
 /// Decodes an explorer answer and normalizes its moves (standard castling UCI, our SAN).
 pub fn decode_stats(body: &[u8], epd: &Epd) -> Option<ExplorerStats> {
-    let raw: ExplorerStats = serde_json::from_slice(body).ok()?;
+    let raw = serde_json::from_slice::<ExplorerStats>(body)
+        .ok()?
+        .clamped();
     Some(match ChessPosition::from_fen(&epd.query_fen()) {
         Some(position) => raw.normalized(&position),
         None => raw,
@@ -394,6 +396,21 @@ mod tests {
     }
 
     const STATS: &str = r#"{"white":10,"draws":5,"black":5,"moves":[{"uci":"e7e5","san":"e5","white":5,"draws":2,"black":3,"averageRating":1900}],"topGames":[],"opening":{"eco":"B00","name":"King's Pawn"}}"#;
+
+    #[test]
+    fn decoding_clamps_counts() {
+        let body = r#"{"white":-10,"draws":5,"black":9223372036854775807,"moves":[{"uci":"e7e5","san":"e5","white":-5,"draws":2,"black":9223372036854775807}]}"#;
+        let stats = decode_stats(body.as_bytes(), &epd("e4")).unwrap();
+        assert_eq!((stats.white, stats.draws, stats.black), (0, 5, 1 << 40));
+        assert_eq!(stats.moves[0].games(), 2 + (1 << 40));
+        assert!(
+            decode_stats(
+                br#"{"white":1e30,"draws":0,"black":0,"moves":[]}"#,
+                &epd("e4")
+            )
+            .is_none()
+        );
+    }
 
     #[test]
     fn url_matches_the_swift_client() {

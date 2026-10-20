@@ -28,7 +28,9 @@ impl ExplorerMove {
     }
 
     pub fn games(&self) -> i64 {
-        self.white + self.draws + self.black
+        self.white
+            .saturating_add(self.draws)
+            .saturating_add(self.black)
     }
 
     /// Score for `side` in 0...1 (wins + half the draws).
@@ -61,9 +63,33 @@ pub struct ExplorerStats {
     pub opening: Option<OpeningName>,
 }
 
+/// Game counts above this are not real (Lichess has a few billion games); clamping keeps the
+/// sums and shares finite.
+const MAX_COUNT: i64 = 1 << 40;
+
+fn clamp_count(n: i64) -> i64 {
+    n.clamp(0, MAX_COUNT)
+}
+
 impl ExplorerStats {
     pub fn total(&self) -> i64 {
-        self.white + self.draws + self.black
+        self.white
+            .saturating_add(self.draws)
+            .saturating_add(self.black)
+    }
+
+    /// With every count in 0...2^40, so a corrupt answer or cache entry cannot give negative
+    /// shares or overflow a sum.
+    pub fn clamped(mut self) -> ExplorerStats {
+        for n in [&mut self.white, &mut self.draws, &mut self.black] {
+            *n = clamp_count(*n);
+        }
+        for m in &mut self.moves {
+            for n in [&mut m.white, &mut m.draws, &mut m.black] {
+                *n = clamp_count(*n);
+            }
+        }
+        self
     }
 
     /// Share of games in this position that continued with `uci` (move games / position games).
@@ -246,6 +272,25 @@ mod tests {
         );
         let back: ExplorerDatabase = serde_json::from_str(&lichess).unwrap();
         assert_eq!(back, ExplorerDatabase::default_lichess());
+    }
+
+    #[test]
+    fn counts_are_clamped() {
+        let stats = ExplorerStats {
+            white: -5,
+            draws: i64::MAX,
+            black: i64::MAX,
+            moves: vec![ExplorerMove::new("e2e4", "e4", i64::MAX, i64::MAX, -1)],
+            opening: None,
+        };
+        assert_eq!(stats.total(), i64::MAX);
+        let stats = stats.clamped();
+        assert_eq!(
+            (stats.white, stats.draws, stats.black),
+            (0, 1 << 40, 1 << 40)
+        );
+        assert_eq!(stats.moves[0].games(), 2 << 40);
+        assert_eq!(stats.share("e2e4"), 1.0);
     }
 
     #[test]
