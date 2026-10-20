@@ -1,0 +1,53 @@
+# cargo-deny (run by scripts/check.sh): licenses, security advisories, bans and sources of
+# every dependency. Install it with `cargo install --locked cargo-deny`.
+
+[graph]
+all-features = true
+
+[advisories]
+# RustSec advisories: vulnerabilities, and unmaintained or yanked crates, fail the check.
+version = 2
+yanked = "deny"
+ignore = [
+  # basic-toml is unmaintained; it reaches us only through uniffi's bindings generator
+  # (askama), at build time. Drop this when uniffi moves off it.
+  { id = "RUSTSEC-2026-0374", reason = "build-time only, via uniffi_bindgen; no maintained release to move to" },
+]
+
+[licenses]
+# Only licenses that may be combined with AGPL-3.0-or-later (the app's license).
+version = 2
+confidence-threshold = 0.9
+# The list is the compatible set, not only what is in use today.
+unused-allowed-license = "allow"
+allow = [
+  "AGPL-3.0-or-later",
+  "GPL-3.0-or-later",
+  "LGPL-3.0-or-later",
+  "MPL-2.0",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "MIT",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "Zlib",
+  "Unicode-3.0",
+  "Unlicense",
+  "CC0-1.0",
+]
+
+[licenses.private]
+# Our own crates (publish = false) are checked by their license field like the rest.
+ignore = false
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# Path dependencies inside the workspace have no version.
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
