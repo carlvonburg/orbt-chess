@@ -64,6 +64,8 @@ One folder per platform around a shared core (Android and web would be `android/
     drill's step clock), UserDefaults and the UI. Models (`RepertoireDocument`, `BuilderModel`,
     `DrillModel`, `StatisticsModel`, `ExplorerService`) are thin `@Observable` wrappers that
     forward to the core and re-read it when its revision changes.
+  - `openingTrainerTests/` — Swift Testing target hosted in the app (folder-synced): conflict
+    merging and file presenters over a temporary folder.
   - `UI/Components/Platform.swift` — the few iOS-only modifiers and what macOS uses instead.
   - `OpeningCoreRust/` — Swift package over the Rust core: the xcframework (built, not
     committed), the generated `opening_core.swift` (never edit by hand) and `Additions.swift`
@@ -116,6 +118,11 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
   (`Changes` with save delays, explorer `Fetch`es); the platform runs the IO and timers.
 - App code is MainActor by default (`SWIFT_DEFAULT_ACTOR_ISOLATION`). Core objects are called
   from the main actor; foreign callbacks (`DocumentListener`, `ExplorerListener`) hop to it.
+  File IO and heavy core calls (opening, saving, remote merges) run off the main actor: a
+  document's `Writer` runs them one at a time, and each coordinated access passes that file's
+  presenter. `ExplorerCacheStore` is thread-agnostic (the core calls it from any thread).
+- iCloud conflict versions are merged, then removed: the PGN into the document, the sidecar
+  with `mergeSidecarData` and the review log with `mergeRevlogData`.
 - Explorer: the position on screen is fetched directly after 300 ms on screen (no queue). The coverage check is a separate queue, one request at a time, one every 1.2 s (Lichess allows ~20/min per user, measured, so expect 429s). A 429 from either pauses both for 60 s (kept across launches) and slows the coverage pace for good; re-login on 401.
 - Fetch policy: the position on screen first; plus a background coverage check only while one of
   the repertoire's screens is showing (overview, builder, study), limited to opponent-to-move positions above the target

@@ -9,8 +9,8 @@ import OpeningCoreRust
 @Observable
 final class RepertoireDocument {
     private(set) var entryID: String
-    private(set) var pgnURL: URL
-    private(set) var sidecarURL: URL
+    private(set) var pgnURL: URL { didSet { files.update { $0.pgn = pgnURL } } }
+    private(set) var sidecarURL: URL { didSet { files.update { $0.sidecar = sidecarURL } } }
     private(set) var name: String
 
     let core: RepertoireDoc
@@ -20,35 +20,58 @@ final class RepertoireDocument {
     private(set) var canUndo = false
 
     @ObservationIgnored let explorer: ExplorerService
-    @ObservationIgnored private var lastWrittenSidecar = Data()
+    /// Told when the PGN was deleted, or moved out of the folder, by someone else.
+    @ObservationIgnored var onRemoved: (() -> Void)?
+    /// Told, with the old entry id, when someone else renamed the PGN.
+    @ObservationIgnored var onRenamed: ((String) -> Void)?
+    /// Runs the file IO off the main actor, one operation at a time, so saves land in order.
+    @ObservationIgnored private let writer = Writer()
     @ObservationIgnored private var pgnSaveTask: Task<Void, Never>?
     @ObservationIgnored private var sidecarSaveTask: Task<Void, Never>?
-    @ObservationIgnored private var presenters: [FilePresenter] = []
+    /// Where the files are, read by the writer when each operation runs.
+    @ObservationIgnored private let files: FileState
+    @ObservationIgnored private var presenters: Presenters? { didSet { files.update { $0.presenters = presenters } } }
+    /// Closing: no new saves are scheduled and changes on disk are ignored.
+    @ObservationIgnored private var isClosed = false
+    /// The files are being deleted: nothing is written any more.
+    @ObservationIgnored private var isDiscarded = false
     @ObservationIgnored private var cachedCards: (revision: UInt64, cards: [EPD: Card])?
 
-    /// Reads the PGN off the main actor, since a large file takes a moment to download.
-    nonisolated static func load(_ url: URL) async throws -> String {
+    /// The opened core and what it asked for while opening and merging conflict versions.
+    struct Loaded: Sendable {
+        let document: RepertoireDoc
+        let changes: [Changes]
+    }
+
+    /// Reads and parses the files off the main actor (a large PGN takes a moment to download and
+    /// parse). iCloud conflict versions of the sidecar and the review log are merged into the
+    /// files first; those of the PGN are merged into the document and the result is saved.
+    nonisolated static func load(pgnURL: URL, sidecarURL: URL, defaults: StudyDefaults,
+                                 explorer: Explorer) async throws -> Loaded {
         try await Task.detached(priority: .userInitiated) {
-            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
-            return String(decoding: try FileAccess.read(url), as: UTF8.self)
+            try? FileManager.default.startDownloadingUbiquitousItem(at: pgnURL)
+            try? resolveSidecarConflicts(at: sidecarURL)
+            try? resolveRevlogConflicts(at: RepertoireLibrary.revlogURL(for: pgnURL))
+            let sidecar = try FileAccess.read(sidecarURL)
+            let text = String(decoding: try FileAccess.read(pgnURL), as: UTF8.self)
+            let opened = try openRepertoire(pgnText: text, sidecar: sidecar, defaults: defaults, explorer: explorer)
+            var changes = [opened.changes]
+            try? resolvePGNConflicts(opened.document, at: pgnURL) { changes.append($0) }
+            return Loaded(document: opened.document, changes: changes)
         }.value
     }
 
-    /// `text` comes from `load(_:)`.
-    init(entry: RepertoireEntry, text: String, explorer: ExplorerService) throws {
-        guard let sidecar = entry.sidecarData else { throw CocoaError(.fileNoSuchFile) }
+    /// `loaded` comes from `load`.
+    init(entry: RepertoireEntry, loaded: Loaded, explorer: ExplorerService) {
         self.entryID = entry.id
         self.pgnURL = entry.pgnURL
         self.sidecarURL = entry.sidecarURL
         self.name = entry.name
         self.explorer = explorer
-        let opened = try openRepertoire(pgnText: text, sidecar: sidecar, defaults: TrainingDefaults.studyDefaults,
-                                        explorer: explorer.core)
-        core = opened.document
-        lastWrittenSidecar = sidecar
+        files = FileState(Files(pgn: entry.pgnURL, sidecar: entry.sidecarURL))
+        core = loaded.document
         core.setListener(listener: Listener(document: self))
-        apply(opened.changes)
-        resolveConflicts()
+        for changes in loaded.changes { apply(changes) }
         startPresenters()
     }
 
@@ -61,33 +84,73 @@ final class RepertoireDocument {
         cachedCards = nil
     }
 
+    /// The presenters of the three files. Each coordinated access passes its own file's
+    /// presenter, so the app is not told about its own reads and writes.
+    private nonisolated struct Presenters: Sendable {
+        let pgn: FilePresenter
+        let sidecar: FilePresenter
+        let revlog: FilePresenter
+        var all: [FilePresenter] { [pgn, sidecar, revlog] }
+    }
+
     private func startPresenters() {
-        let pgnPresenter = FilePresenter(url: pgnURL) { [weak self] in self?.pgnChangedOnDisk() }
-        let sidecarPresenter = FilePresenter(url: sidecarURL) { [weak self] in self?.sidecarChangedOnDisk() }
-        pgnPresenter.start()
-        sidecarPresenter.start()
-        presenters = [pgnPresenter, sidecarPresenter]
+        let save: @MainActor @Sendable () async -> Void = { [weak self] in await self?.savePending() }
+        let pgn = FilePresenter(url: pgnURL, handlers: .init(
+            changed: { [weak self] in self?.pgnChangedOnDisk() },
+            save: save,
+            deleted: { [weak self] in self?.removedByOthers() },
+            moved: { [weak self] in self?.pgnMoved(to: $0) }))
+        let sidecar = FilePresenter(url: sidecarURL, handlers: .init(
+            changed: { [weak self] in self?.sidecarChangedOnDisk() },
+            save: save,
+            moved: { [weak self] in self?.sidecarURL = $0 }))
+        let revlog = FilePresenter(url: revlogURL, handlers: .init(
+            changed: { [weak self] in self?.revlogChangedOnDisk() },
+            save: save))
+        presenters = Presenters(pgn: pgn, sidecar: sidecar, revlog: revlog)
+        for p in [pgn, sidecar, revlog] { p.start() }
     }
 
     private func stopPresenters() {
-        for p in presenters { p.stop() }
-        presenters = []
+        for p in presenters?.all ?? [] { p.stop() }
+        presenters = nil
     }
 
-    /// Renames the PGN and sidecar. The entry id changes with the file names.
-    func rename(to newName: String, in library: RepertoireLibrary) throws {
-        flush()
+    /// Renames the PGN, sidecar and review log. The entry id changes with the file names.
+    func rename(to newName: String, in library: RepertoireLibrary) async throws {
+        await flush()
         stopPresenters()
         defer { startPresenters() }
-        let entry = try library.rename(pgn: pgnURL, to: newName)
-        entryID = entry.id
-        pgnURL = entry.pgnURL
-        sidecarURL = entry.sidecarURL
-        name = entry.name
+        let files = files
+        let renamed = try await writer.run {
+            let renamed = try RepertoireLibrary.renameFiles(pgn: files.current.pgn, to: newName)
+            // Saves queued behind the rename go to the new files.
+            files.update { $0.pgn = renamed.pgnURL; $0.sidecar = renamed.sidecarURL }
+            return renamed
+        }
+        entryID = renamed.sidecarURL.path
+        pgnURL = renamed.pgnURL
+        sidecarURL = renamed.sidecarURL
+        name = renamed.pgnURL.deletingPathExtension().lastPathComponent
+        await library.refresh()
     }
 
-    func close() {
-        flush()
+    /// Saves what is pending and stops watching the files.
+    func close() async {
+        isClosed = true
+        await flush()
+        stopPresenters()
+    }
+
+    /// Stops without saving, for a repertoire whose files are being deleted: a save would
+    /// recreate them.
+    func discard() {
+        isClosed = true
+        isDiscarded = true
+        pgnSaveTask?.cancel()
+        pgnSaveTask = nil
+        sidecarSaveTask?.cancel()
+        sidecarSaveTask = nil
         stopPresenters()
     }
 
@@ -243,99 +306,235 @@ final class RepertoireDocument {
     /// How often each node is reached.
     var reach: [NodeID: Double] { _ = revision; return core.reach() }
 
-    /// The whole review log, including answers not written yet.
-    func reviewLog() -> [RevlogEntry] {
-        core.reviewLog(onDisk: (try? FileAccess.read(revlogURL)) ?? Data())
+    /// The whole review log, including answers not written yet. Read off the main actor.
+    func reviewLog() async -> [RevlogEntry] {
+        let core = core
+        return await readRevlog { core.reviewLog(onDisk: $0) }
+    }
+
+    /// This repertoire's part of the statistics; see `RepertoireDoc.graphParts`.
+    func graphParts(wholeCollection: Bool) async -> GraphParts {
+        let core = core
+        return await readRevlog { core.graphParts(onDisk: $0, wholeCollection: wholeCollection) }
+    }
+
+    private func readRevlog<T: Sendable>(_ body: @escaping @Sendable (Data) -> T) async -> T {
+        let files = files.current
+        return await Task.detached(priority: .userInitiated) {
+            body((try? FileAccess.read(files.revlog, presenter: files.presenters?.revlog)) ?? Data())
+        }.value
     }
 
     // MARK: Saving
 
-    /// Writes pending changes immediately (on close or when the app goes to background).
-    func flush() {
-        if pgnSaveTask != nil {
-            pgnSaveTask?.cancel()
-            pgnSaveTask = nil
-            savePGN()
-        }
-        if sidecarSaveTask != nil {
-            sidecarSaveTask?.cancel()
-            sidecarSaveTask = nil
-            saveSidecar()
-        }
-        saveRevlog()
+    /// Writes pending changes now (on close, when the app goes to background or quits, or when
+    /// another process wants to read the files). Saves already running finish first: the
+    /// writer runs one at a time, and these find nothing left when they had it all.
+    func flush() async {
+        pgnSaveTask?.cancel()
+        pgnSaveTask = nil
+        sidecarSaveTask?.cancel()
+        sidecarSaveTask = nil
+        await savePGN()
+        await saveSidecar()
     }
 
+    /// Another process wants to read the files: writes only what is waiting to be saved. The
+    /// library reads every sidecar when it rescans, so a full flush here would serialize the
+    /// whole PGN on each scan.
+    private func savePending() async {
+        if pgnSaveTask != nil || sidecarSaveTask != nil || core.revlogToAppend() != nil { await flush() }
+    }
+
+    func dismissSaveError() { saveError = nil }
+
     private func schedulePGNSave(after ms: UInt32) {
+        guard !isClosed else { return }
         pgnSaveTask?.cancel()
         pgnSaveTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(Int(ms)))
             guard !Task.isCancelled, let self else { return }
             self.pgnSaveTask = nil
-            self.savePGN()
+            await self.savePGN()
         }
     }
 
     private func scheduleSidecarSave(after ms: UInt32) {
+        guard !isClosed else { return }
         sidecarSaveTask?.cancel()
         sidecarSaveTask = Task { [weak self] in
             if ms > 0 { try? await Task.sleep(for: .milliseconds(Int(ms))) }
             guard !Task.isCancelled, let self else { return }
             self.sidecarSaveTask = nil
-            self.saveSidecar()
+            await self.saveSidecar()
         }
     }
 
-    private func savePGN() {
-        guard let text = core.pgnToSave() else { return }
+    private func savePGN() async {
+        guard !isDiscarded else { return }
+        let core = core, files = files
         do {
-            try FileAccess.write(Data(text.utf8), to: pgnURL, presenter: presenters.first)
-            core.pgnSaved(text: text)
+            try await writer.run {
+                let current = files.current
+                try Self.savePGN(core, to: current.pgn, presenter: current.presenters?.pgn)
+            }
             saveError = nil
         } catch {
             saveError = "Could not save \(pgnURL.lastPathComponent): \(error.localizedDescription)"
         }
     }
 
-    private func saveRevlog() {
-        guard let lines = core.revlogToAppend() else { return }
-        do {
-            try FileAccess.append(lines, to: revlogURL)
-            core.revlogAppended()
-        } catch {
-            saveError = "Could not save the review log: \(error.localizedDescription)"
-        }
+    nonisolated private static func savePGN(_ core: RepertoireDoc, to url: URL, presenter: FilePresenter?) throws {
+        guard let text = core.pgnToSave() else { return }
+        try FileAccess.write(Data(text.utf8), to: url, presenter: presenter)
+        core.pgnSaved(text: text)
     }
 
-    private func saveSidecar() {
-        saveRevlog()
-        guard let data = core.sidecarToSave(timing: SchedTiming()) else { return }
+    /// Appends new answers to the review log, then writes the sidecar.
+    private func saveSidecar() async {
+        guard !isDiscarded else { return }
+        let core = core, files = files
         do {
-            try FileAccess.write(data, to: sidecarURL, presenter: presenters.last)
-            core.sidecarSaved(data: data)
-            lastWrittenSidecar = data
+            try await writer.run {
+                let current = files.current
+                if let lines = core.revlogToAppend() {
+                    do {
+                        try FileAccess.append(lines, to: current.revlog, presenter: current.presenters?.revlog)
+                    } catch {
+                        throw SaveError(message: "Could not save the review log: \(error.localizedDescription)")
+                    }
+                    core.revlogAppended()
+                }
+                guard let data = core.sidecarToSave(timing: SchedTiming()) else { return }
+                try FileAccess.write(data, to: current.sidecar, presenter: current.presenters?.sidecar)
+                core.sidecarSaved(data: data)
+            }
+        } catch let error as SaveError {
+            saveError = error.message
         } catch {
             saveError = "Could not save training data: \(error.localizedDescription)"
         }
     }
 
+    private struct SaveError: Error {
+        let message: String
+    }
+
     // MARK: Changes from elsewhere
 
+    /// Reads and merges on the writer, so it never overlaps one of our own saves.
     private func pgnChangedOnDisk() {
-        guard let data = try? FileAccess.read(pgnURL) else { return }
-        apply(core.remotePgn(text: String(decoding: data, as: UTF8.self)))
-        resolveConflicts()
+        guard !isClosed else { return }
+        let core = core, files = files
+        Task {
+            let changes = await writer.run { () -> [Changes] in
+                let current = files.current
+                var changes: [Changes] = []
+                if let data = try? FileAccess.read(current.pgn, presenter: current.presenters?.pgn) {
+                    changes.append(core.remotePgn(text: String(decoding: data, as: UTF8.self)))
+                }
+                try? Self.resolvePGNConflicts(core, at: current.pgn, presenter: current.presenters?.pgn) { changes.append($0) }
+                return changes
+            }
+            for c in changes { apply(c) }
+        }
     }
 
     private func sidecarChangedOnDisk() {
-        guard let data = try? FileAccess.read(sidecarURL), data != lastWrittenSidecar else { return }
-        apply(core.remoteSidecar(data: data))
+        guard !isClosed else { return }
+        let core = core, files = files
+        Task {
+            let changes = await writer.run { () -> Changes? in
+                let current = files.current
+                try? Self.resolveSidecarConflicts(at: current.sidecar, presenter: current.presenters?.sidecar)
+                guard let data = try? FileAccess.read(current.sidecar, presenter: current.presenters?.sidecar) else { return nil }
+                return core.remoteSidecar(data: data)
+            }
+            guard let changes else { return }
+            apply(changes)
+            // The merge may hold cards newer than the file.
+            scheduleSidecarSave(after: 0)
+        }
     }
 
-    /// Conflicting iCloud versions of the PGN are merged in, never lost.
-    private func resolveConflicts() {
-        FileAccess.resolveConflicts(at: pgnURL) { data in
-            apply(core.mergeConflictVersion(text: String(decoding: data, as: UTF8.self)))
+    private func revlogChangedOnDisk() {
+        guard !isClosed else { return }
+        let files = files
+        Task {
+            await writer.run {
+                let current = files.current
+                try? Self.resolveRevlogConflicts(at: current.revlog, presenter: current.presenters?.revlog)
+            }
         }
+    }
+
+    /// Someone else renamed or moved the PGN. Within the folder, the sidecar and the review log
+    /// follow it (the library pairs them by name); out of it, the repertoire is gone from here.
+    private func pgnMoved(to url: URL) {
+        guard !isClosed, url.standardizedFileURL != pgnURL.standardizedFileURL else { return }
+        guard url.deletingLastPathComponent().standardizedFileURL == pgnURL.deletingLastPathComponent().standardizedFileURL else {
+            return removedByOthers()
+        }
+        let oldID = entryID, oldPGN = pgnURL
+        let newSidecar = RepertoireLibrary.sidecarURL(for: url)
+        pgnURL = url
+        sidecarURL = newSidecar
+        name = url.deletingPathExtension().lastPathComponent
+        entryID = newSidecar.path
+        Task {
+            await writer.run { RepertoireLibrary.moveCompanions(of: oldPGN, to: url) }
+            onRenamed?(oldID)
+        }
+    }
+
+    private func removedByOthers() {
+        guard !isClosed else { return }
+        discard()
+        onRemoved?()
+    }
+
+    // MARK: iCloud conflict versions
+
+    /// Conflicting versions of the PGN are merged into the document, never lost; the merged
+    /// PGN is written before the versions are removed.
+    nonisolated private static func resolvePGNConflicts(_ core: RepertoireDoc, at url: URL, presenter: FilePresenter? = nil,
+                                                        changed: (Changes) -> Void) throws {
+        try FileAccess.resolveConflicts(at: url, presenter: presenter) { data in
+            changed(core.mergeConflictVersion(text: String(decoding: data, as: UTF8.self)))
+        } save: {
+            try savePGN(core, to: url, presenter: presenter)
+        }
+    }
+
+    /// Cards by latest review, settings by latest change (the core's `Sidecar::merged`).
+    nonisolated private static func resolveSidecarConflicts(at url: URL, presenter: FilePresenter? = nil) throws {
+        try FileAccess.resolveConflicts(at: url, presenter: presenter) { mergeSidecarData(a: $0, b: $1) }
+    }
+
+    /// The union of both logs by entry id.
+    nonisolated private static func resolveRevlogConflicts(at url: URL, presenter: FilePresenter? = nil) throws {
+        try FileAccess.resolveConflicts(at: url, presenter: presenter) { mergeRevlogData(a: $0, b: $1) }
+    }
+
+    /// The files and their presenters.
+    private nonisolated struct Files: Sendable {
+        var pgn: URL
+        var sidecar: URL
+        var presenters: Presenters?
+        var revlog: URL { RepertoireLibrary.revlogURL(for: pgn) }
+    }
+
+    private nonisolated final class FileState: @unchecked Sendable {
+        private let lock = NSLock()
+        private var value: Files
+        init(_ value: Files) { self.value = value }
+        var current: Files { lock.withLock { value } }
+        func update(_ body: (inout Files) -> Void) { lock.withLock { body(&value) } }
+    }
+
+    /// Runs file operations off the main actor, in the order they arrive.
+    private actor Writer {
+        func run<T: Sendable>(_ body: @Sendable () throws -> T) rethrows -> T { try body() }
     }
 
     /// Changes the core made by itself (stats arriving), from any thread.

@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import OpeningCoreRust
 
-struct RepertoireEntry: Identifiable, Equatable {
+nonisolated struct RepertoireEntry: Identifiable, Equatable, Sendable {
     /// Path of the sidecar, stable across launches.
     let id: String
     var name: String
@@ -28,7 +28,7 @@ struct RepertoireEntry: Identifiable, Equatable {
 @Observable
 final class RepertoireLibrary {
     nonisolated static let containerID = "iCloud.ch.cvb.openingTrainer"
-    static let sidecarExtension = OpeningCoreRust.sidecarExtension()
+    nonisolated static let sidecarExtension = OpeningCoreRust.sidecarExtension()
 
     private(set) var folder: URL?
     private(set) var usesICloud = false
@@ -37,6 +37,8 @@ final class RepertoireLibrary {
     var lastError: String?
 
     @ObservationIgnored private var presenter: FilePresenter?
+    @ObservationIgnored private var scheduledRefresh: Task<Void, Never>?
+    @ObservationIgnored private var scanGeneration = 0
 
     func setUp() async {
         guard folder == nil else { return }
@@ -52,17 +54,37 @@ final class RepertoireLibrary {
         }
         if let folder {
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            let presenter = FilePresenter(url: folder) { [weak self] in self?.refresh() }
+            let presenter = FilePresenter(url: folder) { [weak self] in self?.scheduleRefresh() }
             presenter.start()
             self.presenter = presenter
         }
-        refresh()
+        await refresh()
         isLoaded = true
     }
 
-    func refresh() {
+    /// Rescans soon. The folder reports every save of an open repertoire, so bursts of
+    /// changes become one scan.
+    func scheduleRefresh() {
+        scheduledRefresh?.cancel()
+        scheduledRefresh = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            await self?.refresh()
+        }
+    }
+
+    /// Rescans the folder off the main actor.
+    func refresh() async {
         guard let folder else { return }
-        var result: [RepertoireEntry] = []
+        scanGeneration += 1
+        let generation = scanGeneration
+        let result = await Task.detached(priority: .userInitiated) { Self.scan(folder) }.value
+        // A later scan started meanwhile and has fresher results.
+        guard generation == scanGeneration else { return }
+        if result != entries { entries = result }
+    }
+
+    nonisolated private static func scan(_ folder: URL) -> [RepertoireEntry] {
         let fm = FileManager.default
         let enumerator = fm.enumerator(at: folder, includingPropertiesForKeys: nil, options: [.skipsPackageDescendants])
         var pgns: [URL] = []
@@ -78,24 +100,38 @@ final class RepertoireLibrary {
                 try? fm.startDownloadingUbiquitousItem(at: real)
             }
         }
-        for pgn in pgns + placeholders {
-            let sidecarURL = Self.sidecarURL(for: pgn)
-            let data = try? FileAccess.read(sidecarURL)
-            let sidecar = data.flatMap { librarySidecar(data: $0) }
-            if sidecar == nil { try? fm.startDownloadingUbiquitousItem(at: sidecarURL) }
-            result.append(RepertoireEntry(id: sidecarURL.path, name: pgn.deletingPathExtension().lastPathComponent,
-                                          pgnURL: pgn, sidecarURL: sidecarURL, sidecarData: sidecar == nil ? nil : data,
-                                          sidecar: sidecar, isDownloading: placeholders.contains(pgn)))
+        let result = (pgns + placeholders).map { pgn in
+            entry(for: pgn, isDownloading: placeholders.contains(pgn))
         }
-        entries = result.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        return result.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
-    static func sidecarURL(for pgn: URL) -> URL {
+    nonisolated private static func entry(for pgn: URL, isDownloading: Bool = false) -> RepertoireEntry {
+        let sidecarURL = sidecarURL(for: pgn)
+        let data = try? FileAccess.read(sidecarURL)
+        let sidecar = data.flatMap { librarySidecar(data: $0) }
+        if sidecar == nil { try? FileManager.default.startDownloadingUbiquitousItem(at: sidecarURL) }
+        return RepertoireEntry(id: sidecarURL.path, name: pgn.deletingPathExtension().lastPathComponent,
+                               pgnURL: pgn, sidecarURL: sidecarURL, sidecarData: sidecar == nil ? nil : data,
+                               sidecar: sidecar, isDownloading: isDownloading)
+    }
+
+    /// Puts the entry for a file the app just wrote in the list right away; a scan follows.
+    private func insertEntry(for pgn: URL) -> RepertoireEntry {
+        let entry = Self.entry(for: pgn)
+        var result = entries.filter { $0.id != entry.id }
+        result.append(entry)
+        entries = result.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        scheduleRefresh()
+        return entry
+    }
+
+    nonisolated static func sidecarURL(for pgn: URL) -> URL {
         pgn.deletingPathExtension().appendingPathExtension(sidecarExtension)
     }
 
     /// The review log next to a PGN.
-    static func revlogURL(for pgn: URL) -> URL {
+    nonisolated static func revlogURL(for pgn: URL) -> URL {
         pgn.deletingPathExtension().appendingPathExtension(revlogExtension())
     }
 
@@ -110,8 +146,7 @@ final class RepertoireLibrary {
         guard !FileManager.default.fileExists(atPath: pgn.path) else { throw CocoaError(.fileWriteFileExists) }
         try FileAccess.write(Data(newRepertoirePgn(name: clean).utf8), to: pgn)
         try FileAccess.write(sidecar, to: Self.sidecarURL(for: pgn))
-        refresh()
-        return entry(id: Self.sidecarURL(for: pgn).path)!
+        return insertEntry(for: pgn)
     }
 
     /// Copies a PGN picked from Files into the repertoire folder, as "Name 2.pgn" when the
@@ -131,23 +166,23 @@ final class RepertoireLibrary {
             n += 1
         }
         try FileAccess.write(data, to: pgn)
-        refresh()
-        return entry(id: Self.sidecarURL(for: pgn).path)!
+        return insertEntry(for: pgn)
     }
 
     /// Writes a sidecar for a PGN that was imported or dropped into the folder.
     func saveSidecar(_ sidecar: Data, for entry: RepertoireEntry) throws {
         try FileAccess.write(sidecar, to: entry.sidecarURL)
-        refresh()
+        _ = insertEntry(for: entry.pgnURL)
     }
 
-    /// Renames a repertoire's PGN and sidecar to `<name>.pgn` and `<name>.otrep.json`.
-    func rename(pgn: URL, to name: String) throws -> RepertoireEntry {
-        let clean = Self.cleanName(name)
+    /// Renames a repertoire's PGN, sidecar and review log to `<name>.pgn`, `<name>.otrep.json`
+    /// and `<name>.otlog.jsonl`. Blocking; returns the new PGN and sidecar.
+    nonisolated static func renameFiles(pgn: URL, to name: String) throws -> (pgnURL: URL, sidecarURL: URL) {
+        let clean = cleanName(name)
         guard !clean.isEmpty else { throw CocoaError(.fileWriteInvalidFileName) }
         let newPGN = pgn.deletingLastPathComponent().appending(path: clean + ".pgn")
-        let sidecar = Self.sidecarURL(for: pgn)
-        let newSidecar = Self.sidecarURL(for: newPGN)
+        let sidecar = sidecarURL(for: pgn)
+        let newSidecar = sidecarURL(for: newPGN)
         // A case-only rename points at the same file on a case-insensitive volume.
         let sameFile = newPGN.path.lowercased() == pgn.path.lowercased()
         if !sameFile, FileManager.default.fileExists(atPath: newPGN.path)
@@ -162,27 +197,38 @@ final class RepertoireLibrary {
                 try? FileAccess.move(newPGN, to: pgn)
                 throw error
             }
-            let revlog = Self.revlogURL(for: pgn)
+            let revlog = revlogURL(for: pgn)
             if FileManager.default.fileExists(atPath: revlog.path) {
-                try? FileAccess.move(revlog, to: Self.revlogURL(for: newPGN))
+                try? FileAccess.move(revlog, to: revlogURL(for: newPGN))
             }
         }
-        refresh()
-        guard let entry = entry(id: newSidecar.path) else { throw CocoaError(.fileNoSuchFile) }
-        return entry
+        return (newPGN, newSidecar)
     }
 
-    /// Deletes a repertoire from the folder (PGN and sidecar).
-    func delete(_ entry: RepertoireEntry) throws {
-        try FileAccess.delete(entry.pgnURL)
-        try? FileAccess.delete(entry.sidecarURL)
-        try? FileAccess.delete(Self.revlogURL(for: entry.pgnURL))
-        refresh()
+    /// After someone else renamed a PGN from `old` to `new`, moves its sidecar and review log
+    /// along, unless a file already has the new name.
+    nonisolated static func moveCompanions(of old: URL, to new: URL) {
+        for (from, to) in [(sidecarURL(for: old), sidecarURL(for: new)), (revlogURL(for: old), revlogURL(for: new))] {
+            let fm = FileManager.default
+            guard fm.fileExists(atPath: from.path), !fm.fileExists(atPath: to.path) else { continue }
+            try? FileAccess.move(from, to: to)
+        }
+    }
+
+    /// Deletes a repertoire from the folder (PGN, sidecar and review log).
+    func delete(_ entry: RepertoireEntry) async throws {
+        try await Task.detached(priority: .userInitiated) {
+            try FileAccess.delete(entry.pgnURL)
+            try? FileAccess.delete(entry.sidecarURL)
+            try? FileAccess.delete(Self.revlogURL(for: entry.pgnURL))
+        }.value
+        entries.removeAll { $0.id == entry.id }
+        scheduleRefresh()
     }
 
     /// The name as a file name: safe characters only, single spaces, no leading dot, at
     /// most 100 characters.
-    private static func cleanName(_ name: String) -> String {
+    nonisolated private static func cleanName(_ name: String) -> String {
         let words = name.safeRepertoireName.split(whereSeparator: \.isWhitespace).joined(separator: " ")
         return String(words.drop { $0 == "." || $0 == " " }.prefix(100))
             .trimmingCharacters(in: .whitespaces)
@@ -193,7 +239,7 @@ private extension String {
     var nonEmpty: String? { isEmpty ? nil : self }
 }
 
-extension String {
+nonisolated extension String {
     /// Keeps letters and digits of any script, spaces, and - _ . , ( ) ' & + !
     /// Path separators become "-" (":" becomes " -", as in "Ruy Lopez - Berlin"); emoji and
     /// other symbols that cause trouble in file names (on iOS, Windows or in sync) are removed.

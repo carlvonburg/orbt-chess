@@ -38,24 +38,34 @@ final class ExplorerEntry {
 /// cache. It can always be re-fetched, so it is not stored in iCloud. The core loads a
 /// database's entries once and keeps them in memory.
 ///
-/// The core calls it from the thread that called into the core, which is always the main
-/// actor here.
+/// The core calls it from whichever thread called into the core (often while it holds a
+/// document's lock), so it uses its own context behind a lock and never hops to another actor.
 nonisolated final class ExplorerCacheStore: StatsStore, @unchecked Sendable {
-    @MainActor private lazy var context: ModelContext = {
-        let config = ModelConfiguration("ExplorerCache", cloudKitDatabase: .none)
-        let container: ModelContainer
-        do {
-            container = try ModelContainer(for: ExplorerEntry.self, configurations: config)
-        } catch {
-            container = try! ModelContainer(for: ExplorerEntry.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+    private let lock = NSLock()
+    private var storedContext: ModelContext?
+
+    /// Runs `body` with the context, one caller at a time.
+    private func withContext<T>(_ body: (ModelContext) -> T) -> T {
+        lock.withLock {
+            if let storedContext { return body(storedContext) }
+            let config = ModelConfiguration("ExplorerCache", cloudKitDatabase: .none)
+            let container: ModelContainer
+            do {
+                container = try ModelContainer(for: ExplorerEntry.self, configurations: config)
+            } catch {
+                container = try! ModelContainer(for: ExplorerEntry.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+            }
+            let context = ModelContext(container)
+            context.autosaveEnabled = false
+            storedContext = context
+            return body(context)
         }
-        return ModelContext(container)
-    }()
+    }
 
     static func key(_ epd: EPD, databaseKey: String) -> String { databaseKey + "|" + epd }
 
     func load(databaseKey: String) -> [StoredStats] {
-        MainActor.assumeIsolated {
+        withContext { context in
             let descriptor = FetchDescriptor<ExplorerEntry>(predicate: #Predicate { $0.database == databaseKey })
             let prefix = databaseKey + "|"
             return ((try? context.fetch(descriptor)) ?? []).map { entry in
@@ -65,7 +75,7 @@ nonisolated final class ExplorerCacheStore: StatsStore, @unchecked Sendable {
     }
 
     func save(databaseKey: String, epd: Epd, json: Data) {
-        MainActor.assumeIsolated {
+        withContext { context in
             let key = Self.key(epd, databaseKey: databaseKey)
             let descriptor = FetchDescriptor<ExplorerEntry>(predicate: #Predicate { $0.key == key })
             if let existing = try? context.fetch(descriptor).first {
@@ -78,11 +88,13 @@ nonisolated final class ExplorerCacheStore: StatsStore, @unchecked Sendable {
         }
     }
 
-    @MainActor var entryCount: Int { (try? context.fetchCount(FetchDescriptor<ExplorerEntry>())) ?? 0 }
+    var entryCount: Int { withContext { (try? $0.fetchCount(FetchDescriptor<ExplorerEntry>())) ?? 0 } }
 
-    @MainActor func clear() {
-        try? context.delete(model: ExplorerEntry.self)
-        try? context.save()
+    func clear() {
+        withContext { context in
+            try? context.delete(model: ExplorerEntry.self)
+            try? context.save()
+        }
     }
 }
 
