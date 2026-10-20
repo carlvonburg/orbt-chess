@@ -8,6 +8,7 @@ pub mod coverage;
 pub mod document;
 pub mod explorer;
 pub mod formats;
+pub mod lichess;
 pub mod pgn;
 pub mod repertoire;
 pub mod statistics;
