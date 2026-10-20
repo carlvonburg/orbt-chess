@@ -13,6 +13,8 @@ use ot_core::explorer::{
     ExplorerDatabase, ExplorerMove, ExplorerSpeed, ExplorerStats, OpeningName,
 };
 use ot_core::formats::{Summary, Timestamp};
+use ot_core::http::{Header, HttpMethod, HttpRequest, HttpResponse};
+use ot_core::lichess::cloud_eval::{CloudEval, CloudEvalLookup, Pv};
 use ot_core::repertoire::{NodeId, RepertoireNode, RepertoireTree};
 use ot_core::statistics::{
     CardCounts, CardInfo, GraphParts, GraphRange, Hour, RetentionPeriod, ReviewCounts, Streak,
@@ -86,6 +88,66 @@ pub enum ExplorerSpeed {
     Classical,
     Correspondence,
 }
+
+// HTTP
+
+#[uniffi::remote(Enum)]
+pub enum HttpMethod {
+    Get,
+    Post,
+    Delete,
+}
+
+#[uniffi::remote(Record)]
+pub struct Header {
+    pub name: String,
+    pub value: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct HttpRequest {
+    pub method: HttpMethod,
+    pub url: String,
+    pub headers: Vec<Header>,
+    pub body: Vec<u8>,
+    pub timeout_secs: Option<u32>,
+}
+
+#[uniffi::remote(Record)]
+pub struct HttpResponse {
+    pub status: u16,
+    pub headers: Vec<Header>,
+    pub body: Vec<u8>,
+}
+
+// Lichess cloud evals
+
+#[uniffi::remote(Record)]
+pub struct Pv {
+    pub moves: String,
+    pub cp: Option<i32>,
+    pub mate: Option<i32>,
+}
+
+#[uniffi::remote(Record)]
+pub struct CloudEval {
+    pub depth: u32,
+    pub pvs: Vec<Pv>,
+}
+
+#[uniffi::remote(Enum)]
+pub enum CloudEvalLookup {
+    Cached(Option<CloudEval>),
+    Fetch(HttpRequest),
+}
+
+/// The eval after `uci` ("+0.3", "#-2"), if it starts one of the cloud lines.
+#[uniffi::export]
+pub fn cloud_eval_text(eval: CloudEval, uci: String) -> Option<String> {
+    eval.text_for(&uci)
+}
+
+// Explorer
 
 #[uniffi::remote(Enum)]
 pub enum ExplorerDatabase {

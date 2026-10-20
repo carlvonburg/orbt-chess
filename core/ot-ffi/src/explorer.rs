@@ -4,6 +4,8 @@ use ot_core::chess::Epd;
 use ot_core::explorer::cache::StatsCache;
 use ot_core::explorer::queue::{self, ExplorerQueue, Lane, QueueState};
 use ot_core::explorer::{ExplorerDatabase, ExplorerStats};
+use ot_core::http::{HttpRequest, HttpResponse};
+use ot_core::lichess::cloud_eval::{self, CloudEval, CloudEvalLookup};
 
 use crate::document::RepertoireDoc;
 
@@ -33,7 +35,32 @@ pub struct Fetch {
     pub lane: Lane,
     pub epd: Epd,
     pub database: ExplorerDatabase,
-    pub url: String,
+    /// Send this as it is (it carries the token).
+    pub request: HttpRequest,
+}
+
+impl From<queue::Fetch> for Fetch {
+    fn from(f: queue::Fetch) -> Fetch {
+        Fetch {
+            id: f.id,
+            lane: f.lane,
+            epd: f.epd,
+            database: f.database,
+            request: f.request,
+        }
+    }
+}
+
+impl From<Fetch> for queue::Fetch {
+    fn from(f: Fetch) -> queue::Fetch {
+        queue::Fetch {
+            id: f.id,
+            lane: f.lane,
+            epd: f.epd,
+            database: f.database,
+            request: f.request,
+        }
+    }
 }
 
 #[derive(uniffi::Record)]
@@ -207,57 +234,32 @@ impl Explorer {
         self.wake();
     }
 
-    /// The requests to send now (with `Authorization: Bearer <token>`), and when to poll again.
-    pub fn poll(&self, now_ms: i64, has_token: bool) -> Poll {
+    /// The requests to send now, and when to poll again. `token`: the Lichess token, if
+    /// signed in.
+    pub fn poll(&self, now_ms: i64, token: Option<String>) -> Poll {
         let p = self
             .inner
             .lock()
             .expect("explorer lock")
             .queue
-            .poll(now_ms, has_token);
+            .poll(now_ms, token.as_deref());
         Poll {
-            fetches: p
-                .fetches
-                .into_iter()
-                .map(|f| Fetch {
-                    id: f.id,
-                    lane: f.lane,
-                    epd: f.epd,
-                    database: f.database,
-                    url: f.url,
-                })
-                .collect(),
+            fetches: p.fetches.into_iter().map(Fetch::from).collect(),
             wake_at: p.wake_at,
         }
     }
 
-    /// An HTTP answer (`status` None: no answer, e.g. offline).
+    /// The answer to a fetch (`response` None: no answer, e.g. offline).
     pub fn on_response(
         &self,
         fetch: Fetch,
-        status: Option<u16>,
-        retry_after_secs: Option<i64>,
-        body: Vec<u8>,
+        response: Option<HttpResponse>,
         now_ms: i64,
     ) -> FetchOutcome {
-        let response = match status {
-            Some(status) => queue::Response::Http {
-                status,
-                retry_after_secs,
-                body,
-            },
-            None => queue::Response::Transport,
-        };
-        let core_fetch = queue::Fetch {
-            id: fetch.id,
-            lane: fetch.lane,
-            epd: fetch.epd.clone(),
-            database: fetch.database.clone(),
-            url: fetch.url.clone(),
-        };
+        let fetch = queue::Fetch::from(fetch);
         let (outcome, documents) = {
             let mut inner = self.inner.lock().expect("explorer lock");
-            let outcome = inner.queue.on_response(&core_fetch, response, now_ms);
+            let outcome = inner.queue.on_response(&fetch, response.as_ref(), now_ms);
             if let Some((db, epd, stats)) = &outcome.stats {
                 inner.cache.put(db, epd.clone(), stats.clone());
             }
@@ -279,5 +281,32 @@ impl Explorer {
             unauthorized: outcome.unauthorized,
             banned_until: outcome.banned_until,
         }
+    }
+}
+
+/// Lichess cloud evals of this session: the platform sends what `lookup` asks for and
+/// passes the answer to `on_response`.
+#[derive(uniffi::Object, Default)]
+pub struct CloudEvals {
+    inner: Mutex<cloud_eval::CloudEvals>,
+}
+
+#[uniffi::export]
+impl CloudEvals {
+    #[uniffi::constructor]
+    pub fn new() -> Arc<CloudEvals> {
+        Arc::new(CloudEvals::default())
+    }
+
+    pub fn lookup(&self, epd: Epd) -> CloudEvalLookup {
+        self.inner.lock().expect("cloud eval lock").lookup(&epd)
+    }
+
+    /// The answer to a `CloudEvalLookup::Fetch` (None: no answer, e.g. offline).
+    pub fn on_response(&self, epd: Epd, response: Option<HttpResponse>) -> Option<CloudEval> {
+        self.inner
+            .lock()
+            .expect("cloud eval lock")
+            .on_response(&epd, response.as_ref())
     }
 }

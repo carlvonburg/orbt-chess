@@ -10,6 +10,7 @@ pub mod document;
 pub mod drill;
 pub mod explorer;
 pub mod formats;
+pub mod http;
 pub mod lichess;
 pub mod pgn;
 pub mod repertoire;

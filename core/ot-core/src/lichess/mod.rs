@@ -1,10 +1,14 @@
 //! Lichess: OAuth2 with PKCE (no client registration, no scopes; the explorer only needs a
-//! valid token) and links into the analysis board. The platform shows the browser sheet,
-//! performs the requests and keeps the token in its secure storage.
+//! valid token), cloud evals and links into the analysis board. The core describes the
+//! requests and reads the answers; the platform shows the browser sheet, sends the requests
+//! and keeps the token in its secure storage.
+
+pub mod cloud_eval;
 
 use sha2::{Digest, Sha256};
 
 use crate::chess::{PlayedMove, Side, san};
+use crate::http::{HttpMethod, HttpRequest, HttpResponse};
 
 pub const HOST: &str = "https://lichess.org";
 pub const CLIENT_ID: &str = "ch.cvb.openingTrainer";
@@ -86,6 +90,8 @@ pub enum AuthError {
     NoCode,
     #[error("Token exchange failed")]
     BadTokenResponse,
+    #[error("Token exchange failed ({0})")]
+    TokenStatus(u16),
 }
 
 fn percent_decode(value: &str) -> String {
@@ -151,25 +157,53 @@ pub fn token_request_body(code: &str, verifier: &str) -> String {
         .join("&")
 }
 
+/// Exchanges the code from the callback for a token.
+pub fn token_request(code: &str, verifier: &str) -> HttpRequest {
+    HttpRequest::new(HttpMethod::Post, format!("{HOST}/api/token")).body(
+        "application/x-www-form-urlencoded",
+        token_request_body(code, verifier),
+    )
+}
+
 /// The token and when it expires (unix seconds), from the token endpoint's answer.
-pub fn parse_token_response(body: &[u8], now_secs: i64) -> Result<(String, i64), AuthError> {
+pub fn parse_token_response(
+    response: &HttpResponse,
+    now_secs: i64,
+) -> Result<(String, i64), AuthError> {
     #[derive(serde::Deserialize)]
     struct TokenResponse {
         access_token: String,
         expires_in: Option<f64>,
     }
-    let r: TokenResponse = serde_json::from_slice(body).map_err(|_| AuthError::BadTokenResponse)?;
+    if response.status != 200 {
+        return Err(AuthError::TokenStatus(response.status));
+    }
+    let r: TokenResponse =
+        serde_json::from_slice(&response.body).map_err(|_| AuthError::BadTokenResponse)?;
     let secs = r.expires_in.map_or(DEFAULT_TOKEN_SECS, |s| s as i64);
     Ok((r.access_token, now_secs + secs))
 }
 
-/// The username from `GET https://lichess.org/api/account`.
-pub fn parse_account(body: &[u8]) -> Option<String> {
+/// Signing out: revokes the token.
+pub fn revoke_request(token: &str) -> HttpRequest {
+    HttpRequest::new(HttpMethod::Delete, format!("{HOST}/api/token")).bearer(token)
+}
+
+/// The signed-in account, for its username.
+pub fn account_request(token: &str) -> HttpRequest {
+    HttpRequest::get(format!("{HOST}/api/account")).bearer(token)
+}
+
+/// The username from the account request's answer.
+pub fn parse_account(response: &HttpResponse) -> Option<String> {
     #[derive(serde::Deserialize)]
     struct Account {
         username: String,
     }
-    serde_json::from_slice::<Account>(body)
+    if response.status != 200 {
+        return None;
+    }
+    serde_json::from_slice::<Account>(&response.body)
         .ok()
         .map(|a| a.username)
 }
@@ -269,15 +303,53 @@ mod tests {
             body,
             "grant_type=authorization_code&code=c%20o&code_verifier=v&redirect_uri=ch.cvb.openingtrainer%3A%2F%2Foauth-callback&client_id=ch.cvb.openingTrainer"
         );
+        let request = token_request("c o", "v");
+        assert_eq!(request.method, HttpMethod::Post);
+        assert_eq!(request.url, "https://lichess.org/api/token");
+        assert_eq!(request.body, body.as_bytes());
+        assert_eq!(
+            (
+                request.headers[0].name.as_str(),
+                request.headers[0].value.as_str()
+            ),
+            ("Content-Type", "application/x-www-form-urlencoded")
+        );
+        let ok = |body: &str| HttpResponse::new(200, body);
         let (token, expires) =
-            parse_token_response(br#"{"access_token":"lio_x","expires_in":100}"#, 1_000).unwrap();
+            parse_token_response(&ok(r#"{"access_token":"lio_x","expires_in":100}"#), 1_000)
+                .unwrap();
         assert_eq!((token.as_str(), expires), ("lio_x", 1_100));
-        let (_, expires) = parse_token_response(br#"{"access_token":"lio_x"}"#, 0).unwrap();
+        let (_, expires) = parse_token_response(&ok(r#"{"access_token":"lio_x"}"#), 0).unwrap();
         assert_eq!(expires, DEFAULT_TOKEN_SECS);
         assert_eq!(
-            parse_account(br#"{"id":"x","username":"Magnus"}"#),
+            parse_token_response(&HttpResponse::new(400, "{}"), 0),
+            Err(AuthError::TokenStatus(400))
+        );
+        assert_eq!(
+            AuthError::TokenStatus(400).to_string(),
+            "Token exchange failed (400)"
+        );
+    }
+
+    #[test]
+    fn account_and_sign_out() {
+        let request = account_request("lio_x");
+        assert_eq!(
+            (request.method, request.url.as_str()),
+            (HttpMethod::Get, "https://lichess.org/api/account")
+        );
+        assert_eq!(request.headers[0].value, "Bearer lio_x");
+        assert_eq!(
+            parse_account(&HttpResponse::new(200, r#"{"id":"x","username":"Magnus"}"#)),
             Some("Magnus".into())
         );
+        assert_eq!(parse_account(&HttpResponse::new(401, "{}")), None);
+        let request = revoke_request("lio_x");
+        assert_eq!(
+            (request.method, request.url.as_str()),
+            (HttpMethod::Delete, "https://lichess.org/api/token")
+        );
+        assert_eq!(request.headers[0].name, "Authorization");
     }
 
     #[test]

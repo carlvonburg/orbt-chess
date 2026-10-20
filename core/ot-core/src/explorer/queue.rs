@@ -1,5 +1,5 @@
-//! Explorer fetching as a state machine (sans-IO): the platform performs the HTTP requests
-//! this hands out and reports the responses; it calls `poll` again at `wake_at` or after any
+//! Explorer fetching as a state machine (sans-IO): the platform sends the HTTP requests this
+//! hands out (token included) and reports the responses; it calls `poll` again at `wake_at` or after any
 //! event.
 //!
 //! The position on screen is fetched once it has stayed on screen for 300 ms (the next focus
@@ -11,6 +11,7 @@ use std::collections::HashMap;
 
 use super::{ExplorerDatabase, ExplorerStats};
 use crate::chess::{ChessPosition, Epd};
+use crate::http::{HttpRequest, HttpResponse, query_encode};
 
 /// Milliseconds since 1970.
 pub type Millis = i64;
@@ -24,24 +25,11 @@ const MAX_INTERVAL_MS: Millis = 10_000;
 const FOCUS_DELAY_MS: Millis = 300;
 const OFFLINE_RETRY_MS: Millis = 30_000;
 const DEFAULT_BAN_MS: Millis = 60_000;
+const TIMEOUT_SECS: u32 = 20;
 
 pub const EXPLORER_HOST: &str = "https://explorer.lichess.org";
 
-/// Percent-encodes a query value (unreserved characters, '/' and ',' stay as they are).
-fn encode(value: &str) -> String {
-    let mut out = String::new();
-    for b in value.bytes() {
-        match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' | b'/' | b',' => {
-                out.push(b as char)
-            }
-            _ => out.push_str(&format!("%{b:02X}")),
-        }
-    }
-    out
-}
-
-/// The explorer URL for a position. The platform adds `Authorization: Bearer <token>`.
+/// The explorer URL for a position.
 pub fn explorer_url(epd: &Epd, database: &ExplorerDatabase) -> String {
     let mut query: Vec<(&str, String)> = vec![
         ("fen", epd.query_fen()),
@@ -52,9 +40,16 @@ pub fn explorer_url(epd: &Epd, database: &ExplorerDatabase) -> String {
     query.extend(database.query_items());
     let query: Vec<String> = query
         .iter()
-        .map(|(k, v)| format!("{k}={}", encode(v)))
+        .map(|(k, v)| format!("{k}={}", query_encode(v)))
         .collect();
     format!("{EXPLORER_HOST}/{}?{}", database.path(), query.join("&"))
+}
+
+/// The explorer request for a position, with the Lichess token.
+pub fn explorer_request(epd: &Epd, database: &ExplorerDatabase, token: &str) -> HttpRequest {
+    HttpRequest::get(explorer_url(epd, database))
+        .bearer(token)
+        .timeout(TIMEOUT_SECS)
 }
 
 /// Decodes an explorer answer and normalizes its moves (standard castling UCI, our SAN).
@@ -81,20 +76,7 @@ pub struct Fetch {
     pub lane: Lane,
     pub epd: Epd,
     pub database: ExplorerDatabase,
-    pub url: String,
-}
-
-/// What the platform got back.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Response {
-    /// An HTTP answer: status, the Retry-After header in seconds, the body.
-    Http {
-        status: u16,
-        retry_after_secs: Option<i64>,
-        body: Vec<u8>,
-    },
-    /// No answer (offline, timeout).
-    Transport,
+    pub request: HttpRequest,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -236,8 +218,9 @@ impl ExplorerQueue {
         self.offline_until = None;
     }
 
-    /// The requests to send now, and when to poll again.
-    pub fn poll(&mut self, now: Millis, has_token: bool) -> Poll {
+    /// The requests to send now, and when to poll again. `token`: the Lichess token, if
+    /// signed in (the explorer needs one).
+    pub fn poll(&mut self, now: Millis, token: Option<&str>) -> Poll {
         let mut poll = Poll::default();
         if let Some(until) = self.banned(now) {
             self.state = QueueState::RateLimited { until };
@@ -257,19 +240,19 @@ impl ExplorerQueue {
         {
             if focus.due_at > now {
                 wake(focus.due_at);
-            } else if !has_token {
-                self.focus = None;
-            } else {
+            } else if let Some(token) = token {
                 let id = self.next_id;
                 self.next_id += 1;
                 focus.in_flight = Some(id);
                 poll.fetches.push(Fetch {
                     id,
                     lane: Lane::Focus,
-                    url: explorer_url(&focus.epd, &focus.database),
+                    request: explorer_request(&focus.epd, &focus.database, token),
                     epd: focus.epd.clone(),
                     database: focus.database.clone(),
                 });
+            } else {
+                self.focus = None;
             }
         }
 
@@ -278,10 +261,7 @@ impl ExplorerQueue {
             let resume_at = self.next_coverage_at.max(self.offline_until.unwrap_or(0));
             if resume_at > now {
                 wake(resume_at);
-            } else if !has_token {
-                self.needs_login = true;
-                self.state = QueueState::NeedsLogin;
-            } else {
+            } else if let Some(token) = token {
                 self.offline_until = None;
                 let (k, request) = self
                     .pending
@@ -298,10 +278,13 @@ impl ExplorerQueue {
                 poll.fetches.push(Fetch {
                     id,
                     lane: Lane::Coverage,
-                    url: explorer_url(&request.epd, &request.database),
+                    request: explorer_request(&request.epd, &request.database, token),
                     epd: request.epd,
                     database: request.database,
                 });
+            } else {
+                self.needs_login = true;
+                self.state = QueueState::NeedsLogin;
             }
         } else if self.pending.is_empty()
             && self.in_flight.is_none()
@@ -312,8 +295,13 @@ impl ExplorerQueue {
         poll
     }
 
-    /// A response to a fetch from `poll`.
-    pub fn on_response(&mut self, fetch: &Fetch, response: Response, now: Millis) -> Outcome {
+    /// The answer to a fetch from `poll` (None: no answer, e.g. offline or a timeout).
+    pub fn on_response(
+        &mut self,
+        fetch: &Fetch,
+        response: Option<&HttpResponse>,
+        now: Millis,
+    ) -> Outcome {
         let mut outcome = Outcome::default();
         let k = key(&fetch.epd, &fetch.database);
         let is_focus = self
@@ -328,28 +316,22 @@ impl ExplorerQueue {
         // request waits the interval from this one's start.
         let mut finished = true;
         let mut paced = false;
-        match response {
-            Response::Http {
-                status: 200, body, ..
-            } => {
+        match response.map(|r| (r.status, r)) {
+            Some((200, r)) => {
                 paced = true;
                 self.pending.remove(&k);
-                if let Some(stats) = decode_stats(&body, &fetch.epd) {
+                if let Some(stats) = decode_stats(&r.body, &fetch.epd) {
                     outcome.stats = Some((fetch.database.clone(), fetch.epd.clone(), stats));
                 }
             }
-            Response::Http { status: 401, .. } => {
+            Some((401, _)) => {
                 outcome.unauthorized = true;
                 self.needs_login = true;
                 self.state = QueueState::NeedsLogin;
             }
-            Response::Http {
-                status: 429,
-                retry_after_secs,
-                ..
-            } => {
+            Some((429, r)) => {
                 self.interval = (self.interval * 3 / 2).min(MAX_INTERVAL_MS);
-                let until = now + retry_after_secs.map_or(DEFAULT_BAN_MS, |s| s * 1000);
+                let until = now + r.retry_after_secs().map_or(DEFAULT_BAN_MS, |s| s * 1000);
                 if self.banned_until.is_none_or(|b| until > b) {
                     self.banned_until = Some(until);
                     outcome.banned_until = Some(until);
@@ -358,13 +340,13 @@ impl ExplorerQueue {
                 // Tried again after the pause.
                 finished = false;
             }
-            Response::Transport => {
+            None => {
                 self.state = QueueState::Offline;
                 if coverage_start.is_some() {
                     self.offline_until = Some(now + OFFLINE_RETRY_MS);
                 }
             }
-            Response::Http { .. } => {
+            Some(_) => {
                 // Unexpected answer for this position: drop it so the queue keeps moving.
                 paced = true;
                 self.pending.remove(&k);
@@ -405,12 +387,10 @@ mod tests {
         p.epd()
     }
 
-    fn ok(body: &str) -> Response {
-        Response::Http {
-            status: 200,
-            retry_after_secs: None,
-            body: body.as_bytes().to_vec(),
-        }
+    const TOKEN: Option<&str> = Some("lio_x");
+
+    fn ok(body: &str) -> HttpResponse {
+        HttpResponse::new(200, body)
     }
 
     const STATS: &str = r#"{"white":10,"draws":5,"black":5,"moves":[{"uci":"e7e5","san":"e5","white":5,"draws":2,"black":3,"averageRating":1900}],"topGames":[],"opening":{"eco":"B00","name":"King's Pawn"}}"#;
@@ -429,24 +409,35 @@ mod tests {
     }
 
     #[test]
+    fn requests_carry_the_token() {
+        let r = explorer_request(&epd("e4"), &db(), "lio_x");
+        assert_eq!(r.url, explorer_url(&epd("e4"), &db()));
+        assert_eq!(
+            (r.headers[0].name.as_str(), r.headers[0].value.as_str()),
+            ("Authorization", "Bearer lio_x")
+        );
+        assert_eq!(r.timeout_secs, Some(20));
+    }
+
+    #[test]
     fn focus_waits_300_ms_and_the_next_focus_replaces_it() {
         let mut q = ExplorerQueue::new(None, None);
         q.focus(epd("e4"), db(), false, 0);
-        let p = q.poll(0, true);
+        let p = q.poll(0, TOKEN);
         assert!(p.fetches.is_empty());
         assert_eq!(p.wake_at, Some(300));
         q.focus(epd("d4"), db(), false, 100);
-        let p = q.poll(400, true);
+        let p = q.poll(400, TOKEN);
         assert_eq!(p.fetches.len(), 1);
         assert_eq!(p.fetches[0].epd, epd("d4"));
-        let out = q.on_response(&p.fetches[0], ok(STATS), 450);
+        let out = q.on_response(&p.fetches[0], Some(&ok(STATS)), 450);
         let (_, e, stats) = out.stats.unwrap();
         assert_eq!(e, epd("d4"));
         assert_eq!(stats.opening.unwrap().name, "King's Pawn");
-        assert!(q.poll(500, true).fetches.is_empty());
+        assert!(q.poll(500, TOKEN).fetches.is_empty());
         // Cached and fresh: nothing to do.
         q.focus(epd("c4"), db(), true, 600);
-        assert_eq!(q.poll(1000, true), Poll::default());
+        assert_eq!(q.poll(1000, TOKEN), Poll::default());
     }
 
     #[test]
@@ -456,20 +447,20 @@ mod tests {
         q.request(epd("d4"), db(), 0.5, false);
         q.request(epd("e4"), db(), 0.7, false);
         assert_eq!(q.remaining(), 2);
-        let p = q.poll(1_000, true);
+        let p = q.poll(1_000, TOKEN);
         assert_eq!(p.fetches[0].epd, epd("e4"));
         // One at a time.
-        assert!(q.poll(1_100, true).fetches.is_empty());
-        q.on_response(&p.fetches[0], ok(STATS), 1_300);
+        assert!(q.poll(1_100, TOKEN).fetches.is_empty());
+        q.on_response(&p.fetches[0], Some(&ok(STATS)), 1_300);
         // The next one starts the interval after the previous start.
-        let p = q.poll(1_500, true);
+        let p = q.poll(1_500, TOKEN);
         assert!(p.fetches.is_empty());
         assert_eq!(p.wake_at, Some(1_000 + BASE_INTERVAL_MS));
-        let p = q.poll(2_200, true);
+        let p = q.poll(2_200, TOKEN);
         assert_eq!(p.fetches[0].epd, epd("d4"));
-        q.on_response(&p.fetches[0], ok(STATS), 2_300);
+        q.on_response(&p.fetches[0], Some(&ok(STATS)), 2_300);
         assert_eq!(q.remaining(), 0);
-        q.poll(5_000, true);
+        q.poll(5_000, TOKEN);
         assert_eq!(q.state(), &QueueState::Idle);
     }
 
@@ -477,29 +468,32 @@ mod tests {
     fn a_429_pauses_both_lanes_slows_down_and_retries() {
         let mut q = ExplorerQueue::new(None, None);
         q.request(epd("e4"), db(), 1.0, false);
-        let p = q.poll(0, true);
+        let p = q.poll(0, TOKEN);
         let out = q.on_response(
             &p.fetches[0],
-            Response::Http {
+            Some(&HttpResponse {
                 status: 429,
-                retry_after_secs: Some(90),
+                headers: vec![crate::http::Header {
+                    name: "Retry-After".into(),
+                    value: "90".into(),
+                }],
                 body: vec![],
-            },
+            }),
             10,
         );
         assert_eq!(out.banned_until, Some(90_010));
         assert_eq!(q.interval_ms(), BASE_INTERVAL_MS * 3 / 2);
         q.focus(epd("d4"), db(), false, 20);
-        let p = q.poll(1_000, true);
+        let p = q.poll(1_000, TOKEN);
         assert!(p.fetches.is_empty());
         assert_eq!(p.wake_at, Some(90_010));
         assert_eq!(q.state(), &QueueState::RateLimited { until: 90_010 });
-        let p = q.poll(90_010, true);
+        let p = q.poll(90_010, TOKEN);
         assert_eq!(p.fetches.len(), 2); // the focus and the retried request
         // A ban persisted from an earlier launch holds too.
         let mut q = ExplorerQueue::new(Some(5_000), None);
         q.request(epd("e4"), db(), 1.0, false);
-        assert_eq!(q.poll(0, true).wake_at, Some(5_000));
+        assert_eq!(q.poll(0, TOKEN).wake_at, Some(5_000));
     }
 
     #[test]
@@ -507,29 +501,21 @@ mod tests {
         let mut q = ExplorerQueue::new(None, None);
         q.request(epd("e4"), db(), 1.0, false);
         // No token: the coverage check waits for a login.
-        assert!(q.poll(0, false).fetches.is_empty());
+        assert!(q.poll(0, None).fetches.is_empty());
         assert_eq!(q.state(), &QueueState::NeedsLogin);
-        assert!(q.poll(10, true).fetches.is_empty());
+        assert!(q.poll(10, TOKEN).fetches.is_empty());
         q.resume();
-        let p = q.poll(20, true);
-        let out = q.on_response(
-            &p.fetches[0],
-            Response::Http {
-                status: 401,
-                retry_after_secs: None,
-                body: vec![],
-            },
-            30,
-        );
+        let p = q.poll(20, TOKEN);
+        let out = q.on_response(&p.fetches[0], Some(&HttpResponse::new(401, Vec::new())), 30);
         assert!(out.unauthorized);
         assert_eq!(q.state(), &QueueState::NeedsLogin);
         q.resume();
-        let p = q.poll(40, true);
-        q.on_response(&p.fetches[0], Response::Transport, 50);
+        let p = q.poll(40, TOKEN);
+        q.on_response(&p.fetches[0], None, 50);
         assert_eq!(q.state(), &QueueState::Offline);
-        let p = q.poll(60, true);
+        let p = q.poll(60, TOKEN);
         assert!(p.fetches.is_empty());
         assert_eq!(p.wake_at, Some(50 + 30_000));
-        assert_eq!(q.poll(30_050, true).fetches.len(), 1);
+        assert_eq!(q.poll(30_050, TOKEN).fetches.len(), 1);
     }
 }

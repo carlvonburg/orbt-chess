@@ -6,6 +6,7 @@ use std::sync::Arc;
 use ot_core::chess::{Epd, Side};
 use ot_core::explorer::ExplorerDatabase;
 use ot_core::formats::{Sidecar, Summary, Timestamp, revlog};
+use ot_core::http::{HttpRequest, HttpResponse};
 use ot_core::repertoire::RepertoireTree;
 use ot_core::statistics::{
     CardCounts, CardInfo, GraphParts, GraphRange, GraphsContext, Hour, RetentionPeriod, Streak,
@@ -339,18 +340,31 @@ pub fn lichess_parse_callback(
     Ok(ot_core::lichess::parse_callback(&url, &expected_state)?)
 }
 
+/// Exchanges the code from the callback for a token.
 #[uniffi::export]
-pub fn lichess_token_request_body(code: String, verifier: String) -> String {
-    ot_core::lichess::token_request_body(&code, &verifier)
+pub fn lichess_token_request(code: String, verifier: String) -> HttpRequest {
+    ot_core::lichess::token_request(&code, &verifier)
 }
 
 #[uniffi::export]
-pub fn lichess_parse_token(body: Vec<u8>, now_secs: i64) -> Result<Token, SignInError> {
-    let (token, expires_at) = ot_core::lichess::parse_token_response(&body, now_secs)?;
+pub fn lichess_parse_token(response: HttpResponse, now_secs: i64) -> Result<Token, SignInError> {
+    let (token, expires_at) = ot_core::lichess::parse_token_response(&response, now_secs)?;
     Ok(Token { token, expires_at })
 }
 
+/// Signing out: revokes the token.
 #[uniffi::export]
-pub fn lichess_parse_account(body: Vec<u8>) -> Option<String> {
-    ot_core::lichess::parse_account(&body)
+pub fn lichess_revoke_request(token: String) -> HttpRequest {
+    ot_core::lichess::revoke_request(&token)
+}
+
+#[uniffi::export]
+pub fn lichess_account_request(token: String) -> HttpRequest {
+    ot_core::lichess::account_request(&token)
+}
+
+/// The username from the account request's answer.
+#[uniffi::export]
+pub fn lichess_parse_account(response: HttpResponse) -> Option<String> {
+    ot_core::lichess::parse_account(&response)
 }
