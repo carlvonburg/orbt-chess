@@ -128,6 +128,10 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
      rustup; it builds iOS, iOS simulator and macOS slices and regenerates the bindings).
   2. `core/scripts/check.sh` before committing Rust changes.
   3. `xcodebuild -project apple/openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' build`
+  A Claude Code hook (`.claude/hooks/check-before-commit.sh`) runs the ones a commit needs before
+  every `git commit` and blocks it on failure: check.sh for `core/`, build-apple.sh for
+  `core/ot-ffi/` or Cargo.lock (the committed bindings must be up to date), the simulator build
+  for `apple/` or the FFI. A blocked commit is fixed, not bypassed.
      (iPad: `name=iPad Pro 13-inch (M5)`; Mac: `-destination 'platform=macOS'`, which needs a
      Mac development profile for the iCloud entitlement, or `CODE_SIGNING_ALLOWED=NO` to compile
      only).
