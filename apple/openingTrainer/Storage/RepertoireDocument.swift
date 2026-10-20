@@ -450,10 +450,8 @@ final class RepertoireDocument {
                 guard let data = try? FileAccess.read(current.sidecar, presenter: current.presenters?.sidecar) else { return nil }
                 return core.remoteSidecar(data: data)
             }
-            guard let changes else { return }
-            apply(changes)
-            // The merge may hold cards newer than the file.
-            scheduleSidecarSave(after: 0)
+            // The core asks for a save only when the merge kept cards or settings the file lacks.
+            if let changes { apply(changes) }
         }
     }
 
