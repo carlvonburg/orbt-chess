@@ -32,7 +32,7 @@ final class StatisticsModel {
             for entry in app.library.entries where !entry.needsSetup {
                 let revlogURL = RepertoireLibrary.revlogURL(for: entry.pgnURL)
                 if let doc = app.documents[entry.id] {
-                    parts.append(doc.core.graphParts(onDisk: (try? FileAccess.read(revlogURL)) ?? Data(), wholeCollection: true))
+                    parts.append(await doc.graphParts(wholeCollection: true))
                 } else if let sidecar = entry.sidecar {
                     parts.append(sidecar.graphParts(revlog: await StudyLog.readData(revlogURL)))
                 }
@@ -46,7 +46,7 @@ final class StatisticsModel {
             }
             document = doc
             cards = doc.core.repertoireCards()
-            let parts = doc.core.graphParts(onDisk: (try? FileAccess.read(doc.revlogURL)) ?? Data(), wholeCollection: false)
+            let parts = await doc.graphParts(wholeCollection: false)
             graphs = Graphs.fromParts(parts: [parts], timing: timing, localOffsetSecs: offset)
         }
     }

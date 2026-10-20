@@ -71,7 +71,8 @@ struct BuilderView: View {
         .checksCoverage(document)
         .onChange(of: model.current, initial: true) { requestStats() }
         .onChange(of: model.draft) { requestStats() }
-        .alert("Could not save", isPresented: .constant(document.saveError != nil)) {
+        .alert("Could not save", isPresented: Binding(
+            get: { document.saveError != nil }, set: { if !$0 { document.dismissSaveError() } })) {
             Button("OK") {}
         } message: {
             Text(document.saveError ?? "")

@@ -73,6 +73,9 @@ pub struct Repertoire {
     pending_revlog: Vec<RevlogEntry>,
     last_written_pgn: String,
     last_written_sidecar: Vec<u8>,
+    /// A local change since the last sidecar write may have changed the summary. Without one,
+    /// a summary that differs from the file's is not written (see `sidecar_to_save`).
+    summary_dirty: bool,
     /// Local edits not written to the PGN yet.
     pgn_dirty: bool,
     /// Screens of this repertoire showing (overview, builder, study): the coverage check runs
@@ -108,6 +111,7 @@ impl Repertoire {
             pending_revlog: Vec::new(),
             last_written_pgn: pgn_text.to_owned(),
             last_written_sidecar: sidecar_bytes.to_vec(),
+            summary_dirty: false,
             pgn_dirty: false,
             coverage_viewers: 0,
             trainer_cache: None,
@@ -676,6 +680,9 @@ impl Repertoire {
     }
 
     /// The sidecar to write (with a fresh summary for the library), or None when unchanged.
+    /// A summary that differs from the file's is written only after a local change (edit,
+    /// answer, settings, stats): each device computes its own, and writing it on every save or
+    /// remote change would have devices rewrite the file for each other.
     pub fn sidecar_to_save(&mut self, timing: &SchedTiming) -> Option<Vec<u8>> {
         let progress = self.learning_progress(RepertoireTree::ROOT);
         let due_count = self.study_counts(timing).review;
@@ -691,12 +698,22 @@ impl Repertoire {
             suspended_count: Some(progress.suspended),
         });
         let data = self.sidecar.encoded();
-        (data != self.last_written_sidecar).then_some(data)
+        if data == self.last_written_sidecar {
+            return None;
+        }
+        if !self.summary_dirty
+            && Sidecar::decode(&self.last_written_sidecar)
+                .is_ok_and(|on_disk| self.sidecar.same_content(&on_disk))
+        {
+            return None;
+        }
+        Some(data)
     }
 
     /// The sidecar was written.
     pub fn sidecar_saved(&mut self, data: Vec<u8>) {
         self.last_written_sidecar = data;
+        self.summary_dirty = false;
     }
 
     /// Review log lines to append, or None when there are none.
@@ -775,6 +792,10 @@ impl Repertoire {
         }
         // The other device's cards may have been suspended against its own copy of the PGN.
         self.sync_suspension();
+        // Write back only what the remote copy lacks (cards, settings): rewriting it for a
+        // summary of our own would have two devices answer each other's writes forever.
+        self.changes.save_sidecar_after_ms =
+            (!self.sidecar.same_content(&remote)).then_some(save_delay::NOW);
         doc_changes(self)
     }
 
@@ -790,6 +811,7 @@ impl Repertoire {
     }
 
     fn request_sidecar_save(&mut self, after_ms: u32) {
+        self.summary_dirty = true;
         self.changes.save_sidecar_after_ms = Some(after_ms);
     }
 }

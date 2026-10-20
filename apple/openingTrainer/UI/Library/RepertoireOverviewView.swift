@@ -44,8 +44,9 @@ struct RepertoireOverviewView: View {
             .sheetFrame()
         }
         .task(id: document.revision) {
+            let revlog = await document.reviewLog()
             graphs = Graphs(cards: Array(document.sidecar.studyCards.values), newCount: 0, suspendedNewCount: 0,
-                            revlog: document.reviewLog(), timing: SchedTiming(),
+                            revlog: revlog, timing: SchedTiming(),
                             localOffsetSecs: Int64(TimeZone.current.secondsFromGMT()))
         }
     }

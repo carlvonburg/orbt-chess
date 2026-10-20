@@ -196,6 +196,42 @@ fn remote_sidecar_merges_cards_and_asks_for_a_recompute_on_new_settings() {
 }
 
 #[test]
+fn a_remote_sidecar_equal_to_ours_but_its_summary_is_not_written_back() {
+    let mut doc = open();
+    let t = timing();
+    let start = ChessPosition::start().epd();
+    doc.answer(&start, 0, Rating::Good, false, 3000, &t);
+    let bytes = doc.sidecar_to_save(&t).unwrap();
+    doc.sidecar_saved(bytes.clone());
+
+    // Another device with the same cards and settings and a summary of its own coverage.
+    let mut other = Sidecar::decode(&bytes).unwrap();
+    let mut summary = other.summary.clone().unwrap();
+    summary.gap_count += 7;
+    summary.completion = 0.25;
+    other.summary = Some(summary);
+    let changes = doc.remote_sidecar(&other.encoded());
+    assert_eq!(changes.save_sidecar_after_ms, None);
+    // Nor by a later flush, whose summary would differ from the other device's.
+    assert!(doc.sidecar_to_save(&t).is_none());
+
+    // A remote copy without our card is written back with it.
+    other.study_cards.remove(&start);
+    let changes = doc.remote_sidecar(&other.encoded());
+    assert_eq!(changes.save_sidecar_after_ms, Some(save_delay::NOW));
+    assert!(doc.sidecar().study_cards.contains_key(&start));
+    let bytes = doc.sidecar_to_save(&t).unwrap();
+    doc.sidecar_saved(bytes);
+
+    // A local edit refreshes the summary even when only the summary changes (an opponent
+    // move adds no card).
+    doc.add_move("b8c6", find(&doc, "e4 c5 Nf3"), &no_stats());
+    let saved = Sidecar::decode(&doc.sidecar_to_save(&t).unwrap()).unwrap();
+    assert!(saved.same_content(doc.sidecar()));
+    assert_eq!(saved.summary.unwrap().saved_move_count, Some(6));
+}
+
+#[test]
 fn coverage_requests_only_while_a_screen_shows() {
     let mut stats = HashMap::new();
     let start = ChessPosition::start();

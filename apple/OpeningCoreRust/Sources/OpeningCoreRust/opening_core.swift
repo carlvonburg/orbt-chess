@@ -12541,12 +12541,37 @@ public func lichessTokenRequest(code: String, verifier: String) -> HttpRequest  
     )
 })
 }
+/**
+ * Two copies of a review log file (iCloud conflict versions) as one file: union by id.
+ */
+public func mergeRevlogData(a: Data, b: Data) -> Data  {
+    return try!  FfiConverterData.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_merge_revlog_data(
+        FfiConverterData.lower(a),
+        FfiConverterData.lower(b),uniffiCallStatus
+    )
+})
+}
 public func mergeRevlogs(a: [RevlogEntry], b: [RevlogEntry]) -> [RevlogEntry]  {
     return try!  FfiConverterSequenceTypeRevlogEntry.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_func_merge_revlogs(
         FfiConverterSequenceTypeRevlogEntry.lower(a),
         FfiConverterSequenceTypeRevlogEntry.lower(b),uniffiCallStatus
+    )
+})
+}
+/**
+ * Two copies of a sidecar file (iCloud conflict versions) as one file: cards by latest
+ * review, settings by latest change. An unreadable copy is dropped; None when neither reads.
+ */
+public func mergeSidecarData(a: Data, b: Data) -> Data?  {
+    return try!  FfiConverterOptionData.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_merge_sidecar_data(
+        FfiConverterData.lower(a),
+        FfiConverterData.lower(b),uniffiCallStatus
     )
 })
 }
@@ -12911,7 +12936,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_lichess_token_request() != 54561) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_func_merge_revlog_data() != 20501) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_func_merge_revlogs() != 19567) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_merge_sidecar_data() != 60539) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_new_repertoire_pgn() != 30132) {

@@ -6,12 +6,14 @@ struct CardInfoSheet: View {
     @Environment(\.dismiss) private var dismiss
     let document: RepertoireDocument
     let node: NodeID
+    /// The review log, read when the sheet appears.
+    @State private var revlog: [RevlogEntry] = []
 
     var body: some View {
         NavigationStack {
             Form {
                 if let epd = document.tree[node]?.epd, let card = document.sidecar.studyCards[epd] {
-                    let graphs = Graphs(cards: [card], newCount: 0, suspendedNewCount: 0, revlog: document.reviewLog(),
+                    let graphs = Graphs(cards: [card], newCount: 0, suspendedNewCount: 0, revlog: revlog,
                                         timing: SchedTiming(), localOffsetSecs: Int64(TimeZone.current.secondsFromGMT()))
                     let info = graphs.cardInfo(card: card, epd: epd)
                     Section {
@@ -49,6 +51,7 @@ struct CardInfoSheet: View {
                     Text("This move has not been studied yet.").foregroundStyle(.secondary)
                 }
             }
+            .task { revlog = await document.reviewLog() }
             .navigationTitle("Move Info")
             .inlineNavigationTitle()
             .toolbar {

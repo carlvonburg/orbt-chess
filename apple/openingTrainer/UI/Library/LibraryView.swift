@@ -117,8 +117,9 @@ struct LibraryView: View {
             get: { deleteEntry != nil }, set: { if !$0 { deleteEntry = nil } }), titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 if let entry = deleteEntry {
-                    model.close(entry.id)
-                    do { try model.library.delete(entry) } catch { errorMessage = error.localizedDescription }
+                    Task {
+                        do { try await model.delete(entry) } catch { errorMessage = error.localizedDescription }
+                    }
                 }
             }
         } message: {
@@ -189,7 +190,7 @@ struct LibraryView: View {
                     }
                 }
             }
-            .refreshable { library.refresh() }
+            .refreshable { await library.refresh() }
             .task(id: TodayKey(entries: library.entries.count, answered: stats.values.reduce(0) { $0 + $1.counts.total })) {
                 await today.load(model)
             }
@@ -869,19 +870,21 @@ struct RepertoireSettingsSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", systemImage: "checkmark") {
-                        let newName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if newName != document.name {
-                            do {
-                                try model.rename(document, to: newName)
-                            } catch {
-                                self.error = (error as? CocoaError)?.code == .fileWriteFileExists
-                                    ? "A repertoire with this name already exists." : error.localizedDescription
-                                return
+                        Task {
+                            let newName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if newName != document.name {
+                                do {
+                                    try await model.rename(document, to: newName)
+                                } catch {
+                                    self.error = (error as? CocoaError)?.code == .fileWriteFileExists
+                                        ? "A repertoire with this name already exists." : error.localizedDescription
+                                    return
+                                }
                             }
+                            document.updateSettings(color: draft.color, database: draft.database,
+                                                    targetGames: draft.targetGames, minGames: draft.minGames)
+                            dismiss()
                         }
-                        document.updateSettings(color: draft.color, database: draft.database,
-                                                targetGames: draft.targetGames, minGames: draft.minGames)
-                        dismiss()
                     }
                     .disabled(!draft.isValid || name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
