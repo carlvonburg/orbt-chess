@@ -69,3 +69,50 @@ impl FixtureStats {
         self.by_epd.get(epd)
     }
 }
+
+// CoveragePropertyTests
+
+pub struct Rng(pub u64);
+
+impl Rng {
+    pub fn next_u64(&mut self) -> u64 {
+        self.0 = self
+            .0
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        self.0
+    }
+}
+
+pub fn fnv(s: &str) -> u64 {
+    let mut h: u64 = 14695981039346656037;
+    for b in s.bytes() {
+        h = (h ^ u64::from(b)).wrapping_mul(1099511628211);
+    }
+    h
+}
+
+/// Synthetic stats: a few legal moves per position with hash-based counts.
+pub fn make_synthetic(epd: &Epd) -> Option<ExplorerStats> {
+    let pos = ChessPosition::from_fen(&epd.query_fen())?;
+    let mut moves = pos.legal_moves();
+    moves.sort_by_key(|m| fnv(&format!("{}{}", epd.as_str(), m.uci)));
+    let explorer: Vec<ExplorerMove> = moves
+        .iter()
+        .take(4)
+        .enumerate()
+        .map(|(i, m)| {
+            let games =
+                (fnv(&format!("{}{}", m.uci, epd.as_str())) % 200) as i64 + (4 - i as i64) * 100;
+            ExplorerMove::new(&m.uci, &m.san, games, 0, 0)
+        })
+        .collect();
+    let total = explorer.iter().map(ExplorerMove::games).sum();
+    Some(ExplorerStats {
+        white: total,
+        draws: 0,
+        black: 0,
+        moves: explorer,
+        opening: None,
+    })
+}

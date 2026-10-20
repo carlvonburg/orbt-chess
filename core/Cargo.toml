@@ -23,3 +23,7 @@ lto = true
 codegen-units = 1
 opt-level = 3
 strip = "debuginfo"
+
+# The golden tests replay large fixtures; unoptimized they take minutes.
+[profile.test]
+opt-level = 2
