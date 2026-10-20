@@ -17,7 +17,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["float_roundtrip"] }
 thiserror = "2.0.21"
 uniffi = "0.32.2"
-flate2 = "1.1"
+insta = "1.49.0"
 sha2 = "0.11.1"
 
 [profile.release]
@@ -26,6 +26,6 @@ codegen-units = 1
 opt-level = 3
 strip = "debuginfo"
 
-# The golden tests replay large fixtures; unoptimized they take minutes.
+# The snapshot tests run the real repertoires in testData/; unoptimized that is slow.
 [profile.test]
 opt-level = 2

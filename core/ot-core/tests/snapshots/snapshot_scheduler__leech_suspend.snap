@@ -1,0 +1,10 @@
+---
+source: ot-core/tests/snapshot_scheduler.rs
+expression: out
+---
+start: Review/Review due 100 ivl 1 ease 2500 reps 5 lapses 7 left 0 s 1.0000 d 9.0000
+0: day 100 +28800s Again from Review
+   next: again relearning 10m leech | hard review 2d | good review 4d | easy review 6d
+   card: Relearn/Suspended due 1708669544 ivl 1 ease 2300 reps 6 lapses 8 left 1 s 0.3055 d 9.6565 leech
+   revlog: Review ease 1 ivl -600 last 1 factor 1062 time 4000
+   leeched

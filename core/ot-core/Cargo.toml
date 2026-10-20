@@ -16,9 +16,7 @@ thiserror.workspace = true
 sha2.workspace = true
 
 [dev-dependencies]
-flate2.workspace = true
-# Fixture move trees nest deeper than serde_json's default limit of 128.
-serde_json = { workspace = true, features = ["unbounded_depth"] }
+insta.workspace = true
 
 # fsrs pulls in rand; on the web, getrandom needs its JS backend.
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]

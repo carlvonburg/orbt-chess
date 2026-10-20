@@ -1,0 +1,44 @@
+---
+source: ot-core/tests/snapshot_scheduler.rs
+expression: out
+---
+0: day 100 +28800s Good from New
+   next: again learning 1m | hard learning 330s | good learning 10m | easy review 6d
+   card: Learn/Learn due 1708669478 ivl 0 ease 0 reps 1 lapses 0 left 1 s 2.3065 d 2.1181
+   revlog: Learning ease 3 ivl -600 last 0 factor 224 time 4000
+1: day 100 +29478s Good from Learn
+   next: again learning 1m | hard learning 10m | good review 2d | easy review 5d
+   card: Review/Review due 102 ivl 2 ease 2500 reps 2 lapses 0 left 0 s 2.3065 d 2.1112
+   revlog: Learning ease 3 ivl 2 last -600 factor 223 time 5000
+2: day 102 +28861s Good from Review
+   next: again relearning 10m | hard review 7d | good review 10d | easy review 18d
+   card: Review/Review due 112 ivl 10 ease 2500 reps 3 lapses 0 left 0 s 10.9711 d 2.1043
+   revlog: Review ease 3 ivl 10 last 2 factor 223 time 6000
+3: day 112 +28922s Good from Review
+   next: again relearning 10m | hard review 30d | good review 43d | easy review 72d
+   card: Review/Review due 155 ivl 43 ease 2500 reps 4 lapses 0 left 0 s 43.9660 d 2.0975
+   revlog: Review ease 3 ivl 43 last 10 factor 222 time 60000
+4: day 155 +28983s Good from Review
+   next: again relearning 10m | hard review 105d | good review 147d | easy review 240d
+   card: Review/Review due 302 ivl 147 ease 2500 reps 5 lapses 0 left 0 s 154.4688 d 2.0906
+   revlog: Review ease 3 ivl 147 last 43 factor 221 time 8000
+5: day 302 +29044s Good from Review
+   next: again relearning 10m | hard review 333d | good review 454d | easy review 719d
+   card: Review/Review due 756 ivl 454 ease 2500 reps 6 lapses 0 left 0 s 463.4675 d 2.0837
+   revlog: Review ease 3 ivl 454 last 147 factor 220 time 9000
+6: day 756 +29105s Good from Review
+   next: again relearning 10m | hard review 975d | good review 1301d | easy review 2016d
+   card: Review/Review due 2057 ivl 1301 ease 2500 reps 7 lapses 0 left 0 s 1252.3660 d 2.0769
+   revlog: Review ease 3 ivl 1301 last 454 factor 220 time 10000
+7: day 2057 +29166s Good from Review
+   next: again relearning 10m | hard review 2387d | good review 3139d | easy review 4785d
+   card: Review/Review due 5196 ivl 3139 ease 2500 reps 8 lapses 0 left 0 s 3137.4850 d 2.0700
+   revlog: Review ease 3 ivl 3139 last 1301 factor 219 time 11000
+8: day 5196 +29227s Good from Review
+   next: again relearning 10m | hard review 5380d | good review 6916d | easy review 10281d
+   card: Review/Review due 12112 ivl 6916 ease 2500 reps 9 lapses 0 left 0 s 7086.1480 d 2.0632
+   revlog: Review ease 3 ivl 6916 last 3139 factor 218 time 12000
+9: day 12112 +29288s Good from Review
+   next: again relearning 10m | hard review 11273d | good review 14216d | easy review 20661d
+   card: Review/Review due 26328 ivl 14216 ease 2500 reps 10 lapses 0 left 0 s 14741.2150 d 2.0563
+   revlog: Review ease 3 ivl 14216 last 6916 factor 217 time 13000

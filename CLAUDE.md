@@ -48,8 +48,10 @@ One folder per platform around a shared core (Android and web would be `android/
   - `ot-ffi/` — the UniFFI 0.32 bindings: objects (`RepertoireDoc`, `BuilderSession`,
     `DrillSession`, `Explorer`, `Position`, `Graphs`, `LibrarySidecar`) and the core's records
     and enums as remote types. Thin: conversions and locking only.
-  - `fixtures/` — outputs recorded from the deleted Swift core, which the Rust tests compare
-    against (its README lists where the core differs). `DEVIATIONS.md` lists where the core
+  - Tests: `ot-core/tests/*.rs` state the rules; `ot-core/tests/snapshot_*.rs` are insta
+    snapshot tests over the inputs in `ot-core/tests/data/` and `testData/` (snapshots in
+    `tests/snapshots/`; after an intended change, `cargo insta review` or
+    `INSTA_UPDATE=always cargo test`, then read the diff). `DEVIATIONS.md` lists where the core
     differs from Anki/lichess.
   - `scripts/check.sh` (fmt, clippy -D warnings, tests, wasm32 check), `scripts/build-apple.sh`.
 - `apple/` — the iPhone, iPad and Mac app (one multiplatform target, not Catalyst):

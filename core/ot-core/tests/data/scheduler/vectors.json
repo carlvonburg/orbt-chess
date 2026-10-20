@@ -1,0 +1,3594 @@
+{
+  "fsrsNextStates": [
+    {
+      "memory": null,
+      "desiredRetention": 0.7,
+      "daysElapsed": 0
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.7,
+      "daysElapsed": 1
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.7,
+      "daysElapsed": 3
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.7,
+      "daysElapsed": 10
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.7,
+      "daysElapsed": 30
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.7,
+      "daysElapsed": 365
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.8,
+      "daysElapsed": 0
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.8,
+      "daysElapsed": 1
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.8,
+      "daysElapsed": 3
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.8,
+      "daysElapsed": 10
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.8,
+      "daysElapsed": 30
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.8,
+      "daysElapsed": 365
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.9,
+      "daysElapsed": 0
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.9,
+      "daysElapsed": 1
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.9,
+      "daysElapsed": 3
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.9,
+      "daysElapsed": 10
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.9,
+      "daysElapsed": 30
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.9,
+      "daysElapsed": 365
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.95,
+      "daysElapsed": 0
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.95,
+      "daysElapsed": 1
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.95,
+      "daysElapsed": 3
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.95,
+      "daysElapsed": 10
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.95,
+      "daysElapsed": 30
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.95,
+      "daysElapsed": 365
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.99,
+      "daysElapsed": 0
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.99,
+      "daysElapsed": 1
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.99,
+      "daysElapsed": 3
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.99,
+      "daysElapsed": 10
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.99,
+      "daysElapsed": 30
+    },
+    {
+      "memory": null,
+      "desiredRetention": 0.99,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 6.4133,
+        "stability": 0.212
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 1
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 5,
+        "stability": 10
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 9,
+        "stability": 100
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 1,
+        "stability": 0.5
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.7,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.8,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.9,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.95,
+      "daysElapsed": 365
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 0
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 1
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 3
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 10
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 30
+    },
+    {
+      "memory": {
+        "difficulty": 11,
+        "stability": 40000
+      },
+      "desiredRetention": 0.99,
+      "daysElapsed": 365
+    }
+  ],
+  "fuzzSeed": [
+    {
+      "cardID": 1,
+      "reps": 0
+    },
+    {
+      "cardID": 1,
+      "reps": 5
+    },
+    {
+      "cardID": 7445857777819718908,
+      "reps": 0
+    },
+    {
+      "cardID": 7445857777819718908,
+      "reps": 7
+    },
+    {
+      "cardID": 9223372036854775807,
+      "reps": 1
+    }
+  ],
+  "intervalKind": [
+    {
+      "kind": {
+        "secs": 0
+      },
+      "secsUntilRollover": 0
+    },
+    {
+      "kind": {
+        "secs": 0
+      },
+      "secsUntilRollover": 300
+    },
+    {
+      "kind": {
+        "secs": 0
+      },
+      "secsUntilRollover": 600
+    },
+    {
+      "kind": {
+        "secs": 0
+      },
+      "secsUntilRollover": 3600
+    },
+    {
+      "kind": {
+        "secs": 0
+      },
+      "secsUntilRollover": 86400
+    },
+    {
+      "kind": {
+        "secs": 59
+      },
+      "secsUntilRollover": 0
+    },
+    {
+      "kind": {
+        "secs": 59
+      },
+      "secsUntilRollover": 300
+    },
+    {
+      "kind": {
+        "secs": 59
+      },
+      "secsUntilRollover": 600
+    },
+    {
+      "kind": {
+        "secs": 59
+      },
+      "secsUntilRollover": 3600
+    },
+    {
+      "kind": {
+        "secs": 59
+      },
+      "secsUntilRollover": 86400
+    },
+    {
+      "kind": {
+        "secs": 600
+      },
+      "secsUntilRollover": 0
+    },
+    {
+      "kind": {
+        "secs": 600
+      },
+      "secsUntilRollover": 300
+    },
+    {
+      "kind": {
+        "secs": 600
+      },
+      "secsUntilRollover": 600
+    },
+    {
+      "kind": {
+        "secs": 600
+      },
+      "secsUntilRollover": 3600
+    },
+    {
+      "kind": {
+        "secs": 600
+      },
+      "secsUntilRollover": 86400
+    },
+    {
+      "kind": {
+        "secs": 86399
+      },
+      "secsUntilRollover": 0
+    },
+    {
+      "kind": {
+        "secs": 86399
+      },
+      "secsUntilRollover": 300
+    },
+    {
+      "kind": {
+        "secs": 86399
+      },
+      "secsUntilRollover": 600
+    },
+    {
+      "kind": {
+        "secs": 86399
+      },
+      "secsUntilRollover": 3600
+    },
+    {
+      "kind": {
+        "secs": 86399
+      },
+      "secsUntilRollover": 86400
+    },
+    {
+      "kind": {
+        "secs": 86400
+      },
+      "secsUntilRollover": 0
+    },
+    {
+      "kind": {
+        "secs": 86400
+      },
+      "secsUntilRollover": 300
+    },
+    {
+      "kind": {
+        "secs": 86400
+      },
+      "secsUntilRollover": 600
+    },
+    {
+      "kind": {
+        "secs": 86400
+      },
+      "secsUntilRollover": 3600
+    },
+    {
+      "kind": {
+        "secs": 86400
+      },
+      "secsUntilRollover": 86400
+    },
+    {
+      "kind": {
+        "secs": 200000
+      },
+      "secsUntilRollover": 0
+    },
+    {
+      "kind": {
+        "secs": 200000
+      },
+      "secsUntilRollover": 300
+    },
+    {
+      "kind": {
+        "secs": 200000
+      },
+      "secsUntilRollover": 600
+    },
+    {
+      "kind": {
+        "secs": 200000
+      },
+      "secsUntilRollover": 3600
+    },
+    {
+      "kind": {
+        "secs": 200000
+      },
+      "secsUntilRollover": 86400
+    },
+    {
+      "kind": {
+        "days": 3
+      },
+      "secsUntilRollover": 0
+    },
+    {
+      "kind": {
+        "days": 3
+      },
+      "secsUntilRollover": 300
+    },
+    {
+      "kind": {
+        "days": 3
+      },
+      "secsUntilRollover": 600
+    },
+    {
+      "kind": {
+        "days": 3
+      },
+      "secsUntilRollover": 3600
+    },
+    {
+      "kind": {
+        "days": 3
+      },
+      "secsUntilRollover": 86400
+    }
+  ],
+  "learningSteps": [
+    {
+      "steps": [
+        1,
+        10
+      ],
+      "remaining": 0
+    },
+    {
+      "steps": [
+        1,
+        10
+      ],
+      "remaining": 1
+    },
+    {
+      "steps": [
+        1,
+        10
+      ],
+      "remaining": 2
+    },
+    {
+      "steps": [
+        1,
+        10
+      ],
+      "remaining": 3
+    },
+    {
+      "steps": [
+        1,
+        10
+      ],
+      "remaining": 4
+    },
+    {
+      "steps": [
+        1,
+        10
+      ],
+      "remaining": 1001
+    },
+    {
+      "steps": [
+        1,
+        10
+      ],
+      "remaining": 1002
+    },
+    {
+      "steps": [
+        10
+      ],
+      "remaining": 0
+    },
+    {
+      "steps": [
+        10
+      ],
+      "remaining": 1
+    },
+    {
+      "steps": [
+        10
+      ],
+      "remaining": 2
+    },
+    {
+      "steps": [
+        10
+      ],
+      "remaining": 3
+    },
+    {
+      "steps": [
+        10
+      ],
+      "remaining": 4
+    },
+    {
+      "steps": [
+        10
+      ],
+      "remaining": 1001
+    },
+    {
+      "steps": [
+        10
+      ],
+      "remaining": 1002
+    },
+    {
+      "steps": [
+        1,
+        10,
+        100
+      ],
+      "remaining": 0
+    },
+    {
+      "steps": [
+        1,
+        10,
+        100
+      ],
+      "remaining": 1
+    },
+    {
+      "steps": [
+        1,
+        10,
+        100
+      ],
+      "remaining": 2
+    },
+    {
+      "steps": [
+        1,
+        10,
+        100
+      ],
+      "remaining": 3
+    },
+    {
+      "steps": [
+        1,
+        10,
+        100
+      ],
+      "remaining": 4
+    },
+    {
+      "steps": [
+        1,
+        10,
+        100
+      ],
+      "remaining": 1001
+    },
+    {
+      "steps": [
+        1,
+        10,
+        100
+      ],
+      "remaining": 1002
+    },
+    {
+      "steps": [],
+      "remaining": 0
+    },
+    {
+      "steps": [],
+      "remaining": 1
+    },
+    {
+      "steps": [],
+      "remaining": 2
+    },
+    {
+      "steps": [],
+      "remaining": 3
+    },
+    {
+      "steps": [],
+      "remaining": 4
+    },
+    {
+      "steps": [],
+      "remaining": 1001
+    },
+    {
+      "steps": [],
+      "remaining": 1002
+    },
+    {
+      "steps": [
+        1440
+      ],
+      "remaining": 0
+    },
+    {
+      "steps": [
+        1440
+      ],
+      "remaining": 1
+    },
+    {
+      "steps": [
+        1440
+      ],
+      "remaining": 2
+    },
+    {
+      "steps": [
+        1440
+      ],
+      "remaining": 3
+    },
+    {
+      "steps": [
+        1440
+      ],
+      "remaining": 4
+    },
+    {
+      "steps": [
+        1440
+      ],
+      "remaining": 1001
+    },
+    {
+      "steps": [
+        1440
+      ],
+      "remaining": 1002
+    },
+    {
+      "steps": [
+        4320
+      ],
+      "remaining": 0
+    },
+    {
+      "steps": [
+        4320
+      ],
+      "remaining": 1
+    },
+    {
+      "steps": [
+        4320
+      ],
+      "remaining": 2
+    },
+    {
+      "steps": [
+        4320
+      ],
+      "remaining": 3
+    },
+    {
+      "steps": [
+        4320
+      ],
+      "remaining": 4
+    },
+    {
+      "steps": [
+        4320
+      ],
+      "remaining": 1001
+    },
+    {
+      "steps": [
+        4320
+      ],
+      "remaining": 1002
+    },
+    {
+      "steps": [
+        0.5,
+        1,
+        2,
+        3
+      ],
+      "remaining": 0
+    },
+    {
+      "steps": [
+        0.5,
+        1,
+        2,
+        3
+      ],
+      "remaining": 1
+    },
+    {
+      "steps": [
+        0.5,
+        1,
+        2,
+        3
+      ],
+      "remaining": 2
+    },
+    {
+      "steps": [
+        0.5,
+        1,
+        2,
+        3
+      ],
+      "remaining": 3
+    },
+    {
+      "steps": [
+        0.5,
+        1,
+        2,
+        3
+      ],
+      "remaining": 4
+    },
+    {
+      "steps": [
+        0.5,
+        1,
+        2,
+        3
+      ],
+      "remaining": 1001
+    },
+    {
+      "steps": [
+        0.5,
+        1,
+        2,
+        3
+      ],
+      "remaining": 1002
+    }
+  ],
+  "leechThreshold": [
+    {
+      "lapses": 0,
+      "threshold": 8
+    },
+    {
+      "lapses": 7,
+      "threshold": 8
+    },
+    {
+      "lapses": 8,
+      "threshold": 8
+    },
+    {
+      "lapses": 12,
+      "threshold": 8
+    },
+    {
+      "lapses": 16,
+      "threshold": 8
+    },
+    {
+      "lapses": 20,
+      "threshold": 8
+    },
+    {
+      "lapses": 3,
+      "threshold": 3
+    },
+    {
+      "lapses": 5,
+      "threshold": 3
+    },
+    {
+      "lapses": 1,
+      "threshold": 1
+    },
+    {
+      "lapses": 2,
+      "threshold": 1
+    },
+    {
+      "lapses": 0,
+      "threshold": 0
+    },
+    {
+      "lapses": 4,
+      "threshold": 0
+    }
+  ],
+  "retrievability": [
+    {
+      "stability": 0.1,
+      "days": 0
+    },
+    {
+      "stability": 0.1,
+      "days": 0.5
+    },
+    {
+      "stability": 0.1,
+      "days": 1
+    },
+    {
+      "stability": 0.1,
+      "days": 5
+    },
+    {
+      "stability": 0.1,
+      "days": 30
+    },
+    {
+      "stability": 0.1,
+      "days": 365
+    },
+    {
+      "stability": 1,
+      "days": 0
+    },
+    {
+      "stability": 1,
+      "days": 0.5
+    },
+    {
+      "stability": 1,
+      "days": 1
+    },
+    {
+      "stability": 1,
+      "days": 5
+    },
+    {
+      "stability": 1,
+      "days": 30
+    },
+    {
+      "stability": 1,
+      "days": 365
+    },
+    {
+      "stability": 2.3065,
+      "days": 0
+    },
+    {
+      "stability": 2.3065,
+      "days": 0.5
+    },
+    {
+      "stability": 2.3065,
+      "days": 1
+    },
+    {
+      "stability": 2.3065,
+      "days": 5
+    },
+    {
+      "stability": 2.3065,
+      "days": 30
+    },
+    {
+      "stability": 2.3065,
+      "days": 365
+    },
+    {
+      "stability": 10,
+      "days": 0
+    },
+    {
+      "stability": 10,
+      "days": 0.5
+    },
+    {
+      "stability": 10,
+      "days": 1
+    },
+    {
+      "stability": 10,
+      "days": 5
+    },
+    {
+      "stability": 10,
+      "days": 30
+    },
+    {
+      "stability": 10,
+      "days": 365
+    },
+    {
+      "stability": 100,
+      "days": 0
+    },
+    {
+      "stability": 100,
+      "days": 0.5
+    },
+    {
+      "stability": 100,
+      "days": 1
+    },
+    {
+      "stability": 100,
+      "days": 5
+    },
+    {
+      "stability": 100,
+      "days": 30
+    },
+    {
+      "stability": 100,
+      "days": 365
+    }
+  ],
+  "review": [
+    {
+      "interval": 0.1,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 0.1,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 0.1,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 0.1,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 0.1,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 0.1,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 0.1,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 0.1,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 0.1,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 0.1,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 0.1,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 0.1,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 0.1,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 1,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 1,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 1,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 1,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 1,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 1,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 1,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 1,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 1,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 1,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 1,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 1,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 1,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 1.5,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 1.5,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 1.5,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 1.5,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 1.5,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 1.5,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 1.5,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 1.5,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 1.5,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 1.5,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 1.5,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 1.5,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 1.5,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 2.49,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 2.49,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 2.49,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 2.49,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 2.49,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 2.49,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 2.49,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 2.49,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 2.49,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 2.49,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 2.49,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 2.49,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 2.49,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 2.5,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 2.5,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 2.5,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 2.5,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 2.5,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 2.5,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 2.5,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 2.5,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 2.5,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 2.5,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 2.5,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 2.5,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 2.5,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 3.3,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 3.3,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 3.3,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 3.3,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 3.3,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 3.3,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 3.3,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 3.3,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 3.3,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 3.3,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 3.3,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 3.3,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 3.3,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 6.9,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 6.9,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 6.9,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 6.9,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 6.9,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 6.9,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 6.9,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 6.9,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 6.9,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 6.9,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 6.9,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 6.9,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 6.9,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 7,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 7,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 7,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 7,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 7,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 7,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 7,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 7,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 7,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 7,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 7,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 7,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 7,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 7.1,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 7.1,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 7.1,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 7.1,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 7.1,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 7.1,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 7.1,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 7.1,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 7.1,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 7.1,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 7.1,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 7.1,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 7.1,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 12.4,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 12.4,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 12.4,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 12.4,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 12.4,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 12.4,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 12.4,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 12.4,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 12.4,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 12.4,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 12.4,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 12.4,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 12.4,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 17,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 17,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 17,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 17,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 17,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 17,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 17,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 17,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 17,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 17,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 17,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 17,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 17,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 19.9,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 19.9,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 19.9,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 19.9,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 19.9,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 19.9,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 19.9,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 19.9,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 19.9,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 19.9,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 19.9,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 19.9,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 19.9,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 20,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 20,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 20,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 20,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 20,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 20,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 20,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 20,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 20,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 20,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 20,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 20,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 20,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 20.1,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 20.1,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 20.1,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 20.1,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 20.1,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 20.1,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 20.1,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 20.1,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 20.1,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 20.1,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 20.1,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 20.1,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 20.1,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 37,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 37,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 37,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 37,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 37,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 37,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 37,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 37,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 37,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 37,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 37,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 37,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 37,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 100,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 100,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 100,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 100,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 100,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 100,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 100,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 100,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 100,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 100,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 100,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 100,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 100,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 365.25,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 365.25,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 365.25,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 365.25,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 365.25,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 365.25,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 365.25,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 365.25,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 365.25,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 365.25,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 365.25,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 365.25,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 365.25,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 1000,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 1000,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 1000,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 1000,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 1000,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 1000,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 1000,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 1000,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 1000,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 1000,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 1000,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 1000,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 1000,
+      "maximum": 36500,
+      "previous": 50
+    },
+    {
+      "interval": 40000,
+      "minimum": 1,
+      "maximum": 36500
+    },
+    {
+      "interval": 40000,
+      "minimum": 2,
+      "maximum": 36500
+    },
+    {
+      "interval": 40000,
+      "minimum": 3,
+      "maximum": 1000
+    },
+    {
+      "interval": 40000,
+      "minimum": 101,
+      "maximum": 1000
+    },
+    {
+      "interval": 40000,
+      "minimum": 1,
+      "maximum": 99
+    },
+    {
+      "interval": 40000,
+      "minimum": 97,
+      "maximum": 103
+    },
+    {
+      "interval": 40000,
+      "minimum": 3,
+      "maximum": 2
+    },
+    {
+      "interval": 40000,
+      "maximum": 36500,
+      "previous": 0
+    },
+    {
+      "interval": 40000,
+      "maximum": 36500,
+      "previous": 1
+    },
+    {
+      "interval": 40000,
+      "maximum": 36500,
+      "previous": 4
+    },
+    {
+      "interval": 40000,
+      "maximum": 36500,
+      "previous": 5
+    },
+    {
+      "interval": 40000,
+      "maximum": 36500,
+      "previous": 10
+    },
+    {
+      "interval": 40000,
+      "maximum": 36500,
+      "previous": 50
+    }
+  ],
+  "fuzzFactors": [
+    0,
+    0.25,
+    0.5,
+    0.75,
+    0.99
+  ],
+  "learningIntervalSecs": [
+    0,
+    1,
+    3,
+    4,
+    59,
+    60,
+    330,
+    600,
+    1200,
+    3600,
+    6000,
+    86400
+  ],
+  "seeds": [
+    "0",
+    "1",
+    "2",
+    "3",
+    "42",
+    "1000",
+    "3107432833210105766",
+    "7445857777819718908",
+    "9223372036854775807",
+    "18446744073709551615"
+  ]
+}

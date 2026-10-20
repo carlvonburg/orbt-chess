@@ -116,3 +116,139 @@ pub fn make_synthetic(epd: &Epd) -> Option<ExplorerStats> {
         opening: None,
     })
 }
+
+// Test data (tests/data) and the snapshot tests' helpers.
+
+use std::path::PathBuf;
+
+use ot_core::chess::Side;
+use ot_core::coverage::{CoverageEngine, CoverageSettings};
+
+pub fn data_path(path: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data")
+        .join(path)
+}
+
+pub fn data_text(path: &str) -> String {
+    std::fs::read_to_string(data_path(path)).unwrap_or_else(|e| panic!("{path}: {e}"))
+}
+
+pub fn data_json(path: &str) -> serde_json::Value {
+    serde_json::from_str(&data_text(path)).unwrap_or_else(|e| panic!("{path}: {e}"))
+}
+
+/// The small PGNs in tests/data/pgn, by name, sorted.
+pub fn small_pgns() -> Vec<(String, String)> {
+    let mut names: Vec<String> = std::fs::read_dir(data_path("pgn"))
+        .expect("tests/data/pgn")
+        .filter_map(|e| {
+            let name = e.ok()?.file_name().into_string().ok()?;
+            name.strip_suffix(".pgn").map(str::to_owned)
+        })
+        .collect();
+    names.sort();
+    names
+        .into_iter()
+        .map(|n| {
+            let text = data_text(&format!("pgn/{n}.pgn"));
+            (n, text)
+        })
+        .collect()
+}
+
+/// The real repertoires in the repository's testData/ (both Black): `berlin`, `semislav`.
+pub const REPERTOIRES: [&str; 2] = ["berlin", "semislav"];
+
+pub fn repertoire(name: &str) -> String {
+    let file = match name {
+        "berlin" => "Berlin-2026-09-22T19_03_40.239Z.pgn",
+        "semislav" => "Semi-Slav-2026-09-22T18_59_03.655Z.pgn",
+        other => panic!("unknown repertoire {other}"),
+    };
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../testData")
+        .join(file);
+    std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))
+}
+
+/// Stats built from the tree's own moves: child i of a position gets 1000/(i+1) games, the
+/// position 200 more; a transposed position uses its lowest node.
+pub fn tree_stats(tree: &RepertoireTree) -> HashMap<Epd, ExplorerStats> {
+    let mut stats = HashMap::new();
+    for node in tree.nodes() {
+        if stats.contains_key(&node.epd) {
+            continue;
+        }
+        let moves: Vec<ExplorerMove> = node
+            .children
+            .iter()
+            .enumerate()
+            .filter_map(|(i, &c)| {
+                let mv = tree[c].mv.as_ref()?;
+                Some(ExplorerMove::new(
+                    &mv.uci,
+                    &mv.san,
+                    1000 / (i as i64 + 1),
+                    0,
+                    0,
+                ))
+            })
+            .collect();
+        let total = moves.iter().map(ExplorerMove::games).sum::<i64>() + 200;
+        stats.insert(
+            node.epd.clone(),
+            ExplorerStats {
+                white: total,
+                draws: 0,
+                black: 0,
+                moves,
+                opening: None,
+            },
+        );
+    }
+    stats
+}
+
+/// Synthetic stats (`make_synthetic`) for every position of the tree.
+pub fn synthetic_stats(tree: &RepertoireTree) -> HashMap<Epd, ExplorerStats> {
+    tree.nodes()
+        .filter_map(|n| Some((n.epd.clone(), make_synthetic(&n.epd)?)))
+        .collect()
+}
+
+/// Leaves out one position in five (by hash), so some positions are still pending.
+pub fn with_missing(mut stats: HashMap<Epd, ExplorerStats>) -> HashMap<Epd, ExplorerStats> {
+    stats.retain(|epd, _| !fnv(epd.as_str()).is_multiple_of(5));
+    stats
+}
+
+/// Reach of every node under `tree_stats`, coverage target 1 in 500.
+pub fn reach(tree: &RepertoireTree, color: Side) -> HashMap<NodeId, f64> {
+    let mut engine = CoverageEngine::new(CoverageSettings::new(color, 500, 25));
+    engine.recompute_all(tree, &tree_stats(tree));
+    engine
+        .info()
+        .iter()
+        .filter_map(|(&id, c)| Some((id, c.reach?)))
+        .collect()
+}
+
+/// A number for a snapshot: whole numbers without a fraction, others to 6 decimals.
+pub fn num(x: f64) -> String {
+    if x.fract() == 0.0 && x.abs() < 1e15 {
+        format!("{x:.0}")
+    } else {
+        let s = format!("{x:.6}");
+        s.trim_end_matches('0').to_owned()
+    }
+}
+
+/// The SAN moves from the root to `id`.
+pub fn line_san(tree: &RepertoireTree, nodes: &[NodeId]) -> String {
+    nodes
+        .iter()
+        .filter_map(|&n| tree[n].mv.as_ref().map(|m| m.san.as_str()))
+        .collect::<Vec<_>>()
+        .join(" ")
+}

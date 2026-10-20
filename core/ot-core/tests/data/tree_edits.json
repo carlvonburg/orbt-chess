@@ -1,0 +1,180 @@
+{
+  "edits": [
+    {
+      "op": "new"
+    },
+    {
+      "after": 0,
+      "op": "addMove",
+      "uci": "e2e4"
+    },
+    {
+      "after": 0,
+      "op": "addMoveSAN",
+      "san": "e4"
+    },
+    {
+      "after": 1,
+      "op": "addMoveSAN",
+      "san": "c5"
+    },
+    {
+      "after": 1,
+      "op": "addMoveSAN",
+      "san": "e5"
+    },
+    {
+      "id": 3,
+      "op": "promote"
+    },
+    {
+      "after": 2,
+      "op": "addMoveSAN",
+      "san": "Nf3"
+    },
+    {
+      "id": 2,
+      "op": "delete"
+    },
+    {
+      "after": 0,
+      "op": "addLine",
+      "ucis": [
+        "d2d4",
+        "g8f6",
+        "c2c4",
+        "e7e6"
+      ]
+    },
+    {
+      "after": 0,
+      "op": "addLine",
+      "ucis": [
+        "c2c4",
+        "e7e6",
+        "d2d4",
+        "g8f6"
+      ]
+    },
+    {
+      "after": 3,
+      "op": "addMoveSAN",
+      "san": "Nf3"
+    },
+    {
+      "after": 13,
+      "op": "addMoveSAN",
+      "san": "Nc6"
+    },
+    {
+      "after": 14,
+      "op": "addMoveSAN",
+      "san": "Bb5!?"
+    },
+    {
+      "after": 14,
+      "op": "addMoveSAN",
+      "san": "Ke3"
+    },
+    {
+      "after": 14,
+      "op": "addMove",
+      "uci": "e1h1"
+    },
+    {
+      "id": 1,
+      "op": "setNote",
+      "text": "  new idea  "
+    },
+    {
+      "index": 0,
+      "name": "Event",
+      "op": "setChapterTag",
+      "value": "Edited"
+    },
+    {
+      "index": 0,
+      "name": "White",
+      "op": "setChapterTag",
+      "value": "Me"
+    },
+    {
+      "at": 1,
+      "op": "mergeMoves",
+      "pgn": "1... c5 2. Nf3 (2. c3 d5) d6 *"
+    }
+  ],
+  "chapters": [
+    {
+      "op": "parse",
+      "pgn": "chapters_ab"
+    },
+    {
+      "after": 4,
+      "op": "addMoveSAN",
+      "san": "c4"
+    }
+  ],
+  "notes": [
+    {
+      "op": "parse",
+      "pgn": "note_commands"
+    },
+    {
+      "id": 1,
+      "op": "setNote",
+      "text": "new idea"
+    },
+    {
+      "id": 1,
+      "op": "setNote",
+      "text": ""
+    }
+  ],
+  "mergeTree": {
+    "local": [
+      [
+        0,
+        "e2e4"
+      ],
+      [
+        1,
+        "e7e5"
+      ],
+      [
+        2,
+        "g1f3"
+      ],
+      [
+        1,
+        "c7c5"
+      ],
+      [
+        4,
+        "g1f3"
+      ]
+    ],
+    "remote": [
+      [
+        0,
+        "e2e4"
+      ],
+      [
+        1,
+        "e7e5"
+      ],
+      [
+        2,
+        "g1f3"
+      ],
+      [
+        1,
+        "e7e6"
+      ],
+      [
+        4,
+        "d2d4"
+      ]
+    ]
+  }
+}

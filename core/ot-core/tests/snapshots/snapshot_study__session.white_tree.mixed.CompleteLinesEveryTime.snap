@@ -1,0 +1,46 @@
+---
+source: ot-core/tests/snapshot_study.rs
+expression: text
+---
+daily:
++0s Counts { new: 0, learning: 1, review: 4 } e4 c5 Nf3 Nc6 d4
+  roles: 0 queued, 2 queued, 4 queued
+  0 Again: Relearn/Learn due +624s ivl 1
+  2 Good: Review/Review due 115 ivl 15
+  4 Again: Relearn/Learn due +677s ivl 1
++21s Counts { new: 0, learning: 3, review: 1 } e4 c5 Nf3 d6 d4
+  roles: 0 queued, 2 practice, 4 queued
+  0 Good: Review/Review due 101 ivl 1
+  4 Again: Learn/Learn due +104s ivl 0
++42s Counts { new: 0, learning: 2, review: 1 } e4 e5 Nf3
+  roles: 0 practice, 2 queued
+  2 Good: Review/Review due 123 ivl 23
++56s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4
+  roles: 0 practice, 2 practice, 4 queued
+  4 Good: Learn/Learn due +692s ivl 0
++77s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 Nc6 d4
+  roles: 0 practice, 2 practice, 4 queued
+  4 Good: Review/Review due 101 ivl 1
++98s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4
+  roles: 0 practice, 2 practice, 4 queued
+  4 Again: Learn/Learn due +179s ivl 0
++119s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4
+  roles: 0 practice, 2 practice, 4 queued
+  4 Good: Learn/Learn due +752s ivl 0
++140s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4
+  roles: 0 practice, 2 practice, 4 queued
+  4 Good: Review/Review due 101 ivl 1
+11 answers, 5 positions answered, 5 played; counts Counts { new: 0, learning: 0, review: 0 }
+
+branch [e4]:
++0s Counts { new: 0, learning: 1, review: 3 } e4 c5 Nf3 Nc6 d4
+  roles: 0 auto, 2 queued, 4 queued
+  2 Good filtered: Review/Review due 115 ivl 15
+  4 Good filtered: Review/Review due 114 ivl 14
++21s Counts { new: 0, learning: 1, review: 1 } e4 c5 Nf3 d6 d4
+  roles: 0 auto, 2 practice, 4 queued
+  4 Good filtered: Review/Review due 107 ivl 7
++42s Counts { new: 0, learning: 0, review: 1 } e4 e5 Nf3
+  roles: 0 auto, 2 queued
+  2 Good filtered: Review/Review due 123 ivl 23
+4 answers, 4 positions answered, 4 played; counts Counts { new: 0, learning: 0, review: 0 }
