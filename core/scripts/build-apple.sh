@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Builds the Rust core for Apple platforms and refreshes the OpeningCoreRust Swift package:
-#   OpeningCoreRust/OpeningCoreFFI.xcframework   (static libraries + C headers, not committed)
-#   OpeningCoreRust/Sources/OpeningCoreRust/      (generated Swift bindings, committed)
+#   apple/OpeningCoreRust/OpeningCoreFFI.xcframework   (static libraries + C headers, not committed)
+#   apple/OpeningCoreRust/Sources/OpeningCoreRust/      (generated Swift bindings, committed)
 # Usage: core/scripts/build-apple.sh [--debug]
 set -euo pipefail
 
@@ -9,7 +9,7 @@ export PATH="/opt/homebrew/opt/rustup/bin:$HOME/.cargo/bin:$PATH"
 
 core_dir="${0:A:h:h}"
 repo_dir="${core_dir:h}"
-package_dir="$repo_dir/OpeningCoreRust"
+package_dir="$repo_dir/apple/OpeningCoreRust"
 lib_name="libopening_core.a"
 ffi_module="opening_coreFFI"
 

@@ -35,16 +35,21 @@ Non-goals for now: auto gap filling, online game review, daily tasks, plans in a
 position, model games, bundled engine.
 
 ## Layout
-- `OpeningCore/` — local Swift package, no UI. Chess wrapper over
-  chesskit-swift, PGN parser/writer, RepertoireTree, explorer stats model, coverage
-  engine, training (Anki's scheduler ported in `Training/Anki/`). Test with `swift test` inside that folder.
-- `openingTrainer/` — the app target (folder-synced group, new files are
-  picked up automatically). `Lichess/`, `Storage/`, `UI/`.
+One folder per platform around a shared core (Android and web would be `android/`, `web/`).
 - `core/` — the Rust core replacing OpeningCore (in progress, branch `rust-core`): `ot-core` is
   pure Rust with no IO or OS APIs and must keep building for wasm32; `ot-ffi` holds the UniFFI
-  bindings. Check with `core/scripts/check.sh`.
-- `OpeningCoreRust/` — Swift package over the Rust core: the xcframework (built, not committed)
-  and the generated Swift bindings.
+  bindings. Check with `core/scripts/check.sh`. `core/fixtures/` holds the Swift core's outputs
+  that the Rust tests compare against; `core/DEVIATIONS.md` lists where the Rust core differs.
+- `apple/` — the iPhone and iPad app:
+  - `openingTrainer.xcodeproj`; `openingTrainer/` is the app target (folder-synced group, new
+    files are picked up automatically): `Lichess/`, `Storage/`, `UI/`. `Config/` holds the
+    Info.plist and entitlements.
+  - `OpeningCoreRust/` — Swift package over the Rust core: the xcframework (built, not
+    committed) and the generated Swift bindings.
+  - `OpeningCore/` — the Swift core being replaced (no UI): chess over chesskit-swift, PGN,
+    RepertoireTree, explorer stats, coverage, training (Anki's scheduler in `Training/Anki/`).
+    Test with `swift test` inside that folder.
+- `Design/` — app icon sources.
 
 ## Transpositions (see RepertoireTree.merge)
 Each position's lines are stored once. When a PGN move order reaches a position whose
@@ -90,4 +95,4 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
   1-in-400 and 156 at 1-in-500, about 8-9 minutes at 3.5 s).
   Never fetch every position of a PGN.
   Cached stats never expire for now (`ExplorerDatabase.maxAge`).
-- Build: `core/scripts/build-apple.sh` (after changing Rust code, and once after cloning), then `xcodebuild -project openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' build`
+- Build: `core/scripts/build-apple.sh` (after changing Rust code, and once after cloning), then `xcodebuild -project apple/openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' build`

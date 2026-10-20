@@ -24,12 +24,19 @@ Results are cached per node. Editing a line only recomputes that line's subtree 
 ancestors; new statistics only recompute the positions they belong to. Statistics are
 cached locally by position (FEN without move counters), so each position is fetched once.
 
+## Layout
+- `core/`: the Rust core shared by every platform (chess, PGN, repertoire, coverage,
+  training). No IO or platform APIs.
+- `apple/`: the iPhone and iPad app (SwiftUI) and its Swift package over the core.
+- `Design/`: app icon sources.
+
 ## Building
-Requires Xcode 26 and iOS 26.
+Requires Xcode 26, iOS 26 and Rust (`brew install rustup`, then `rustup default stable`).
 
 ```
-xcodebuild -project openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
-cd OpeningCore && swift test
+core/scripts/build-apple.sh
+xcodebuild -project apple/openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+core/scripts/check.sh
 ```
 
 Lichess login uses OAuth with PKCE and needs no client registration.
@@ -39,4 +46,6 @@ AGPL-3.0-or-later. The study scheduler is ported from
 [Anki](https://github.com/ankitects/anki) (AGPL-3.0, Ankitects Pty Ltd and contributors) and
 [fsrs-rs](https://github.com/open-spaced-repetition/fsrs-rs) (BSD-3-Clause, Open Spaced
 Repetition). Piece set "cburnett" (GPLv2+) via Lichess. Chess rules by
-[chesskit-swift](https://github.com/chesskit-app/chesskit-swift) (MIT).
+[shakmaty](https://github.com/niklasf/shakmaty) (GPL-3.0-or-later) in the Rust core, and
+[chesskit-swift](https://github.com/chesskit-app/chesskit-swift) (MIT) in the Swift core it
+replaces.

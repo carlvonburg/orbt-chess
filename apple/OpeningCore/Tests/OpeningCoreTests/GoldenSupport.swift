@@ -73,10 +73,10 @@ extension J: ExpressibleByStringLiteral, ExpressibleByIntegerLiteral, Expressibl
 enum Golden {
     static var enabled: Bool { ProcessInfo.processInfo.environment["OT_WRITE_GOLDENS"] == "1" }
 
-    /// `<repo>/core/fixtures`, from this file's location.
+    /// `<repo>/core/fixtures`, from this file's location (`<repo>/apple/OpeningCore/Tests/...`).
     static let fixtures: URL = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        .deletingLastPathComponent().appendingPathComponent("core/fixtures")
+        .deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("core/fixtures")
 
     /// The large test PGNs: `$OT_TESTDATA`, or `testData` next to the repo.
     static var testData: URL {

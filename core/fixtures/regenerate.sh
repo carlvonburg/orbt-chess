@@ -3,7 +3,7 @@
 # (name.ext -> name.ext.gz; -n leaves out name and time, so reruns are byte-identical).
 set -eu
 fixtures=$(cd "$(dirname "$0")" && pwd)
-cd "$fixtures/../../OpeningCore"
+cd "$fixtures/../../apple/OpeningCore"
 OT_WRITE_GOLDENS=1 swift test --filter GoldenFixtureTests
 cd "$fixtures"
 # The dumper wrote plain files: drop the .gz copies they replace (also if now under 1 MB).
