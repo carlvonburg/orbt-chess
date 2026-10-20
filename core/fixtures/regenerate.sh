@@ -1,5 +1,5 @@
 #!/bin/sh
-# Regenerates the golden fixtures from the Swift core, then gzips every file over 1 MB
+# Regenerates the golden fixtures from the Swift core (deleted: run this from an old checkout, see README.md), then gzips every file over 1 MB
 # (name.ext -> name.ext.gz; -n leaves out name and time, so reruns are byte-identical).
 set -eu
 fixtures=$(cd "$(dirname "$0")" && pwd)

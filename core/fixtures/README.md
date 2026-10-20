@@ -4,7 +4,12 @@ Reference outputs of the Swift core (`OpeningCore`), which the Rust core must re
 Written by `OpeningCore/Tests/OpeningCoreTests/GoldenFixtureTests.swift` (helpers in
 `GoldenSupport.swift`). Do not edit by hand.
 
-## Regenerate
+**The Swift core has been deleted** (after the app moved to the Rust core), so these files
+are now fixed test data and `regenerate.sh` no longer works as it is. To regenerate them,
+check out the last commit that still has `apple/OpeningCore` (`git log -- apple/OpeningCore`)
+in a separate worktree and run the script there.
+
+## Regenerate (from a checkout that still has the Swift core)
 
 ```bash
 core/fixtures/regenerate.sh
