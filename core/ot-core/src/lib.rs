@@ -5,6 +5,7 @@
 
 pub mod chess;
 pub mod coverage;
+pub mod document;
 pub mod explorer;
 pub mod formats;
 pub mod pgn;

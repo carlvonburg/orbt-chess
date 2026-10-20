@@ -210,6 +210,15 @@ impl RepertoireTree {
             .find(|&c| san::loose(san_of(c)) == loose)
     }
 
+    /// Follows a line of SAN moves ("e4 c5 Nf3") from the root; None if any is missing.
+    pub fn find_san(&self, line: &str) -> Option<NodeId> {
+        let mut cursor = Self::ROOT;
+        for san in line.split_whitespace() {
+            cursor = self.child_by_san(cursor, san)?;
+        }
+        Some(cursor)
+    }
+
     /// Follows a list of UCI moves from the root; returns None if any is missing.
     pub fn node_following_uci<S: AsRef<str>>(&self, moves: &[S]) -> Option<NodeId> {
         let mut cursor = Self::ROOT;
