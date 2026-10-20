@@ -1,6 +1,6 @@
 //! Ported from OpeningCore/Tests/OpeningCoreTests/ChessTests.swift.
 
-use ot_core::chess::{ChessPosition, Epd, Side};
+use ot_core::chess::{BoardSquare, ChessPosition, Epd, PlayedMove, Side};
 
 fn pos(fen: &str) -> ChessPosition {
     ChessPosition::from_fen(fen).expect("valid FEN")
@@ -102,4 +102,17 @@ fn epd_side_to_move() {
         p.epd().query_fen(),
         "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
     );
+}
+
+#[test]
+fn played_move_squares_of_a_bad_uci_are_none() {
+    let mv = |uci: &str| PlayedMove {
+        san: "?".into(),
+        uci: uci.into(),
+    };
+    assert_eq!(mv("e2e4").from(), BoardSquare::parse("e2"));
+    assert_eq!(mv("e2e4").to(), BoardSquare::parse("e4"));
+    for bad in ["", "e", "e2", "é2e4", "e2é4", "z9e4"] {
+        assert!(mv(bad).from().is_none() || mv(bad).to().is_none(), "{bad}");
+    }
 }

@@ -108,7 +108,7 @@ impl Trainer {
     pub fn card_epds(&self, root: NodeId) -> HashSet<Epd> {
         self.card_nodes(root)
             .into_iter()
-            .map(|id| self.tree[id].epd.clone())
+            .filter_map(|id| self.tree.get(id).map(|n| n.epd.clone()))
             .collect()
     }
 

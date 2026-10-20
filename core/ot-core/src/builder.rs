@@ -46,6 +46,11 @@ impl Arrow {
             dashed: false,
         }
     }
+
+    /// An arrow for a move; None if its UCI is not a move.
+    pub fn for_move(m: &PlayedMove, style: ArrowStyle, width: f64, opacity: f64) -> Option<Arrow> {
+        Some(Arrow::new(m.from()?, m.to()?, style, width, opacity))
+    }
 }
 
 /// Merges the changes of consecutive operations: later save requests replace earlier ones.
@@ -491,16 +496,16 @@ impl Builder {
         if node.side_to_move() == doc.color() {
             return child_moves()
                 .enumerate()
-                .map(|(i, m)| {
+                .filter_map(|(i, m)| {
                     let (width, opacity) = if i == 0 { (0.2, 0.85) } else { (0.12, 0.5) };
-                    Arrow::new(m.from(), m.to(), ArrowStyle::Mine, width, opacity)
+                    Arrow::for_move(&m, ArrowStyle::Mine, width, opacity)
                 })
                 .collect();
         }
         let replies = doc.coverage().get(node.id).map(|c| &c.replies);
         let Some(replies) = replies.filter(|r| !r.is_empty()) else {
             return child_moves()
-                .map(|m| Arrow::new(m.from(), m.to(), ArrowStyle::Opponent, 0.12, 0.6))
+                .filter_map(|m| Arrow::for_move(&m, ArrowStyle::Opponent, 0.12, 0.6))
                 .collect();
         };
         let max_share = replies.iter().map(|r| r.share).fold(f64::MIN, f64::max);
