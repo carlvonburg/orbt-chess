@@ -1,4 +1,4 @@
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 
 /// The main screen: board, move path, and a panel that shows the opponent's replies
@@ -77,14 +77,14 @@ struct BuilderView: View {
 
     private var board: some View {
         BoardView(position: model.position, orientation: model.orientation, lastMove: model.lastMove,
-                  arrows: model.arrows, movableSide: model.position.sideToMove) { from, to, promotion in
+                  arrows: model.arrows, movableSide: model.position.sideToMove()) { from, to, promotion in
             model.play(from: from, to: to, promotion: promotion)
         }
         .frame(maxWidth: 680)
     }
 
     private func requestStats() {
-        let epd = model.position.epd
+        let epd = model.position.epd()
         document.requestStats(for: epd)
     }
 
@@ -265,12 +265,12 @@ struct MovePathStrip: View {
                     }
                     ForEach(path, id: \.self) { id in
                         if let node = model.tree[id], let move = node.move {
-                            MoveChip(ply: node.ply, san: move.san, isCurrent: id == model.current && !model.hasDraft)
+                            MoveChip(ply: Int(node.ply), san: move.san, isCurrent: id == model.current && !model.hasDraft)
                                 .onTapGesture { model.go(to: id) }
                                 .id(id)
                         }
                     }
-                    let basePly = model.node?.ply ?? 0
+                    let basePly = Int(model.node?.ply ?? 0)
                     ForEach(Array(model.draft.enumerated()), id: \.offset) { i, move in
                         MoveChip(ply: basePly + i + 1, san: move.san, isCurrent: i == model.draft.count - 1, dashed: true)
                             .id("draft\(i)")
@@ -321,7 +321,7 @@ struct MoveChip: View {
 /// Opening name, reach, building and learning progress, and the note of the current node.
 struct NodeHeader: View {
     let model: BuilderModel
-    let node: RepertoireNode
+    let node: Node
     let onNote: () -> Void
 
     var body: some View {
@@ -411,7 +411,7 @@ struct RepliesPanel: View {
     @Environment(AppModel.self) private var app
     let model: BuilderModel
     let replies: [ReplyInfo]?
-    let saved: RepertoireNode?
+    let saved: Node?
 
     var body: some View {
         Group {
@@ -450,7 +450,7 @@ struct RepliesPanel: View {
                         .builderRow()
                     }
                 }
-                if model.document.stats(saved?.epd ?? model.position.epd) != nil {
+                if model.document.stats(saved?.epd ?? model.position.epd()) != nil {
                     Text("No games in this position.")
                         .font(.footnote).foregroundStyle(.secondary)
                         .padding(.vertical, 8)
@@ -550,7 +550,7 @@ struct ReplyRow: View {
 /// Your move: explorer candidates with your saved moves marked in place.
 struct YourMovePanel: View {
     let model: BuilderModel
-    let node: RepertoireNode
+    let node: Node
 
     var body: some View {
         if node.children.isEmpty {
@@ -575,7 +575,7 @@ struct CandidatesSection: View {
     let model: BuilderModel
     let epd: EPD
     let title: String
-    var savedAt: RepertoireNode?
+    var savedAt: Node?
     let select: (String) -> Void
     @State private var eval: CloudEvalClient.Eval?
     @State private var showOthers = false
@@ -902,7 +902,7 @@ struct DraftPanel: View {
                 RepliesPanel(model: model, replies: model.document.coverage[target]?.replies, saved: node)
             }
         } else if model.isUserTurnOnBoard {
-            CandidatesSection(model: model, epd: model.position.epd, title: "Candidates",
+            CandidatesSection(model: model, epd: model.position.epd(), title: "Candidates",
                               select: model.play(uci:))
         } else {
             RepliesPanel(model: model, replies: replies, saved: nil)
@@ -910,7 +910,7 @@ struct DraftPanel: View {
     }
 
     private var openingName: String? {
-        model.document.stats(model.position.epd)?.opening?.name ?? model.document.openingName(at: model.current)
+        model.document.stats(model.position.epd())?.opening?.name ?? model.document.openingName(at: model.current)
     }
 }
 
@@ -972,7 +972,7 @@ struct CoverageCheckStatus: View {
                 switch app.queue.state {
                 case .rateLimited(let until):
                     Image(systemName: "hourglass")
-                    Text("Lichess asked to slow down · resuming \(until, style: .relative)")
+                    Text("Lichess asked to slow down · resuming \(Date(timeIntervalSince1970: TimeInterval(until) / 1000), style: .relative)")
                 case .offline:
                     Image(systemName: "wifi.slash")
                     Text("Offline · \(unchecked) positions not checked yet")

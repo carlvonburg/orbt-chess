@@ -8,8 +8,8 @@ use ot_core::explorer::ExplorerDatabase;
 use ot_core::formats::{Sidecar, Summary, Timestamp, revlog};
 use ot_core::repertoire::RepertoireTree;
 use ot_core::statistics::{
-    CardCounts, CardInfo, GraphRange, GraphsContext, Hour, RetentionPeriod, Streak, Today,
-    TrueRetention, WeakMove,
+    CardCounts, CardInfo, GraphParts, GraphRange, GraphsContext, Hour, RetentionPeriod, Streak,
+    Today, TrueRetention, WeakMove,
 };
 use ot_core::training::anki::{Card, Counts, DeckConfig, RevlogEntry, SchedTiming};
 use ot_core::training::{PracticeMode, Progress};
@@ -42,6 +42,20 @@ impl Graphs {
             new_count,
             suspended_new_count,
             revlog,
+            timing,
+            local_offset_secs,
+        )))
+    }
+
+    /// Statistics over the parts of one or more repertoires.
+    #[uniffi::constructor]
+    pub fn from_parts(
+        parts: Vec<GraphParts>,
+        timing: SchedTiming,
+        local_offset_secs: i64,
+    ) -> Arc<Graphs> {
+        Arc::new(Graphs(GraphsContext::from_parts(
+            parts,
             timing,
             local_offset_secs,
         )))
@@ -193,6 +207,12 @@ impl LibrarySidecar {
 
     pub fn cards(&self) -> HashMap<Epd, Card> {
         self.0.cards()
+    }
+
+    /// This repertoire's part of the whole collection's statistics, estimated without its
+    /// PGN; `revlog` is its review log file.
+    pub fn graph_parts(&self, revlog: Vec<u8>) -> GraphParts {
+        GraphParts::collection_estimate(&self.0, revlog::decode(&revlog))
     }
 
     pub fn estimated_progress(&self) -> Progress {

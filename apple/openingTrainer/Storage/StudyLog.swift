@@ -9,10 +9,14 @@ enum StudyLog {
     }
 
     nonisolated static func read(_ url: URL) async -> [RevlogEntry] {
-        let data = await Task.detached {
+        decodeRevlog(data: await readData(url))
+    }
+
+    /// The log file's bytes, read off the main actor; empty when there is none.
+    nonisolated static func readData(_ url: URL) async -> Data {
+        await Task.detached {
             try? FileManager.default.startDownloadingUbiquitousItem(at: url)
-            return try? FileAccess.read(url)
+            return (try? FileAccess.read(url)) ?? Data()
         }.value
-        return data.map { decodeRevlog(data: $0) } ?? []
     }
 }

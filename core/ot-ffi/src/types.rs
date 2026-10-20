@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use ot_core::builder::{Arrow, ArrowStyle};
 use ot_core::chess::{BoardPiece, BoardSquare, Epd, PieceKind, PlayedMove, Side};
 use ot_core::coverage::{CoverageGap, GapKind, NodeCoverage, ReplyInfo, Status};
-use ot_core::document::{Changes, StudyDefaults};
+use ot_core::document::{Changes, OutlineItem, StudyDefaults};
 use ot_core::drill::{DrillMode, Feedback, Phase};
 use ot_core::explorer::queue::{Lane, QueueState};
 use ot_core::explorer::{
@@ -15,8 +15,8 @@ use ot_core::explorer::{
 use ot_core::formats::{Summary, Timestamp};
 use ot_core::repertoire::{NodeId, RepertoireNode, RepertoireTree};
 use ot_core::statistics::{
-    CardCounts, CardInfo, GraphRange, Hour, RetentionPeriod, ReviewCounts, Streak, Today,
-    TrueRetention, WeakMove,
+    CardCounts, CardInfo, GraphParts, GraphRange, Hour, RetentionPeriod, ReviewCounts, Streak,
+    Today, TrueRetention, WeakMove,
 };
 use ot_core::training::anki::{
     Card, CardQueue, CardType, Counts, DayLimit, DeckLimits, DeckStudyStats, MemoryState,
@@ -368,6 +368,14 @@ pub struct Changes {
 }
 
 #[uniffi::remote(Record)]
+pub struct OutlineItem {
+    pub id: NodeId,
+    pub first: NodeId,
+    pub text: String,
+    pub has_children: bool,
+}
+
+#[uniffi::remote(Record)]
 pub struct Summary {
     pub card_count: i64,
     pub completion: f64,
@@ -504,6 +512,15 @@ pub struct WeakMove {
     pub lapses: i64,
     pub retrievability: Option<f64>,
     pub leech: bool,
+}
+
+/// What one repertoire contributes to the statistics.
+#[uniffi::remote(Record)]
+pub struct GraphParts {
+    pub cards: Vec<Card>,
+    pub new_count: i64,
+    pub suspended_new_count: i64,
+    pub revlog: Vec<RevlogEntry>,
 }
 
 #[uniffi::remote(Record)]
@@ -675,6 +692,12 @@ pub fn practice_mode_title(mode: PracticeMode) -> String {
 #[uniffi::export]
 pub fn range_title(range: GraphRange) -> String {
     range.title().to_owned()
+}
+
+/// Days a graph range covers; 0 for all time.
+#[uniffi::export]
+pub fn range_days(range: GraphRange) -> i64 {
+    range.days()
 }
 
 #[uniffi::export]

@@ -1,4 +1,4 @@
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 
 /// Shown when a study session has nothing left: this session's result, the streak, the
@@ -96,7 +96,7 @@ struct StudyFinishedView: View {
         .background(.fill.quinary, in: .rect(cornerRadius: 16))
     }
 
-    private func legend(_ value: Int, _ label: String, _ color: Color) -> some View {
+    private func legend(_ value: Int64, _ label: String, _ color: Color) -> some View {
         HStack(spacing: 4) {
             Circle().fill(color).frame(width: 7, height: 7)
             Text("\(value) \(label)").foregroundStyle(.secondary)

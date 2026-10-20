@@ -1,4 +1,4 @@
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 
 /// Anki's Card Info for the move at a position: dates, interval, memory state and history.
@@ -11,13 +11,14 @@ struct CardInfoSheet: View {
         NavigationStack {
             Form {
                 if let epd = document.tree[node]?.epd, let card = document.sidecar.studyCards[epd] {
-                    let graphs = GraphsContext(cards: [card], newCount: 0, revlog: document.reviewLog(), timing: SchedTiming())
-                    let info = graphs.cardInfo(card, epd: epd)
+                    let graphs = Graphs(cards: [card], newCount: 0, suspendedNewCount: 0, revlog: document.reviewLog(),
+                                        timing: SchedTiming(), localOffsetSecs: Int64(TimeZone.current.secondsFromGMT()))
+                    let info = graphs.cardInfo(card: card, epd: epd)
                     Section {
-                        LabeledContent("Added", value: info.added.formatted(date: .abbreviated, time: .omitted))
-                        if let first = info.firstReview { LabeledContent("First review", value: first.formatted(date: .abbreviated, time: .omitted)) }
-                        if let latest = info.latestReview { LabeledContent("Latest review", value: latest.formatted(date: .abbreviated, time: .shortened)) }
-                        if let due = info.due { LabeledContent("Due", value: due.formatted(date: .abbreviated, time: card.queue == .learn ? .shortened : .omitted)) }
+                        LabeledContent("Added", value: seconds(info.added).formatted(date: .abbreviated, time: .omitted))
+                        if let first = info.firstReview { LabeledContent("First review", value: millis(first).formatted(date: .abbreviated, time: .omitted)) }
+                        if let latest = info.latestReview { LabeledContent("Latest review", value: millis(latest).formatted(date: .abbreviated, time: .shortened)) }
+                        if let due = info.due { LabeledContent("Due", value: seconds(due).formatted(date: .abbreviated, time: card.queue == .learn ? .shortened : .omitted)) }
                         LabeledContent("Interval", value: card.ctype == .review || card.ctype == .relearn ? "\(info.interval) days" : "Learning")
                         LabeledContent("Reviews", value: "\(info.reps)")
                         LabeledContent("Lapses", value: "\(info.lapses)\(card.leech == true ? " (leech)" : "")")
@@ -36,7 +37,7 @@ struct CardInfoSheet: View {
                             HStack {
                                 Text(entry.date.formatted(date: .abbreviated, time: .shortened))
                                 Spacer()
-                                Text(kind(entry.type)).foregroundStyle(.secondary)
+                                Text(kind(entry.kind)).foregroundStyle(.secondary)
                                 Text(entry.ease == 1 ? "Again" : entry.ease == 0 ? "Manual" : "Good")
                                     .foregroundStyle(entry.ease == 1 ? .red : .primary)
                                     .frame(width: 56, alignment: .trailing)
@@ -57,6 +58,9 @@ struct CardInfoSheet: View {
             }
         }
     }
+
+    private func seconds(_ unix: Int64) -> Date { Date(timeIntervalSince1970: TimeInterval(unix)) }
+    private func millis(_ unix: Int64) -> Date { Date(timeIntervalSince1970: TimeInterval(unix) / 1000) }
 
     private func kind(_ type: RevlogReviewKind) -> String {
         switch type {

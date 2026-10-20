@@ -164,6 +164,7 @@ extension CardCounts {
 }
 
 extension ReviewCounts {
+    public init() { self.init(learn: 0, relearn: 0, young: 0, mature: 0, filtered: 0) }
     public var total: Int { Int(learn + relearn + young + mature + filtered) }
 }
 
@@ -201,6 +202,8 @@ extension GraphRange: CaseIterable, Identifiable {
     public static var allCases: [GraphRange] { [.month, .threeMonths, .year, .all] }
     public var id: Self { self }
     public var title: String { rangeTitle(range: self) }
+    /// Days the range covers; 0 for all time.
+    public var days: Int { Int(rangeDays(range: self)) }
 }
 
 extension RetentionPeriod: CaseIterable, Identifiable {
@@ -241,4 +244,34 @@ extension SchedTiming {
 extension Timestamp {
     /// Milliseconds since 1970 for a date (the core's timestamps).
     public static func of(_ date: Date) -> Timestamp { Timestamp(date.timeIntervalSince1970 * 1000) }
+}
+
+// MARK: Statistics
+
+extension Graphs {
+    /// True retention by period, of the cards in `positions` if given.
+    public func retentionTable(positions: [Epd]? = nil) -> [RetentionPeriod: TrueRetention] {
+        Dictionary(trueRetention(positions: positions).map { ($0.period, $0.retention) }, uniquingKeysWith: { a, _ in a })
+    }
+}
+
+extension TrueRetention {
+    public init() { self.init(youngPassed: 0, youngFailed: 0, maturePassed: 0, matureFailed: 0) }
+}
+
+extension Streak {
+    public init() { self.init(current: 0, longest: 0, studiedToday: false) }
+}
+
+extension WeakMove: Identifiable {
+    public var id: Epd { epd }
+}
+
+extension Dictionary where Key == Int64 {
+    /// The same values keyed by `Int`, for charts.
+    public var intKeys: [Int: Value] { Dictionary<Int, Value>(uniqueKeysWithValues: map { (Int($0.key), $0.value) }) }
+}
+
+extension Dictionary where Key == Int64, Value == Int64 {
+    public var ints: [Int: Int] { Dictionary<Int, Int>(uniqueKeysWithValues: map { (Int($0.key), Int($0.value)) }) }
 }

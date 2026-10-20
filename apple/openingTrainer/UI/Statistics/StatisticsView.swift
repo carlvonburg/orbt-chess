@@ -1,5 +1,5 @@
 import Charts
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 import UIKit
 
@@ -23,11 +23,11 @@ struct StatisticsView: View {
                         CalendarCard(graphs: graphs)
                         ReviewsCard(graphs: graphs, range: model.range)
                         CardCountsCard(graphs: graphs)
-                        HistogramCard(title: "Review Intervals", unit: "days", values: graphs.intervals(),
+                        HistogramCard(title: "Review Intervals", unit: "days", values: graphs.intervals().ints,
                                       footer: "The delay until each move is shown again.")
-                        HistogramCard(title: "Difficulty", unit: "%", values: graphs.difficulty(), maxBin: 100,
+                        HistogramCard(title: "Difficulty", unit: "%", values: graphs.difficulty().ints, maxBin: 100,
                                       footer: "How hard each move is to remember (FSRS).")
-                        HistogramCard(title: "Stability", unit: "days", values: graphs.stability(),
+                        HistogramCard(title: "Stability", unit: "days", values: graphs.stability().ints,
                                       footer: "How long until recall drops to 90% (FSRS).")
                         RetrievabilityCard(graphs: graphs)
                         HourlyCard(graphs: graphs, range: model.range)
@@ -69,7 +69,7 @@ struct StatisticsView: View {
     /// The period stays in the content; which repertoire is in the toolbar.
     private var filters: some View {
         Picker("Period", selection: $model.range) {
-            ForEach(GraphsContext.Range.allCases) { Text($0.title).tag($0) }
+            ForEach(GraphRange.allCases) { Text($0.title).tag($0) }
         }
         .pickerStyle(.segmented)
     }
@@ -151,6 +151,9 @@ private func percent(_ value: Double?) -> String {
 }
 
 private func moves(_ n: Int) -> String { n == 1 ? "1 move" : "\(n.formatted()) moves" }
+private func moves(_ n: Int64) -> String { moves(Int(n)) }
+
+private func duration(_ millis: Int64) -> String { duration(Int(millis)) }
 
 private func duration(_ millis: Int) -> String {
     let secs = Double(millis) / 1000
@@ -160,7 +163,7 @@ private func duration(_ millis: Int) -> String {
 
 private struct ExpectedRecallCard: View {
     let model: StatisticsModel
-    let graphs: GraphsContext
+    let graphs: Graphs
 
     var body: some View {
         StatCard(title: "Expected Recall in Games",
@@ -169,7 +172,7 @@ private struct ExpectedRecallCard: View {
                 Text(percent(model.expectedRecall)).font(.system(size: 44, weight: .bold, design: .rounded))
                 VStack(alignment: .leading) {
                     let counts = graphs.cardCounts()
-                    Text("\(counts.total - counts.new) of \(counts.total) moves studied")
+                    Text("\(counts.total - Int(counts.new)) of \(counts.total) moves studied")
                     Text("\(counts.mature) mature").foregroundStyle(.secondary)
                 }
                 .font(.footnote)
@@ -179,7 +182,7 @@ private struct ExpectedRecallCard: View {
 }
 
 private struct TodayCard: View {
-    let graphs: GraphsContext
+    let graphs: Graphs
 
     var body: some View {
         let today = graphs.today()
@@ -205,14 +208,15 @@ private struct TodayCard: View {
 }
 
 private struct FutureDueCard: View {
-    let graphs: GraphsContext
+    let graphs: Graphs
     @State private var selected: Int?
 
     var body: some View {
         let due = graphs.futureDue()
+        let dueByDay = due.dueByDay.ints
         let days = 30
-        let overdue = due.dueByDay.filter { $0.key < 0 }.values.reduce(0, +)
-        let bars = (0..<days).map { ($0, due.dueByDay[$0] ?? 0) } + (overdue > 0 ? [(-1, overdue)] : [])
+        let overdue = dueByDay.filter { $0.key < 0 }.values.reduce(0, +)
+        let bars = (0..<days).map { ($0, dueByDay[$0] ?? 0) } + (overdue > 0 ? [(-1, overdue)] : [])
         let total = bars.reduce(0) { $0 + $1.1 }
         StatCard(title: "Future Due", subtitle: "Moves due in the next 30 days\(overdue > 0 ? "; the bar left of today is overdue" : "").") {
             Chart(bars, id: \.0) { day, count in
@@ -233,7 +237,7 @@ private struct FutureDueCard: View {
             Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 2) {
                 GridRow { Text("Total"); Text(moves(total)).monospacedDigit() }
                 GridRow { Text("Average"); Text(String(format: "%.1f moves/day", Double(total) / Double(days))).monospacedDigit() }
-                GridRow { Text("Due tomorrow"); Text(moves(due.dueByDay[1] ?? 0)).monospacedDigit() }
+                GridRow { Text("Due tomorrow"); Text(moves(dueByDay[1] ?? 0)).monospacedDigit() }
                 GridRow { Text("Daily load"); Text("\(due.dailyLoad) moves/day").monospacedDigit() }
             }
             .font(.footnote)
@@ -257,10 +261,10 @@ private struct Tooltip: View {
 }
 
 private struct CalendarCard: View {
-    let graphs: GraphsContext
+    let graphs: Graphs
 
     var body: some View {
-        let counts = graphs.reviews().count
+        let counts = graphs.reviews().count.intKeys
         let weeks = 20
         let weekdayToday = Calendar.current.component(.weekday, from: .now) - 1  // 0 = Sunday
         let cells = (0..<(weeks * 7)).compactMap { i -> (week: Int, weekday: Int, count: Int)? in
@@ -301,31 +305,31 @@ private enum ReviewKind: String, CaseIterable, Plottable {
         }
     }
 
-    func value(_ c: GraphsContext.ReviewCounts) -> Int {
+    func value(_ c: ReviewCounts) -> Int {
         switch self {
-        case .learn: c.learn
-        case .relearn: c.relearn
-        case .young: c.young
-        case .mature: c.mature
-        case .filtered: c.filtered
+        case .learn: Int(c.learn)
+        case .relearn: Int(c.relearn)
+        case .young: Int(c.young)
+        case .mature: Int(c.mature)
+        case .filtered: Int(c.filtered)
         }
     }
 }
 
 private struct ReviewsCard: View {
-    let graphs: GraphsContext
-    let range: GraphsContext.Range
+    let graphs: Graphs
+    let range: GraphRange
     @State private var showTime = false
     @State private var selected: Int?
 
     var body: some View {
         let data = graphs.reviews()
-        let source = showTime ? data.time : data.count
-        let first = range == .all ? (source.keys.min() ?? 0) : -(range.rawValue - 1)
-        let bars = source.filter { $0.key >= first }.flatMap { day, c in
+        let source: [Int: ReviewCounts] = (showTime ? data.time : data.count).intKeys
+        let first: Int = range == .all ? (source.keys.min() ?? 0) : -(range.days - 1)
+        let bars: [(day: Int, kind: ReviewKind, value: Int)] = source.filter { $0.key >= first }.flatMap { day, c in
             ReviewKind.allCases.map { (day: day, kind: $0, value: $0.value(c)) }.filter { $0.value > 0 }
         }
-        let totals = Dictionary(grouping: bars, by: \.kind).mapValues { $0.reduce(0) { $0 + $1.value } }
+        let totals: [ReviewKind: Int] = Dictionary(grouping: bars, by: \.kind).mapValues { $0.reduce(0) { $0 + $1.value } }
         let studied = Set(bars.map(\.day)).count
         StatCard(title: "Reviews", subtitle: "Answers per day by kind.") {
             Picker("Show", selection: $showTime) {
@@ -342,7 +346,7 @@ private struct ReviewsCard: View {
                     RuleMark(x: .value("Day", selected))
                         .foregroundStyle(.secondary.opacity(0.3))
                         .annotation(position: .top, overflowResolution: .init(x: .fit, y: .disabled)) {
-                            let c = source[selected] ?? .init()
+                            let c = source[selected] ?? ReviewCounts()
                             Tooltip(title: selected == 0 ? "Today" : "\(-selected) days ago",
                                     value: showTime ? duration(c.total) : "\(c.total) answers")
                         }
@@ -381,14 +385,14 @@ private struct LegendRow: View {
 }
 
 private struct CardCountsCard: View {
-    let graphs: GraphsContext
+    let graphs: Graphs
 
     var body: some View {
         let c = graphs.cardCounts()
         let items: [(String, Int, Color)] = [
-            ("New", c.new, StudyColors.newGroup), ("Learning", c.learn, StudyColors.learningGroup),
-            ("Relearning", c.relearn, StudyColors.relearningGroup), ("Young", c.young, StudyColors.young),
-            ("Mature", c.mature, StudyColors.mature), ("Suspended", c.suspended, StudyColors.suspended),
+            ("New", Int(c.new), StudyColors.newGroup), ("Learning", Int(c.learn), StudyColors.learningGroup),
+            ("Relearning", Int(c.relearn), StudyColors.relearningGroup), ("Young", Int(c.young), StudyColors.young),
+            ("Mature", Int(c.mature), StudyColors.mature), ("Suspended", Int(c.suspended), StudyColors.suspended),
         ]
         let suspended = c.suspended > 0
             ? " Suspended: your moves below alternative moves. They keep their progress and are studied again if their line becomes the main line."
@@ -450,23 +454,23 @@ private struct HistogramCard: View {
 }
 
 private struct RetrievabilityCard: View {
-    let graphs: GraphsContext
+    let graphs: Graphs
 
     var body: some View {
         let r = graphs.retrievability()
-        HistogramCard(title: "Retrievability", unit: "%", values: r.bins, maxBin: 100,
+        HistogramCard(title: "Retrievability", unit: "%", values: r.bins.ints, maxBin: 100,
                       footer: "Chance of recalling each move now (FSRS). Average \(String(format: "%.1f", r.average))%, estimated total knowledge \(moves(Int(r.sum.rounded()))).",
                       showsAverage: false)
     }
 }
 
 private struct HourlyCard: View {
-    let graphs: GraphsContext
-    let range: GraphsContext.Range
+    let graphs: Graphs
+    let range: GraphRange
     @State private var selected: Int?
 
     var body: some View {
-        let hours = graphs.hours(range)
+        let hours = graphs.hours(range: range)
         StatCard(title: "Hourly Breakdown", subtitle: "Answers by hour of day; tap a bar for the share answered correctly.") {
             Chart(Array(hours.enumerated()), id: \.offset) { hour, h in
                 BarMark(x: .value("Hour", hour), y: .value("Answers", h.total))
@@ -489,11 +493,11 @@ private struct HourlyCard: View {
 }
 
 private struct AnswerButtonsCard: View {
-    let graphs: GraphsContext
-    let range: GraphsContext.Range
+    let graphs: Graphs
+    let range: GraphRange
 
     var body: some View {
-        let b = graphs.buttons(range)
+        let b = graphs.buttons(range: range)
         let groups = [("Learning", b.learning), ("Young", b.young), ("Mature", b.mature)]
         StatCard(title: "Answer Buttons", subtitle: "Again = wrong move, hint or browsing; Good = correct.") {
             Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 4) {
@@ -519,18 +523,18 @@ private struct AnswerButtonsCard: View {
 }
 
 private struct TrueRetentionCard: View {
-    let graphs: GraphsContext
+    let graphs: Graphs
 
     var body: some View {
-        let table = graphs.trueRetention()
+        let table = graphs.retentionTable()
         StatCard(title: "True Retention", subtitle: "Moves answered correctly after a delay of a day or more.") {
-            RetentionGrid(rows: GraphsContext.RetentionPeriod.allCases.map { ($0.title, table[$0] ?? .init()) })
+            RetentionGrid(rows: RetentionPeriod.allCases.map { ($0.title, table[$0] ?? .init()) })
         }
     }
 }
 
 private struct RetentionGrid: View {
-    let rows: [(String, GraphsContext.TrueRetention)]
+    let rows: [(String, TrueRetention)]
 
     var body: some View {
         Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {

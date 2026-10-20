@@ -4,10 +4,12 @@
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 
 mod chess_stats;
+mod scope;
 
 use std::collections::{BTreeMap, BTreeSet};
 
 pub use chess_stats::{WeakMove, expected_recall, opening_branches, weakest_moves};
+pub use scope::{GraphParts, card_reach, repertoire_cards};
 
 use crate::chess::Epd;
 use crate::training::MATURE_INTERVAL;

@@ -1,4 +1,4 @@
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -252,7 +252,7 @@ struct LibraryView: View {
             if !filtersActive { return true }
             guard let s = stats[entry.id] else { return false }
             // A PGN that is not set up yet has no side or progress to filter by.
-            guard let side = entry.sidecar?.color else { return false }
+            guard let side = entry.sidecar?.color() else { return false }
             if let wanted = sideFilter.side, side != wanted { return false }
             if onlyGaps && s.gaps == 0 { return false }
             if onlyDue && s.due == 0 { return false }
@@ -296,7 +296,7 @@ private struct TodayCard: View {
     typealias Item = (entry: RepertoireEntry, stats: EntryStats)
 
     let entries: [Item]
-    let today: GraphsContext.Today?
+    let today: Today?
     let streak: Streak
     let studyAll: () -> Void
     let open: (LibraryRoute) -> Void
@@ -312,8 +312,8 @@ private struct TodayCard: View {
         case caughtUp
     }
 
-    private var counts: CardQueues.Counts {
-        entries.reduce(into: CardQueues.Counts()) {
+    private var counts: Counts {
+        entries.reduce(into: Counts()) {
             $0.new += $1.stats.counts.new
             $0.learning += $1.stats.counts.learning
             $0.review += $1.stats.counts.review
@@ -514,7 +514,7 @@ private struct TodayCard: View {
         return streak.studiedToday ? days + longest : "Study today to keep your \(days)"
     }
 
-    private func count(_ value: Int, _ color: Color) -> some View {
+    private func count(_ value: Int64, _ color: Color) -> some View {
         Text(value.formatted()).foregroundStyle(value > 0 ? color : Color.secondary.opacity(0.6))
     }
 }
@@ -522,15 +522,16 @@ private struct TodayCard: View {
 /// Today's answers and the study streak across all repertoires, read from their review logs.
 @Observable
 final class LibraryTodayModel {
-    private(set) var today: GraphsContext.Today?
-    private(set) var streak = Streak()
+    private(set) var today: Today?
+    private(set) var streak = Streak(current: 0, longest: 0, studiedToday: false)
 
     func load(_ app: AppModel) async {
         var revlog: [RevlogEntry] = []
         for entry in app.library.entries where !entry.needsSetup {
             revlog += await StudyLog.revlog(for: entry, in: app)
         }
-        let graphs = GraphsContext(cards: [], newCount: 0, revlog: revlog, timing: SchedTiming())
+        let graphs = Graphs(cards: [], newCount: 0, suspendedNewCount: 0, revlog: revlog, timing: SchedTiming(),
+                            localOffsetSecs: Int64(TimeZone.current.secondsFromGMT()))
         today = graphs.today()
         streak = graphs.streak()
     }
@@ -629,8 +630,8 @@ private enum LibraryGroup: String, CaseIterable, Identifiable {
 
     func contains(_ entry: RepertoireEntry) -> Bool {
         switch self {
-        case .white: entry.sidecar?.color == .white
-        case .black: entry.sidecar?.color == .black
+        case .white: entry.sidecar?.color() == .white
+        case .black: entry.sidecar?.color() == .black
         case .setup: entry.sidecar == nil
         }
     }
@@ -669,24 +670,27 @@ struct EntryStats {
     var completion = 0.0
     var gaps = 0
     var savedMoves = 0
-    var progress = Trainer.Progress()
-    var counts = CardQueues.Counts()
+    var progress = Progress()
+    var counts = Counts()
     /// Learning moves waiting for a later step today, soonest first.
     var laterLearning: [Date] = []
     var dueTomorrow = 0
     var nextDue: Date?
     /// Learning and review cards waiting today.
-    var due: Int { counts.learning + counts.review }
+    var due: Int { Int(counts.learning + counts.review) }
 
     init(document: RepertoireDocument) {
         _ = document.revision
         let root = document.coverage.root
         completion = root?.completion ?? 0
-        gaps = root?.gapCount ?? 0
+        gaps = Int(root?.gapCount ?? 0)
         savedMoves = document.savedMoveCount
         progress = document.learningProgress()
         counts = document.studyCounts()
-        setDue(document.sidecar)
+        let timing = SchedTiming()
+        laterLearning = document.sidecar.laterLearningDues(timing: timing)
+        dueTomorrow = document.sidecar.dueTomorrow(timing: timing)
+        nextDue = document.sidecar.nextDue(timing: timing)
     }
 
     init(entry: RepertoireEntry, document: RepertoireDocument?) {
@@ -697,23 +701,20 @@ struct EntryStats {
         }
     }
 
-    private init(sidecar: Sidecar?) {
+    private init(sidecar: LibrarySidecar?) {
         guard let sidecar else { return }
-        counts = sidecar.estimatedStudyCounts(config: TrainingDefaults.config, timing: SchedTiming())
-        progress = sidecar.estimatedProgress
-        setDue(sidecar)
-        guard let s = sidecar.summary else { return }
-        completion = s.completion
-        gaps = s.gapCount
-        // Older summaries have no move count: anything with your moves has saved moves.
-        savedMoves = s.savedMoveCount ?? s.cardCount
-    }
-
-    private mutating func setDue(_ sidecar: Sidecar) {
         let timing = SchedTiming()
-        laterLearning = sidecar.laterLearningDues(timing: timing)
-        dueTomorrow = sidecar.dueTomorrow(timing: timing)
-        nextDue = sidecar.nextDue(timing: timing)
+        counts = sidecar.estimatedStudyCounts(newPerDay: Int64(TrainingDefaults.newPerDay),
+                                              reviewsPerDay: Int64(TrainingDefaults.reviewsPerDay), timing: timing)
+        progress = sidecar.estimatedProgress()
+        laterLearning = sidecar.laterLearningDues(timing: timing).map { Date(timeIntervalSince1970: TimeInterval($0)) }
+        dueTomorrow = Int(sidecar.dueTomorrow(timing: timing))
+        nextDue = sidecar.nextDue(timing: timing).map { Date(timeIntervalSince1970: TimeInterval($0)) }
+        guard let s = sidecar.summary() else { return }
+        completion = s.completion
+        gaps = Int(s.gapCount)
+        // Older summaries have no move count: anything with your moves has saved moves.
+        savedMoves = Int(s.savedMoveCount ?? s.cardCount)
     }
 }
 
@@ -791,7 +792,7 @@ struct NewRepertoireSheet: View {
 struct SetupSheet: View {
     @Environment(\.dismiss) private var dismiss
     let title: String
-    let onSave: (Sidecar) throws -> Void
+    let onSave: (Data) throws -> Void
     @State private var draft = RepertoireSettingsDraft()
     @State private var error: String?
 

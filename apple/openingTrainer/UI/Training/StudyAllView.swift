@@ -1,4 +1,4 @@
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 
 /// Studies today's moves of every repertoire, one repertoire after another in name order (Anki's

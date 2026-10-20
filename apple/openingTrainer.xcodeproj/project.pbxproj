@@ -7,13 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AA00000000000000000000A1 /* OpeningCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000A3 /* OpeningCore */; };
 		AA00000000000000000000B1 /* OpeningCoreRust in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000B3 /* OpeningCoreRust */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		1F1758813083B5B8003B959B /* openingTrainer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = openingTrainer.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		AA00000000000000000000A4 /* OpeningCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = OpeningCore; sourceTree = "<group>"; };
 		AA00000000000000000000B4 /* OpeningCoreRust */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = OpeningCoreRust; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -30,7 +28,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA00000000000000000000A1 /* OpeningCore in Frameworks */,
 				AA00000000000000000000B1 /* OpeningCoreRust in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -41,7 +38,6 @@
 		1F1758783083B5B8003B959B = {
 			isa = PBXGroup;
 			children = (
-				AA00000000000000000000A4 /* OpeningCore */,
 				AA00000000000000000000B4 /* OpeningCoreRust */,
 				1F1758833083B5B8003B959B /* openingTrainer */,
 				1F1758823083B5B8003B959B /* Products */,
@@ -76,7 +72,6 @@
 			);
 			name = openingTrainer;
 			packageProductDependencies = (
-				AA00000000000000000000A3 /* OpeningCore */,
 				AA00000000000000000000B3 /* OpeningCoreRust */,
 			);
 			productName = openingTrainer;
@@ -108,7 +103,6 @@
 			mainGroup = 1F1758783083B5B8003B959B;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				AA00000000000000000000A2 /* XCLocalSwiftPackageReference "OpeningCore" */,
 				AA00000000000000000000B2 /* XCLocalSwiftPackageReference "OpeningCoreRust" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -357,10 +351,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		AA00000000000000000000A2 /* XCLocalSwiftPackageReference "OpeningCore" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = OpeningCore;
-		};
 		AA00000000000000000000B2 /* XCLocalSwiftPackageReference "OpeningCoreRust" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = OpeningCoreRust;
@@ -368,10 +358,6 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AA00000000000000000000A3 /* OpeningCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = OpeningCore;
-		};
 		AA00000000000000000000B3 /* OpeningCoreRust */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OpeningCoreRust;

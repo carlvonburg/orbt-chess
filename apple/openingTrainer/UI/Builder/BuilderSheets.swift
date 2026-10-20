@@ -1,4 +1,4 @@
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 
 /// The repertoire as a collapsible tree. Chains without branching are shown as one row.
@@ -76,36 +76,13 @@ struct OutlineSheet: View {
     }
 
     private func items(under id: NodeID) -> [Item] {
-        guard let node = model.tree[id] else { return [] }
-        return node.children.map { chain(from: $0) }
-    }
-
-    /// Follows single-child chains and returns one item for them.
-    private func chain(from start: NodeID) -> Item {
-        let tree = model.tree
-        var cursor = start
-        var parts: [String] = []
-        var first = true
-        while let node = tree[cursor], let move = node.move {
-            let ply = node.ply - 1
-            if ply % 2 == 0 { parts.append("\(ply / 2 + 1).") } else if first { parts.append("\(ply / 2 + 1)...") }
-            parts.append(move.san)
-            first = false
-            guard node.children.count == 1 else { break }
-            cursor = node.children[0]
+        model.document.core.outlineChildren(id: id).map { item in
+            Item(id: item.id, first: item.first, text: item.text, children: item.hasChildren ? items(under: item.id) : nil)
         }
-        let children = tree[cursor]?.children.isEmpty == false ? items(under: cursor) : nil
-        return Item(id: cursor, first: start, text: parts.joined(separator: " "), children: children)
     }
 
     private var matches: [NodeID] {
-        let query = SAN.loose(search.trimmingCharacters(in: .whitespaces)).lowercased()
-        guard !query.isEmpty else { return [] }
-        return model.tree.nodes.values
-            .filter { SAN.loose($0.move?.san ?? "").lowercased() == query || $0.note.lowercased().contains(query) }
-            .sorted { $0.ply < $1.ply }
-            .prefix(100)
-            .map(\.id)
+        model.document.core.search(query: search, limit: 100)
     }
 }
 
@@ -156,15 +133,7 @@ struct GapsSheet: View {
     }
 
     private func text(for gap: CoverageGap) -> String {
-        let line = model.tree.lineText(to: gap.node)
-        switch gap.kind {
-        case .missingMove:
-            return (line.isEmpty ? "Start" : line) + " — your move?"
-        case let .missingReply(_, san):
-            let ply = model.tree[gap.node]?.ply ?? 0
-            let number = ply % 2 == 0 ? "\(ply / 2 + 1). " : (line.isEmpty ? "\(ply / 2 + 1)... " : "")
-            return [line, number + san].filter { !$0.isEmpty }.joined(separator: " ")
-        }
+        model.document.core.gapText(gap: gap)
     }
 }
 

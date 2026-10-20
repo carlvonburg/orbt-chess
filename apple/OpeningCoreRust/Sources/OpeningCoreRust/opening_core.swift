@@ -2394,6 +2394,20 @@ public convenience init(cards: [Card], newCount: Int64, suspendedNewCount: Int64
     }
 
     
+    /**
+     * Statistics over the parts of one or more repertoires.
+     */
+public static func fromParts(parts: [GraphParts], timing: SchedTiming, localOffsetSecs: Int64) -> Graphs  {
+    return try!  FfiConverterTypeGraphs_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_graphs_from_parts(
+        FfiConverterSequenceTypeGraphParts.lower(parts),
+        FfiConverterTypeSchedTiming_lower(timing),
+        FfiConverterInt64.lower(localOffsetSecs),uniffiCallStatus
+    )
+})
+}
+    
 
     
 open func buttons(range: GraphRange) -> ButtonCounts  {
@@ -2590,6 +2604,12 @@ public protocol LibrarySidecarProtocol: AnyObject, Sendable {
     
     func estimatedStudyCounts(newPerDay: Int64, reviewsPerDay: Int64, timing: SchedTiming)  -> Counts
     
+    /**
+     * This repertoire's part of the whole collection's statistics, estimated without its
+     * PGN; `revlog` is its review log file.
+     */
+    func graphParts(revlog: Data)  -> GraphParts
+    
     func id()  -> String
     
     func laterLearningDues(timing: SchedTiming)  -> [Int64]
@@ -2724,6 +2744,20 @@ open func estimatedStudyCounts(newPerDay: Int64, reviewsPerDay: Int64, timing: S
         FfiConverterInt64.lower(newPerDay),
         FfiConverterInt64.lower(reviewsPerDay),
         FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * This repertoire's part of the whole collection's statistics, estimated without its
+     * PGN; `revlog` is its review log file.
+     */
+open func graphParts(revlog: Data) -> GraphParts  {
+    return try!  FfiConverterTypeGraphParts_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_graph_parts(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(revlog),uniffiCallStatus
     )
 })
 }
@@ -3140,6 +3174,11 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
      */
     func cardNodes(root: UInt32)  -> [UInt32]
     
+    /**
+     * The reach of each card position, for expected recall.
+     */
+    func cardReach()  -> [Epd: Double]
+    
     func cards()  -> [Epd: Card]
     
     func chapters()  -> [ChapterInfo]
@@ -3170,9 +3209,20 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     func extendLimitsToday(new: Int64, review: Int64, timing: SchedTiming)  -> Changes
     
     /**
+     * A gap as a line of moves, e.g. "1. e4 c5 2. Nf3 Nc6".
+     */
+    func gapText(gap: CoverageGap)  -> String
+    
+    /**
      * All gaps, biggest first.
      */
     func gaps()  -> [CoverageGap]
+    
+    /**
+     * This repertoire's part of the statistics: of the whole collection (every stored card),
+     * or of this repertoire alone (only cards at its positions). `on_disk` is the review log file.
+     */
+    func graphParts(onDisk: Data, wholeCollection: Bool)  -> GraphParts
     
     func isAncestor(a: UInt32, b: UInt32)  -> Bool
     
@@ -3223,6 +3273,11 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     func openingName(id: UInt32)  -> String?
     
     /**
+     * The outline rows below `id`: one per child, each a chain of moves without branching.
+     */
+    func outlineChildren(id: UInt32)  -> [OutlineItem]
+    
+    /**
      * The repertoire's own practice mode, if it overrides the default.
      */
     func ownPracticeMode()  -> PracticeMode?
@@ -3259,6 +3314,11 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     func remoteSidecar(data: Data)  -> Changes
     
     /**
+     * The cards stored for this repertoire's positions.
+     */
+    func repertoireCards()  -> [Epd: Card]
+    
+    /**
      * Fetches stats for the position on screen, ahead of the coverage check.
      */
     func requestStats(epd: Epd, nowMs: Int64) 
@@ -3279,6 +3339,11 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     func root()  -> Node
     
     func savedMoveCount()  -> Int64
+    
+    /**
+     * Nodes whose move (loose SAN) or note matches `query`, shallowest first.
+     */
+    func search(query: String, limit: UInt32)  -> [UInt32]
     
     func setDefaults(defaults: StudyDefaults)  -> Changes
     
@@ -3461,6 +3526,18 @@ open func cardNodes(root: UInt32) -> [UInt32]  {
 })
 }
     
+    /**
+     * The reach of each card position, for expected recall.
+     */
+open func cardReach() -> [Epd: Double]  {
+    return try!  FfiConverterDictionaryTypeEpdDouble.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_card_reach(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
 open func cards() -> [Epd: Card]  {
     return try!  FfiConverterDictionaryTypeEpdTypeCard.lift(try! rustCall() {
         uniffiCallStatus in
@@ -3594,6 +3671,19 @@ open func extendLimitsToday(new: Int64, review: Int64, timing: SchedTiming) -> C
 }
     
     /**
+     * A gap as a line of moves, e.g. "1. e4 c5 2. Nf3 Nc6".
+     */
+open func gapText(gap: CoverageGap) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_gap_text(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeCoverageGap_lower(gap),uniffiCallStatus
+    )
+})
+}
+    
+    /**
      * All gaps, biggest first.
      */
 open func gaps() -> [CoverageGap]  {
@@ -3601,6 +3691,21 @@ open func gaps() -> [CoverageGap]  {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_repertoiredoc_gaps(
             self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * This repertoire's part of the statistics: of the whole collection (every stored card),
+     * or of this repertoire alone (only cards at its positions). `on_disk` is the review log file.
+     */
+open func graphParts(onDisk: Data, wholeCollection: Bool) -> GraphParts  {
+    return try!  FfiConverterTypeGraphParts_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_graph_parts(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(onDisk),
+        FfiConverterBool.lower(wholeCollection),uniffiCallStatus
     )
 })
 }
@@ -3796,6 +3901,19 @@ open func openingName(id: UInt32) -> String?  {
 }
     
     /**
+     * The outline rows below `id`: one per child, each a chain of moves without branching.
+     */
+open func outlineChildren(id: UInt32) -> [OutlineItem]  {
+    return try!  FfiConverterSequenceTypeOutlineItem.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_outline_children(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+    /**
      * The repertoire's own practice mode, if it overrides the default.
      */
 open func ownPracticeMode() -> PracticeMode?  {
@@ -3923,6 +4041,18 @@ open func remoteSidecar(data: Data) -> Changes  {
 }
     
     /**
+     * The cards stored for this repertoire's positions.
+     */
+open func repertoireCards() -> [Epd: Card]  {
+    return try!  FfiConverterDictionaryTypeEpdTypeCard.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_repertoire_cards(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
      * Fetches stats for the position on screen, ahead of the coverage check.
      */
 open func requestStats(epd: Epd, nowMs: Int64)  {try! rustCall() {
@@ -3998,6 +4128,20 @@ open func savedMoveCount() -> Int64  {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_repertoiredoc_saved_move_count(
             self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Nodes whose move (loose SAN) or note matches `query`, shallowest first.
+     */
+open func search(query: String, limit: UInt32) -> [UInt32]  {
+    return try!  FfiConverterSequenceUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_search(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(query),
+        FfiConverterUInt32.lower(limit),uniffiCallStatus
     )
 })
 }
@@ -5822,6 +5966,71 @@ public func FfiConverterTypeFutureDue_lower(_ value: FutureDue) -> RustBuffer {
 }
 
 
+/**
+ * What one repertoire contributes to the statistics.
+ */
+public struct GraphParts: Equatable, Hashable {
+    public var cards: [Card]
+    public var newCount: Int64
+    public var suspendedNewCount: Int64
+    public var revlog: [RevlogEntry]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(cards: [Card], newCount: Int64, suspendedNewCount: Int64, revlog: [RevlogEntry]) {
+        self.cards = cards
+        self.newCount = newCount
+        self.suspendedNewCount = suspendedNewCount
+        self.revlog = revlog
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension GraphParts: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGraphParts: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GraphParts {
+        return
+            try GraphParts(
+                cards: FfiConverterSequenceTypeCard.read(from: &buf), 
+                newCount: FfiConverterInt64.read(from: &buf), 
+                suspendedNewCount: FfiConverterInt64.read(from: &buf), 
+                revlog: FfiConverterSequenceTypeRevlogEntry.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: GraphParts, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypeCard.write(value.cards, into: &buf)
+        FfiConverterInt64.write(value.newCount, into: &buf)
+        FfiConverterInt64.write(value.suspendedNewCount, into: &buf)
+        FfiConverterSequenceTypeRevlogEntry.write(value.revlog, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGraphParts_lift(_ buf: RustBuffer) throws -> GraphParts {
+    return try FfiConverterTypeGraphParts.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGraphParts_lower(_ value: GraphParts) -> RustBuffer {
+    return FfiConverterTypeGraphParts.lower(value)
+}
+
+
 public struct Hour: Equatable, Hashable {
     public var total: Int64
     public var correct: Int64
@@ -6364,6 +6573,68 @@ public func FfiConverterTypeOpeningName_lift(_ buf: RustBuffer) throws -> Openin
 #endif
 public func FfiConverterTypeOpeningName_lower(_ value: OpeningName) -> RustBuffer {
     return FfiConverterTypeOpeningName.lower(value)
+}
+
+
+public struct OutlineItem: Equatable, Hashable {
+    public var id: UInt32
+    public var first: UInt32
+    public var text: String
+    public var hasChildren: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: UInt32, first: UInt32, text: String, hasChildren: Bool) {
+        self.id = id
+        self.first = first
+        self.text = text
+        self.hasChildren = hasChildren
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension OutlineItem: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOutlineItem: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OutlineItem {
+        return
+            try OutlineItem(
+                id: FfiConverterUInt32.read(from: &buf), 
+                first: FfiConverterUInt32.read(from: &buf), 
+                text: FfiConverterString.read(from: &buf), 
+                hasChildren: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OutlineItem, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.id, into: &buf)
+        FfiConverterUInt32.write(value.first, into: &buf)
+        FfiConverterString.write(value.text, into: &buf)
+        FfiConverterBool.write(value.hasChildren, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOutlineItem_lift(_ buf: RustBuffer) throws -> OutlineItem {
+    return try FfiConverterTypeOutlineItem.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOutlineItem_lower(_ value: OutlineItem) -> RustBuffer {
+    return FfiConverterTypeOutlineItem.lower(value)
 }
 
 
@@ -10854,6 +11125,31 @@ fileprivate struct FfiConverterSequenceTypeFetch: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeGraphParts: FfiConverterRustBuffer {
+    typealias SwiftType = [GraphParts]
+
+    public static func write(_ value: [GraphParts], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeGraphParts.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [GraphParts] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [GraphParts]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeGraphParts.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeHour: FfiConverterRustBuffer {
     typealias SwiftType = [Hour]
 
@@ -10896,6 +11192,31 @@ fileprivate struct FfiConverterSequenceTypeNode: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeNode.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeOutlineItem: FfiConverterRustBuffer {
+    typealias SwiftType = [OutlineItem]
+
+    public static func write(_ value: [OutlineItem], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeOutlineItem.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [OutlineItem] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [OutlineItem]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeOutlineItem.read(from: &buf))
         }
         return seq
     }
@@ -11713,6 +12034,17 @@ public func practiceModeTitle(mode: PracticeMode) -> String  {
     )
 })
 }
+/**
+ * Days a graph range covers; 0 for all time.
+ */
+public func rangeDays(range: GraphRange) -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_range_days(
+        FfiConverterTypeGraphRange_lower(range),uniffiCallStatus
+    )
+})
+}
 public func rangeTitle(range: GraphRange) -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
         uniffiCallStatus in
@@ -11907,6 +12239,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_practice_mode_title() != 10971) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_func_range_days() != 38830) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_func_range_title() != 24563) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -11955,6 +12290,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_card_nodes() != 34477) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_card_reach() != 16134) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_repertoiredoc_cards() != 767) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -11994,7 +12332,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_extend_limits_today() != 1093) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_gap_text() != 63643) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_repertoiredoc_gaps() != 19080) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_graph_parts() != 18556) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_is_ancestor() != 48409) {
@@ -12051,6 +12395,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_opening_name() != 9062) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_outline_children() != 36768) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_repertoiredoc_own_practice_mode() != 38388) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -12087,6 +12434,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_remote_sidecar() != 13670) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_repertoire_cards() != 14076) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_repertoiredoc_request_stats() != 9069) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -12109,6 +12459,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_saved_move_count() != 51247) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_search() != 48080) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_set_defaults() != 44683) {
@@ -12474,6 +12827,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_librarysidecar_estimated_study_counts() != 57623) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_librarysidecar_graph_parts() != 27194) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_librarysidecar_id() != 41272) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -12505,6 +12861,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_constructor_drillsession_new() != 49692) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_graphs_from_parts() != 35335) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_constructor_graphs_new() != 61351) {

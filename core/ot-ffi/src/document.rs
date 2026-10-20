@@ -3,10 +3,11 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use ot_core::chess::{Epd, PlayedMove, Side};
 use ot_core::coverage::{CoverageGap, NodeCoverage, ReplyInfo, StatsSource};
-use ot_core::document::{Changes, Repertoire, StudyDefaults};
+use ot_core::document::{Changes, OutlineItem, Repertoire, StudyDefaults};
 use ot_core::explorer::{ExplorerDatabase, ExplorerStats};
 use ot_core::formats::Timestamp;
 use ot_core::repertoire::{NodeId, RepertoireTree};
+use ot_core::statistics::GraphParts;
 use ot_core::training::anki::{
     Card, Counts, DeckLimits, RemainingLimits, RevlogEntry, SchedTiming,
 };
@@ -271,6 +272,21 @@ impl RepertoireDoc {
         self.lock().line_text(id)
     }
 
+    /// The outline rows below `id`: one per child, each a chain of moves without branching.
+    pub fn outline_children(&self, id: NodeId) -> Vec<OutlineItem> {
+        ot_core::document::outline_children(self.lock().tree(), id)
+    }
+
+    /// Nodes whose move (loose SAN) or note matches `query`, shallowest first.
+    pub fn search(&self, query: String, limit: u32) -> Vec<NodeId> {
+        ot_core::document::search(self.lock().tree(), &query, limit as usize)
+    }
+
+    /// A gap as a line of moves, e.g. "1. e4 c5 2. Nf3 Nc6".
+    pub fn gap_text(&self, gap: CoverageGap) -> String {
+        ot_core::document::gap_text(self.lock().tree(), &gap)
+    }
+
     pub fn saved_move_count(&self) -> i64 {
         self.lock().saved_move_count()
     }
@@ -471,6 +487,28 @@ impl RepertoireDoc {
 
     pub fn learning_progress(&self, node: NodeId) -> Progress {
         self.lock().learning_progress(node)
+    }
+
+    /// This repertoire's part of the statistics: of the whole collection (every stored card),
+    /// or of this repertoire alone (only cards at its positions). `on_disk` is the review log file.
+    pub fn graph_parts(&self, on_disk: Vec<u8>, whole_collection: bool) -> GraphParts {
+        let mut doc = self.lock();
+        let revlog = doc.review_log(&on_disk);
+        if whole_collection {
+            GraphParts::collection(&mut doc, revlog)
+        } else {
+            GraphParts::repertoire(&mut doc, revlog)
+        }
+    }
+
+    /// The cards stored for this repertoire's positions.
+    pub fn repertoire_cards(&self) -> HashMap<Epd, Card> {
+        ot_core::statistics::repertoire_cards(&mut self.lock())
+    }
+
+    /// The reach of each card position, for expected recall.
+    pub fn card_reach(&self) -> HashMap<Epd, f64> {
+        ot_core::statistics::card_reach(&mut self.lock())
     }
 
     /// How often each position is reached.

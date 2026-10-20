@@ -1,4 +1,4 @@
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 
 struct BoardArrow: Hashable, Identifiable {
@@ -13,6 +13,26 @@ struct BoardArrow: Hashable, Identifiable {
     var dashed = false
 
     var id: String { "\(from)\(to)\(style)" }
+
+    init(from: BoardSquare, to: BoardSquare, style: Style, width: Double = 0.18, opacity: Double = 0.85, dashed: Bool = false) {
+        self.from = from
+        self.to = to
+        self.style = style
+        self.width = width
+        self.opacity = opacity
+        self.dashed = dashed
+    }
+
+    /// An arrow the core chose.
+    init(_ arrow: Arrow) {
+        let style: Style = switch arrow.style {
+        case .mine: .mine
+        case .opponent: .opponent
+        case .gap: .gap
+        case .hint: .hint
+        }
+        self.init(from: arrow.from, to: arrow.to, style: style, width: arrow.width, opacity: arrow.opacity, dashed: arrow.dashed)
+    }
 
     var color: Color {
         switch style {
@@ -67,7 +87,7 @@ struct BoardView: View {
 
     /// The drop, once the position shows it played (not when the move was refused).
     private var playedDrop: Drop? {
-        guard let drop, drop.fen != position.fen, position.piece(at: drop.to)?.side == drop.side else { return nil }
+        guard let drop, drop.fen != position.fen(), position.piece(at: drop.to)?.side == drop.side else { return nil }
         return drop
     }
 
@@ -105,7 +125,7 @@ struct BoardView: View {
         }
         .aspectRatio(1, contentMode: .fit)
         .onAppear { layout.update(to: position) }
-        .onChange(of: position.fen) {
+        .onChange(of: position.fen()) {
             selected = nil
             if playedDrop != nil {
                 layout.update(to: position)
@@ -114,7 +134,7 @@ struct BoardView: View {
             }
             drop = nil
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: position.fen)
+        .sensoryFeedback(.impact(weight: .light), trigger: position.fen())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Chess board")
     }
@@ -170,7 +190,7 @@ struct BoardView: View {
     }
 
     private func promotionPicker(_ move: (from: BoardSquare, to: BoardSquare), sq: CGFloat) -> some View {
-        let side = position.sideToMove
+        let side = position.sideToMove()
         let kinds: [PieceKind] = [.queen, .knight, .rook, .bishop]
         let c = center(move.to, sq: sq)
         let downward = c.y < sq * 4
@@ -238,7 +258,7 @@ struct BoardView: View {
 
     private func canMove(from square: BoardSquare) -> Bool {
         guard let movableSide, let piece = position.piece(at: square) else { return false }
-        return piece.side == movableSide && piece.side == position.sideToMove
+        return piece.side == movableSide && piece.side == position.sideToMove()
     }
 
     private func attemptMove(from: BoardSquare, to: BoardSquare, dragged: Bool = false) {
@@ -252,7 +272,7 @@ struct BoardView: View {
         }
         selected = nil
         if dragged, let side = position.piece(at: from)?.side {
-            drop = Drop(from: from, to: to, side: side, fen: position.fen)
+            drop = Drop(from: from, to: to, side: side, fen: position.fen())
         }
         onMove(from, to, nil)
     }
@@ -297,7 +317,7 @@ struct PieceLayout {
     }
 
     mutating func update(to position: ChessPosition) {
-        let new = position.pieces
+        let new = position.pieces()
         var unmatchedOld = pieces
         var result: [Placed] = []
         var unmatchedNew: [BoardPiece] = []

@@ -7,10 +7,12 @@
 //! request replaces the previous one, like rescheduling a timer). `pgn_to_save`,
 //! `sidecar_to_save` and `take_revlog` give the bytes to write.
 
+mod outline;
 mod repertoire;
 #[cfg(test)]
 mod tests;
 
+pub use outline::{OutlineItem, gap_text, outline_children, search};
 pub use repertoire::{Changes, OpenError, Repertoire, StudyDefaults};
 
 /// Delays before saving, by what changed (as the Swift build used them).

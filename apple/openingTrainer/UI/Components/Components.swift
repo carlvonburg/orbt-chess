@@ -1,6 +1,9 @@
-import OpeningCore
+import OpeningCoreRust
 import SafariServices
 import SwiftUI
+
+/// The core's learning progress, not Foundation's `Progress`.
+typealias Progress = OpeningCoreRust.Progress
 
 /// Thin horizontal progress bar.
 struct CompletionBar: View {
@@ -24,9 +27,9 @@ struct CompletionBar: View {
 
 /// White / draw / black result bar.
 struct ScoreBar: View {
-    let white: Int
-    let draws: Int
-    let black: Int
+    let white: Int64
+    let draws: Int64
+    let black: Int64
 
     var body: some View {
         let total = max(white + draws + black, 1)
@@ -59,18 +62,11 @@ enum Format {
     }
 
     /// "1. d4 d5 2. c4 c6", numbered from `startPly` (0 = White's first move).
-    static func moveList(_ moves: [PlayedMove], startPly: Int = 0) -> String {
-        var parts: [String] = []
-        for (i, move) in moves.enumerated() {
-            let ply = startPly + i
-            if ply % 2 == 0 {
-                parts.append("\(ply / 2 + 1). \(move.san)")
-            } else {
-                parts.append(i == 0 ? "\(ply / 2 + 1)… \(move.san)" : move.san)
-            }
-        }
-        return parts.joined(separator: " ")
+    static func moveList(_ moves: [PlayedMove], startPly: UInt32 = 0) -> String {
+        OpeningCoreRust.moveList(moves: moves, startPly: startPly)
     }
+
+    static func games(_ n: Int64) -> String { games(Int(n)) }
 
     static func games(_ n: Int) -> String {
         if n >= 1_000_000_000 { return String(format: "%.1fB", Double(n) / 1_000_000_000) }
@@ -94,13 +90,7 @@ struct SafariView: UIViewControllerRepresentable {
 enum LichessLinks {
     /// Opens the line in the Lichess analysis board, keeping the move history.
     static func analysis(moves: [PlayedMove], orientation: Side) -> URL {
-        let sans = moves.map { SAN.loose($0.san) }
-        let path = sans.isEmpty ? "" : sans.joined(separator: "_")
-        var allowed = CharacterSet.urlPathAllowed
-        allowed.remove(charactersIn: "#?")
-        let encoded = path.addingPercentEncoding(withAllowedCharacters: allowed) ?? path
-        let base = sans.isEmpty ? "https://lichess.org/analysis" : "https://lichess.org/analysis/pgn/\(encoded)"
-        return URL(string: base + (orientation == .black ? "?color=black" : ""))!
+        URL(string: lichessAnalysisUrl(moves: moves, orientation: orientation))!
     }
 }
 
@@ -155,7 +145,7 @@ enum StudyColors {
 /// Studied moves by Anki's groups (learning, young, mature) over all your moves; moves not
 /// studied yet are the empty track.
 struct StudiedBar: View {
-    let progress: Trainer.Progress
+    let progress: Progress
     var height: CGFloat = 6
 
     var body: some View {
@@ -180,8 +170,8 @@ struct StudiedBar: View {
 /// New / Learning / To Review, as on Anki's deck list. Nothing when the repertoire has no
 /// moves of yours yet, only the new count before anything was studied, zeros greyed.
 struct DueCounts: View {
-    let counts: CardQueues.Counts
-    let progress: Trainer.Progress
+    let counts: Counts
+    let progress: Progress
     var font: Font = .subheadline
 
     var body: some View {
@@ -202,7 +192,7 @@ struct DueCounts: View {
         }
     }
 
-    private func number(_ value: Int, _ color: Color) -> some View {
+    private func number(_ value: Int64, _ color: Color) -> some View {
         Text(value.formatted()).foregroundStyle(value > 0 ? color : Color.secondary.opacity(0.6))
     }
 }

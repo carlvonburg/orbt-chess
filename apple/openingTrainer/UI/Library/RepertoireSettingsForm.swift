@@ -1,4 +1,4 @@
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 
 /// Editable repertoire settings: color, coverage database and coverage target.
@@ -12,14 +12,14 @@ struct RepertoireSettingsDraft: Equatable {
 
     init() {}
 
-    init(_ sidecar: Sidecar) {
+    init(_ sidecar: RepertoireDocument.SidecarValues) {
         color = sidecar.color
         switch sidecar.database {
         case .masters:
             useMasters = true
-        case let .lichess(speeds, ratings):
+        case let .lichess(ratings, speeds):
             self.speeds = Set(speeds)
-            self.ratings = Set(ratings)
+            self.ratings = Set(ratings.map(Int.init))
         }
         targetGames = sidecar.targetGames
         minGames = sidecar.minGames
@@ -27,13 +27,15 @@ struct RepertoireSettingsDraft: Equatable {
 
     var database: ExplorerDatabase {
         if useMasters { return .masters }
-        return .lichess(speeds: ExplorerSpeed.allCases.filter(speeds.contains), ratings: ratings.sorted())
+        return .lichess(ratings: ratings.sorted().map(Int64.init), speeds: ExplorerSpeed.allCases.filter(speeds.contains))
     }
 
     var isValid: Bool { useMasters || (!speeds.isEmpty && !ratings.isEmpty) }
 
-    func makeSidecar() -> Sidecar {
-        Sidecar(color: color, database: database, targetGames: targetGames, minGames: minGames)
+    /// The sidecar file of a new repertoire with these settings.
+    func makeSidecar() -> Data {
+        newSidecar(id: UUID().uuidString, color: color, database: database, targetGames: Int64(targetGames),
+                   minGames: Int64(minGames), now: .of(.now))
     }
 }
 
@@ -202,7 +204,7 @@ struct DailyPracticeDraft: Equatable {
     /// This repertoire's practice mode; nil uses the default.
     var practiceMode: PracticeMode?
 
-    init(sidecar: Sidecar) {
+    init(sidecar: RepertoireDocument.SidecarValues) {
         limits = sidecar.limits ?? DeckLimits()
         // Limits for one day only are no longer offered; drop any left over.
         limits.newLimitToday = nil
@@ -217,20 +219,20 @@ struct DailyPracticeDraft: Equatable {
             if newValue {
                 limits = DeckLimits()
             } else {
-                limits.newLimit = presetNew
-                limits.reviewLimit = presetReviews
+                limits.newLimit = Int64(presetNew)
+                limits.reviewLimit = Int64(presetReviews)
             }
         }
     }
 
     var newPerDay: Int {
-        get { limits.newLimit ?? presetNew }
-        set { limits.newLimit = newValue }
+        get { limits.newLimit.map(Int.init) ?? presetNew }
+        set { limits.newLimit = Int64(newValue) }
     }
 
     var reviewsPerDay: Int {
-        get { limits.reviewLimit ?? presetReviews }
-        set { limits.reviewLimit = newValue }
+        get { limits.reviewLimit.map(Int.init) ?? presetReviews }
+        set { limits.reviewLimit = Int64(newValue) }
     }
 
     var mode: PracticeMode {

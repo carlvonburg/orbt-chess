@@ -1,19 +1,7 @@
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 
-enum DrillMode: Hashable, CustomStringConvertible {
-    /// Today's cards (Anki's "Study Now").
-    case study
-    /// Every card under a position (Anki's custom study, a filtered deck).
-    case branch(NodeID)
-
-    var description: String {
-        switch self {
-        case .study: "study"
-        case .branch(let id): "branch\(id)"
-        }
-    }
-
+extension DrillMode {
     var title: String {
         switch self {
         case .study: "Study"
@@ -22,279 +10,164 @@ enum DrillMode: Hashable, CustomStringConvertible {
     }
 }
 
-/// Plays study lines one after another. Each card on a line is answered like an Anki card:
-/// a wrong move, a hint or browsing is Again; a correct move is Good.
+/// Plays study lines one after another. The Rust core (`DrillSession`) answers the cards and
+/// decides what happens next; this runs its timers: the rewind and the opponent's moves step
+/// on a clock, the next line follows a finished one after a pause, and a wrong move's
+/// feedback turns into a hint after a moment.
 @Observable
 final class DrillModel {
-    enum Feedback: Equatable {
-        case none
-        case correct
-        case wrong(expected: PlayedMove)
-        case alternative
-        case newMove(PlayedMove)
-    }
-
     let document: RepertoireDocument
     let mode: DrillMode
     /// New moves to add to today's limit before studying (Anki's custom study).
     let learnMore: Int
-    private(set) var session: StudySession?
-    private(set) var line: StudyLine?
-    private(set) var run: LineRun?
-    private(set) var feedback: Feedback = .none
-    private(set) var finished = false
-    private(set) var showHint = false
-    /// Cards answered in this session.
-    private(set) var answeredCount = 0
-    /// Of those, answered Good.
-    private(set) var correctCount = 0
-    /// Time spent answering: the sum of each answer's time, as in the review log.
-    private(set) var studiedMillis = 0
-
-    /// Observed: `isUserTurn` depends on it, so the board unlocks when autoplay ends.
-    private var autoplay: Task<Void, Never>?
-    @ObservationIgnored private var interrupted = false
-    @ObservationIgnored private var turnStarted = Date.now
-    /// Cards already answered on the current line (a wrong try answers once).
-    @ObservationIgnored private var answeredOnLine: Set<EPD> = []
+    @ObservationIgnored private let session: DrillSession
+    @ObservationIgnored private var started = false
+    @ObservationIgnored private var timer: Task<Void, Never>?
+    @ObservationIgnored private var wrongTimer: Task<Void, Never>?
+    /// Bumped after every change, so views re-read the session.
+    private var stamp = 0
 
     init(document: RepertoireDocument, mode: DrillMode, learnMore: Int = 0) {
         self.document = document
         self.mode = mode
         self.learnMore = learnMore
+        session = DrillSession(doc: document.core, mode: mode)
     }
+
+    private func observe() {
+        _ = stamp
+        _ = document.revision
+    }
+
+    private static var nowMs: Int64 { ExplorerService.millis(.now) }
 
     var color: Side { document.color }
-    var isFiltered: Bool { if case .branch = mode { true } else { false } }
-    var counts: CardQueues.Counts { session?.queue.counts ?? CardQueues.Counts() }
-    var nextLearningDue: Date? { session?.queue.nextLearningDue }
-
-    var position: ChessPosition {
-        guard let run, let node = document.tree[run.currentNode] else { return .start }
-        return node.position
+    var isFiltered: Bool { session.isFiltered() }
+    var phase: Phase { observe(); return session.phase() }
+    var finished: Bool { phase == .finished }
+    var feedback: Feedback { observe(); return session.feedback() }
+    var showHint: Bool { observe(); return session.showHint() }
+    /// Cards answered in this session.
+    var answeredCount: Int { observe(); return Int(session.answeredCount()) }
+    /// Of those, answered Good.
+    var correctCount: Int { observe(); return Int(session.correctCount()) }
+    /// Time spent answering: the sum of each answer's time, as in the review log.
+    var studiedMillis: Int { observe(); return Int(session.studiedMillis()) }
+    var counts: Counts { observe(); return session.counts() }
+    var nextLearningDue: Date? {
+        observe()
+        return session.nextLearningDue().map { Date(timeIntervalSince1970: TimeInterval($0)) }
     }
-    var lastMove: PlayedMove? { run.flatMap { document.tree[$0.currentNode]?.move } }
+
+    var position: ChessPosition { observe(); return session.position() }
+    var lastMove: PlayedMove? { observe(); return session.lastMove() }
     /// The moves on the board, from the start of the line.
-    var playedNodes: ArraySlice<NodeID> { run.map { $0.nodes[...$0.index].dropFirst() } ?? [] }
-    var openingName: String? { run.flatMap { document.openingName(at: $0.currentNode) } }
-
-    private var currentRole: MoveRole? {
-        guard let run, run.isOwnTurn else { return nil }
-        return line?.roles[run.index]
+    var playedNodes: [NodeID] { observe(); return session.playedNodes() }
+    var openingName: String? {
+        observe()
+        return session.currentNode().flatMap { document.openingName(at: $0) }
     }
-
-    private var currentEPD: EPD? { run.flatMap { document.tree[$0.currentNode]?.epd } }
-
-    var isUserTurn: Bool {
-        guard autoplay == nil, let role = currentRole else { return false }
-        return role != .auto
-    }
+    var isUserTurn: Bool { observe(); return session.isUserTurn() }
 
     /// The kind of card being asked, for highlighting its count.
-    var askedKind: CardQueues.Kind? {
-        guard isUserTurn, let epd = currentEPD else { return nil }
-        return session?.queue.kind(of: epd)
-    }
+    var askedKind: QueueKind? { observe(); return session.askedKind() }
 
-    var arrows: [BoardArrow] {
-        switch feedback {
-        case .wrong(let expected), .newMove(let expected):
-            return [BoardArrow(from: expected.from, to: expected.to, style: .hint, width: 0.2)]
-        default:
-            if showHint, let expected = run?.expected {
-                return [BoardArrow(from: expected.from, to: expected.to, style: .hint, width: 0.2, opacity: 0.6)]
-            }
-            return []
-        }
-    }
+    var arrows: [BoardArrow] { observe(); return session.arrows().map(BoardArrow.init) }
 
     func start() {
         // Runs again when the view reappears (after browsing, or as it's pushed): resume the
         // opponent's moves if they were stopped, keep the session.
-        if session != nil {
-            if interrupted { interrupted = false; continueLine() }
-            return
+        if !started {
+            started = true
+            document.apply(session.start(learnMore: Int64(learnMore), timing: SchedTiming()))
         }
-        if learnMore > 0 { document.extendNewLimitToday(by: learnMore) }
-        session = document.studySession(branch: { if case .branch(let id) = mode { id } else { nil } }())
-        nextLine()
+        changed()
     }
 
     func stop() {
-        interrupted = autoplay != nil
-        autoplay?.cancel()
-        autoplay = nil
+        timer?.cancel()
+        timer = nil
     }
 
     func userMoved(from: BoardSquare, to: BoardSquare, promotion: PieceKind?) {
-        guard isUserTurn, var run, let epd = currentEPD, let role = currentRole,
-              let (move, _) = position.play(from: from, to: to, promotion: promotion) else { return }
-        let outcome = run.userPlayed(uci: move.uci)
-        self.run = run
-        switch outcome {
-        case .correct:
-            if case .answer(let kind) = role, !answeredOnLine.contains(epd) {
-                answer(epd, kind: kind, rating: .good)
-            }
-            session?.didPlay(epd)
-            showHint = false
-            feedback = .correct
-            continueLine()
-        case .alternative:
-            feedback = .alternative
-        case .wrong(let expected):
-            if case .answer(let kind) = role, !answeredOnLine.contains(epd) {
-                answer(epd, kind: kind, rating: .again)
-            }
-            feedback = .wrong(expected: expected)
-            Task {
+        document.apply(session.userMoved(from: from, to: to, promotion: promotion, timing: SchedTiming(), nowMs: Self.nowMs))
+        if case .wrong = session.feedback() {
+            wrongTimer?.cancel()
+            wrongTimer = Task { [weak self] in
                 try? await Task.sleep(for: .milliseconds(1200))
-                if case .wrong = feedback {
-                    // Anki shows the answer: keep the arrow until the move is played
-                    feedback = .none
-                    showHint = true
-                }
+                guard !Task.isCancelled, let self else { return }
+                // Anki shows the answer: keep the arrow until the move is played
+                self.session.wrongTimeout()
+                self.stamp += 1
             }
         }
+        changed()
     }
 
     /// The node to open when the user browses the repertoire mid-line. Browsing on your
     /// own turn reveals the answer, so it counts as Again.
     func browseNode() -> NodeID? {
-        guard let run else { return nil }
-        failCurrentCard()
-        return run.currentNode
+        let result = session.browseNode(timing: SchedTiming(), nowMs: Self.nowMs)
+        document.apply(result.changes)
+        changed()
+        return result.node
     }
 
     func hint() {
-        failCurrentCard()
-        showHint = true
+        document.apply(session.hint(timing: SchedTiming(), nowMs: Self.nowMs))
+        changed()
     }
 
     /// The moves to the board, for Lichess analysis. Looking counts as Again, like browsing.
     func analysisMoves() -> [PlayedMove] {
-        failCurrentCard()
-        guard let run else { return [] }
-        return document.tree.moves(to: run.currentNode)
+        let result = session.analysisMoves(timing: SchedTiming(), nowMs: Self.nowMs)
+        document.apply(result.changes)
+        changed()
+        return result.moves
     }
 
     /// Anki's custom study "Increase today's new card limit".
     func increaseNewLimit(by count: Int) {
-        extendLimits { document.extendNewLimitToday(by: count, timing: $0) }
+        document.apply(session.extendLimits(new: Int64(count), review: 0, timing: SchedTiming()))
+        changed()
     }
 
     /// Anki's custom study "Increase today's review card limit".
     func increaseReviewLimit(by count: Int) {
-        extendLimits { document.extendReviewLimitToday(by: count, timing: $0) }
-    }
-
-    private func extendLimits(_ extend: (SchedTiming) -> Void) {
-        let timing = SchedTiming()
-        extend(timing)
-        session?.rebuild(cards: document.sidecar.studyCards, limits: document.remainingLimits(timing), timing: timing,
-                         learnAheadSecs: document.deckConfig.learnAheadSecs)
-        finished = false
-        nextLine()
+        document.apply(session.extendLimits(new: 0, review: Int64(count), timing: SchedTiming()))
+        changed()
     }
 
     /// Looks for cards again (learning cards that became due).
     func checkAgain() {
-        finished = false
-        nextLine()
+        session.checkAgain(timing: SchedTiming())
+        changed()
     }
 
-    // MARK: Private
+    // MARK: Timing
 
-    private func failCurrentCard() {
-        guard isUserTurn, let epd = currentEPD, case .answer(let kind) = currentRole, !answeredOnLine.contains(epd) else { return }
-        answer(epd, kind: kind, rating: .again)
-    }
-
-    private func answer(_ epd: EPD, kind: AnswerKind, rating: Rating) {
-        guard var session else { return }
-        let timing = SchedTiming()
-        let taken = Int(Date.now.timeIntervalSince(turnStarted) * 1000)
-        let card = document.answer(epd, position: session.position(of: epd), rating: rating,
-                                   filtered: isFiltered || kind == .reviewAhead, takenMillis: taken, timing: timing)
-        session.didAnswer(epd, card: card, timing: timing)
-        self.session = session
-        answeredOnLine.insert(epd)
-        answeredCount += 1
-        if rating == .good { correctCount += 1 }
-        studiedMillis += taken
-    }
-
-    private func continueLine() {
-        autoplay?.cancel()
-        autoplay = Task { [weak self] in
-            guard let self else { return }
-            try? await Task.sleep(for: .milliseconds(450))
-            while var run = self.run, !run.isFinished, !run.isOwnTurn || self.currentRole == .auto {
-                guard !Task.isCancelled else { return }
-                run.advance()
-                self.run = run
-                try? await Task.sleep(for: .milliseconds(450))
-            }
-            guard !Task.isCancelled else { return }
-            self.autoplay = nil
-            guard let run = self.run else { return }
-            if run.isFinished {
-                try? await Task.sleep(for: .milliseconds(400))
-                self.nextLine()
+    /// Refreshes the views and runs the timer the new phase needs.
+    private func changed() {
+        stamp += 1
+        timer?.cancel()
+        timer = nil
+        let delay: Int
+        switch session.phase() {
+        case .rewinding: delay = 250
+        case .autoplay: delay = 450
+        case .lineDone: delay = 400
+        case .idle, .userTurn, .finished: return
+        }
+        timer = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(delay))
+            guard !Task.isCancelled, let self else { return }
+            self.timer = nil
+            if self.session.phase() == .lineDone {
+                self.session.nextLine(timing: SchedTiming())
             } else {
-                self.prepareUserTurn()
+                self.session.step(nowMs: Self.nowMs)
             }
-        }
-    }
-
-    /// A New card is shown first (its answer), then the user plays it.
-    private func prepareUserTurn() {
-        turnStarted = .now
-        showHint = false
-        if currentRole == .answer(.introduce), let expected = run?.expected {
-            feedback = .newMove(expected)
-        } else if feedback != .correct {
-            feedback = .none
-        }
-    }
-
-    private func nextLine() {
-        autoplay?.cancel()
-        autoplay = nil
-        guard var session else { return }
-        session.updateLearningCutoff(now: Int64(Date.now.timeIntervalSince1970))
-        let next = session.nextLine(cards: document.sidecar.studyCards)
-        self.session = session
-        guard let next else {
-            line = nil
-            run = nil
-            finished = true
-            feedback = .none
-            return
-        }
-        let previous = run
-        line = next
-        answeredOnLine = []
-        feedback = .none
-        showHint = false
-        // Take moves back to where the lines part when that's shorter than replaying from move 1.
-        guard var previous, let start = next.resumeIndex(from: previous.nodes, shown: previous.index) else {
-            run = LineRun(trainer: document.trainer, nodes: next.nodes)
-            continueLine()
-            return
-        }
-        autoplay = Task { [weak self] in
-            guard let self else { return }
-            try? await Task.sleep(for: .milliseconds(300))
-            while previous.index > start {
-                guard !Task.isCancelled else { return }
-                previous.takeBack()
-                self.run = previous
-                try? await Task.sleep(for: .milliseconds(250))
-            }
-            guard !Task.isCancelled else { return }
-            self.run = LineRun(trainer: self.document.trainer, nodes: next.nodes, index: start)
-            self.continueLine()
+            self.changed()
         }
     }
 }
@@ -446,8 +319,8 @@ struct DrillView: View {
 
 /// The moves played so far on a study line. Read-only: going to a move would show its answer.
 private struct LineHistory: View {
-    let tree: RepertoireTree
-    let nodes: ArraySlice<NodeID>
+    let tree: RepertoireDocument.Tree
+    let nodes: [NodeID]
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -456,7 +329,7 @@ private struct LineHistory: View {
                     // Plies from the line's position: after a transposition a node's own ply can differ.
                     ForEach(Array(nodes.enumerated()), id: \.element) { i, id in
                         if let move = tree[id]?.move {
-                            MoveChip(ply: tree.root.ply + i + 1, san: move.san, isCurrent: i == nodes.count - 1)
+                            MoveChip(ply: Int(tree.root.ply) + i + 1, san: move.san, isCurrent: i == nodes.count - 1)
                                 .id(id)
                         }
                     }
@@ -470,8 +343,8 @@ private struct LineHistory: View {
 
 /// Anki's three counts: New (blue), Learning (red), To Review (green).
 struct StudyCountsView: View {
-    let counts: CardQueues.Counts
-    var highlight: CardQueues.Kind?
+    let counts: Counts
+    var highlight: QueueKind?
 
     var body: some View {
         HStack(spacing: 10) {
@@ -485,7 +358,7 @@ struct StudyCountsView: View {
         .accessibilityLabel("\(counts.new) new, \(counts.learning) learning, \(counts.review) to review")
     }
 
-    private func number(_ value: Int, _ color: Color, _ kind: CardQueues.Kind) -> some View {
+    private func number(_ value: Int64, _ color: Color, _ kind: QueueKind) -> some View {
         Text(value.formatted())
             .foregroundStyle(color)
             .underline(highlight == kind)

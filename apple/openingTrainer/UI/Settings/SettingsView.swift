@@ -1,4 +1,3 @@
-import OpeningCore
 import OpeningCoreRust
 import SwiftUI
 
@@ -7,8 +6,8 @@ struct SettingsView: View {
     @Environment(\.webAuthenticationSession) private var webAuth
     @Environment(\.dismiss) private var dismiss
     @State private var cacheCount = 0
-    @AppStorage(TrainingDefaults.newPerDayKey) private var newPerDay = DeckConfig().newPerDay
-    @AppStorage(TrainingDefaults.reviewsPerDayKey) private var reviewsPerDay = DeckConfig().reviewsPerDay
+    @AppStorage(TrainingDefaults.newPerDayKey) private var newPerDay = Int(TrainingDefaults.preset.newPerDay)
+    @AppStorage(TrainingDefaults.reviewsPerDayKey) private var reviewsPerDay = Int(TrainingDefaults.preset.reviewsPerDay)
     @AppStorage(TrainingDefaults.practiceModeKey) private var practiceMode = PracticeMode.default
 
     var body: some View {
@@ -48,9 +47,9 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    LabeledContent("Learning steps", value: steps(DeckConfig().learnSteps))
-                    LabeledContent("Relearning steps", value: steps(DeckConfig().relearnSteps))
-                    LabeledContent("Desired retention", value: Format.percent(DeckConfig().desiredRetention))
+                    LabeledContent("Learning steps", value: steps(TrainingDefaults.preset.learnSteps))
+                    LabeledContent("Relearning steps", value: steps(TrainingDefaults.preset.relearnSteps))
+                    LabeledContent("Desired retention", value: Format.percent(TrainingDefaults.preset.desiredRetention))
                     LabeledContent("Next day starts at", value: "\(SchedTiming.rolloverHour) AM")
                 } header: {
                     Text("Scheduling")

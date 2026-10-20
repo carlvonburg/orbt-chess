@@ -1,4 +1,4 @@
-import OpeningCore
+import OpeningCoreRust
 import SwiftUI
 
 /// Anki's deck overview for one repertoire: coverage progress, today's counts and Options,
@@ -10,7 +10,7 @@ struct RepertoireOverviewView: View {
     let study: () -> Void
     let practice: () -> Void
     @State private var sheet: Sheet?
-    @State private var graphs: GraphsContext?
+    @State private var graphs: Graphs?
 
     private enum Sheet: String, Identifiable {
         case settings, options
@@ -41,8 +41,9 @@ struct RepertoireOverviewView: View {
             }
         }
         .task(id: document.revision) {
-            graphs = GraphsContext(cards: Array(document.sidecar.studyCards.values), newCount: 0,
-                                   revlog: document.reviewLog(), timing: SchedTiming())
+            graphs = Graphs(cards: Array(document.sidecar.studyCards.values), newCount: 0, suspendedNewCount: 0,
+                            revlog: document.reviewLog(), timing: SchedTiming(),
+                            localOffsetSecs: Int64(TimeZone.current.secondsFromGMT()))
         }
     }
 
@@ -109,7 +110,7 @@ struct RepertoireOverviewView: View {
                 let today = graphs.today()
                 LabeledContent("Today", value: today.answerCount == 0 ? "Not studied"
                                : "\(today.answerCount) \(today.answerCount == 1 ? "move" : "moves") · \(Int((Double(today.answerMillis) / 60_000).rounded())) min")
-                if let retention = graphs.trueRetention()[.month]?.total {
+                if let retention = graphs.retentionTable()[.month]?.total {
                     LabeledContent("True retention (month)", value: Format.percent(retention))
                 }
             }
@@ -137,7 +138,7 @@ struct RepertoireOverviewView: View {
         }
     }
 
-    private func legend(_ value: Int, _ label: String, _ color: Color) -> some View {
+    private func legend(_ value: Int64, _ label: String, _ color: Color) -> some View {
         HStack(spacing: 4) {
             Circle().fill(color).frame(width: 7, height: 7)
             Text("\(value.formatted()) \(label)").foregroundStyle(.secondary)
@@ -146,13 +147,13 @@ struct RepertoireOverviewView: View {
 
     /// Only the counts above zero, in Anki's colors.
     @ViewBuilder
-    private func dueCounts(_ counts: CardQueues.Counts) -> some View {
+    private func dueCounts(_ counts: Counts) -> some View {
         if counts.new > 0 { due(counts.new, "new", StudyColors.new) }
         if counts.learning > 0 { due(counts.learning, "learning", StudyColors.learning) }
         if counts.review > 0 { due(counts.review, "review", StudyColors.review) }
     }
 
-    private func due(_ value: Int, _ label: String, _ color: Color) -> some View {
+    private func due(_ value: Int64, _ label: String, _ color: Color) -> some View {
         Text("\(value.formatted()) \(label)")
             .foregroundStyle(color)
             .fontWeight(.semibold)
