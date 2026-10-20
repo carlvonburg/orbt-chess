@@ -1,0 +1,48 @@
+{
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "eye.svg",
+          "name" : "eye"
+        },
+        {
+          "glass" : true,
+          "image-name" : "knight.svg",
+          "name" : "knight"
+        }
+      ],
+      "name" : "Knight",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
+          "glass" : false,
+          "image-name" : "board.svg",
+          "name" : "board"
+        }
+      ],
+      "name" : "Board",
+      "shadow" : {
+        "kind" : "none",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : "shared"
+  }
+}
