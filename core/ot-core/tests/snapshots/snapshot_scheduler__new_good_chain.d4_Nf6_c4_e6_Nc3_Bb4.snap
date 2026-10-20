@@ -4,9 +4,9 @@ expression: out
 ---
 0: day 100 +28800s Good from New
    next: again learning 1m | hard learning 330s | good learning 10m | easy review 6d
-   card: Learn/Learn due 1708669454 ivl 0 ease 0 reps 1 lapses 0 left 1 s 2.3065 d 2.1181
+   card: Learn/Learn due 1708669401 ivl 0 ease 0 reps 1 lapses 0 left 1 s 2.3065 d 2.1181
    revlog: Learning ease 3 ivl -600 last 0 factor 224 time 4000
-1: day 100 +29454s Good from Learn
+1: day 100 +29401s Good from Learn
    next: again learning 1m | hard learning 10m | good review 2d | easy review 5d
    card: Review/Review due 102 ivl 2 ease 2500 reps 2 lapses 0 left 0 s 2.3065 d 2.1112
    revlog: Learning ease 3 ivl 2 last -600 factor 223 time 5000

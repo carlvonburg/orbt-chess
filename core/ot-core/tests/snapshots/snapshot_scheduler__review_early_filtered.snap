@@ -17,9 +17,9 @@ start: Review/Review due 105 ivl 10 ease 2500 reps 5 lapses 0 left 0 s 10.0000 d
    revlog: Filtered ease 3 ivl 175 last 65 factor 541 time 6000
 3: day 360 +28922s Again filtered from Review
    next: again relearning 10m | hard review 328d | good review 425d | easy review 640d
-   card: Relearn/Learn due 1731133557 ivl 5 ease 2300 reps 9 lapses 1 left 1 s 4.5613 d 8.3321
+   card: Relearn/Learn due 1731133648 ivl 5 ease 2300 reps 9 lapses 1 left 1 s 4.5613 d 8.3321
    revlog: Filtered ease 1 ivl -600 last 175 factor 915 time 60000
-4: day 360 +29557s Good from Learn
+4: day 360 +29648s Good from Learn
    next: again relearning 10m | hard relearning 15m | good review 4d | easy review 5d
    card: Review/Review due 364 ivl 4 ease 2300 reps 10 lapses 1 left 0 s 4.5613 d 8.3190
    revlog: Relearning ease 3 ivl 4 last -600 factor 913 time 8000

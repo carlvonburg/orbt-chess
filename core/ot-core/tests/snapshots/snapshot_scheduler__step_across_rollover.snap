@@ -16,9 +16,9 @@ expression: out
    revlog: Review ease 3 ivl 34 last 8 factor 223 time 6000
 3: day 143 +28922s Again from Review
    next: again relearning 10m | hard review 90d | good review 126d | easy review 206d
-   card: Relearn/Learn due 1712384745 ivl 3 ease 2300 reps 4 lapses 1 left 1 s 2.5869 d 7.3900
+   card: Relearn/Learn due 1712384811 ivl 3 ease 2300 reps 4 lapses 1 left 1 s 2.5869 d 7.3900
    revlog: Review ease 1 ivl -600 last 34 factor 810 time 60000
-4: day 143 +29545s Good from Learn
+4: day 143 +29611s Good from Learn
    next: again relearning 10m | hard relearning 15m | good review 4d | easy review 6d
    card: Review/Review due 147 ivl 4 ease 2300 reps 5 lapses 1 left 0 s 2.5869 d 7.3778
    revlog: Relearning ease 3 ivl 4 last -600 factor 809 time 8000

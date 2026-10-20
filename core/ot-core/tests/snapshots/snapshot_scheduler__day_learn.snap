@@ -13,9 +13,9 @@ start: Learn/DayLearn due 99 ivl 0 ease 0 reps 1 lapses 0 left 1 s 2.3065 d 2.10
    revlog: Review ease 3 ivl 49 last 12 factor 221 time 5000
 2: day 161 +28861s Again from Review
    next: again relearning 10m | hard review 124d | good review 174d | easy review 282d
-   card: Relearn/Learn due 1713939884 ivl 3 ease 2300 reps 4 lapses 1 left 1 s 2.9977 d 7.3840
+   card: Relearn/Learn due 1713939950 ivl 3 ease 2300 reps 4 lapses 1 left 1 s 2.9977 d 7.3840
    revlog: Review ease 1 ivl -600 last 49 factor 809 time 6000
-3: day 161 +29484s Good from Learn
+3: day 161 +29550s Good from Learn
    next: again relearning 10m | hard relearning 15m | good review 4d | easy review 6d
    card: Review/Review due 165 ivl 4 ease 2300 reps 5 lapses 1 left 0 s 2.9977 d 7.3719
    revlog: Relearning ease 3 ivl 4 last -600 factor 808 time 60000

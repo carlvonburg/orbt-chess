@@ -5,22 +5,22 @@ expression: text
 daily:
 +0s Counts { new: 5, learning: 0, review: 0 } d4 d5 c4 c6 Nf3 Nf6 Nc3 e6
   roles: 1 introduce, 3 introduce, 5 introduce, 7 introduce
-  1 Good: Learn/Learn due +672s ivl 0
-  3 Good: Learn/Learn due +626s ivl 0
-  5 Good: Learn/Learn due +742s ivl 0
-  7 Good: Learn/Learn due +727s ivl 0
+  1 Good: Learn/Learn due +717s ivl 0
+  3 Good: Learn/Learn due +682s ivl 0
+  5 Good: Learn/Learn due +676s ivl 0
+  7 Good: Learn/Learn due +776s ivl 0
 +28s Counts { new: 1, learning: 4, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5
   roles: 1 queued, 3 queued, 5 queued, 7 introduce
   1 Good: Review/Review due 102 ivl 2
   3 Good: Review/Review due 102 ivl 2
   5 Good: Review/Review due 102 ivl 2
-  7 Again: Learn/Learn due +128s ivl 0
+  7 Again: Learn/Learn due +119s ivl 0
 +56s Counts { new: 0, learning: 2, review: 0 } d4 d5 c4 c6 Nf3 Nf6 Nc3 e6 (from 6)
   roles: 1 auto, 3 auto, 5 auto, 7 queued
   7 Good: Review/Review due 102 ivl 2
 +84s Counts { new: 0, learning: 1, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5 (from 6)
   roles: 1 auto, 3 auto, 5 auto, 7 queued
-  7 Good: Learn/Learn due +766s ivl 0
+  7 Good: Learn/Learn due +805s ivl 0
 +112s Counts { new: 0, learning: 1, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5 (from 7)
   roles: 1 auto, 3 auto, 5 auto, 7 queued
   7 Good: Review/Review due 101 ivl 1
@@ -29,27 +29,27 @@ daily:
 branch [d4]:
 +0s Counts { new: 7, learning: 0, review: 0 } d4 d5 c4 c6 Nf3 Nf6 Nc3 e6
   roles: 1 introduce, 3 introduce, 5 introduce, 7 introduce
-  1 Good filtered: Learn/Learn due +672s ivl 0
-  3 Good filtered: Learn/Learn due +626s ivl 0
-  5 Good filtered: Learn/Learn due +742s ivl 0
-  7 Good filtered: Learn/Learn due +727s ivl 0
+  1 Good filtered: Learn/Learn due +717s ivl 0
+  3 Good filtered: Learn/Learn due +682s ivl 0
+  5 Good filtered: Learn/Learn due +676s ivl 0
+  7 Good filtered: Learn/Learn due +776s ivl 0
 +28s Counts { new: 3, learning: 4, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5
   roles: 1 queued, 3 queued, 5 queued, 7 introduce
   1 Good filtered: Review/Review due 102 ivl 2
   3 Good filtered: Review/Review due 102 ivl 2
   5 Good filtered: Review/Review due 102 ivl 2
-  7 Again filtered: Learn/Learn due +128s ivl 0
+  7 Again filtered: Learn/Learn due +119s ivl 0
 +56s Counts { new: 2, learning: 2, review: 0 } d4 d5 Nf3 Nf6 c4 c6 Nc3 e6
   roles: 1 auto, 3 introduce, 5 introduce, 7 queued
-  3 Good filtered: Learn/Learn due +678s ivl 0
-  5 Good filtered: Learn/Learn due +763s ivl 0
-  7 Again filtered: Learn/Learn due +156s ivl 0
+  3 Good filtered: Learn/Learn due +778s ivl 0
+  5 Good filtered: Learn/Learn due +800s ivl 0
+  7 Again filtered: Learn/Learn due +153s ivl 0
 +84s Counts { new: 0, learning: 4, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5
   roles: 1 auto, 3 auto, 5 auto, 7 queued
-  7 Good filtered: Learn/Learn due +766s ivl 0
+  7 Good filtered: Learn/Learn due +805s ivl 0
 +112s Counts { new: 0, learning: 4, review: 0 } d4 d5 c4 c6 Nf3 Nf6 Nc3 e6 (from 6)
   roles: 1 auto, 3 auto, 5 auto, 7 queued
-  7 Good filtered: Learn/Learn due +866s ivl 0
+  7 Good filtered: Learn/Learn due +860s ivl 0
 +140s Counts { new: 0, learning: 4, review: 0 } d4 d5 Nf3 Nf6 c4 c6 Nc3 e6
   roles: 1 auto, 3 queued, 5 queued, 7 queued
   3 Good filtered: Review/Review due 102 ivl 2
@@ -60,7 +60,7 @@ branch [d4]:
   7 Again filtered: Learn/Learn due +260s ivl 0
 +196s Counts { new: 0, learning: 1, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5 (from 7)
   roles: 1 auto, 3 auto, 5 auto, 7 queued
-  7 Good filtered: Learn/Learn due +878s ivl 0
+  7 Good filtered: Learn/Learn due +949s ivl 0
 +224s Counts { new: 0, learning: 1, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5 (from 7)
   roles: 1 auto, 3 auto, 5 auto, 7 queued
   7 Good filtered: Review/Review due 101 ivl 1
