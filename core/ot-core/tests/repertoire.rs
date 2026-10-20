@@ -172,3 +172,48 @@ fn lines_stay_in_their_chapter() {
     let b = RepertoireTree::from_games(vec![games[1].clone()]);
     assert!(b.find("d4 d5 Nf3 Nf6 c4 c6 e3").is_some());
 }
+
+#[test]
+fn shared_pre_comments_stay_in_their_variation() {
+    // d4 and c5 start a variation in the first game and the main line in the second.
+    let text = "1. e4 ({ pre d4 } 1. d4 d5) 1... e5 ({ pre c5 } 1... c5) *\n\n\
+                1. d4 d5 *\n\n1. e4 c5 *\n";
+    let tree = RepertoireTree::from_pgn(text);
+    let saved = tree.pgn_text();
+    assert_eq!(
+        saved,
+        "1. e4 ({ pre d4 } 1. d4 d5) 1... e5 ({ pre c5 } 1... c5) *\n\n\
+         1. d4 d5 *\n\n1. e4 c5 *\n"
+    );
+    assert_eq!(RepertoireTree::from_pgn(&saved).pgn_text(), saved);
+}
+
+#[test]
+fn a_transposition_follows_the_node_of_its_own_chapter() {
+    // Chapter 2 merges "1. Na3 Nc6 2. Nb1" into its own "1. Na3 Na6 2. Nb1 Nb4 3. Nc3 Nc6
+    // 4. Nb1" (same position); chapter 1 has another node with that position, with other
+    // moves. The transposition must lead to chapter 2's node, which holds Nb4.
+    let pgn = "[Event \"One\"]\n\n1. Na3 Na6 2. Nb1 Nb4 3. Na3 Nc6 4. Nb1 Na5 *\n\n\
+               [Event \"Two\"]\n\n1. Na3 Na6 (1... Nc6 2. Nb1 Nb4) 2. Nb1 Nb4 3. Nc3 Nc6 4. Nb1 Na5 *\n";
+    let tree = RepertoireTree::from_pgn(pgn);
+    let leaf = tree.find_san("Na3 Nc6 Nb1").unwrap();
+    let target = tree.transposition_target(leaf).unwrap();
+    assert_eq!(
+        target,
+        tree.find_san("Na3 Na6 Nb1 Nb4 Nc3 Nc6 Nb1").unwrap()
+    );
+    assert!(tree.child_by_san(target, "Nb4").is_some());
+}
+
+#[test]
+fn a_chapter_merges_the_same_whatever_the_order_of_its_variations() {
+    // Chapter 2 reaches "1. Nc3 Nc6" (which chapter 1 continues) only in a variation that
+    // comes after the line transposing into it.
+    let pgn = "[Event \"One\"]\n\n1. Nc3 Nc6 2. Na4 *\n\n\
+               [Event \"Two\"]\n\n1. Nc3 Na6 (1... Nc6) 2. Na4 Nb4 3. Nc3 Nc6 4. Na4 *\n";
+    let tree = RepertoireTree::from_pgn(pgn);
+    let text = tree.pgn_text();
+    assert_eq!(RepertoireTree::from_pgn(&text).pgn_text(), text);
+    let leaf = tree.find_san("Nc3 Na6 Na4 Nb4 Nc3 Nc6").unwrap();
+    assert_eq!(tree.transposition_target(leaf), tree.find_san("Nc3 Nc6"));
+}

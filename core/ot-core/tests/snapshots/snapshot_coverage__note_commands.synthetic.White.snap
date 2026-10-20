@@ -1,0 +1,19 @@
+---
+source: ot-core/tests/snapshot_coverage.rs
+expression: text
+---
+root: completion 0 gaps 4 (mass 1) pending 0
+nodes by status: {"required": 2}
+4 gaps, the biggest:
+  reply d6 after [e4] mass 0.337035 seen every 3
+  reply d5 after [e4] mass 0.322012 seen every 3
+  reply Nh6 after [e4] mass 0.254735 seen every 4
+  reply Nf6 after [e4] mass 0.086218 seen every 12
+0 pending positions, the most reached:
+
+0 root: required reach 1 completion 0 gaps 4 (mass 1) pending 0 seen every 1
+1 e4: required reach 1 completion 0 gaps 4 (mass 1) pending 0 seen every 1
+    d6 share 0.337035 reach 0.337035 completion 0 games 516 required
+    d5 share 0.322012 reach 0.322012 completion 0 games 493 required
+    Nh6 share 0.254735 reach 0.254735 completion 0 games 390 required
+    Nf6 share 0.086218 reach 0.086218 completion 0 games 132 required

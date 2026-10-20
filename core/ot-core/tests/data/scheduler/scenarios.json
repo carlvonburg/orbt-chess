@@ -1,0 +1,764 @@
+{
+  "t0": 1700000000,
+  "baseConfig": {"capAnswerTimeToSecs": 60, "desiredRetention": 0.9, "easyMultiplier": 1.3, "fsrsShortTermWithStepsEnabled": false, "graduatingIntervalEasy": 4, "graduatingIntervalGood": 1, "hardMultiplier": 1.2, "initialEase": 2.5, "intervalMultiplier": 1, "lapseMultiplier": 0, "learnAheadSecs": 1200, "learnSteps": [1, 10], "leechAction": "tagOnly", "leechThreshold": 8, "maximumReviewInterval": 36500, "minimumLapseInterval": 1, "newCardsIgnoreReviewLimit": false, "newPerDay": 20, "relearnSteps": [10], "reviewsPerDay": 200},
+  "scenarios": [
+    {
+      "name": "new_good_chain.start",
+      "epd": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+      "cardId": 7445857777819718908,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_again_good.start",
+      "epd": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+      "cardId": 7445857777819718908,
+      "steps": [
+        {"rating": "again", "position": 7, "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "position": 7, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "again", "takenMillis": 10000, "position": 7, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 12000, "position": 7, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "position": 7, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_mixed_late.start",
+      "epd": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+      "cardId": 7445857777819718908,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 90}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 2, "secs": 28983}},
+        {"rating": "again", "takenMillis": 9000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 2, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 2, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 2, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_good_chain.e4",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_again_good.e4",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "steps": [
+        {"rating": "again", "position": 7, "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "position": 7, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "again", "takenMillis": 10000, "position": 7, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 12000, "position": 7, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "position": 7, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_mixed_late.e4",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 90}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 2, "secs": 28983}},
+        {"rating": "again", "takenMillis": 9000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 2, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 2, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 2, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_good_chain.d4",
+      "epd": "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -",
+      "cardId": 7812462233027710121,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_again_good.d4",
+      "epd": "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -",
+      "cardId": 7812462233027710121,
+      "steps": [
+        {"rating": "again", "position": 7, "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "position": 7, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "again", "takenMillis": 10000, "position": 7, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 12000, "position": 7, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "position": 7, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_mixed_late.d4",
+      "epd": "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -",
+      "cardId": 7812462233027710121,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 90}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 2, "secs": 28983}},
+        {"rating": "again", "takenMillis": 9000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 2, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 2, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 2, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_good_chain.e4_e5",
+      "epd": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -",
+      "cardId": 5774276127714537426,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_again_good.e4_e5",
+      "epd": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -",
+      "cardId": 5774276127714537426,
+      "steps": [
+        {"rating": "again", "position": 7, "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "position": 7, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "again", "takenMillis": 10000, "position": 7, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 12000, "position": 7, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "position": 7, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_mixed_late.e4_e5",
+      "epd": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -",
+      "cardId": 5774276127714537426,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 90}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 2, "secs": 28983}},
+        {"rating": "again", "takenMillis": 9000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 2, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 2, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 2, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_good_chain.e4_c5",
+      "epd": "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -",
+      "cardId": 4105685192796757786,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_again_good.e4_c5",
+      "epd": "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -",
+      "cardId": 4105685192796757786,
+      "steps": [
+        {"rating": "again", "position": 7, "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "position": 7, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "again", "takenMillis": 10000, "position": 7, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 12000, "position": 7, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "position": 7, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_mixed_late.e4_c5",
+      "epd": "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -",
+      "cardId": 4105685192796757786,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 90}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 2, "secs": 28983}},
+        {"rating": "again", "takenMillis": 9000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 2, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 2, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 2, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_good_chain.d4_d5_c4",
+      "epd": "rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq -",
+      "cardId": 6588982545959252443,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_again_good.d4_d5_c4",
+      "epd": "rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq -",
+      "cardId": 6588982545959252443,
+      "steps": [
+        {"rating": "again", "position": 7, "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "position": 7, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "again", "takenMillis": 10000, "position": 7, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 12000, "position": 7, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "position": 7, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_mixed_late.d4_d5_c4",
+      "epd": "rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq -",
+      "cardId": 6588982545959252443,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 90}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 2, "secs": 28983}},
+        {"rating": "again", "takenMillis": 9000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 2, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 2, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 2, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_good_chain.c4",
+      "epd": "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq -",
+      "cardId": 7797065353302876427,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_again_good.c4",
+      "epd": "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq -",
+      "cardId": 7797065353302876427,
+      "steps": [
+        {"rating": "again", "position": 7, "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "position": 7, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "again", "takenMillis": 10000, "position": 7, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 12000, "position": 7, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "position": 7, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_mixed_late.c4",
+      "epd": "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq -",
+      "cardId": 7797065353302876427,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 90}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 2, "secs": 28983}},
+        {"rating": "again", "takenMillis": 9000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 2, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 2, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 2, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_good_chain.Nf3",
+      "epd": "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -",
+      "cardId": 1693098281745633769,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_again_good.Nf3",
+      "epd": "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -",
+      "cardId": 1693098281745633769,
+      "steps": [
+        {"rating": "again", "position": 7, "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "position": 7, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "again", "takenMillis": 10000, "position": 7, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 12000, "position": 7, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "position": 7, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_mixed_late.Nf3",
+      "epd": "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq -",
+      "cardId": 1693098281745633769,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 90}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 2, "secs": 28983}},
+        {"rating": "again", "takenMillis": 9000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 2, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 2, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 2, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_good_chain.e4_e5_Nf3_Nc6_Bb5",
+      "epd": "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -",
+      "cardId": 1237271424104305317,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_again_good.e4_e5_Nf3_Nc6_Bb5",
+      "epd": "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -",
+      "cardId": 1237271424104305317,
+      "steps": [
+        {"rating": "again", "position": 7, "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "position": 7, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "again", "takenMillis": 10000, "position": 7, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 12000, "position": 7, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "position": 7, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_mixed_late.e4_e5_Nf3_Nc6_Bb5",
+      "epd": "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -",
+      "cardId": 1237271424104305317,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 90}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 2, "secs": 28983}},
+        {"rating": "again", "takenMillis": 9000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 2, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 2, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 2, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_good_chain.d4_Nf6_c4_e6_Nc3_Bb4",
+      "epd": "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq -",
+      "cardId": 5481399629266461740,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_again_good.d4_Nf6_c4_e6_Nc3_Bb4",
+      "epd": "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq -",
+      "cardId": 5481399629266461740,
+      "steps": [
+        {"rating": "again", "position": 7, "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "position": 7, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "again", "takenMillis": 10000, "position": 7, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "position": 7, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 12000, "position": 7, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "position": 7, "afterDue": {"days": 0, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "new_mixed_late.d4_Nf6_c4_e6_Nc3_Bb4",
+      "epd": "rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq -",
+      "cardId": 5481399629266461740,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 90}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 2, "secs": 28983}},
+        {"rating": "again", "takenMillis": 9000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"secs": 90}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 2, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 2, "secs": 29227}},
+        {"rating": "good", "takenMillis": 13000, "afterDue": {"days": 2, "secs": 29288}}
+      ]
+    },
+    {
+      "name": "review_on_time",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "start": {"added": 1700000000, "ctype": 2, "due": 100, "easeFactor": 2500, "id": 3107432833210105763, "interval": 10, "lapses": 0, "lastReviewTime": 1707804800, "memory": {"difficulty": 5, "stability": 10}, "originalPosition": 0, "queue": 2, "remainingSteps": 0, "reps": 5},
+      "steps": [
+        {"rating": "good", "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "again", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}}
+      ]
+    },
+    {
+      "name": "review_late",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "start": {"added": 1700000000, "ctype": 2, "due": 97, "easeFactor": 2500, "id": 3107432833210105763, "interval": 10, "lapses": 0, "lastReviewTime": 1707545600, "memory": {"difficulty": 5, "stability": 10}, "originalPosition": 0, "queue": 2, "remainingSteps": 0, "reps": 5},
+      "steps": [
+        {"rating": "good", "afterDue": {"days": 3, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"days": 3, "secs": 28800}},
+        {"rating": "again", "takenMillis": 6000, "afterDue": {"days": 3, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 3, "secs": 28983}}
+      ]
+    },
+    {
+      "name": "review_early_filtered",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "start": {"added": 1700000000, "ctype": 2, "due": 105, "easeFactor": 2500, "id": 3107432833210105763, "interval": 10, "lapses": 0, "lastReviewTime": 1708236800, "memory": {"difficulty": 5, "stability": 10}, "originalPosition": 0, "queue": 2, "remainingSteps": 0, "reps": 5},
+      "steps": [
+        {"rating": "good", "filtered": true, "afterDue": {"days": -5, "secs": 28800}},
+        {"rating": "good", "filtered": true, "takenMillis": 5000, "afterDue": {"days": -2, "secs": 28800}},
+        {"rating": "good", "filtered": true, "takenMillis": 6000, "afterDue": {"days": -2, "secs": 28861}},
+        {"rating": "again", "filtered": true, "takenMillis": 75000, "afterDue": {"days": -2, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"secs": 0}}
+      ]
+    },
+    {
+      "name": "review_filtered_session",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "start": {"added": 1700000000, "ctype": 2, "due": 120, "easeFactor": 2500, "id": 3107432833210105763, "interval": 30, "lapses": 0, "lastReviewTime": 1707804800, "memory": {"difficulty": 3, "stability": 30}, "originalPosition": 0, "queue": 2, "remainingSteps": 0, "reps": 5},
+      "steps": [
+        {"rating": "good", "filtered": true, "afterDue": {"days": -20, "secs": 28800}},
+        {"rating": "again", "filtered": true, "takenMillis": 5000, "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "good", "filtered": true, "takenMillis": 6000, "afterDue": {"secs": 0}},
+        {"rating": "good", "filtered": true, "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}}
+      ]
+    },
+    {
+      "name": "review_no_memory",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "start": {"added": 1700000000, "ctype": 2, "due": 100, "easeFactor": 2500, "id": 3107432833210105763, "interval": 4, "lapses": 0, "originalPosition": 0, "queue": 2, "remainingSteps": 0, "reps": 5},
+      "steps": [
+        {"rating": "good", "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}}
+      ]
+    },
+    {
+      "name": "relearn",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "start": {"added": 1700000000, "ctype": 3, "due": 1708668700, "easeFactor": 2500, "id": 3107432833210105763, "interval": 3, "lapses": 2, "lastReviewTime": 1708668100, "memory": {"difficulty": 7, "stability": 1.5}, "originalPosition": 0, "queue": 1, "remainingSteps": 1, "reps": 5},
+      "steps": [
+        {"rating": "good", "afterDue": {"secs": 100}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"secs": 0}}
+      ]
+    },
+    {
+      "name": "leech_tag_only",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "start": {"added": 1700000000, "ctype": 2, "due": 100, "easeFactor": 2500, "id": 3107432833210105763, "interval": 1, "lapses": 7, "lastReviewTime": 1708582400, "memory": {"difficulty": 9, "stability": 1}, "originalPosition": 0, "queue": 2, "remainingSteps": 0, "reps": 5},
+      "steps": [
+        {"rating": "again", "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 0}}
+      ]
+    },
+    {
+      "name": "leech_suspend",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "config": {"leechAction": "suspend"},
+      "start": {"added": 1700000000, "ctype": 2, "due": 100, "easeFactor": 2500, "id": 3107432833210105763, "interval": 1, "lapses": 7, "lastReviewTime": 1708582400, "memory": {"difficulty": 9, "stability": 1}, "originalPosition": 0, "queue": 2, "remainingSteps": 0, "reps": 5},
+      "steps": [
+        {"rating": "again", "afterDue": {"days": 0, "secs": 28800}}
+      ]
+    },
+    {
+      "name": "leech_threshold_16",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "start": {"added": 1700000000, "ctype": 2, "due": 100, "easeFactor": 2500, "id": 3107432833210105763, "interval": 1, "lapses": 15, "lastReviewTime": 1708582400, "memory": {"difficulty": 9, "stability": 1}, "originalPosition": 0, "queue": 2, "remainingSteps": 0, "reps": 5},
+      "steps": [
+        {"rating": "again", "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}}
+      ]
+    },
+    {
+      "name": "step_across_rollover",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 86100}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "again", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"secs": 0}}
+      ]
+    },
+    {
+      "name": "again_near_rollover",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "steps": [
+        {"rating": "again", "at": {"day": 100, "secs": 86370}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 0}}
+      ]
+    },
+    {
+      "name": "day_learn",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "start": {"added": 1700000000, "ctype": 1, "due": 99, "easeFactor": 0, "id": 3107432833210105763, "interval": 0, "lapses": 0, "lastReviewTime": 1708496000, "memory": {"difficulty": 2.1, "stability": 2.3065}, "queue": 3, "remainingSteps": 1, "reps": 1},
+      "steps": [
+        {"rating": "good", "position": 2, "afterDue": {"days": 1, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "position": 2, "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "again", "takenMillis": 6000, "position": 2, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "position": 2, "afterDue": {"secs": 0}}
+      ]
+    },
+    {
+      "name": "three_steps_no_relearn",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "config": {"learnSteps": [1, 10, 100], "relearnSteps": []},
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "again", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}}
+      ]
+    },
+    {
+      "name": "three_steps_again",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "config": {"learnSteps": [1, 10, 100], "relearnSteps": []},
+      "steps": [
+        {"rating": "again", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"secs": 0}}
+      ]
+    },
+    {
+      "name": "no_steps",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "config": {"learnSteps": [], "relearnSteps": []},
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "again", "takenMillis": 5000, "afterDue": {"days": 0, "secs": 28800}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "again", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}}
+      ]
+    },
+    {
+      "name": "no_steps_short_term",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "config": {"fsrsShortTermWithStepsEnabled": true, "learnSteps": [], "relearnSteps": []},
+      "steps": [
+        {"rating": "again", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 6000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}}
+      ]
+    },
+    {
+      "name": "short_term_with_steps",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "config": {"fsrsShortTermWithStepsEnabled": true},
+      "steps": [
+        {"rating": "again", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"secs": 0}},
+        {"rating": "again", "takenMillis": 75000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"secs": 0}}
+      ]
+    },
+    {
+      "name": "retention_80_max_30",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "config": {"capAnswerTimeToSecs": 20, "desiredRetention": 0.8, "graduatingIntervalGood": 3, "maximumReviewInterval": 30, "minimumLapseInterval": 2},
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "good", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"days": 0, "secs": 28983}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}},
+        {"rating": "good", "takenMillis": 11000, "afterDue": {"days": 0, "secs": 29166}},
+        {"rating": "good", "takenMillis": 12000, "afterDue": {"days": 0, "secs": 29227}},
+        {"rating": "again", "takenMillis": 13000, "afterDue": {"days": 0, "secs": 29288}},
+        {"rating": "good", "takenMillis": 14000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 15000, "afterDue": {"days": 0, "secs": 29410}}
+      ]
+    },
+    {
+      "name": "retention_97",
+      "epd": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -",
+      "cardId": 3107432833210105763,
+      "config": {"desiredRetention": 0.97},
+      "steps": [
+        {"rating": "good", "at": {"day": 100, "secs": 28800}},
+        {"rating": "good", "takenMillis": 5000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 6000, "afterDue": {"days": 0, "secs": 28861}},
+        {"rating": "again", "takenMillis": 75000, "afterDue": {"days": 0, "secs": 28922}},
+        {"rating": "good", "takenMillis": 8000, "afterDue": {"secs": 0}},
+        {"rating": "good", "takenMillis": 9000, "afterDue": {"days": 0, "secs": 29044}},
+        {"rating": "good", "takenMillis": 10000, "afterDue": {"days": 0, "secs": 29105}}
+      ]
+    }
+  ]
+}

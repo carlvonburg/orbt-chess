@@ -1,0 +1,60 @@
+---
+source: ot-core/tests/snapshot_pgn.rs
+expression: games_json(&games)
+---
+[
+  {
+    "comments": [],
+    "moves": [
+      {
+        "children": [
+          {
+            "children": [],
+            "comments": [],
+            "nags": [],
+            "preComments": [],
+            "san": "e5"
+          }
+        ],
+        "comments": [],
+        "nags": [],
+        "preComments": [],
+        "san": "e4"
+      }
+    ],
+    "result": "*",
+    "tags": [
+      [
+        "Event",
+        "A"
+      ]
+    ]
+  },
+  {
+    "comments": [],
+    "moves": [
+      {
+        "children": [
+          {
+            "children": [],
+            "comments": [],
+            "nags": [],
+            "preComments": [],
+            "san": "d5"
+          }
+        ],
+        "comments": [],
+        "nags": [],
+        "preComments": [],
+        "san": "d4"
+      }
+    ],
+    "result": "*",
+    "tags": [
+      [
+        "Event",
+        "B"
+      ]
+    ]
+  }
+]

@@ -1,0 +1,7 @@
+---
+source: ot-core/tests/snapshot_pgn.rs
+expression: tree_text(&tree)
+---
+1 nodes, 0 merged transpositions
+chapter 0 "Endgame": Event=Endgame SetUp=1 FEN=8/8/8/4k3/8/8/4P3/4K3 w - - 0 1
+0 root ply 0 ch {} | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -

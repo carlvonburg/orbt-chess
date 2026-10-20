@@ -60,43 +60,72 @@ impl fmt::Display for Timestamp {
 impl std::str::FromStr for Timestamp {
     type Err = String;
 
-    /// Accepts `YYYY-MM-DDTHH:MM:SS`, optional fraction, then `Z` or `±HH:MM`.
+    /// Accepts `YYYY-MM-DDTHH:MM:SS`, optional fraction, then `Z` or `±HH:MM`. Works on bytes
+    /// and checks every field's range: the text comes from files that may be corrupt.
     fn from_str(s: &str) -> Result<Timestamp, String> {
-        let bad = || format!("not an ISO 8601 date: {s}");
-        let b = s.as_bytes();
-        if b.len() < 20 || b[4] != b'-' || b[7] != b'-' || b[10] != b'T' || b[13] != b':' {
-            return Err(bad());
-        }
-        let num = |range: std::ops::Range<usize>| -> Result<i64, String> {
-            s.get(range).and_then(|t| t.parse().ok()).ok_or_else(bad)
-        };
-        let (y, mo, d) = (num(0..4)?, num(5..7)?, num(8..10)?);
-        let (h, mi, sec) = (num(11..13)?, num(14..16)?, num(17..19)?);
-        let mut i = 19;
-        let mut millis = 0;
-        if b.get(i) == Some(&b'.') {
-            let start = i + 1;
-            i = start;
-            while i < b.len() && b[i].is_ascii_digit() {
-                i += 1;
-            }
-            let frac = &s[start..i];
-            let padded = format!("{frac:0<3}");
-            millis = padded[..3].parse::<i64>().map_err(|_| bad())?;
-        }
-        let offset_secs = match &s[i..] {
-            "Z" | "z" => 0,
-            tz if tz.len() == 6 && (tz.starts_with('+') || tz.starts_with('-')) => {
-                let sign = if tz.starts_with('-') { -1 } else { 1 };
-                let oh: i64 = tz[1..3].parse().map_err(|_| bad())?;
-                let om: i64 = tz[4..6].parse().map_err(|_| bad())?;
-                sign * (oh * 3600 + om * 60)
-            }
-            _ => return Err(bad()),
-        };
-        let secs = days_from_civil(y, mo, d) * 86_400 + h * 3600 + mi * 60 + sec - offset_secs;
-        Ok(Timestamp(secs * 1000 + millis))
+        parse(s.as_bytes()).ok_or_else(|| format!("not an ISO 8601 date: {s}"))
     }
+}
+
+/// The number in `b[range]`, if it is all ASCII digits and within `min..=max`.
+fn number(b: &[u8], range: std::ops::Range<usize>, min: i64, max: i64) -> Option<i64> {
+    let digits = b.get(range)?;
+    if !digits.iter().all(u8::is_ascii_digit) {
+        return None;
+    }
+    let n = digits.iter().fold(0, |n, &d| n * 10 + i64::from(d - b'0'));
+    (min..=max).contains(&n).then_some(n)
+}
+
+fn days_in_month(y: i64, m: i64) -> i64 {
+    match m {
+        2 if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0) => 29,
+        2 => 28,
+        4 | 6 | 9 | 11 => 30,
+        _ => 31,
+    }
+}
+
+fn parse(b: &[u8]) -> Option<Timestamp> {
+    let separators = [(4, b'-'), (7, b'-'), (10, b'T'), (13, b':'), (16, b':')];
+    if separators.iter().any(|&(i, c)| b.get(i) != Some(&c)) {
+        return None;
+    }
+    let y = number(b, 0..4, 0, 9999)?;
+    let mo = number(b, 5..7, 1, 12)?;
+    let d = number(b, 8..10, 1, days_in_month(y, mo))?;
+    let h = number(b, 11..13, 0, 23)?;
+    let mi = number(b, 14..16, 0, 59)?;
+    let sec = number(b, 17..19, 0, 59)?;
+    let mut i = 19;
+    let mut millis = 0;
+    if b.get(i) == Some(&b'.') {
+        i += 1;
+        let start = i;
+        while b.get(i).is_some_and(u8::is_ascii_digit) {
+            i += 1;
+        }
+        // Milliseconds from the first three digits, padded with zeros.
+        for k in 0..3 {
+            let digit = if start + k < i {
+                b[start + k] - b'0'
+            } else {
+                0
+            };
+            millis = millis * 10 + i64::from(digit);
+        }
+    }
+    let offset_secs = match &b[i..] {
+        b"Z" | b"z" => 0,
+        [sign @ (b'+' | b'-'), _, _, b':', _, _] => {
+            let tz = &b[i..];
+            let secs = number(tz, 1..3, 0, 23)? * 3600 + number(tz, 4..6, 0, 59)? * 60;
+            if *sign == b'-' { -secs } else { secs }
+        }
+        _ => return None,
+    };
+    let secs = days_from_civil(y, mo, d) * 86_400 + h * 3600 + mi * 60 + sec - offset_secs;
+    Some(Timestamp(secs * 1000 + millis))
 }
 
 impl Serialize for Timestamp {
@@ -131,5 +160,35 @@ mod tests {
                 .to_string(),
             "2024-02-29T23:59:59.900Z"
         );
+        assert_eq!(
+            "2026-10-20T10:04:12.Z".parse::<Timestamp>().unwrap().0,
+            t.0 - 515
+        );
+    }
+
+    #[test]
+    fn rejects_malformed_dates_without_panicking() {
+        for bad in [
+            "2026-10-20T10:04:12+0\u{e9}00",
+            "2026-10-20T10:04:12+\u{e9}:00",
+            "2026-10-20T10:04:12.5\u{e9}Z",
+            "\u{e9}026-10-20T10:04:12Z",
+            "2026-13-20T10:04:12Z",
+            "2026-00-20T10:04:12Z",
+            "2026-02-29T10:04:12Z",
+            "2026-04-31T10:04:12Z",
+            "2026-10-20T24:04:12Z",
+            "2026-10-20T10:60:12Z",
+            "2026-10-20T10:04:60Z",
+            "2026-10-20T10:04:12+24:00",
+            "2026-10-20T10:04:12+02:60",
+            "2026-+1-20T10:04:12Z",
+            "2026-10-20T10:04:12",
+            "2026-10-20T10:04:12ZZ",
+            "2026-10-20 10:04:12Z",
+            "",
+        ] {
+            assert!(bad.parse::<Timestamp>().is_err(), "{bad}");
+        }
     }
 }

@@ -1,0 +1,33 @@
+---
+source: ot-core/tests/snapshot_coverage.rs
+expression: text
+---
+root: completion 1 gaps 0 (mass 0) pending 0
+nodes by status: {"required": 14, "transposition": 1}
+0 gaps, the biggest:
+0 pending positions, the most reached:
+
+0 root: required reach 1 completion 1 gaps 0 (mass 0) pending 0 seen every 1
+    d4 share 0.833333 reach 0.833333 completion 1 games 1000 required, child 1
+1 d4: required reach 0.833333 completion 1 gaps 0 (mass 0) pending 0 seen every 1
+2 d5: required reach 0.833333 completion 1 gaps 0 (mass 0) pending 0 seen every 1
+    c4 share 0.588235 reach 0.490196 completion 1 games 1000 required, child 3
+    Nf3 share 0.294118 reach 0.245098 completion 1 games 500 required, child 9
+3 c4: required reach 0.490196 completion 1 gaps 0 (mass 0) pending 0 seen every 2
+4 c6: required reach 0.490196 completion 1 gaps 0 (mass 0) pending 0 seen every 2
+    Nf3 share 0.833333 reach 0.408497 completion 1 games 1000 required, child 5
+5 Nf3: required reach 0.408497 completion 1 gaps 0 (mass 0) pending 0 seen every 2
+6 Nf6: required reach 0.408497 completion 1 gaps 0 (mass 0) pending 0 seen every 2
+    Nc3 share 0.588235 reach 0.240292 completion 1 games 1000 required, child 7
+    e3 share 0.294118 reach 0.120146 completion 1 games 500 required, child 13
+7 Nc3: required reach 0.240292 completion 1 gaps 0 (mass 0) pending 0 seen every 4
+8 e6: required reach 0.240292 completion 1 gaps 0 (mass 0) pending 0 seen every 4
+9 Nf3: required reach 0.245098 completion 1 gaps 0 (mass 0) pending 0 seen every 4
+10 Nf6: required reach 0.245098 completion 1 gaps 0 (mass 0) pending 0 seen every 4
+    c4 share 0.833333 reach 0.204248 completion 1 games 1000 required, child 11
+11 c4: required reach 0.204248 completion 1 gaps 0 (mass 0) pending 0 seen every 5
+12 c6: transposition(6) reach 0.204248 completion 1 gaps 0 (mass 0) pending 0 seen every 5
+    Nc3 share 0.588235 reach 0.120146 completion 1 games 1000 required, transposes to 7
+    e3 share 0.294118 reach 0.060073 completion 1 games 500 required, transposes to 13
+13 e3: required reach 0.120146 completion 1 gaps 0 (mass 0) pending 0 seen every 8
+14 Bf5: required reach 0.120146 completion 1 gaps 0 (mass 0) pending 0 seen every 8

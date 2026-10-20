@@ -111,12 +111,14 @@ pub(crate) fn fuzz_factor(seed: Option<u64>) -> Option<f64> {
     seed.map(|s| f64::from(StdRng::seed_from_u64(s).random_range(0.0f32..1.0)))
 }
 
-/// Adds up to 25% to a learning delay, but no more than 5 minutes.
+/// Adds up to 25% to a learning delay, but no more than 5 minutes. In u32 and f32 as in
+/// Anki's `learning_ivl_with_fuzz`, so a seed draws the same delay (both use rand 0.10).
 pub(crate) fn learning_interval_with_fuzz(seed: Option<u64>, secs: i64) -> i64 {
     let Some(seed) = seed else { return secs };
-    let upper_exclusive = secs + (secs as f64 * 0.25).min(300.0).floor() as i64;
+    let secs = secs.clamp(0, i64::from(u32::MAX)) as u32;
+    let upper_exclusive = secs.saturating_add(((secs as f32) * 0.25).min(300.0).floor() as u32);
     if secs >= upper_exclusive {
-        return secs;
+        return i64::from(secs);
     }
-    StdRng::seed_from_u64(seed).random_range(secs..upper_exclusive)
+    i64::from(StdRng::seed_from_u64(seed).random_range(secs..upper_exclusive))
 }

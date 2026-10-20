@@ -24,17 +24,29 @@ struct Builder {
 
 const ROOT: usize = 0;
 
-fn build(arena: &mut [Builder], index: usize) -> PgnMove {
-    let children = std::mem::take(&mut arena[index].children);
-    let children = children.into_iter().map(|c| build(arena, c)).collect();
-    let b = &mut arena[index];
-    PgnMove {
-        san: std::mem::take(&mut b.san),
-        nags: std::mem::take(&mut b.nags),
-        pre_comments: std::mem::take(&mut b.pre_comments),
-        comments: std::mem::take(&mut b.comments),
-        children,
+/// Turns the arena into moves. Children always come after their parent in the arena, so
+/// building from the back finds every child done (no recursion: lines can be very long).
+fn build(arena: &mut [Builder]) -> Vec<PgnMove> {
+    let mut built: Vec<Option<PgnMove>> = Vec::new();
+    built.resize_with(arena.len(), || None);
+    for index in (ROOT + 1..arena.len()).rev() {
+        let b = &mut arena[index];
+        let children = std::mem::take(&mut b.children)
+            .into_iter()
+            .filter_map(|c| built[c].take())
+            .collect();
+        built[index] = Some(PgnMove {
+            san: std::mem::take(&mut b.san),
+            nags: std::mem::take(&mut b.nags),
+            pre_comments: std::mem::take(&mut b.pre_comments),
+            comments: std::mem::take(&mut b.comments),
+            children,
+        });
     }
+    std::mem::take(&mut arena[ROOT].children)
+        .into_iter()
+        .filter_map(|c| built[c].take())
+        .collect()
 }
 
 struct Parser {
@@ -177,8 +189,8 @@ impl Parser {
                         continue;
                     }
                     if let Some((san, nag)) = parse_move_token(&token) {
-                        saw_content = true;
                         if san.is_empty() {
+                            // A lone glyph; before any move there is nothing to attach it to.
                             if let Some(nag) = nag
                                 && cursor != ROOT
                             {
@@ -186,6 +198,7 @@ impl Parser {
                             }
                             continue;
                         }
+                        saw_content = true;
                         let node = arena.len();
                         arena.push(Builder {
                             san,
@@ -204,8 +217,7 @@ impl Parser {
 
         game.comments = std::mem::take(&mut arena[ROOT].comments);
         self.variation_just_opened = false;
-        let roots = std::mem::take(&mut arena[ROOT].children);
-        game.moves = roots.into_iter().map(|c| build(&mut arena, c)).collect();
+        game.moves = build(&mut arena);
         saw_content.then_some(game)
     }
 

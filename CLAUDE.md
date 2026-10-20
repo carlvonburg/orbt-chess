@@ -48,10 +48,19 @@ One folder per platform around a shared core (Android and web would be `android/
   - `ot-ffi/` — the UniFFI 0.32 bindings: objects (`RepertoireDoc`, `BuilderSession`,
     `DrillSession`, `Explorer`, `Position`, `Graphs`, `LibrarySidecar`) and the core's records
     and enums as remote types. Thin: conversions and locking only.
-  - `fixtures/` — outputs recorded from the deleted Swift core, which the Rust tests compare
-    against (its README lists where the core differs). `DEVIATIONS.md` lists where the core
+  - Tests: `ot-core/tests/*.rs` state the rules; `ot-core/tests/snapshot_*.rs` are insta
+    snapshot tests over the inputs in `ot-core/tests/data/` and `testData/` (snapshots in
+    `tests/snapshots/`; after an intended change, `cargo insta review` or
+    `INSTA_UPDATE=always cargo test`, then read the diff). `DEVIATIONS.md` lists where the core
     differs from Anki/lichess.
-  - `scripts/check.sh` (fmt, clippy -D warnings, tests, wasm32 check), `scripts/build-apple.sh`.
+  - `rust-toolchain.toml` pins the Rust version, components and targets; `deny.toml` configures
+    cargo-deny (licenses compatible with AGPL-3.0-or-later, RustSec advisories, bans, sources).
+  - `scripts/check.sh` (fmt, clippy -D warnings, tests, wasm32 check, cargo deny),
+    `scripts/build-apple.sh`.
+  - `fuzz/` — cargo-fuzz targets for what the app reads (PGN, sidecar, review log, explorer
+    answers), outside the workspace; `fuzz/run.sh [seconds]` runs them all (nightly).
+    The core must not panic or recurse per ply on any input: the app calls it on small
+    stacks, and a panic or overflow in a non-throwing call crashes it on every launch.
 - `apple/` — the iPhone, iPad and Mac app (one multiplatform target, not Catalyst):
   - `openingTrainer.xcodeproj`; `openingTrainer/` is the app target (folder-synced group, new
     files are picked up automatically): `Lichess/`, `Storage/`, `UI/`. `Config/` holds the
@@ -62,6 +71,8 @@ One folder per platform around a shared core (Android and web would be `android/
     drill's step clock), UserDefaults and the UI. Models (`RepertoireDocument`, `BuilderModel`,
     `DrillModel`, `StatisticsModel`, `ExplorerService`) are thin `@Observable` wrappers that
     forward to the core and re-read it when its revision changes.
+  - `openingTrainerTests/` — Swift Testing target hosted in the app (folder-synced): conflict
+    merging and file presenters over a temporary folder.
   - `UI/Components/Platform.swift` — the few iOS-only modifiers and what macOS uses instead.
   - `OpeningCoreRust/` — Swift package over the Rust core: the xcframework (built, not
     committed), the generated `opening_core.swift` (never edit by hand) and `Additions.swift`
@@ -114,6 +125,11 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
   (`Changes` with save delays, explorer `Fetch`es); the platform runs the IO and timers.
 - App code is MainActor by default (`SWIFT_DEFAULT_ACTOR_ISOLATION`). Core objects are called
   from the main actor; foreign callbacks (`DocumentListener`, `ExplorerListener`) hop to it.
+  File IO and heavy core calls (opening, saving, remote merges) run off the main actor: a
+  document's `Writer` runs them one at a time, and each coordinated access passes that file's
+  presenter. `ExplorerCacheStore` is thread-agnostic (the core calls it from any thread).
+- iCloud conflict versions are merged, then removed: the PGN into the document, the sidecar
+  with `mergeSidecarData` and the review log with `mergeRevlogData`.
 - Explorer: the position on screen is fetched directly after 300 ms on screen (no queue). The coverage check is a separate queue, one request at a time, one every 1.2 s (Lichess allows ~20/min per user, measured, so expect 429s). A 429 from either pauses both for 60 s (kept across launches) and slows the coverage pace for good; re-login on 401.
 - Fetch policy: the position on screen first; plus a background coverage check only while one of
   the repertoire's screens is showing (overview, builder, study), limited to opponent-to-move positions above the target
@@ -123,9 +139,16 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
   Cached stats never expire for now (the core keeps every entry it loads; there is no age check).
 - Build:
   1. `core/scripts/build-apple.sh` after changing Rust code and once after cloning (Rust from
-     rustup; it builds iOS, iOS simulator and macOS slices and regenerates the bindings).
-  2. `core/scripts/check.sh` before committing Rust changes.
+     rustup, which installs the pinned toolchain; it builds iOS, iOS simulator and macOS slices
+     and regenerates the bindings). `swift test` in `apple/OpeningCoreRust` smoke-tests the
+     bindings.
+  2. `core/scripts/check.sh` before committing Rust changes (needs
+     `cargo install --locked cargo-deny` once).
   3. `xcodebuild -project apple/openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' build`
      (iPad: `name=iPad Pro 13-inch (M5)`; Mac: `-destination 'platform=macOS'`, which needs a
      Mac development profile for the iCloud entitlement, or `CODE_SIGNING_ALLOWED=NO` to compile
      only).
+  A Claude Code hook (`.claude/hooks/check-before-commit.sh`) runs the ones a commit needs before
+  every `git commit` and blocks it on failure: check.sh for `core/`, build-apple.sh for
+  `core/ot-ffi/` or Cargo.lock (the committed bindings must be up to date), the simulator build
+  for `apple/` or the FFI. A blocked commit is fixed, not bypassed.

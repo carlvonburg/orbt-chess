@@ -1,0 +1,13 @@
+---
+source: ot-core/tests/snapshot_pgn.rs
+expression: out
+---
+{"op":"parse","pgn":"note_commands"} -> null
+  1:e4
+  1. e4 { [%cal Ge2e4] old } *
+{"id":1,"op":"setNote","text":"new idea"} -> null
+  1:e4
+  1. e4 { [%cal Ge2e4] new idea } *
+{"id":1,"op":"setNote","text":""} -> null
+  1:e4
+  1. e4 { [%cal Ge2e4] } *

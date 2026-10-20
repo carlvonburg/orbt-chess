@@ -1,0 +1,86 @@
+---
+source: ot-core/tests/snapshot_study.rs
+expression: text
+---
+daily:
++0s Counts { new: 5, learning: 0, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3
+  roles: 0 introduce, 2 introduce, 4 introduce, 6 introduce, 8 introduce, 10 introduce
+  0 Again: Learn/Learn due +75s ivl 0
+  2 Good: Learn/Learn due +736s ivl 0
+  4 Good: Learn/Learn due +768s ivl 0
+  6 Again: Learn/Learn due +91s ivl 0
+  8 Good: Learn/Learn due +764s ivl 0
+  10 Good: Learn/Learn due +660s ivl 0
++42s Counts { new: 0, learning: 6, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3
+  roles: 0 queued, 2 queued, 4 queued, 6 queued, 8 queued, 10 queued
+  0 Good: Learn/Learn due +694s ivl 0
+  2 Good: Review/Review due 102 ivl 2
+  4 Again: Learn/Learn due +130s ivl 0
+  6 Good: Learn/Learn due +814s ivl 0
+  8 Good: Review/Review due 102 ivl 2
+  10 Good: Review/Review due 102 ivl 2
++84s Counts { new: 0, learning: 3, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4
+  roles: 0 queued, 2 practice, 4 queued, 6 queued
+  0 Good: Review/Review due 101 ivl 1
+  4 Again: Learn/Learn due +171s ivl 0
+  6 Good: Review/Review due 101 ivl 1
++112s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4
+  roles: 0 practice, 2 practice, 4 queued
+  4 Good: Learn/Learn due +773s ivl 0
++133s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4
+  roles: 0 practice, 2 practice, 4 queued
+  4 Good: Review/Review due 101 ivl 1
+17 answers, 6 positions answered, 6 played; counts Counts { new: 0, learning: 0, review: 0 }
+
+branch [e4]:
++0s Counts { new: 7, learning: 0, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3
+  roles: 0 auto, 2 introduce, 4 introduce, 6 introduce, 8 introduce, 10 introduce
+  2 Good filtered: Learn/Learn due +736s ivl 0
+  4 Good filtered: Learn/Learn due +768s ivl 0
+  6 Good filtered: Learn/Learn due +658s ivl 0
+  8 Good filtered: Learn/Learn due +764s ivl 0
+  10 Again filtered: Learn/Learn due +103s ivl 0
++42s Counts { new: 2, learning: 5, review: 0 } e4 e5 Nf3
+  roles: 0 auto, 2 introduce
+  2 Good filtered: Learn/Learn due +667s ivl 0
++56s Counts { new: 1, learning: 6, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3
+  roles: 0 auto, 2 queued, 4 queued, 6 queued, 8 queued, 10 introduce
+  2 Again filtered: Learn/Learn due +142s ivl 0
+  4 Good filtered: Review/Review due 102 ivl 2
+  6 Good filtered: Review/Review due 102 ivl 2
+  8 Good filtered: Review/Review due 102 ivl 2
+  10 Good filtered: Learn/Learn due +828s ivl 0
++98s Counts { new: 0, learning: 4, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3
+  roles: 0 auto, 2 queued, 4 practice, 6 practice, 8 practice, 10 queued
+  2 Again filtered: Learn/Learn due +172s ivl 0
+  10 Good filtered: Learn/Learn due +793s ivl 0
++140s Counts { new: 0, learning: 4, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3
+  roles: 0 auto, 2 queued, 4 practice, 6 practice, 8 practice, 10 queued
+  2 Good filtered: Learn/Learn due +851s ivl 0
+  10 Good filtered: Review/Review due 101 ivl 1
++182s Counts { new: 0, learning: 3, review: 0 } e4 e5 Nf3
+  roles: 0 auto, 2 queued
+  2 Again filtered: Learn/Learn due +267s ivl 0
++196s Counts { new: 0, learning: 3, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3
+  roles: 0 auto, 2 queued, 4 practice, 6 practice, 8 practice, 10 queued
+  2 Good filtered: Review/Review due 101 ivl 1
+  10 Again filtered: Learn/Learn due +298s ivl 0
++238s Counts { new: 0, learning: 2, review: 0 } e4 e5 Nf3
+  roles: 0 auto, 2 queued
+  2 Good filtered: Learn/Learn due +909s ivl 0
++252s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3
+  roles: 0 auto, 2 practice, 4 practice, 6 practice, 8 practice, 10 queued
+  10 Good filtered: Learn/Learn due +916s ivl 0
++294s Counts { new: 0, learning: 2, review: 0 } e4 e5 Nf3
+  roles: 0 auto, 2 queued
+  2 Again filtered: Learn/Learn due +374s ivl 0
++308s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3
+  roles: 0 auto, 2 practice, 4 practice, 6 practice, 8 practice, 10 queued
+  10 Good filtered: Review/Review due 101 ivl 1
++350s Counts { new: 0, learning: 1, review: 0 } e4 e5 Nf3
+  roles: 0 auto, 2 queued
+  2 Good filtered: Learn/Learn due +984s ivl 0
++364s Counts { new: 0, learning: 1, review: 0 } e4 e5 Nf3 (from 2)
+  roles: 0 auto, 2 queued
+  2 Good filtered: Review/Review due 101 ivl 1
+24 answers, 7 positions answered, 7 played; counts Counts { new: 0, learning: 0, review: 0 }

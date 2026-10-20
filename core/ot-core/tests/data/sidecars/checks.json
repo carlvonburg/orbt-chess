@@ -1,0 +1,12 @@
+{
+  "timing": {
+    "daysElapsed": 2400,
+    "nextDayAt": 1907446400,
+    "now": 1907392400
+  },
+  "active": [
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+    "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -",
+    "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq -"
+  ]
+}

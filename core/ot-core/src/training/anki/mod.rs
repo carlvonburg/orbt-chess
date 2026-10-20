@@ -15,7 +15,7 @@ mod steps;
 mod timing;
 
 #[cfg(test)]
-mod golden_vectors;
+mod snapshot_vectors;
 #[cfg(test)]
 mod tests;
 

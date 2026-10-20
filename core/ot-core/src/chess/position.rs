@@ -160,12 +160,14 @@ pub struct PlayedMove {
 }
 
 impl PlayedMove {
-    pub fn from(&self) -> BoardSquare {
-        BoardSquare::parse(&self.uci[0..2]).expect("UCI from square")
+    /// The from square; None if `uci` is not a move (it may come from a file or a server).
+    pub fn from(&self) -> Option<BoardSquare> {
+        BoardSquare::parse(self.uci.get(0..2)?)
     }
 
-    pub fn to(&self) -> BoardSquare {
-        BoardSquare::parse(&self.uci[2..4]).expect("UCI to square")
+    /// The to square; None if `uci` is not a move.
+    pub fn to(&self) -> Option<BoardSquare> {
+        BoardSquare::parse(self.uci.get(2..4)?)
     }
 }
 
@@ -346,7 +348,7 @@ impl ChessPosition {
                 let Some(mp) = san::parts(&san::loose(&m.san)) else {
                     return false;
                 };
-                let from = m.from().to_string();
+                let from = m.uci.get(0..2).unwrap_or("");
                 mp.piece == parts.piece
                     && mp.destination == parts.destination
                     && mp.promotion == parts.promotion
