@@ -1,27 +1,24 @@
-//! The FFI surface of ot-core. Thin: converts types and holds objects; no domain logic here.
+//! The FFI surface of ot-core: the core's types as they are, and objects that hold the state
+//! of an open repertoire, the builder, a drill and the explorer for the platform's views.
+//! Thin: conversions and locking only; the rules live in ot-core.
 
 uniffi::setup_scaffolding!("opening_core");
 
-#[derive(Debug, thiserror::Error, uniffi::Error)]
-pub enum CoreError {
-    #[error("invalid FEN: {fen}")]
-    InvalidFen { fen: String },
-}
+mod document;
+mod explorer;
+mod position;
+mod sessions;
+mod stats;
+mod types;
 
-impl From<ot_core::CoreError> for CoreError {
-    fn from(error: ot_core::CoreError) -> Self {
-        match error {
-            ot_core::CoreError::InvalidFen(fen) => CoreError::InvalidFen { fen },
-        }
-    }
-}
+pub use document::*;
+pub use explorer::*;
+pub use position::*;
+pub use sessions::*;
+pub use stats::*;
+pub use types::*;
 
 #[uniffi::export]
 pub fn core_version() -> String {
     ot_core::version().to_owned()
-}
-
-#[uniffi::export]
-pub fn legal_move_count(fen: String) -> Result<u32, CoreError> {
-    Ok(ot_core::legal_move_count(&fen)? as u32)
 }

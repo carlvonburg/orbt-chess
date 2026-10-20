@@ -100,7 +100,7 @@ pub enum Response {
 #[derive(Clone, Debug, PartialEq)]
 pub enum QueueState {
     Idle,
-    Fetching { remaining: usize },
+    Fetching { remaining: u64 },
     RateLimited { until: Millis },
     NeedsLogin,
     Offline,
@@ -293,7 +293,7 @@ impl ExplorerQueue {
                 self.next_id += 1;
                 self.in_flight = Some((id, k, now));
                 self.state = QueueState::Fetching {
-                    remaining: self.pending.len(),
+                    remaining: self.pending.len() as u64,
                 };
                 poll.fetches.push(Fetch {
                     id,

@@ -17,31 +17,31 @@ use crate::training::anki::{
 
 /// Time ranges of Anki's graphs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Range {
+pub enum GraphRange {
     Month,
     ThreeMonths,
     Year,
     All,
 }
 
-impl Range {
-    pub const ALL: [Range; 4] = [Range::Month, Range::ThreeMonths, Range::Year, Range::All];
+impl GraphRange {
+    pub const ALL: [GraphRange; 4] = [GraphRange::Month, GraphRange::ThreeMonths, GraphRange::Year, GraphRange::All];
 
     pub fn days(self) -> i64 {
         match self {
-            Range::Month => 30,
-            Range::ThreeMonths => 90,
-            Range::Year => 365,
-            Range::All => 0,
+            GraphRange::Month => 30,
+            GraphRange::ThreeMonths => 90,
+            GraphRange::Year => 365,
+            GraphRange::All => 0,
         }
     }
 
     pub fn title(self) -> &'static str {
         match self {
-            Range::Month => "1 month",
-            Range::ThreeMonths => "3 months",
-            Range::Year => "1 year",
-            Range::All => "All",
+            GraphRange::Month => "1 month",
+            GraphRange::ThreeMonths => "3 months",
+            GraphRange::Year => "1 year",
+            GraphRange::All => "All",
         }
     }
 }
@@ -396,14 +396,14 @@ impl GraphsContext {
         result
     }
 
-    fn since(&self, range: Range) -> i64 {
+    fn since(&self, range: GraphRange) -> i64 {
         match range {
-            Range::All => i64::MIN,
+            GraphRange::All => i64::MIN,
             _ => (self.next_day_start() - 86_400 * range.days()) * 1000,
         }
     }
 
-    pub fn hours(&self, range: Range) -> [Hour; 24] {
+    pub fn hours(&self, range: GraphRange) -> [Hour; 24] {
         let mut hours = [Hour::default(); 24];
         let start = self.since(range);
         for review in self
@@ -421,7 +421,7 @@ impl GraphsContext {
         hours
     }
 
-    pub fn buttons(&self, range: Range) -> ButtonCounts {
+    pub fn buttons(&self, range: GraphRange) -> ButtonCounts {
         let mut counts = ButtonCounts::default();
         let start = self.since(range);
         for review in self

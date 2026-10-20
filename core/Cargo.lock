@@ -575,6 +575,7 @@ name = "ot-ffi"
 version = "0.1.0"
 dependencies = [
  "ot-core",
+ "serde_json",
  "thiserror",
  "uniffi",
 ]

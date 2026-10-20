@@ -460,7 +460,45 @@ fileprivate final class UniffiHandleMap<T>: @unchecked Sendable {
 
 
 // Public interface members begin here.
+// Magic number for the Rust proxy to call using the same mechanism as every other method,
+// to free the callback once it's dropped by Rust.
+private let IDX_CALLBACK_FREE: Int32 = 0
+// Callback return codes
+private let UNIFFI_CALLBACK_SUCCESS: Int32 = 0
+private let UNIFFI_CALLBACK_ERROR: Int32 = 1
+private let UNIFFI_CALLBACK_UNEXPECTED_ERROR: Int32 = 2
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterUInt8: FfiConverterPrimitive {
+    typealias FfiType = UInt8
+    typealias SwiftType = UInt8
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt8 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: UInt8, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterUInt16: FfiConverterPrimitive {
+    typealias FfiType = UInt16
+    typealias SwiftType = UInt16
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt16 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
@@ -474,6 +512,94 @@ fileprivate struct FfiConverterUInt32: FfiConverterPrimitive {
     }
 
     public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterInt32: FfiConverterPrimitive {
+    typealias FfiType = Int32
+    typealias SwiftType = Int32
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Int32 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: Int32, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterUInt64: FfiConverterPrimitive {
+    typealias FfiType = UInt64
+    typealias SwiftType = UInt64
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> UInt64 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterInt64: FfiConverterPrimitive {
+    typealias FfiType = Int64
+    typealias SwiftType = Int64
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Int64 {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: Int64, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterDouble: FfiConverterPrimitive {
+    typealias FfiType = Double
+    typealias SwiftType = Double
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Double {
+        return try lift(readDouble(&buf))
+    }
+
+    public static func write(_ value: Double, into buf: inout [UInt8]) {
+        writeDouble(&buf, lower(value))
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterBool : FfiConverter {
+    typealias FfiType = Int8
+    typealias SwiftType = Bool
+
+    public static func lift(_ value: Int8) throws -> Bool {
+        return value != 0
+    }
+
+    public static func lower(_ value: Bool) -> Int8 {
+        return value ? 1 : 0
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Bool {
+        return try lift(readInt(&buf))
+    }
+
+    public static func write(_ value: Bool, into buf: inout [UInt8]) {
         writeInt(&buf, lower(value))
     }
 }
@@ -524,13 +650,7324 @@ fileprivate struct FfiConverterString: FfiConverter {
     }
 }
 
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterData: FfiConverterRustBuffer {
+    typealias SwiftType = Data
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Data {
+        let len: Int32 = try readInt(&buf)
+        return Data(try readBytes(&buf, count: Int(len)))
+    }
+
+    public static func write(_ value: Data, into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        writeBytes(&buf, value)
+    }
+}
+
+
+
+
+/**
+ * The builder's navigation over a repertoire.
+ */
+public protocol BuilderSessionProtocol: AnyObject, Sendable {
+    
+    func arrows()  -> [Arrow]
+    
+    func back()  -> Changes
+    
+    func canForward()  -> Bool
+    
+    func continuation()  -> UInt32?
+    
+    func current()  -> UInt32
+    
+    func delete(id: UInt32)  -> Changes
+    
+    func discardDraft() 
+    
+    func draft()  -> [PlayedMove]
+    
+    func draftReplies()  -> [ReplyInfo]?
+    
+    func draftTransposition()  -> UInt32?
+    
+    func forward()  -> Changes
+    
+    func go(id: UInt32)  -> Changes
+    
+    func goToBiggestGap()  -> Changes
+    
+    func goToGap(gap: CoverageGap)  -> Changes
+    
+    func hasDraft()  -> Bool
+    
+    func isUserTurnOnBoard()  -> Bool
+    
+    func lastMove()  -> PlayedMove?
+    
+    func movesToBoard()  -> [PlayedMove]
+    
+    func orientation()  -> Side
+    
+    func play(from: BoardSquare, to: BoardSquare, promotion: PieceKind?)  -> Changes
+    
+    func playUci(uci: String)  -> Changes
+    
+    /**
+     * Position on the board (after the draft).
+     */
+    func position()  -> Position
+    
+    func preview(uci: String)  -> Changes
+    
+    func reachOnBoard()  -> Double?
+    
+    func saveDraft()  -> Changes
+    
+    func setOrientation(side: Side) 
+    
+    /**
+     * The node whose moves the panels show.
+     */
+    func shownNode()  -> UInt32
+    
+    func sibling(offset: Int64)  -> Changes
+    
+    func transpositionAfter(uci: String)  -> UInt32?
+    
+}
+/**
+ * The builder's navigation over a repertoire.
+ */
+open class BuilderSession: BuilderSessionProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_buildersession(self.handle, $0) }
+    }
+    /**
+     * Opens at `start`, or at the last position looked at.
+     */
+public convenience init(doc: RepertoireDoc, start: UInt32?) {
+    let handle =
+        try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_buildersession_new(
+        FfiConverterTypeRepertoireDoc_lower(doc),
+        FfiConverterOptionUInt32.lower(start),uniffiCallStatus
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_buildersession(handle, $0) }
+    }
+
+    
+
+    
+open func arrows() -> [Arrow]  {
+    return try!  FfiConverterSequenceTypeArrow.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_arrows(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func back() -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_back(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func canForward() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_can_forward(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func continuation() -> UInt32?  {
+    return try!  FfiConverterOptionUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_continuation(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func current() -> UInt32  {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_current(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func delete(id: UInt32) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_delete(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func discardDraft()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_discard_draft(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func draft() -> [PlayedMove]  {
+    return try!  FfiConverterSequenceTypePlayedMove.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_draft(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func draftReplies() -> [ReplyInfo]?  {
+    return try!  FfiConverterOptionSequenceTypeReplyInfo.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_draft_replies(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func draftTransposition() -> UInt32?  {
+    return try!  FfiConverterOptionUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_draft_transposition(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func forward() -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_forward(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func go(id: UInt32) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_go(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func goToBiggestGap() -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_go_to_biggest_gap(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func goToGap(gap: CoverageGap) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_go_to_gap(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeCoverageGap_lower(gap),uniffiCallStatus
+    )
+})
+}
+    
+open func hasDraft() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_has_draft(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func isUserTurnOnBoard() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_is_user_turn_on_board(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func lastMove() -> PlayedMove?  {
+    return try!  FfiConverterOptionTypePlayedMove.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_last_move(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func movesToBoard() -> [PlayedMove]  {
+    return try!  FfiConverterSequenceTypePlayedMove.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_moves_to_board(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func orientation() -> Side  {
+    return try!  FfiConverterTypeSide_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_orientation(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func play(from: BoardSquare, to: BoardSquare, promotion: PieceKind?) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_play(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeBoardSquare_lower(from),
+        FfiConverterTypeBoardSquare_lower(to),
+        FfiConverterOptionTypePieceKind.lower(promotion),uniffiCallStatus
+    )
+})
+}
+    
+open func playUci(uci: String) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_play_uci(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uci),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Position on the board (after the draft).
+     */
+open func position() -> Position  {
+    return try!  FfiConverterTypePosition_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_position(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func preview(uci: String) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_preview(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uci),uniffiCallStatus
+    )
+})
+}
+    
+open func reachOnBoard() -> Double?  {
+    return try!  FfiConverterOptionDouble.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_reach_on_board(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func saveDraft() -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_save_draft(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func setOrientation(side: Side)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_set_orientation(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSide_lower(side),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * The node whose moves the panels show.
+     */
+open func shownNode() -> UInt32  {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_shown_node(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func sibling(offset: Int64) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_sibling(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(offset),uniffiCallStatus
+    )
+})
+}
+    
+open func transpositionAfter(uci: String) -> UInt32?  {
+    return try!  FfiConverterOptionUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_transposition_after(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uci),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBuilderSession: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = BuilderSession
+
+    public static func lift(_ handle: UInt64) throws -> BuilderSession {
+        return BuilderSession(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: BuilderSession) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BuilderSession {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: BuilderSession, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBuilderSession_lift(_ handle: UInt64) throws -> BuilderSession {
+    return try FfiConverterTypeBuilderSession.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBuilderSession_lower(_ value: BuilderSession) -> UInt64 {
+    return FfiConverterTypeBuilderSession.lower(value)
+}
+
+
+
+
+
+
+/**
+ * Told about changes the core made by itself (stats arriving for this repertoire).
+ */
+public protocol DocumentListener: AnyObject, Sendable {
+    
+    func changed(changes: Changes) 
+    
+}
+/**
+ * Told about changes the core made by itself (stats arriving for this repertoire).
+ */
+open class DocumentListenerImpl: DocumentListener, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_documentlistener(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_documentlistener(handle, $0) }
+    }
+
+    
+
+    
+open func changed(changes: Changes)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_documentlistener_changed(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeChanges_lower(changes),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfaceDocumentListener {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // Store the vtable directly.
+    static let vtable: UniffiVTableCallbackInterfaceDocumentListener = UniffiVTableCallbackInterfaceDocumentListener(
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            do {
+                try FfiConverterTypeDocumentListener.handleMap.remove(handle: uniffiHandle)
+            } catch {
+                print("Uniffi callback interface DocumentListener: handle missing in uniffiFree")
+            }
+        },
+        uniffiClone: { (uniffiHandle: UInt64) -> UInt64 in
+            do {
+                return try FfiConverterTypeDocumentListener.handleMap.clone(handle: uniffiHandle)
+            } catch {
+                fatalError("Uniffi callback interface DocumentListener: handle missing in uniffiClone")
+            }
+        },
+        changed: { (
+            uniffiHandle: UInt64,
+            changes: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeDocumentListener.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.changed(
+                     changes: try FfiConverterTypeChanges_lift(changes)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        }
+    )
+
+    // Rust stores this pointer for future callback invocations, so it must live
+    // for the process lifetime (not just for the init function call).
+    //
+    // `nonisolated(unsafe)` is needed under Swift 6 strict concurrency.
+    // This is safe because the pointee is initialized once during static init
+    // and never mutated by either side of the FFI.  Its fields are C function pointers.
+    nonisolated(unsafe) static let vtablePtr: UnsafePointer<UniffiVTableCallbackInterfaceDocumentListener> = {
+        let ptr = UnsafeMutablePointer<UniffiVTableCallbackInterfaceDocumentListener>.allocate(capacity: 1)
+        ptr.initialize(to: vtable)
+        return UnsafePointer(ptr)
+    }()
+}
+
+private func uniffiCallbackInitDocumentListener() {
+    uniffi_opening_core_fn_init_callback_vtable_documentlistener(UniffiCallbackInterfaceDocumentListener.vtablePtr)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDocumentListener: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<DocumentListener>()
+
+    typealias FfiType = UInt64
+    typealias SwiftType = DocumentListener
+
+    public static func lift(_ handle: UInt64) throws -> DocumentListener {
+        if ((handle & 1) == 0) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return DocumentListenerImpl(unsafeFromHandle: handle)
+        } else {
+            // Swift-generated handle, get the object from the handle map
+            return try handleMap.remove(handle: handle)
+        }
+    }
+
+    public static func lower(_ value: DocumentListener) -> UInt64 {
+         if let rustImpl = value as? DocumentListenerImpl {
+             // Rust-implemented object.  Clone the handle and return it
+            return rustImpl.uniffiCloneHandle()
+         } else {
+            // Swift object, generate a new vtable handle and return that.
+            return handleMap.insert(obj: value)
+         }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DocumentListener {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: DocumentListener, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDocumentListener_lift(_ handle: UInt64) throws -> DocumentListener {
+    return try FfiConverterTypeDocumentListener.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDocumentListener_lower(_ value: DocumentListener) -> UInt64 {
+    return FfiConverterTypeDocumentListener.lower(value)
+}
+
+
+
+
+
+
+/**
+ * A study session played line by line. See ot_core::drill for the timing.
+ */
+public protocol DrillSessionProtocol: AnyObject, Sendable {
+    
+    func analysisMoves(timing: SchedTiming, nowMs: Int64)  -> MovesAndChanges
+    
+    func answeredCount()  -> Int64
+    
+    func arrows()  -> [Arrow]
+    
+    func askedKind()  -> QueueKind?
+    
+    func browseNode(timing: SchedTiming, nowMs: Int64)  -> NodeAndChanges
+    
+    func checkAgain(timing: SchedTiming) 
+    
+    func correctCount()  -> Int64
+    
+    func counts()  -> Counts
+    
+    func currentNode()  -> UInt32?
+    
+    func extendLimits(new: Int64, review: Int64, timing: SchedTiming)  -> Changes
+    
+    func feedback()  -> Feedback
+    
+    func hint(timing: SchedTiming, nowMs: Int64)  -> Changes
+    
+    func isFiltered()  -> Bool
+    
+    func isUserTurn()  -> Bool
+    
+    func lastMove()  -> PlayedMove?
+    
+    func line()  -> StudyLineRecord?
+    
+    func nextLearningDue()  -> Int64?
+    
+    func nextLine(timing: SchedTiming) 
+    
+    func phase()  -> Phase
+    
+    /**
+     * The nodes of the moves on the board, from the start of the line.
+     */
+    func playedNodes()  -> [UInt32]
+    
+    func position()  -> Position
+    
+    func showHint()  -> Bool
+    
+    /**
+     * Starts the session; `learn_more` new cards are added to today's limit first.
+     */
+    func start(learnMore: Int64, timing: SchedTiming)  -> Changes
+    
+    /**
+     * One step of the rewind or autoplay.
+     */
+    func step(nowMs: Int64) 
+    
+    func studiedMillis()  -> Int64
+    
+    func userMoved(from: BoardSquare, to: BoardSquare, promotion: PieceKind?, timing: SchedTiming, nowMs: Int64)  -> Changes
+    
+    func wrongTimeout() 
+    
+}
+/**
+ * A study session played line by line. See ot_core::drill for the timing.
+ */
+open class DrillSession: DrillSessionProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_drillsession(self.handle, $0) }
+    }
+public convenience init(doc: RepertoireDoc, mode: DrillMode) {
+    let handle =
+        try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_drillsession_new(
+        FfiConverterTypeRepertoireDoc_lower(doc),
+        FfiConverterTypeDrillMode_lower(mode),uniffiCallStatus
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_drillsession(handle, $0) }
+    }
+
+    
+
+    
+open func analysisMoves(timing: SchedTiming, nowMs: Int64) -> MovesAndChanges  {
+    return try!  FfiConverterTypeMovesAndChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_analysis_moves(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+    
+open func answeredCount() -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_answered_count(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func arrows() -> [Arrow]  {
+    return try!  FfiConverterSequenceTypeArrow.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_arrows(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func askedKind() -> QueueKind?  {
+    return try!  FfiConverterOptionTypeQueueKind.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_asked_kind(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func browseNode(timing: SchedTiming, nowMs: Int64) -> NodeAndChanges  {
+    return try!  FfiConverterTypeNodeAndChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_browse_node(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+    
+open func checkAgain(timing: SchedTiming)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_check_again(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+}
+}
+    
+open func correctCount() -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_correct_count(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func counts() -> Counts  {
+    return try!  FfiConverterTypeCounts_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_counts(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func currentNode() -> UInt32?  {
+    return try!  FfiConverterOptionUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_current_node(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func extendLimits(new: Int64, review: Int64, timing: SchedTiming) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_extend_limits(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(new),
+        FfiConverterInt64.lower(review),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+open func feedback() -> Feedback  {
+    return try!  FfiConverterTypeFeedback_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_feedback(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func hint(timing: SchedTiming, nowMs: Int64) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_hint(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+    
+open func isFiltered() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_is_filtered(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func isUserTurn() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_is_user_turn(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func lastMove() -> PlayedMove?  {
+    return try!  FfiConverterOptionTypePlayedMove.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_last_move(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func line() -> StudyLineRecord?  {
+    return try!  FfiConverterOptionTypeStudyLineRecord.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_line(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func nextLearningDue() -> Int64?  {
+    return try!  FfiConverterOptionInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_next_learning_due(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func nextLine(timing: SchedTiming)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_next_line(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+}
+}
+    
+open func phase() -> Phase  {
+    return try!  FfiConverterTypePhase_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_phase(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The nodes of the moves on the board, from the start of the line.
+     */
+open func playedNodes() -> [UInt32]  {
+    return try!  FfiConverterSequenceUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_played_nodes(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func position() -> Position  {
+    return try!  FfiConverterTypePosition_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_position(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func showHint() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_show_hint(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Starts the session; `learn_more` new cards are added to today's limit first.
+     */
+open func start(learnMore: Int64, timing: SchedTiming) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_start(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(learnMore),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * One step of the rewind or autoplay.
+     */
+open func step(nowMs: Int64)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_step(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+}
+}
+    
+open func studiedMillis() -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_studied_millis(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func userMoved(from: BoardSquare, to: BoardSquare, promotion: PieceKind?, timing: SchedTiming, nowMs: Int64) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_user_moved(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeBoardSquare_lower(from),
+        FfiConverterTypeBoardSquare_lower(to),
+        FfiConverterOptionTypePieceKind.lower(promotion),
+        FfiConverterTypeSchedTiming_lower(timing),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+    
+open func wrongTimeout()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_drillsession_wrong_timeout(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDrillSession: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = DrillSession
+
+    public static func lift(_ handle: UInt64) throws -> DrillSession {
+        return DrillSession(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: DrillSession) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DrillSession {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: DrillSession, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDrillSession_lift(_ handle: UInt64) throws -> DrillSession {
+    return try FfiConverterTypeDrillSession.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDrillSession_lower(_ value: DrillSession) -> UInt64 {
+    return FfiConverterTypeDrillSession.lower(value)
+}
+
+
+
+
+
+
+/**
+ * Explorer stats for every repertoire: the cache, and the fetch queue the platform runs.
+ */
+public protocol ExplorerProtocol: AnyObject, Sendable {
+    
+    func cancelAll(database: ExplorerDatabase) 
+    
+    /**
+     * Forgets the stats in memory (after the platform cleared its store).
+     */
+    func clear() 
+    
+    /**
+     * Loads a database's stored stats once.
+     */
+    func ensureLoaded(database: ExplorerDatabase) 
+    
+    /**
+     * The position on screen.
+     */
+    func focus(epd: Epd, database: ExplorerDatabase, nowMs: Int64) 
+    
+    /**
+     * An HTTP answer (`status` None: no answer, e.g. offline).
+     */
+    func onResponse(fetch: Fetch, status: UInt16?, retryAfterSecs: Int64?, body: Data, nowMs: Int64)  -> FetchOutcome
+    
+    /**
+     * The requests to send now (with `Authorization: Bearer <token>`), and when to poll again.
+     */
+    func poll(nowMs: Int64, hasToken: Bool)  -> Poll
+    
+    /**
+     * Coverage requests waiting.
+     */
+    func remaining()  -> UInt64
+    
+    /**
+     * After signing in or when the network is back.
+     */
+    func resume() 
+    
+    func setListener(listener: ExplorerListener) 
+    
+    func state()  -> QueueState
+    
+    func stats(database: ExplorerDatabase, epd: Epd)  -> ExplorerStats?
+    
+}
+/**
+ * Explorer stats for every repertoire: the cache, and the fetch queue the platform runs.
+ */
+open class Explorer: ExplorerProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_explorer(self.handle, $0) }
+    }
+    /**
+     * `banned_until`: the persisted end of a ban; `base_interval_ms` overrides the pace.
+     */
+public convenience init(store: StatsStore, bannedUntil: Int64?, baseIntervalMs: Int64?) {
+    let handle =
+        try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_explorer_new(
+        FfiConverterTypeStatsStore_lower(store),
+        FfiConverterOptionInt64.lower(bannedUntil),
+        FfiConverterOptionInt64.lower(baseIntervalMs),uniffiCallStatus
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_explorer(handle, $0) }
+    }
+
+    
+
+    
+open func cancelAll(database: ExplorerDatabase)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_cancel_all(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeExplorerDatabase_lower(database),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * Forgets the stats in memory (after the platform cleared its store).
+     */
+open func clear()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_clear(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * Loads a database's stored stats once.
+     */
+open func ensureLoaded(database: ExplorerDatabase)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_ensure_loaded(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeExplorerDatabase_lower(database),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * The position on screen.
+     */
+open func focus(epd: Epd, database: ExplorerDatabase, nowMs: Int64)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_focus(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEpd_lower(epd),
+        FfiConverterTypeExplorerDatabase_lower(database),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * An HTTP answer (`status` None: no answer, e.g. offline).
+     */
+open func onResponse(fetch: Fetch, status: UInt16?, retryAfterSecs: Int64?, body: Data, nowMs: Int64) -> FetchOutcome  {
+    return try!  FfiConverterTypeFetchOutcome_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_on_response(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeFetch_lower(fetch),
+        FfiConverterOptionUInt16.lower(status),
+        FfiConverterOptionInt64.lower(retryAfterSecs),
+        FfiConverterData.lower(body),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The requests to send now (with `Authorization: Bearer <token>`), and when to poll again.
+     */
+open func poll(nowMs: Int64, hasToken: Bool) -> Poll  {
+    return try!  FfiConverterTypePoll_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_poll(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(nowMs),
+        FfiConverterBool.lower(hasToken),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Coverage requests waiting.
+     */
+open func remaining() -> UInt64  {
+    return try!  FfiConverterUInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_remaining(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * After signing in or when the network is back.
+     */
+open func resume()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_resume(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func setListener(listener: ExplorerListener)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_set_listener(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeExplorerListener_lower(listener),uniffiCallStatus
+    )
+}
+}
+    
+open func state() -> QueueState  {
+    return try!  FfiConverterTypeQueueState_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_state(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func stats(database: ExplorerDatabase, epd: Epd) -> ExplorerStats?  {
+    return try!  FfiConverterOptionTypeExplorerStats.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_stats(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeExplorerDatabase_lower(database),
+        FfiConverterTypeEpd_lower(epd),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeExplorer: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = Explorer
+
+    public static func lift(_ handle: UInt64) throws -> Explorer {
+        return Explorer(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: Explorer) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Explorer {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: Explorer, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorer_lift(_ handle: UInt64) throws -> Explorer {
+    return try FfiConverterTypeExplorer.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorer_lower(_ value: Explorer) -> UInt64 {
+    return FfiConverterTypeExplorer.lower(value)
+}
+
+
+
+
+
+
+/**
+ * Told when there is fetching to do: call `Explorer::poll`.
+ */
+public protocol ExplorerListener: AnyObject, Sendable {
+    
+    func wake() 
+    
+}
+/**
+ * Told when there is fetching to do: call `Explorer::poll`.
+ */
+open class ExplorerListenerImpl: ExplorerListener, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_explorerlistener(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_explorerlistener(handle, $0) }
+    }
+
+    
+
+    
+open func wake()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorerlistener_wake(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfaceExplorerListener {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // Store the vtable directly.
+    static let vtable: UniffiVTableCallbackInterfaceExplorerListener = UniffiVTableCallbackInterfaceExplorerListener(
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            do {
+                try FfiConverterTypeExplorerListener.handleMap.remove(handle: uniffiHandle)
+            } catch {
+                print("Uniffi callback interface ExplorerListener: handle missing in uniffiFree")
+            }
+        },
+        uniffiClone: { (uniffiHandle: UInt64) -> UInt64 in
+            do {
+                return try FfiConverterTypeExplorerListener.handleMap.clone(handle: uniffiHandle)
+            } catch {
+                fatalError("Uniffi callback interface ExplorerListener: handle missing in uniffiClone")
+            }
+        },
+        wake: { (
+            uniffiHandle: UInt64,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeExplorerListener.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.wake(
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        }
+    )
+
+    // Rust stores this pointer for future callback invocations, so it must live
+    // for the process lifetime (not just for the init function call).
+    //
+    // `nonisolated(unsafe)` is needed under Swift 6 strict concurrency.
+    // This is safe because the pointee is initialized once during static init
+    // and never mutated by either side of the FFI.  Its fields are C function pointers.
+    nonisolated(unsafe) static let vtablePtr: UnsafePointer<UniffiVTableCallbackInterfaceExplorerListener> = {
+        let ptr = UnsafeMutablePointer<UniffiVTableCallbackInterfaceExplorerListener>.allocate(capacity: 1)
+        ptr.initialize(to: vtable)
+        return UnsafePointer(ptr)
+    }()
+}
+
+private func uniffiCallbackInitExplorerListener() {
+    uniffi_opening_core_fn_init_callback_vtable_explorerlistener(UniffiCallbackInterfaceExplorerListener.vtablePtr)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeExplorerListener: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<ExplorerListener>()
+
+    typealias FfiType = UInt64
+    typealias SwiftType = ExplorerListener
+
+    public static func lift(_ handle: UInt64) throws -> ExplorerListener {
+        if ((handle & 1) == 0) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return ExplorerListenerImpl(unsafeFromHandle: handle)
+        } else {
+            // Swift-generated handle, get the object from the handle map
+            return try handleMap.remove(handle: handle)
+        }
+    }
+
+    public static func lower(_ value: ExplorerListener) -> UInt64 {
+         if let rustImpl = value as? ExplorerListenerImpl {
+             // Rust-implemented object.  Clone the handle and return it
+            return rustImpl.uniffiCloneHandle()
+         } else {
+            // Swift object, generate a new vtable handle and return that.
+            return handleMap.insert(obj: value)
+         }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ExplorerListener {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: ExplorerListener, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorerListener_lift(_ handle: UInt64) throws -> ExplorerListener {
+    return try FfiConverterTypeExplorerListener.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorerListener_lower(_ value: ExplorerListener) -> UInt64 {
+    return FfiConverterTypeExplorerListener.lower(value)
+}
+
+
+
+
+
+
+/**
+ * The cards and review log statistics are computed from.
+ */
+public protocol GraphsProtocol: AnyObject, Sendable {
+    
+    func buttons(range: GraphRange)  -> ButtonCounts
+    
+    func cardCounts()  -> CardCounts
+    
+    func cardInfo(card: Card, epd: Epd)  -> CardInfo
+    
+    func difficulty()  -> [Int64: Int64]
+    
+    func futureDue()  -> FutureDue
+    
+    func hours(range: GraphRange)  -> [Hour]
+    
+    func intervals()  -> [Int64: Int64]
+    
+    func retrievability()  -> Retrievability
+    
+    func reviews()  -> Reviews
+    
+    func stability()  -> [Int64: Int64]
+    
+    func streak()  -> Streak
+    
+    func today()  -> Today
+    
+    /**
+     * True retention, of the cards in `positions` if given.
+     */
+    func trueRetention(positions: [Epd]?)  -> [RetentionRow]
+    
+}
+/**
+ * The cards and review log statistics are computed from.
+ */
+open class Graphs: GraphsProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_graphs(self.handle, $0) }
+    }
+public convenience init(cards: [Card], newCount: Int64, suspendedNewCount: Int64, revlog: [RevlogEntry], timing: SchedTiming, localOffsetSecs: Int64) {
+    let handle =
+        try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_graphs_new(
+        FfiConverterSequenceTypeCard.lower(cards),
+        FfiConverterInt64.lower(newCount),
+        FfiConverterInt64.lower(suspendedNewCount),
+        FfiConverterSequenceTypeRevlogEntry.lower(revlog),
+        FfiConverterTypeSchedTiming_lower(timing),
+        FfiConverterInt64.lower(localOffsetSecs),uniffiCallStatus
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_graphs(handle, $0) }
+    }
+
+    
+
+    
+open func buttons(range: GraphRange) -> ButtonCounts  {
+    return try!  FfiConverterTypeButtonCounts_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_buttons(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeGraphRange_lower(range),uniffiCallStatus
+    )
+})
+}
+    
+open func cardCounts() -> CardCounts  {
+    return try!  FfiConverterTypeCardCounts_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_card_counts(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func cardInfo(card: Card, epd: Epd) -> CardInfo  {
+    return try!  FfiConverterTypeCardInfo_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_card_info(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeCard_lower(card),
+        FfiConverterTypeEpd_lower(epd),uniffiCallStatus
+    )
+})
+}
+    
+open func difficulty() -> [Int64: Int64]  {
+    return try!  FfiConverterDictionaryInt64Int64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_difficulty(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func futureDue() -> FutureDue  {
+    return try!  FfiConverterTypeFutureDue_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_future_due(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func hours(range: GraphRange) -> [Hour]  {
+    return try!  FfiConverterSequenceTypeHour.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_hours(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeGraphRange_lower(range),uniffiCallStatus
+    )
+})
+}
+    
+open func intervals() -> [Int64: Int64]  {
+    return try!  FfiConverterDictionaryInt64Int64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_intervals(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func retrievability() -> Retrievability  {
+    return try!  FfiConverterTypeRetrievability_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_retrievability(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func reviews() -> Reviews  {
+    return try!  FfiConverterTypeReviews_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_reviews(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func stability() -> [Int64: Int64]  {
+    return try!  FfiConverterDictionaryInt64Int64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_stability(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func streak() -> Streak  {
+    return try!  FfiConverterTypeStreak_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_streak(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func today() -> Today  {
+    return try!  FfiConverterTypeToday_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_today(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * True retention, of the cards in `positions` if given.
+     */
+open func trueRetention(positions: [Epd]?) -> [RetentionRow]  {
+    return try!  FfiConverterSequenceTypeRetentionRow.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_true_retention(
+            self.uniffiCloneHandle(),
+        FfiConverterOptionSequenceTypeEpd.lower(positions),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGraphs: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = Graphs
+
+    public static func lift(_ handle: UInt64) throws -> Graphs {
+        return Graphs(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: Graphs) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Graphs {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: Graphs, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGraphs_lift(_ handle: UInt64) throws -> Graphs {
+    return try FfiConverterTypeGraphs.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGraphs_lower(_ value: Graphs) -> UInt64 {
+    return FfiConverterTypeGraphs.lower(value)
+}
+
+
+
+
+
+
+/**
+ * A sidecar read without opening its PGN, for library rows.
+ */
+public protocol LibrarySidecarProtocol: AnyObject, Sendable {
+    
+    func cards()  -> [Epd: Card]
+    
+    func color()  -> Side
+    
+    func configKey()  -> String
+    
+    func database()  -> ExplorerDatabase
+    
+    func dueTomorrow(timing: SchedTiming)  -> Int64
+    
+    func estimatedProgress()  -> Progress
+    
+    func estimatedStudyCounts(newPerDay: Int64, reviewsPerDay: Int64, timing: SchedTiming)  -> Counts
+    
+    func id()  -> String
+    
+    func laterLearningDues(timing: SchedTiming)  -> [Int64]
+    
+    func minGames()  -> Int64
+    
+    func nextDue(timing: SchedTiming)  -> Int64?
+    
+    func practiceMode()  -> PracticeMode?
+    
+    func summary()  -> Summary?
+    
+    func targetGames()  -> Int64
+    
+}
+/**
+ * A sidecar read without opening its PGN, for library rows.
+ */
+open class LibrarySidecar: LibrarySidecarProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_librarysidecar(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_librarysidecar(handle, $0) }
+    }
+
+    
+
+    
+open func cards() -> [Epd: Card]  {
+    return try!  FfiConverterDictionaryTypeEpdTypeCard.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_cards(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func color() -> Side  {
+    return try!  FfiConverterTypeSide_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_color(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func configKey() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_config_key(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func database() -> ExplorerDatabase  {
+    return try!  FfiConverterTypeExplorerDatabase_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_database(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func dueTomorrow(timing: SchedTiming) -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_due_tomorrow(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+open func estimatedProgress() -> Progress  {
+    return try!  FfiConverterTypeProgress_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_estimated_progress(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func estimatedStudyCounts(newPerDay: Int64, reviewsPerDay: Int64, timing: SchedTiming) -> Counts  {
+    return try!  FfiConverterTypeCounts_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_estimated_study_counts(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(newPerDay),
+        FfiConverterInt64.lower(reviewsPerDay),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+open func id() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_id(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func laterLearningDues(timing: SchedTiming) -> [Int64]  {
+    return try!  FfiConverterSequenceInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_later_learning_dues(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+open func minGames() -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_min_games(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func nextDue(timing: SchedTiming) -> Int64?  {
+    return try!  FfiConverterOptionInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_next_due(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+open func practiceMode() -> PracticeMode?  {
+    return try!  FfiConverterOptionTypePracticeMode.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_practice_mode(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func summary() -> Summary?  {
+    return try!  FfiConverterOptionTypeSummary.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_summary(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func targetGames() -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_librarysidecar_target_games(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLibrarySidecar: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = LibrarySidecar
+
+    public static func lift(_ handle: UInt64) throws -> LibrarySidecar {
+        return LibrarySidecar(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: LibrarySidecar) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LibrarySidecar {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: LibrarySidecar, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLibrarySidecar_lift(_ handle: UInt64) throws -> LibrarySidecar {
+    return try FfiConverterTypeLibrarySidecar.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLibrarySidecar_lower(_ value: LibrarySidecar) -> UInt64 {
+    return FfiConverterTypeLibrarySidecar.lower(value)
+}
+
+
+
+
+
+
+/**
+ * An immutable chess position with legal-move helpers.
+ */
+public protocol PositionProtocol: AnyObject, Sendable {
+    
+    func epd()  -> Epd
+    
+    func fen()  -> String
+    
+    func fullmoveNumber()  -> UInt32
+    
+    func isCheckmate()  -> Bool
+    
+    func isPromotion(from: BoardSquare, to: BoardSquare)  -> Bool
+    
+    func legalDestinations(square: BoardSquare)  -> [BoardSquare]
+    
+    func legalMoves()  -> [PlayedMove]
+    
+    func pieceAt(square: BoardSquare)  -> BoardPiece?
+    
+    func pieces()  -> [BoardPiece]
+    
+    func play(from: BoardSquare, to: BoardSquare, promotion: PieceKind?)  -> PlayResult?
+    
+    func playSan(san: String)  -> PlayResult?
+    
+    func playUci(uci: String)  -> PlayResult?
+    
+    func sideToMove()  -> Side
+    
+}
+/**
+ * An immutable chess position with legal-move helpers.
+ */
+open class Position: PositionProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_position(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_position(handle, $0) }
+    }
+
+    
+public static func start() -> Position  {
+    return try!  FfiConverterTypePosition_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_position_start(uniffiCallStatus
+    )
+})
+}
+    
+
+    
+open func epd() -> Epd  {
+    return try!  FfiConverterTypeEpd_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_epd(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func fen() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_fen(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func fullmoveNumber() -> UInt32  {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_fullmove_number(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func isCheckmate() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_is_checkmate(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func isPromotion(from: BoardSquare, to: BoardSquare) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_is_promotion(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeBoardSquare_lower(from),
+        FfiConverterTypeBoardSquare_lower(to),uniffiCallStatus
+    )
+})
+}
+    
+open func legalDestinations(square: BoardSquare) -> [BoardSquare]  {
+    return try!  FfiConverterSequenceTypeBoardSquare.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_legal_destinations(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeBoardSquare_lower(square),uniffiCallStatus
+    )
+})
+}
+    
+open func legalMoves() -> [PlayedMove]  {
+    return try!  FfiConverterSequenceTypePlayedMove.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_legal_moves(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func pieceAt(square: BoardSquare) -> BoardPiece?  {
+    return try!  FfiConverterOptionTypeBoardPiece.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_piece_at(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeBoardSquare_lower(square),uniffiCallStatus
+    )
+})
+}
+    
+open func pieces() -> [BoardPiece]  {
+    return try!  FfiConverterSequenceTypeBoardPiece.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_pieces(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func play(from: BoardSquare, to: BoardSquare, promotion: PieceKind?) -> PlayResult?  {
+    return try!  FfiConverterOptionTypePlayResult.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_play(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeBoardSquare_lower(from),
+        FfiConverterTypeBoardSquare_lower(to),
+        FfiConverterOptionTypePieceKind.lower(promotion),uniffiCallStatus
+    )
+})
+}
+    
+open func playSan(san: String) -> PlayResult?  {
+    return try!  FfiConverterOptionTypePlayResult.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_play_san(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(san),uniffiCallStatus
+    )
+})
+}
+    
+open func playUci(uci: String) -> PlayResult?  {
+    return try!  FfiConverterOptionTypePlayResult.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_play_uci(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uci),uniffiCallStatus
+    )
+})
+}
+    
+open func sideToMove() -> Side  {
+    return try!  FfiConverterTypeSide_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_position_side_to_move(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePosition: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = Position
+
+    public static func lift(_ handle: UInt64) throws -> Position {
+        return Position(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: Position) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Position {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: Position, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePosition_lift(_ handle: UInt64) throws -> Position {
+    return try FfiConverterTypePosition.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePosition_lower(_ value: Position) -> UInt64 {
+    return FfiConverterTypePosition.lower(value)
+}
+
+
+
+
+
+
+/**
+ * An open repertoire. The platform reads and writes its files; see `Changes`.
+ */
+public protocol RepertoireDocProtocol: AnyObject, Sendable {
+    
+    func addLine(ucis: [String], start: UInt32)  -> AddResult
+    
+    func addMove(uci: String, parent: UInt32)  -> AddResult
+    
+    /**
+     * Every node, in id order (for the outline and search).
+     */
+    func allNodes()  -> [Node]
+    
+    func canUndo()  -> Bool
+    
+    func card(epd: Epd)  -> Card?
+    
+    func cardEpds(root: UInt32)  -> [Epd]
+    
+    /**
+     * Your-turn nodes with a main move under `root`, where cards are asked.
+     */
+    func cardNodes(root: UInt32)  -> [UInt32]
+    
+    func cards()  -> [Epd: Card]
+    
+    func chapters()  -> [ChapterInfo]
+    
+    func childBySan(id: UInt32, san: String)  -> UInt32?
+    
+    func childByUci(id: UInt32, uci: String)  -> UInt32?
+    
+    func color()  -> Side
+    
+    func count()  -> UInt32
+    
+    func coverage(id: UInt32)  -> NodeCoverage?
+    
+    func coverageRoot()  -> NodeCoverage?
+    
+    func database()  -> ExplorerDatabase
+    
+    func delete(id: UInt32)  -> Changes
+    
+    /**
+     * Replies at a position that is not in the repertoire (a draft on the board).
+     */
+    func draftReplies(epd: Epd, reach: Double?)  -> [ReplyInfo]?
+    
+    func dueTomorrow(timing: SchedTiming)  -> Int64
+    
+    func extendLimitsToday(new: Int64, review: Int64, timing: SchedTiming)  -> Changes
+    
+    /**
+     * All gaps, biggest first.
+     */
+    func gaps()  -> [CoverageGap]
+    
+    func isAncestor(a: UInt32, b: UInt32)  -> Bool
+    
+    func isExcluded(uci: String, node: UInt32)  -> Bool
+    
+    func lastLine()  -> [String]?
+    
+    func laterLearningDues(timing: SchedTiming)  -> [Int64]
+    
+    func learningProgress(node: UInt32)  -> Progress
+    
+    func leaves(id: UInt32)  -> [UInt32]
+    
+    func limits()  -> DeckLimits?
+    
+    /**
+     * SAN line to a node, e.g. "1. e4 c5 2. Nf3".
+     */
+    func lineText(id: UInt32)  -> String
+    
+    func loadWarnings()  -> [String]
+    
+    func mergeConflictVersion(text: String)  -> Changes
+    
+    func minGames()  -> Int64
+    
+    func moves(id: UInt32)  -> [PlayedMove]
+    
+    /**
+     * Unix seconds when the next card falls due after today's are done.
+     */
+    func nextDue(timing: SchedTiming)  -> Int64?
+    
+    func node(id: UInt32)  -> Node?
+    
+    func nodeFollowing(ucis: [String], start: UInt32)  -> UInt32?
+    
+    func nodesAt(epd: Epd)  -> [UInt32]
+    
+    /**
+     * The opening branches for per-branch statistics.
+     */
+    func openingBranches()  -> [UInt32]
+    
+    /**
+     * The opening name of a node, or of its nearest ancestor, from stats already loaded.
+     */
+    func openingName(id: UInt32)  -> String?
+    
+    /**
+     * The repertoire's own practice mode, if it overrides the default.
+     */
+    func ownPracticeMode()  -> PracticeMode?
+    
+    /**
+     * Node ids from the root to `id`, inclusive.
+     */
+    func path(id: UInt32)  -> [UInt32]
+    
+    func pgnSaved(text: String) 
+    
+    func pgnToSave()  -> String?
+    
+    func position(id: UInt32)  -> Position?
+    
+    func practiceMode()  -> PracticeMode
+    
+    func promote(id: UInt32)  -> Changes
+    
+    /**
+     * How often each position is reached.
+     */
+    func reach()  -> [UInt32: Double]
+    
+    func remainingLimits(timing: SchedTiming)  -> RemainingLimits
+    
+    func rememberLine(ucis: [String])  -> Changes
+    
+    func remotePgn(text: String)  -> Changes
+    
+    /**
+     * The sidecar changed on disk; reloads stats and recomputes when settings changed.
+     */
+    func remoteSidecar(data: Data)  -> Changes
+    
+    /**
+     * Fetches stats for the position on screen, ahead of the coverage check.
+     */
+    func requestStats(epd: Epd, nowMs: Int64) 
+    
+    /**
+     * The whole review log: the file's entries plus answers not written yet.
+     */
+    func reviewLog(onDisk: Data)  -> [RevlogEntry]
+    
+    func reviewsBeyondLimit(timing: SchedTiming)  -> Int64
+    
+    func revision()  -> UInt64
+    
+    func revlogAppended() 
+    
+    func revlogToAppend()  -> Data?
+    
+    func root()  -> Node
+    
+    func savedMoveCount()  -> Int64
+    
+    func setDefaults(defaults: StudyDefaults)  -> Changes
+    
+    func setExcluded(uci: String, node: UInt32, excluded: Bool, now: Timestamp)  -> Changes
+    
+    func setListener(listener: DocumentListener) 
+    
+    func setNote(text: String, id: UInt32)  -> Changes
+    
+    func sidecarSaved(data: Data) 
+    
+    func sidecarToSave(timing: SchedTiming, now: Timestamp)  -> Data?
+    
+    /**
+     * A screen of this repertoire appeared: the coverage check runs while any is showing.
+     */
+    func startCoverageCheck()  -> Changes
+    
+    func stats(epd: Epd)  -> ExplorerStats?
+    
+    func stopCoverageCheck() 
+    
+    func studyCounts(timing: SchedTiming)  -> Counts
+    
+    /**
+     * Depth-first order, parents before children.
+     */
+    func subtree(id: UInt32)  -> [UInt32]
+    
+    func suspendedCardEpds(root: UInt32)  -> [Epd]
+    
+    func targetGames()  -> Int64
+    
+    func transpositionTarget(id: UInt32)  -> UInt32?
+    
+    /**
+     * Opponent positions above your target whose stats are not loaded yet.
+     */
+    func uncheckedPositions()  -> Int64
+    
+    func undo()  -> Changes
+    
+    /**
+     * Changes the coverage settings (loading the new database's stats first).
+     */
+    func updateSettings(color: Side, database: ExplorerDatabase, targetGames: Int64, minGames: Int64, now: Timestamp)  -> Changes
+    
+    func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?, now: Timestamp)  -> Changes
+    
+}
+/**
+ * An open repertoire. The platform reads and writes its files; see `Changes`.
+ */
+open class RepertoireDoc: RepertoireDocProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_repertoiredoc(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_repertoiredoc(handle, $0) }
+    }
+
+    
+
+    
+open func addLine(ucis: [String], start: UInt32) -> AddResult  {
+    return try!  FfiConverterTypeAddResult_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_add_line(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceString.lower(ucis),
+        FfiConverterUInt32.lower(start),uniffiCallStatus
+    )
+})
+}
+    
+open func addMove(uci: String, parent: UInt32) -> AddResult  {
+    return try!  FfiConverterTypeAddResult_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_add_move(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uci),
+        FfiConverterUInt32.lower(parent),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Every node, in id order (for the outline and search).
+     */
+open func allNodes() -> [Node]  {
+    return try!  FfiConverterSequenceTypeNode.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_all_nodes(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func canUndo() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_can_undo(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func card(epd: Epd) -> Card?  {
+    return try!  FfiConverterOptionTypeCard.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_card(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEpd_lower(epd),uniffiCallStatus
+    )
+})
+}
+    
+open func cardEpds(root: UInt32) -> [Epd]  {
+    return try!  FfiConverterSequenceTypeEpd.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_card_epds(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(root),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Your-turn nodes with a main move under `root`, where cards are asked.
+     */
+open func cardNodes(root: UInt32) -> [UInt32]  {
+    return try!  FfiConverterSequenceUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_card_nodes(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(root),uniffiCallStatus
+    )
+})
+}
+    
+open func cards() -> [Epd: Card]  {
+    return try!  FfiConverterDictionaryTypeEpdTypeCard.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_cards(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func chapters() -> [ChapterInfo]  {
+    return try!  FfiConverterSequenceTypeChapterInfo.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_chapters(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func childBySan(id: UInt32, san: String) -> UInt32?  {
+    return try!  FfiConverterOptionUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_child_by_san(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),
+        FfiConverterString.lower(san),uniffiCallStatus
+    )
+})
+}
+    
+open func childByUci(id: UInt32, uci: String) -> UInt32?  {
+    return try!  FfiConverterOptionUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_child_by_uci(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),
+        FfiConverterString.lower(uci),uniffiCallStatus
+    )
+})
+}
+    
+open func color() -> Side  {
+    return try!  FfiConverterTypeSide_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_color(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func count() -> UInt32  {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_count(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func coverage(id: UInt32) -> NodeCoverage?  {
+    return try!  FfiConverterOptionTypeNodeCoverage.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_coverage(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func coverageRoot() -> NodeCoverage?  {
+    return try!  FfiConverterOptionTypeNodeCoverage.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_coverage_root(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func database() -> ExplorerDatabase  {
+    return try!  FfiConverterTypeExplorerDatabase_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_database(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func delete(id: UInt32) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_delete(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Replies at a position that is not in the repertoire (a draft on the board).
+     */
+open func draftReplies(epd: Epd, reach: Double?) -> [ReplyInfo]?  {
+    return try!  FfiConverterOptionSequenceTypeReplyInfo.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_draft_replies(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEpd_lower(epd),
+        FfiConverterOptionDouble.lower(reach),uniffiCallStatus
+    )
+})
+}
+    
+open func dueTomorrow(timing: SchedTiming) -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_due_tomorrow(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+open func extendLimitsToday(new: Int64, review: Int64, timing: SchedTiming) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_extend_limits_today(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(new),
+        FfiConverterInt64.lower(review),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * All gaps, biggest first.
+     */
+open func gaps() -> [CoverageGap]  {
+    return try!  FfiConverterSequenceTypeCoverageGap.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_gaps(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func isAncestor(a: UInt32, b: UInt32) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_is_ancestor(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(a),
+        FfiConverterUInt32.lower(b),uniffiCallStatus
+    )
+})
+}
+    
+open func isExcluded(uci: String, node: UInt32) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_is_excluded(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uci),
+        FfiConverterUInt32.lower(node),uniffiCallStatus
+    )
+})
+}
+    
+open func lastLine() -> [String]?  {
+    return try!  FfiConverterOptionSequenceString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_last_line(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func laterLearningDues(timing: SchedTiming) -> [Int64]  {
+    return try!  FfiConverterSequenceInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_later_learning_dues(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+open func learningProgress(node: UInt32) -> Progress  {
+    return try!  FfiConverterTypeProgress_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_learning_progress(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(node),uniffiCallStatus
+    )
+})
+}
+    
+open func leaves(id: UInt32) -> [UInt32]  {
+    return try!  FfiConverterSequenceUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_leaves(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func limits() -> DeckLimits?  {
+    return try!  FfiConverterOptionTypeDeckLimits.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_limits(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * SAN line to a node, e.g. "1. e4 c5 2. Nf3".
+     */
+open func lineText(id: UInt32) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_line_text(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func loadWarnings() -> [String]  {
+    return try!  FfiConverterSequenceString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_load_warnings(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func mergeConflictVersion(text: String) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_merge_conflict_version(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(text),uniffiCallStatus
+    )
+})
+}
+    
+open func minGames() -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_min_games(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func moves(id: UInt32) -> [PlayedMove]  {
+    return try!  FfiConverterSequenceTypePlayedMove.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_moves(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Unix seconds when the next card falls due after today's are done.
+     */
+open func nextDue(timing: SchedTiming) -> Int64?  {
+    return try!  FfiConverterOptionInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_next_due(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+open func node(id: UInt32) -> Node?  {
+    return try!  FfiConverterOptionTypeNode.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_node(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func nodeFollowing(ucis: [String], start: UInt32) -> UInt32?  {
+    return try!  FfiConverterOptionUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_node_following(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceString.lower(ucis),
+        FfiConverterUInt32.lower(start),uniffiCallStatus
+    )
+})
+}
+    
+open func nodesAt(epd: Epd) -> [UInt32]  {
+    return try!  FfiConverterSequenceUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_nodes_at(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEpd_lower(epd),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The opening branches for per-branch statistics.
+     */
+open func openingBranches() -> [UInt32]  {
+    return try!  FfiConverterSequenceUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_opening_branches(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The opening name of a node, or of its nearest ancestor, from stats already loaded.
+     */
+open func openingName(id: UInt32) -> String?  {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_opening_name(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The repertoire's own practice mode, if it overrides the default.
+     */
+open func ownPracticeMode() -> PracticeMode?  {
+    return try!  FfiConverterOptionTypePracticeMode.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_own_practice_mode(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Node ids from the root to `id`, inclusive.
+     */
+open func path(id: UInt32) -> [UInt32]  {
+    return try!  FfiConverterSequenceUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_path(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func pgnSaved(text: String)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_pgn_saved(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(text),uniffiCallStatus
+    )
+}
+}
+    
+open func pgnToSave() -> String?  {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_pgn_to_save(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func position(id: UInt32) -> Position?  {
+    return try!  FfiConverterOptionTypePosition.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_position(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func practiceMode() -> PracticeMode  {
+    return try!  FfiConverterTypePracticeMode_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_practice_mode(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func promote(id: UInt32) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_promote(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * How often each position is reached.
+     */
+open func reach() -> [UInt32: Double]  {
+    return try!  FfiConverterDictionaryUInt32Double.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_reach(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func remainingLimits(timing: SchedTiming) -> RemainingLimits  {
+    return try!  FfiConverterTypeRemainingLimits_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_remaining_limits(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+open func rememberLine(ucis: [String]) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_remember_line(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceString.lower(ucis),uniffiCallStatus
+    )
+})
+}
+    
+open func remotePgn(text: String) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_remote_pgn(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(text),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The sidecar changed on disk; reloads stats and recomputes when settings changed.
+     */
+open func remoteSidecar(data: Data) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_remote_sidecar(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(data),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Fetches stats for the position on screen, ahead of the coverage check.
+     */
+open func requestStats(epd: Epd, nowMs: Int64)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_request_stats(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEpd_lower(epd),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * The whole review log: the file's entries plus answers not written yet.
+     */
+open func reviewLog(onDisk: Data) -> [RevlogEntry]  {
+    return try!  FfiConverterSequenceTypeRevlogEntry.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_review_log(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(onDisk),uniffiCallStatus
+    )
+})
+}
+    
+open func reviewsBeyondLimit(timing: SchedTiming) -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_reviews_beyond_limit(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+open func revision() -> UInt64  {
+    return try!  FfiConverterUInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_revision(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func revlogAppended()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_revlog_appended(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func revlogToAppend() -> Data?  {
+    return try!  FfiConverterOptionData.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_revlog_to_append(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func root() -> Node  {
+    return try!  FfiConverterTypeNode_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_root(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func savedMoveCount() -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_saved_move_count(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func setDefaults(defaults: StudyDefaults) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_set_defaults(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeStudyDefaults_lower(defaults),uniffiCallStatus
+    )
+})
+}
+    
+open func setExcluded(uci: String, node: UInt32, excluded: Bool, now: Timestamp) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_set_excluded(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uci),
+        FfiConverterUInt32.lower(node),
+        FfiConverterBool.lower(excluded),
+        FfiConverterTypeTimestamp_lower(now),uniffiCallStatus
+    )
+})
+}
+    
+open func setListener(listener: DocumentListener)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_set_listener(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeDocumentListener_lower(listener),uniffiCallStatus
+    )
+}
+}
+    
+open func setNote(text: String, id: UInt32) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_set_note(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(text),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func sidecarSaved(data: Data)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_sidecar_saved(
+            self.uniffiCloneHandle(),
+        FfiConverterData.lower(data),uniffiCallStatus
+    )
+}
+}
+    
+open func sidecarToSave(timing: SchedTiming, now: Timestamp) -> Data?  {
+    return try!  FfiConverterOptionData.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_sidecar_to_save(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),
+        FfiConverterTypeTimestamp_lower(now),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * A screen of this repertoire appeared: the coverage check runs while any is showing.
+     */
+open func startCoverageCheck() -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_start_coverage_check(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func stats(epd: Epd) -> ExplorerStats?  {
+    return try!  FfiConverterOptionTypeExplorerStats.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_stats(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEpd_lower(epd),uniffiCallStatus
+    )
+})
+}
+    
+open func stopCoverageCheck()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_stop_coverage_check(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func studyCounts(timing: SchedTiming) -> Counts  {
+    return try!  FfiConverterTypeCounts_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_study_counts(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Depth-first order, parents before children.
+     */
+open func subtree(id: UInt32) -> [UInt32]  {
+    return try!  FfiConverterSequenceUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_subtree(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func suspendedCardEpds(root: UInt32) -> [Epd]  {
+    return try!  FfiConverterSequenceTypeEpd.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_suspended_card_epds(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(root),uniffiCallStatus
+    )
+})
+}
+    
+open func targetGames() -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_target_games(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func transpositionTarget(id: UInt32) -> UInt32?  {
+    return try!  FfiConverterOptionUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_transposition_target(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Opponent positions above your target whose stats are not loaded yet.
+     */
+open func uncheckedPositions() -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_unchecked_positions(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func undo() -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_undo(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Changes the coverage settings (loading the new database's stats first).
+     */
+open func updateSettings(color: Side, database: ExplorerDatabase, targetGames: Int64, minGames: Int64, now: Timestamp) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_update_settings(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSide_lower(color),
+        FfiConverterTypeExplorerDatabase_lower(database),
+        FfiConverterInt64.lower(targetGames),
+        FfiConverterInt64.lower(minGames),
+        FfiConverterTypeTimestamp_lower(now),uniffiCallStatus
+    )
+})
+}
+    
+open func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?, now: Timestamp) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_update_study_settings(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeDeckLimits_lower(limits),
+        FfiConverterOptionTypePracticeMode.lower(practiceMode),
+        FfiConverterTypeTimestamp_lower(now),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRepertoireDoc: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = RepertoireDoc
+
+    public static func lift(_ handle: UInt64) throws -> RepertoireDoc {
+        return RepertoireDoc(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: RepertoireDoc) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RepertoireDoc {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: RepertoireDoc, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRepertoireDoc_lift(_ handle: UInt64) throws -> RepertoireDoc {
+    return try FfiConverterTypeRepertoireDoc.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRepertoireDoc_lower(_ value: RepertoireDoc) -> UInt64 {
+    return FfiConverterTypeRepertoireDoc.lower(value)
+}
+
+
+
+
+
+
+/**
+ * Where the platform keeps explorer stats between launches (a local, unsynced cache).
+ */
+public protocol StatsStore: AnyObject, Sendable {
+    
+    /**
+     * Every stored entry of a database (by its cache key): (EPD, the stats as JSON).
+     */
+    func load(databaseKey: String)  -> [StoredStats]
+    
+    func save(databaseKey: String, epd: Epd, json: Data) 
+    
+}
+/**
+ * Where the platform keeps explorer stats between launches (a local, unsynced cache).
+ */
+open class StatsStoreImpl: StatsStore, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_statsstore(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_statsstore(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * Every stored entry of a database (by its cache key): (EPD, the stats as JSON).
+     */
+open func load(databaseKey: String) -> [StoredStats]  {
+    return try!  FfiConverterSequenceTypeStoredStats.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_statsstore_load(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(databaseKey),uniffiCallStatus
+    )
+})
+}
+    
+open func save(databaseKey: String, epd: Epd, json: Data)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_statsstore_save(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(databaseKey),
+        FfiConverterTypeEpd_lower(epd),
+        FfiConverterData.lower(json),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfaceStatsStore {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // Store the vtable directly.
+    static let vtable: UniffiVTableCallbackInterfaceStatsStore = UniffiVTableCallbackInterfaceStatsStore(
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            do {
+                try FfiConverterTypeStatsStore.handleMap.remove(handle: uniffiHandle)
+            } catch {
+                print("Uniffi callback interface StatsStore: handle missing in uniffiFree")
+            }
+        },
+        uniffiClone: { (uniffiHandle: UInt64) -> UInt64 in
+            do {
+                return try FfiConverterTypeStatsStore.handleMap.clone(handle: uniffiHandle)
+            } catch {
+                fatalError("Uniffi callback interface StatsStore: handle missing in uniffiClone")
+            }
+        },
+        load: { (
+            uniffiHandle: UInt64,
+            databaseKey: RustBuffer,
+            uniffiOutReturn: UnsafeMutablePointer<RustBuffer>,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> [StoredStats] in
+                guard let uniffiObj = try? FfiConverterTypeStatsStore.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.load(
+                     databaseKey: try FfiConverterString.lift(databaseKey)
+                )
+            }
+
+            
+            let writeReturn = { uniffiOutReturn.pointee = FfiConverterSequenceTypeStoredStats.lower($0) }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        },
+        save: { (
+            uniffiHandle: UInt64,
+            databaseKey: RustBuffer,
+            epd: RustBuffer,
+            json: RustBuffer,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeStatsStore.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.save(
+                     databaseKey: try FfiConverterString.lift(databaseKey),
+                     epd: try FfiConverterTypeEpd_lift(epd),
+                     json: try FfiConverterData.lift(json)
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        }
+    )
+
+    // Rust stores this pointer for future callback invocations, so it must live
+    // for the process lifetime (not just for the init function call).
+    //
+    // `nonisolated(unsafe)` is needed under Swift 6 strict concurrency.
+    // This is safe because the pointee is initialized once during static init
+    // and never mutated by either side of the FFI.  Its fields are C function pointers.
+    nonisolated(unsafe) static let vtablePtr: UnsafePointer<UniffiVTableCallbackInterfaceStatsStore> = {
+        let ptr = UnsafeMutablePointer<UniffiVTableCallbackInterfaceStatsStore>.allocate(capacity: 1)
+        ptr.initialize(to: vtable)
+        return UnsafePointer(ptr)
+    }()
+}
+
+private func uniffiCallbackInitStatsStore() {
+    uniffi_opening_core_fn_init_callback_vtable_statsstore(UniffiCallbackInterfaceStatsStore.vtablePtr)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeStatsStore: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<StatsStore>()
+
+    typealias FfiType = UInt64
+    typealias SwiftType = StatsStore
+
+    public static func lift(_ handle: UInt64) throws -> StatsStore {
+        if ((handle & 1) == 0) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return StatsStoreImpl(unsafeFromHandle: handle)
+        } else {
+            // Swift-generated handle, get the object from the handle map
+            return try handleMap.remove(handle: handle)
+        }
+    }
+
+    public static func lower(_ value: StatsStore) -> UInt64 {
+         if let rustImpl = value as? StatsStoreImpl {
+             // Rust-implemented object.  Clone the handle and return it
+            return rustImpl.uniffiCloneHandle()
+         } else {
+            // Swift object, generate a new vtable handle and return that.
+            return handleMap.insert(obj: value)
+         }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> StatsStore {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: StatsStore, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStatsStore_lift(_ handle: UInt64) throws -> StatsStore {
+    return try FfiConverterTypeStatsStore.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStatsStore_lower(_ value: StatsStore) -> UInt64 {
+    return FfiConverterTypeStatsStore.lower(value)
+}
+
+
+
+
+public struct AddResult: Equatable, Hashable {
+    public var node: UInt32?
+    public var changes: Changes
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(node: UInt32?, changes: Changes) {
+        self.node = node
+        self.changes = changes
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AddResult: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAddResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AddResult {
+        return
+            try AddResult(
+                node: FfiConverterOptionUInt32.read(from: &buf), 
+                changes: FfiConverterTypeChanges.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AddResult, into buf: inout [UInt8]) {
+        FfiConverterOptionUInt32.write(value.node, into: &buf)
+        FfiConverterTypeChanges.write(value.changes, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAddResult_lift(_ buf: RustBuffer) throws -> AddResult {
+    return try FfiConverterTypeAddResult.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAddResult_lower(_ value: AddResult) -> RustBuffer {
+    return FfiConverterTypeAddResult.lower(value)
+}
+
+
+public struct Arrow: Equatable, Hashable {
+    public var from: BoardSquare
+    public var to: BoardSquare
+    public var style: ArrowStyle
+    public var width: Double
+    public var opacity: Double
+    public var dashed: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(from: BoardSquare, to: BoardSquare, style: ArrowStyle, width: Double, opacity: Double, dashed: Bool) {
+        self.from = from
+        self.to = to
+        self.style = style
+        self.width = width
+        self.opacity = opacity
+        self.dashed = dashed
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Arrow: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeArrow: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Arrow {
+        return
+            try Arrow(
+                from: FfiConverterTypeBoardSquare.read(from: &buf), 
+                to: FfiConverterTypeBoardSquare.read(from: &buf), 
+                style: FfiConverterTypeArrowStyle.read(from: &buf), 
+                width: FfiConverterDouble.read(from: &buf), 
+                opacity: FfiConverterDouble.read(from: &buf), 
+                dashed: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Arrow, into buf: inout [UInt8]) {
+        FfiConverterTypeBoardSquare.write(value.from, into: &buf)
+        FfiConverterTypeBoardSquare.write(value.to, into: &buf)
+        FfiConverterTypeArrowStyle.write(value.style, into: &buf)
+        FfiConverterDouble.write(value.width, into: &buf)
+        FfiConverterDouble.write(value.opacity, into: &buf)
+        FfiConverterBool.write(value.dashed, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeArrow_lift(_ buf: RustBuffer) throws -> Arrow {
+    return try FfiConverterTypeArrow.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeArrow_lower(_ value: Arrow) -> RustBuffer {
+    return FfiConverterTypeArrow.lower(value)
+}
+
+
+public struct BoardPiece: Equatable, Hashable {
+    public var side: Side
+    public var kind: PieceKind
+    public var square: BoardSquare
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(side: Side, kind: PieceKind, square: BoardSquare) {
+        self.side = side
+        self.kind = kind
+        self.square = square
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension BoardPiece: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBoardPiece: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BoardPiece {
+        return
+            try BoardPiece(
+                side: FfiConverterTypeSide.read(from: &buf), 
+                kind: FfiConverterTypePieceKind.read(from: &buf), 
+                square: FfiConverterTypeBoardSquare.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: BoardPiece, into buf: inout [UInt8]) {
+        FfiConverterTypeSide.write(value.side, into: &buf)
+        FfiConverterTypePieceKind.write(value.kind, into: &buf)
+        FfiConverterTypeBoardSquare.write(value.square, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBoardPiece_lift(_ buf: RustBuffer) throws -> BoardPiece {
+    return try FfiConverterTypeBoardPiece.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBoardPiece_lower(_ value: BoardPiece) -> RustBuffer {
+    return FfiConverterTypeBoardPiece.lower(value)
+}
+
+
+public struct ButtonCounts: Equatable, Hashable {
+    /**
+     * Again ... Easy.
+     */
+    public var learning: [Int64]
+    public var young: [Int64]
+    public var mature: [Int64]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Again ... Easy.
+         */learning: [Int64], young: [Int64], mature: [Int64]) {
+        self.learning = learning
+        self.young = young
+        self.mature = mature
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ButtonCounts: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeButtonCounts: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ButtonCounts {
+        return
+            try ButtonCounts(
+                learning: FfiConverterSequenceInt64.read(from: &buf), 
+                young: FfiConverterSequenceInt64.read(from: &buf), 
+                mature: FfiConverterSequenceInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ButtonCounts, into buf: inout [UInt8]) {
+        FfiConverterSequenceInt64.write(value.learning, into: &buf)
+        FfiConverterSequenceInt64.write(value.young, into: &buf)
+        FfiConverterSequenceInt64.write(value.mature, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeButtonCounts_lift(_ buf: RustBuffer) throws -> ButtonCounts {
+    return try FfiConverterTypeButtonCounts.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeButtonCounts_lower(_ value: ButtonCounts) -> RustBuffer {
+    return FfiConverterTypeButtonCounts.lower(value)
+}
+
+
+public struct Card: Equatable, Hashable {
+    public var added: Int64
+    public var ctype: CardType
+    public var due: Int64
+    public var easeFactor: Int64
+    public var id: Int64
+    public var interval: Int64
+    public var lapses: Int64
+    public var lastReviewTime: Int64?
+    public var leech: Bool?
+    public var memory: MemoryState?
+    public var originalPosition: Int64?
+    public var queue: CardQueue
+    public var remainingSteps: Int64
+    public var reps: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(added: Int64, ctype: CardType, due: Int64, easeFactor: Int64, id: Int64, interval: Int64, lapses: Int64, lastReviewTime: Int64?, leech: Bool?, memory: MemoryState?, originalPosition: Int64?, queue: CardQueue, remainingSteps: Int64, reps: Int64) {
+        self.added = added
+        self.ctype = ctype
+        self.due = due
+        self.easeFactor = easeFactor
+        self.id = id
+        self.interval = interval
+        self.lapses = lapses
+        self.lastReviewTime = lastReviewTime
+        self.leech = leech
+        self.memory = memory
+        self.originalPosition = originalPosition
+        self.queue = queue
+        self.remainingSteps = remainingSteps
+        self.reps = reps
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Card: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCard: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Card {
+        return
+            try Card(
+                added: FfiConverterInt64.read(from: &buf), 
+                ctype: FfiConverterTypeCardType.read(from: &buf), 
+                due: FfiConverterInt64.read(from: &buf), 
+                easeFactor: FfiConverterInt64.read(from: &buf), 
+                id: FfiConverterInt64.read(from: &buf), 
+                interval: FfiConverterInt64.read(from: &buf), 
+                lapses: FfiConverterInt64.read(from: &buf), 
+                lastReviewTime: FfiConverterOptionInt64.read(from: &buf), 
+                leech: FfiConverterOptionBool.read(from: &buf), 
+                memory: FfiConverterOptionTypeMemoryState.read(from: &buf), 
+                originalPosition: FfiConverterOptionInt64.read(from: &buf), 
+                queue: FfiConverterTypeCardQueue.read(from: &buf), 
+                remainingSteps: FfiConverterInt64.read(from: &buf), 
+                reps: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Card, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.added, into: &buf)
+        FfiConverterTypeCardType.write(value.ctype, into: &buf)
+        FfiConverterInt64.write(value.due, into: &buf)
+        FfiConverterInt64.write(value.easeFactor, into: &buf)
+        FfiConverterInt64.write(value.id, into: &buf)
+        FfiConverterInt64.write(value.interval, into: &buf)
+        FfiConverterInt64.write(value.lapses, into: &buf)
+        FfiConverterOptionInt64.write(value.lastReviewTime, into: &buf)
+        FfiConverterOptionBool.write(value.leech, into: &buf)
+        FfiConverterOptionTypeMemoryState.write(value.memory, into: &buf)
+        FfiConverterOptionInt64.write(value.originalPosition, into: &buf)
+        FfiConverterTypeCardQueue.write(value.queue, into: &buf)
+        FfiConverterInt64.write(value.remainingSteps, into: &buf)
+        FfiConverterInt64.write(value.reps, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCard_lift(_ buf: RustBuffer) throws -> Card {
+    return try FfiConverterTypeCard.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCard_lower(_ value: Card) -> RustBuffer {
+    return FfiConverterTypeCard.lower(value)
+}
+
+
+public struct CardCounts: Equatable, Hashable {
+    public var new: Int64
+    public var learn: Int64
+    public var relearn: Int64
+    public var young: Int64
+    public var mature: Int64
+    public var suspended: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(new: Int64, learn: Int64, relearn: Int64, young: Int64, mature: Int64, suspended: Int64) {
+        self.new = new
+        self.learn = learn
+        self.relearn = relearn
+        self.young = young
+        self.mature = mature
+        self.suspended = suspended
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CardCounts: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCardCounts: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CardCounts {
+        return
+            try CardCounts(
+                new: FfiConverterInt64.read(from: &buf), 
+                learn: FfiConverterInt64.read(from: &buf), 
+                relearn: FfiConverterInt64.read(from: &buf), 
+                young: FfiConverterInt64.read(from: &buf), 
+                mature: FfiConverterInt64.read(from: &buf), 
+                suspended: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CardCounts, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.new, into: &buf)
+        FfiConverterInt64.write(value.learn, into: &buf)
+        FfiConverterInt64.write(value.relearn, into: &buf)
+        FfiConverterInt64.write(value.young, into: &buf)
+        FfiConverterInt64.write(value.mature, into: &buf)
+        FfiConverterInt64.write(value.suspended, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCardCounts_lift(_ buf: RustBuffer) throws -> CardCounts {
+    return try FfiConverterTypeCardCounts.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCardCounts_lower(_ value: CardCounts) -> RustBuffer {
+    return FfiConverterTypeCardCounts.lower(value)
+}
+
+
+public struct CardInfo: Equatable, Hashable {
+    public var added: Int64
+    public var firstReview: Int64?
+    public var latestReview: Int64?
+    public var due: Int64?
+    public var interval: Int64
+    public var reps: Int64
+    public var lapses: Int64
+    public var averageMillis: Int64
+    public var totalMillis: Int64
+    public var retrievability: Double?
+    public var memory: MemoryState?
+    public var history: [RevlogEntry]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(added: Int64, firstReview: Int64?, latestReview: Int64?, due: Int64?, interval: Int64, reps: Int64, lapses: Int64, averageMillis: Int64, totalMillis: Int64, retrievability: Double?, memory: MemoryState?, history: [RevlogEntry]) {
+        self.added = added
+        self.firstReview = firstReview
+        self.latestReview = latestReview
+        self.due = due
+        self.interval = interval
+        self.reps = reps
+        self.lapses = lapses
+        self.averageMillis = averageMillis
+        self.totalMillis = totalMillis
+        self.retrievability = retrievability
+        self.memory = memory
+        self.history = history
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CardInfo: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCardInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CardInfo {
+        return
+            try CardInfo(
+                added: FfiConverterInt64.read(from: &buf), 
+                firstReview: FfiConverterOptionInt64.read(from: &buf), 
+                latestReview: FfiConverterOptionInt64.read(from: &buf), 
+                due: FfiConverterOptionInt64.read(from: &buf), 
+                interval: FfiConverterInt64.read(from: &buf), 
+                reps: FfiConverterInt64.read(from: &buf), 
+                lapses: FfiConverterInt64.read(from: &buf), 
+                averageMillis: FfiConverterInt64.read(from: &buf), 
+                totalMillis: FfiConverterInt64.read(from: &buf), 
+                retrievability: FfiConverterOptionDouble.read(from: &buf), 
+                memory: FfiConverterOptionTypeMemoryState.read(from: &buf), 
+                history: FfiConverterSequenceTypeRevlogEntry.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CardInfo, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.added, into: &buf)
+        FfiConverterOptionInt64.write(value.firstReview, into: &buf)
+        FfiConverterOptionInt64.write(value.latestReview, into: &buf)
+        FfiConverterOptionInt64.write(value.due, into: &buf)
+        FfiConverterInt64.write(value.interval, into: &buf)
+        FfiConverterInt64.write(value.reps, into: &buf)
+        FfiConverterInt64.write(value.lapses, into: &buf)
+        FfiConverterInt64.write(value.averageMillis, into: &buf)
+        FfiConverterInt64.write(value.totalMillis, into: &buf)
+        FfiConverterOptionDouble.write(value.retrievability, into: &buf)
+        FfiConverterOptionTypeMemoryState.write(value.memory, into: &buf)
+        FfiConverterSequenceTypeRevlogEntry.write(value.history, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCardInfo_lift(_ buf: RustBuffer) throws -> CardInfo {
+    return try FfiConverterTypeCardInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCardInfo_lower(_ value: CardInfo) -> RustBuffer {
+    return FfiConverterTypeCardInfo.lower(value)
+}
+
+
+public struct Changes: Equatable, Hashable {
+    public var revision: UInt64
+    public var treeChanged: Bool
+    public var savePgnAfterMs: UInt32?
+    public var saveSidecarAfterMs: UInt32?
+    public var reloadStats: Bool
+    public var coverageCheck: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(revision: UInt64, treeChanged: Bool, savePgnAfterMs: UInt32?, saveSidecarAfterMs: UInt32?, reloadStats: Bool, coverageCheck: Bool) {
+        self.revision = revision
+        self.treeChanged = treeChanged
+        self.savePgnAfterMs = savePgnAfterMs
+        self.saveSidecarAfterMs = saveSidecarAfterMs
+        self.reloadStats = reloadStats
+        self.coverageCheck = coverageCheck
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Changes: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeChanges: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Changes {
+        return
+            try Changes(
+                revision: FfiConverterUInt64.read(from: &buf), 
+                treeChanged: FfiConverterBool.read(from: &buf), 
+                savePgnAfterMs: FfiConverterOptionUInt32.read(from: &buf), 
+                saveSidecarAfterMs: FfiConverterOptionUInt32.read(from: &buf), 
+                reloadStats: FfiConverterBool.read(from: &buf), 
+                coverageCheck: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Changes, into buf: inout [UInt8]) {
+        FfiConverterUInt64.write(value.revision, into: &buf)
+        FfiConverterBool.write(value.treeChanged, into: &buf)
+        FfiConverterOptionUInt32.write(value.savePgnAfterMs, into: &buf)
+        FfiConverterOptionUInt32.write(value.saveSidecarAfterMs, into: &buf)
+        FfiConverterBool.write(value.reloadStats, into: &buf)
+        FfiConverterBool.write(value.coverageCheck, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChanges_lift(_ buf: RustBuffer) throws -> Changes {
+    return try FfiConverterTypeChanges.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChanges_lower(_ value: Changes) -> RustBuffer {
+    return FfiConverterTypeChanges.lower(value)
+}
+
+
+public struct ChapterInfo: Equatable, Hashable {
+    public var name: String
+    public var tags: [String: String]
+    /**
+     * From a non-standard position: kept verbatim, not part of the tree.
+     */
+    public var passthrough: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(name: String, tags: [String: String], 
+        /**
+         * From a non-standard position: kept verbatim, not part of the tree.
+         */passthrough: Bool) {
+        self.name = name
+        self.tags = tags
+        self.passthrough = passthrough
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ChapterInfo: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeChapterInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ChapterInfo {
+        return
+            try ChapterInfo(
+                name: FfiConverterString.read(from: &buf), 
+                tags: FfiConverterDictionaryStringString.read(from: &buf), 
+                passthrough: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ChapterInfo, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.name, into: &buf)
+        FfiConverterDictionaryStringString.write(value.tags, into: &buf)
+        FfiConverterBool.write(value.passthrough, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChapterInfo_lift(_ buf: RustBuffer) throws -> ChapterInfo {
+    return try FfiConverterTypeChapterInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeChapterInfo_lower(_ value: ChapterInfo) -> RustBuffer {
+    return FfiConverterTypeChapterInfo.lower(value)
+}
+
+
+public struct Counts: Equatable, Hashable {
+    public var new: Int64
+    public var learning: Int64
+    public var review: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(new: Int64, learning: Int64, review: Int64) {
+        self.new = new
+        self.learning = learning
+        self.review = review
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Counts: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCounts: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Counts {
+        return
+            try Counts(
+                new: FfiConverterInt64.read(from: &buf), 
+                learning: FfiConverterInt64.read(from: &buf), 
+                review: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Counts, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.new, into: &buf)
+        FfiConverterInt64.write(value.learning, into: &buf)
+        FfiConverterInt64.write(value.review, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCounts_lift(_ buf: RustBuffer) throws -> Counts {
+    return try FfiConverterTypeCounts.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCounts_lower(_ value: Counts) -> RustBuffer {
+    return FfiConverterTypeCounts.lower(value)
+}
+
+
+public struct CoverageGap: Equatable, Hashable {
+    public var node: UInt32
+    public var kind: GapKind
+    public var mass: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(node: UInt32, kind: GapKind, mass: Double) {
+        self.node = node
+        self.kind = kind
+        self.mass = mass
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CoverageGap: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoverageGap: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoverageGap {
+        return
+            try CoverageGap(
+                node: FfiConverterUInt32.read(from: &buf), 
+                kind: FfiConverterTypeGapKind.read(from: &buf), 
+                mass: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CoverageGap, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.node, into: &buf)
+        FfiConverterTypeGapKind.write(value.kind, into: &buf)
+        FfiConverterDouble.write(value.mass, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoverageGap_lift(_ buf: RustBuffer) throws -> CoverageGap {
+    return try FfiConverterTypeCoverageGap.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoverageGap_lower(_ value: CoverageGap) -> RustBuffer {
+    return FfiConverterTypeCoverageGap.lower(value)
+}
+
+
+public struct DayLimit: Equatable, Hashable {
+    public var limit: Int64
+    public var today: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(limit: Int64, today: Int64) {
+        self.limit = limit
+        self.today = today
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DayLimit: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDayLimit: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DayLimit {
+        return
+            try DayLimit(
+                limit: FfiConverterInt64.read(from: &buf), 
+                today: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DayLimit, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.limit, into: &buf)
+        FfiConverterInt64.write(value.today, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDayLimit_lift(_ buf: RustBuffer) throws -> DayLimit {
+    return try FfiConverterTypeDayLimit.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDayLimit_lower(_ value: DayLimit) -> RustBuffer {
+    return FfiConverterTypeDayLimit.lower(value)
+}
+
+
+public struct DeckLimits: Equatable, Hashable {
+    public var newLimit: Int64?
+    public var newLimitToday: DayLimit?
+    public var reviewLimit: Int64?
+    public var reviewLimitToday: DayLimit?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(newLimit: Int64?, newLimitToday: DayLimit?, reviewLimit: Int64?, reviewLimitToday: DayLimit?) {
+        self.newLimit = newLimit
+        self.newLimitToday = newLimitToday
+        self.reviewLimit = reviewLimit
+        self.reviewLimitToday = reviewLimitToday
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DeckLimits: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDeckLimits: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DeckLimits {
+        return
+            try DeckLimits(
+                newLimit: FfiConverterOptionInt64.read(from: &buf), 
+                newLimitToday: FfiConverterOptionTypeDayLimit.read(from: &buf), 
+                reviewLimit: FfiConverterOptionInt64.read(from: &buf), 
+                reviewLimitToday: FfiConverterOptionTypeDayLimit.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DeckLimits, into buf: inout [UInt8]) {
+        FfiConverterOptionInt64.write(value.newLimit, into: &buf)
+        FfiConverterOptionTypeDayLimit.write(value.newLimitToday, into: &buf)
+        FfiConverterOptionInt64.write(value.reviewLimit, into: &buf)
+        FfiConverterOptionTypeDayLimit.write(value.reviewLimitToday, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDeckLimits_lift(_ buf: RustBuffer) throws -> DeckLimits {
+    return try FfiConverterTypeDeckLimits.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDeckLimits_lower(_ value: DeckLimits) -> RustBuffer {
+    return FfiConverterTypeDeckLimits.lower(value)
+}
+
+
+public struct DeckStudyStats: Equatable, Hashable {
+    public var lastDayStudied: Int64
+    public var millisecondsStudied: Int64
+    public var newStudied: Int64
+    public var reviewStudied: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(lastDayStudied: Int64, millisecondsStudied: Int64, newStudied: Int64, reviewStudied: Int64) {
+        self.lastDayStudied = lastDayStudied
+        self.millisecondsStudied = millisecondsStudied
+        self.newStudied = newStudied
+        self.reviewStudied = reviewStudied
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DeckStudyStats: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDeckStudyStats: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DeckStudyStats {
+        return
+            try DeckStudyStats(
+                lastDayStudied: FfiConverterInt64.read(from: &buf), 
+                millisecondsStudied: FfiConverterInt64.read(from: &buf), 
+                newStudied: FfiConverterInt64.read(from: &buf), 
+                reviewStudied: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DeckStudyStats, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.lastDayStudied, into: &buf)
+        FfiConverterInt64.write(value.millisecondsStudied, into: &buf)
+        FfiConverterInt64.write(value.newStudied, into: &buf)
+        FfiConverterInt64.write(value.reviewStudied, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDeckStudyStats_lift(_ buf: RustBuffer) throws -> DeckStudyStats {
+    return try FfiConverterTypeDeckStudyStats.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDeckStudyStats_lower(_ value: DeckStudyStats) -> RustBuffer {
+    return FfiConverterTypeDeckStudyStats.lower(value)
+}
+
+
+public struct ExplorerMove: Equatable, Hashable {
+    public var uci: String
+    public var san: String
+    public var white: Int64
+    public var draws: Int64
+    public var black: Int64
+    public var averageRating: Int64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(uci: String, san: String, white: Int64, draws: Int64, black: Int64, averageRating: Int64?) {
+        self.uci = uci
+        self.san = san
+        self.white = white
+        self.draws = draws
+        self.black = black
+        self.averageRating = averageRating
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ExplorerMove: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeExplorerMove: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ExplorerMove {
+        return
+            try ExplorerMove(
+                uci: FfiConverterString.read(from: &buf), 
+                san: FfiConverterString.read(from: &buf), 
+                white: FfiConverterInt64.read(from: &buf), 
+                draws: FfiConverterInt64.read(from: &buf), 
+                black: FfiConverterInt64.read(from: &buf), 
+                averageRating: FfiConverterOptionInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ExplorerMove, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.uci, into: &buf)
+        FfiConverterString.write(value.san, into: &buf)
+        FfiConverterInt64.write(value.white, into: &buf)
+        FfiConverterInt64.write(value.draws, into: &buf)
+        FfiConverterInt64.write(value.black, into: &buf)
+        FfiConverterOptionInt64.write(value.averageRating, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorerMove_lift(_ buf: RustBuffer) throws -> ExplorerMove {
+    return try FfiConverterTypeExplorerMove.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorerMove_lower(_ value: ExplorerMove) -> RustBuffer {
+    return FfiConverterTypeExplorerMove.lower(value)
+}
+
+
+public struct ExplorerStats: Equatable, Hashable {
+    public var white: Int64
+    public var draws: Int64
+    public var black: Int64
+    public var moves: [ExplorerMove]
+    public var opening: OpeningName?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(white: Int64, draws: Int64, black: Int64, moves: [ExplorerMove], opening: OpeningName?) {
+        self.white = white
+        self.draws = draws
+        self.black = black
+        self.moves = moves
+        self.opening = opening
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ExplorerStats: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeExplorerStats: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ExplorerStats {
+        return
+            try ExplorerStats(
+                white: FfiConverterInt64.read(from: &buf), 
+                draws: FfiConverterInt64.read(from: &buf), 
+                black: FfiConverterInt64.read(from: &buf), 
+                moves: FfiConverterSequenceTypeExplorerMove.read(from: &buf), 
+                opening: FfiConverterOptionTypeOpeningName.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ExplorerStats, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.white, into: &buf)
+        FfiConverterInt64.write(value.draws, into: &buf)
+        FfiConverterInt64.write(value.black, into: &buf)
+        FfiConverterSequenceTypeExplorerMove.write(value.moves, into: &buf)
+        FfiConverterOptionTypeOpeningName.write(value.opening, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorerStats_lift(_ buf: RustBuffer) throws -> ExplorerStats {
+    return try FfiConverterTypeExplorerStats.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorerStats_lower(_ value: ExplorerStats) -> RustBuffer {
+    return FfiConverterTypeExplorerStats.lower(value)
+}
+
+
+public struct Fetch: Equatable, Hashable {
+    public var id: UInt64
+    public var lane: Lane
+    public var epd: Epd
+    public var database: ExplorerDatabase
+    public var url: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: UInt64, lane: Lane, epd: Epd, database: ExplorerDatabase, url: String) {
+        self.id = id
+        self.lane = lane
+        self.epd = epd
+        self.database = database
+        self.url = url
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Fetch: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFetch: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Fetch {
+        return
+            try Fetch(
+                id: FfiConverterUInt64.read(from: &buf), 
+                lane: FfiConverterTypeLane.read(from: &buf), 
+                epd: FfiConverterTypeEpd.read(from: &buf), 
+                database: FfiConverterTypeExplorerDatabase.read(from: &buf), 
+                url: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Fetch, into buf: inout [UInt8]) {
+        FfiConverterUInt64.write(value.id, into: &buf)
+        FfiConverterTypeLane.write(value.lane, into: &buf)
+        FfiConverterTypeEpd.write(value.epd, into: &buf)
+        FfiConverterTypeExplorerDatabase.write(value.database, into: &buf)
+        FfiConverterString.write(value.url, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFetch_lift(_ buf: RustBuffer) throws -> Fetch {
+    return try FfiConverterTypeFetch.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFetch_lower(_ value: Fetch) -> RustBuffer {
+    return FfiConverterTypeFetch.lower(value)
+}
+
+
+public struct FetchOutcome: Equatable, Hashable {
+    /**
+     * Lichess rejected the token: sign in again.
+     */
+    public var unauthorized: Bool
+    /**
+     * Persist this end of a ban (milliseconds since 1970).
+     */
+    public var bannedUntil: Int64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Lichess rejected the token: sign in again.
+         */unauthorized: Bool, 
+        /**
+         * Persist this end of a ban (milliseconds since 1970).
+         */bannedUntil: Int64?) {
+        self.unauthorized = unauthorized
+        self.bannedUntil = bannedUntil
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FetchOutcome: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFetchOutcome: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FetchOutcome {
+        return
+            try FetchOutcome(
+                unauthorized: FfiConverterBool.read(from: &buf), 
+                bannedUntil: FfiConverterOptionInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FetchOutcome, into buf: inout [UInt8]) {
+        FfiConverterBool.write(value.unauthorized, into: &buf)
+        FfiConverterOptionInt64.write(value.bannedUntil, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFetchOutcome_lift(_ buf: RustBuffer) throws -> FetchOutcome {
+    return try FfiConverterTypeFetchOutcome.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFetchOutcome_lower(_ value: FetchOutcome) -> RustBuffer {
+    return FfiConverterTypeFetchOutcome.lower(value)
+}
+
+
+public struct FutureDue: Equatable, Hashable {
+    /**
+     * Days from today (0 = today, negative = overdue) → cards.
+     */
+    public var dueByDay: [Int64: Int64]
+    public var haveBacklog: Bool
+    public var dailyLoad: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Days from today (0 = today, negative = overdue) → cards.
+         */dueByDay: [Int64: Int64], haveBacklog: Bool, dailyLoad: Int64) {
+        self.dueByDay = dueByDay
+        self.haveBacklog = haveBacklog
+        self.dailyLoad = dailyLoad
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FutureDue: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFutureDue: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FutureDue {
+        return
+            try FutureDue(
+                dueByDay: FfiConverterDictionaryInt64Int64.read(from: &buf), 
+                haveBacklog: FfiConverterBool.read(from: &buf), 
+                dailyLoad: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FutureDue, into buf: inout [UInt8]) {
+        FfiConverterDictionaryInt64Int64.write(value.dueByDay, into: &buf)
+        FfiConverterBool.write(value.haveBacklog, into: &buf)
+        FfiConverterInt64.write(value.dailyLoad, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFutureDue_lift(_ buf: RustBuffer) throws -> FutureDue {
+    return try FfiConverterTypeFutureDue.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFutureDue_lower(_ value: FutureDue) -> RustBuffer {
+    return FfiConverterTypeFutureDue.lower(value)
+}
+
+
+public struct Hour: Equatable, Hashable {
+    public var total: Int64
+    public var correct: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(total: Int64, correct: Int64) {
+        self.total = total
+        self.correct = correct
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Hour: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeHour: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Hour {
+        return
+            try Hour(
+                total: FfiConverterInt64.read(from: &buf), 
+                correct: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Hour, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.total, into: &buf)
+        FfiConverterInt64.write(value.correct, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHour_lift(_ buf: RustBuffer) throws -> Hour {
+    return try FfiConverterTypeHour.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHour_lower(_ value: Hour) -> RustBuffer {
+    return FfiConverterTypeHour.lower(value)
+}
+
+
+public struct MemoryState: Equatable, Hashable {
+    public var difficulty: Double
+    public var stability: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(difficulty: Double, stability: Double) {
+        self.difficulty = difficulty
+        self.stability = stability
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension MemoryState: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeMemoryState: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MemoryState {
+        return
+            try MemoryState(
+                difficulty: FfiConverterDouble.read(from: &buf), 
+                stability: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: MemoryState, into buf: inout [UInt8]) {
+        FfiConverterDouble.write(value.difficulty, into: &buf)
+        FfiConverterDouble.write(value.stability, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMemoryState_lift(_ buf: RustBuffer) throws -> MemoryState {
+    return try FfiConverterTypeMemoryState.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMemoryState_lower(_ value: MemoryState) -> RustBuffer {
+    return FfiConverterTypeMemoryState.lower(value)
+}
+
+
+public struct MovesAndChanges: Equatable, Hashable {
+    public var moves: [PlayedMove]
+    public var changes: Changes
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(moves: [PlayedMove], changes: Changes) {
+        self.moves = moves
+        self.changes = changes
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension MovesAndChanges: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeMovesAndChanges: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MovesAndChanges {
+        return
+            try MovesAndChanges(
+                moves: FfiConverterSequenceTypePlayedMove.read(from: &buf), 
+                changes: FfiConverterTypeChanges.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: MovesAndChanges, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypePlayedMove.write(value.moves, into: &buf)
+        FfiConverterTypeChanges.write(value.changes, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMovesAndChanges_lift(_ buf: RustBuffer) throws -> MovesAndChanges {
+    return try FfiConverterTypeMovesAndChanges.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMovesAndChanges_lower(_ value: MovesAndChanges) -> RustBuffer {
+    return FfiConverterTypeMovesAndChanges.lower(value)
+}
+
+
+/**
+ * A node of the move tree (`RepertoireNode` without its cached position).
+ */
+public struct Node: Equatable, Hashable {
+    public var id: UInt32
+    public var parent: UInt32?
+    /**
+     * The move that leads here; None for the root.
+     */
+    public var mv: PlayedMove?
+    public var fen: String
+    public var epd: Epd
+    public var ply: UInt32
+    /**
+     * `children[0]` is the main continuation.
+     */
+    public var children: [UInt32]
+    public var comments: [String]
+    public var preComments: [String]
+    public var nags: [Int32]
+    /**
+     * The note without embedded commands like `[%cal Ge2e4]`.
+     */
+    public var note: String
+    public var chapters: [UInt32]
+    public var sideToMove: Side
+    /**
+     * For a node without moves: where its lines are stored.
+     */
+    public var transpositionTarget: UInt32?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: UInt32, parent: UInt32?, 
+        /**
+         * The move that leads here; None for the root.
+         */mv: PlayedMove?, fen: String, epd: Epd, ply: UInt32, 
+        /**
+         * `children[0]` is the main continuation.
+         */children: [UInt32], comments: [String], preComments: [String], nags: [Int32], 
+        /**
+         * The note without embedded commands like `[%cal Ge2e4]`.
+         */note: String, chapters: [UInt32], sideToMove: Side, 
+        /**
+         * For a node without moves: where its lines are stored.
+         */transpositionTarget: UInt32?) {
+        self.id = id
+        self.parent = parent
+        self.mv = mv
+        self.fen = fen
+        self.epd = epd
+        self.ply = ply
+        self.children = children
+        self.comments = comments
+        self.preComments = preComments
+        self.nags = nags
+        self.note = note
+        self.chapters = chapters
+        self.sideToMove = sideToMove
+        self.transpositionTarget = transpositionTarget
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Node: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeNode: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Node {
+        return
+            try Node(
+                id: FfiConverterUInt32.read(from: &buf), 
+                parent: FfiConverterOptionUInt32.read(from: &buf), 
+                mv: FfiConverterOptionTypePlayedMove.read(from: &buf), 
+                fen: FfiConverterString.read(from: &buf), 
+                epd: FfiConverterTypeEpd.read(from: &buf), 
+                ply: FfiConverterUInt32.read(from: &buf), 
+                children: FfiConverterSequenceUInt32.read(from: &buf), 
+                comments: FfiConverterSequenceString.read(from: &buf), 
+                preComments: FfiConverterSequenceString.read(from: &buf), 
+                nags: FfiConverterSequenceInt32.read(from: &buf), 
+                note: FfiConverterString.read(from: &buf), 
+                chapters: FfiConverterSequenceUInt32.read(from: &buf), 
+                sideToMove: FfiConverterTypeSide.read(from: &buf), 
+                transpositionTarget: FfiConverterOptionUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Node, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.id, into: &buf)
+        FfiConverterOptionUInt32.write(value.parent, into: &buf)
+        FfiConverterOptionTypePlayedMove.write(value.mv, into: &buf)
+        FfiConverterString.write(value.fen, into: &buf)
+        FfiConverterTypeEpd.write(value.epd, into: &buf)
+        FfiConverterUInt32.write(value.ply, into: &buf)
+        FfiConverterSequenceUInt32.write(value.children, into: &buf)
+        FfiConverterSequenceString.write(value.comments, into: &buf)
+        FfiConverterSequenceString.write(value.preComments, into: &buf)
+        FfiConverterSequenceInt32.write(value.nags, into: &buf)
+        FfiConverterString.write(value.note, into: &buf)
+        FfiConverterSequenceUInt32.write(value.chapters, into: &buf)
+        FfiConverterTypeSide.write(value.sideToMove, into: &buf)
+        FfiConverterOptionUInt32.write(value.transpositionTarget, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeNode_lift(_ buf: RustBuffer) throws -> Node {
+    return try FfiConverterTypeNode.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeNode_lower(_ value: Node) -> RustBuffer {
+    return FfiConverterTypeNode.lower(value)
+}
+
+
+public struct NodeAndChanges: Equatable, Hashable {
+    public var node: UInt32?
+    public var changes: Changes
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(node: UInt32?, changes: Changes) {
+        self.node = node
+        self.changes = changes
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension NodeAndChanges: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeNodeAndChanges: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> NodeAndChanges {
+        return
+            try NodeAndChanges(
+                node: FfiConverterOptionUInt32.read(from: &buf), 
+                changes: FfiConverterTypeChanges.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: NodeAndChanges, into buf: inout [UInt8]) {
+        FfiConverterOptionUInt32.write(value.node, into: &buf)
+        FfiConverterTypeChanges.write(value.changes, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeNodeAndChanges_lift(_ buf: RustBuffer) throws -> NodeAndChanges {
+    return try FfiConverterTypeNodeAndChanges.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeNodeAndChanges_lower(_ value: NodeAndChanges) -> RustBuffer {
+    return FfiConverterTypeNodeAndChanges.lower(value)
+}
+
+
+public struct NodeCoverage: Equatable, Hashable {
+    public var reach: Double?
+    public var status: Status
+    public var completion: Double
+    public var gapCount: Int64
+    public var gapMass: Double
+    public var pendingCount: Int64
+    public var biggestGap: CoverageGap?
+    public var localGaps: [CoverageGap]
+    public var replies: [ReplyInfo]
+    public var counts: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(reach: Double?, status: Status, completion: Double, gapCount: Int64, gapMass: Double, pendingCount: Int64, biggestGap: CoverageGap?, localGaps: [CoverageGap], replies: [ReplyInfo], counts: Bool) {
+        self.reach = reach
+        self.status = status
+        self.completion = completion
+        self.gapCount = gapCount
+        self.gapMass = gapMass
+        self.pendingCount = pendingCount
+        self.biggestGap = biggestGap
+        self.localGaps = localGaps
+        self.replies = replies
+        self.counts = counts
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension NodeCoverage: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeNodeCoverage: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> NodeCoverage {
+        return
+            try NodeCoverage(
+                reach: FfiConverterOptionDouble.read(from: &buf), 
+                status: FfiConverterTypeStatus.read(from: &buf), 
+                completion: FfiConverterDouble.read(from: &buf), 
+                gapCount: FfiConverterInt64.read(from: &buf), 
+                gapMass: FfiConverterDouble.read(from: &buf), 
+                pendingCount: FfiConverterInt64.read(from: &buf), 
+                biggestGap: FfiConverterOptionTypeCoverageGap.read(from: &buf), 
+                localGaps: FfiConverterSequenceTypeCoverageGap.read(from: &buf), 
+                replies: FfiConverterSequenceTypeReplyInfo.read(from: &buf), 
+                counts: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: NodeCoverage, into buf: inout [UInt8]) {
+        FfiConverterOptionDouble.write(value.reach, into: &buf)
+        FfiConverterTypeStatus.write(value.status, into: &buf)
+        FfiConverterDouble.write(value.completion, into: &buf)
+        FfiConverterInt64.write(value.gapCount, into: &buf)
+        FfiConverterDouble.write(value.gapMass, into: &buf)
+        FfiConverterInt64.write(value.pendingCount, into: &buf)
+        FfiConverterOptionTypeCoverageGap.write(value.biggestGap, into: &buf)
+        FfiConverterSequenceTypeCoverageGap.write(value.localGaps, into: &buf)
+        FfiConverterSequenceTypeReplyInfo.write(value.replies, into: &buf)
+        FfiConverterBool.write(value.counts, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeNodeCoverage_lift(_ buf: RustBuffer) throws -> NodeCoverage {
+    return try FfiConverterTypeNodeCoverage.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeNodeCoverage_lower(_ value: NodeCoverage) -> RustBuffer {
+    return FfiConverterTypeNodeCoverage.lower(value)
+}
+
+
+public struct Opened {
+    public var document: RepertoireDoc
+    /**
+     * What to do right away (e.g. save a compacted PGN).
+     */
+    public var changes: Changes
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(document: RepertoireDoc, 
+        /**
+         * What to do right away (e.g. save a compacted PGN).
+         */changes: Changes) {
+        self.document = document
+        self.changes = changes
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Opened: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOpened: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Opened {
+        return
+            try Opened(
+                document: FfiConverterTypeRepertoireDoc.read(from: &buf), 
+                changes: FfiConverterTypeChanges.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Opened, into buf: inout [UInt8]) {
+        FfiConverterTypeRepertoireDoc.write(value.document, into: &buf)
+        FfiConverterTypeChanges.write(value.changes, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOpened_lift(_ buf: RustBuffer) throws -> Opened {
+    return try FfiConverterTypeOpened.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOpened_lower(_ value: Opened) -> RustBuffer {
+    return FfiConverterTypeOpened.lower(value)
+}
+
+
+public struct OpeningName: Equatable, Hashable {
+    public var eco: String
+    public var name: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(eco: String, name: String) {
+        self.eco = eco
+        self.name = name
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension OpeningName: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeOpeningName: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> OpeningName {
+        return
+            try OpeningName(
+                eco: FfiConverterString.read(from: &buf), 
+                name: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: OpeningName, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.eco, into: &buf)
+        FfiConverterString.write(value.name, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOpeningName_lift(_ buf: RustBuffer) throws -> OpeningName {
+    return try FfiConverterTypeOpeningName.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeOpeningName_lower(_ value: OpeningName) -> RustBuffer {
+    return FfiConverterTypeOpeningName.lower(value)
+}
+
+
+public struct PlayResult {
+    public var mv: PlayedMove
+    public var position: Position
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(mv: PlayedMove, position: Position) {
+        self.mv = mv
+        self.position = position
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PlayResult: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePlayResult: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PlayResult {
+        return
+            try PlayResult(
+                mv: FfiConverterTypePlayedMove.read(from: &buf), 
+                position: FfiConverterTypePosition.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PlayResult, into buf: inout [UInt8]) {
+        FfiConverterTypePlayedMove.write(value.mv, into: &buf)
+        FfiConverterTypePosition.write(value.position, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePlayResult_lift(_ buf: RustBuffer) throws -> PlayResult {
+    return try FfiConverterTypePlayResult.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePlayResult_lower(_ value: PlayResult) -> RustBuffer {
+    return FfiConverterTypePlayResult.lower(value)
+}
+
+
+public struct PlayedMove: Equatable, Hashable {
+    public var san: String
+    public var uci: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(san: String, uci: String) {
+        self.san = san
+        self.uci = uci
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PlayedMove: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePlayedMove: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PlayedMove {
+        return
+            try PlayedMove(
+                san: FfiConverterString.read(from: &buf), 
+                uci: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PlayedMove, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.san, into: &buf)
+        FfiConverterString.write(value.uci, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePlayedMove_lift(_ buf: RustBuffer) throws -> PlayedMove {
+    return try FfiConverterTypePlayedMove.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePlayedMove_lower(_ value: PlayedMove) -> RustBuffer {
+    return FfiConverterTypePlayedMove.lower(value)
+}
+
+
+public struct Poll: Equatable, Hashable {
+    public var fetches: [Fetch]
+    /**
+     * Milliseconds since 1970: poll again then (or after any event).
+     */
+    public var wakeAt: Int64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(fetches: [Fetch], 
+        /**
+         * Milliseconds since 1970: poll again then (or after any event).
+         */wakeAt: Int64?) {
+        self.fetches = fetches
+        self.wakeAt = wakeAt
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Poll: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePoll: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Poll {
+        return
+            try Poll(
+                fetches: FfiConverterSequenceTypeFetch.read(from: &buf), 
+                wakeAt: FfiConverterOptionInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Poll, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypeFetch.write(value.fetches, into: &buf)
+        FfiConverterOptionInt64.write(value.wakeAt, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePoll_lift(_ buf: RustBuffer) throws -> Poll {
+    return try FfiConverterTypePoll.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePoll_lower(_ value: Poll) -> RustBuffer {
+    return FfiConverterTypePoll.lower(value)
+}
+
+
+public struct Progress: Equatable, Hashable {
+    public var cards: Int64
+    public var learning: Int64
+    public var young: Int64
+    public var mature: Int64
+    public var suspended: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(cards: Int64, learning: Int64, young: Int64, mature: Int64, suspended: Int64) {
+        self.cards = cards
+        self.learning = learning
+        self.young = young
+        self.mature = mature
+        self.suspended = suspended
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Progress: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeProgress: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Progress {
+        return
+            try Progress(
+                cards: FfiConverterInt64.read(from: &buf), 
+                learning: FfiConverterInt64.read(from: &buf), 
+                young: FfiConverterInt64.read(from: &buf), 
+                mature: FfiConverterInt64.read(from: &buf), 
+                suspended: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Progress, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.cards, into: &buf)
+        FfiConverterInt64.write(value.learning, into: &buf)
+        FfiConverterInt64.write(value.young, into: &buf)
+        FfiConverterInt64.write(value.mature, into: &buf)
+        FfiConverterInt64.write(value.suspended, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeProgress_lift(_ buf: RustBuffer) throws -> Progress {
+    return try FfiConverterTypeProgress.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeProgress_lower(_ value: Progress) -> RustBuffer {
+    return FfiConverterTypeProgress.lower(value)
+}
+
+
+public struct RemainingLimits: Equatable, Hashable {
+    public var review: Int64
+    public var new: Int64
+    public var capNewToReview: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(review: Int64, new: Int64, capNewToReview: Bool) {
+        self.review = review
+        self.new = new
+        self.capNewToReview = capNewToReview
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension RemainingLimits: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRemainingLimits: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RemainingLimits {
+        return
+            try RemainingLimits(
+                review: FfiConverterInt64.read(from: &buf), 
+                new: FfiConverterInt64.read(from: &buf), 
+                capNewToReview: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RemainingLimits, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.review, into: &buf)
+        FfiConverterInt64.write(value.new, into: &buf)
+        FfiConverterBool.write(value.capNewToReview, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRemainingLimits_lift(_ buf: RustBuffer) throws -> RemainingLimits {
+    return try FfiConverterTypeRemainingLimits.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRemainingLimits_lower(_ value: RemainingLimits) -> RustBuffer {
+    return FfiConverterTypeRemainingLimits.lower(value)
+}
+
+
+public struct ReplyInfo: Equatable, Hashable {
+    public var uci: String
+    public var san: String
+    public var share: Double
+    public var reach: Double
+    public var required: Bool
+    public var excluded: Bool
+    public var child: UInt32?
+    public var transposesTo: UInt32?
+    public var completion: Double
+    public var games: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(uci: String, san: String, share: Double, reach: Double, required: Bool, excluded: Bool, child: UInt32?, transposesTo: UInt32?, completion: Double, games: Int64) {
+        self.uci = uci
+        self.san = san
+        self.share = share
+        self.reach = reach
+        self.required = required
+        self.excluded = excluded
+        self.child = child
+        self.transposesTo = transposesTo
+        self.completion = completion
+        self.games = games
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ReplyInfo: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeReplyInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ReplyInfo {
+        return
+            try ReplyInfo(
+                uci: FfiConverterString.read(from: &buf), 
+                san: FfiConverterString.read(from: &buf), 
+                share: FfiConverterDouble.read(from: &buf), 
+                reach: FfiConverterDouble.read(from: &buf), 
+                required: FfiConverterBool.read(from: &buf), 
+                excluded: FfiConverterBool.read(from: &buf), 
+                child: FfiConverterOptionUInt32.read(from: &buf), 
+                transposesTo: FfiConverterOptionUInt32.read(from: &buf), 
+                completion: FfiConverterDouble.read(from: &buf), 
+                games: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ReplyInfo, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.uci, into: &buf)
+        FfiConverterString.write(value.san, into: &buf)
+        FfiConverterDouble.write(value.share, into: &buf)
+        FfiConverterDouble.write(value.reach, into: &buf)
+        FfiConverterBool.write(value.required, into: &buf)
+        FfiConverterBool.write(value.excluded, into: &buf)
+        FfiConverterOptionUInt32.write(value.child, into: &buf)
+        FfiConverterOptionUInt32.write(value.transposesTo, into: &buf)
+        FfiConverterDouble.write(value.completion, into: &buf)
+        FfiConverterInt64.write(value.games, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReplyInfo_lift(_ buf: RustBuffer) throws -> ReplyInfo {
+    return try FfiConverterTypeReplyInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReplyInfo_lower(_ value: ReplyInfo) -> RustBuffer {
+    return FfiConverterTypeReplyInfo.lower(value)
+}
+
+
+public struct RetentionRow: Equatable, Hashable {
+    public var period: RetentionPeriod
+    public var retention: TrueRetention
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(period: RetentionPeriod, retention: TrueRetention) {
+        self.period = period
+        self.retention = retention
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension RetentionRow: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRetentionRow: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RetentionRow {
+        return
+            try RetentionRow(
+                period: FfiConverterTypeRetentionPeriod.read(from: &buf), 
+                retention: FfiConverterTypeTrueRetention.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RetentionRow, into buf: inout [UInt8]) {
+        FfiConverterTypeRetentionPeriod.write(value.period, into: &buf)
+        FfiConverterTypeTrueRetention.write(value.retention, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRetentionRow_lift(_ buf: RustBuffer) throws -> RetentionRow {
+    return try FfiConverterTypeRetentionRow.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRetentionRow_lower(_ value: RetentionRow) -> RustBuffer {
+    return FfiConverterTypeRetentionRow.lower(value)
+}
+
+
+public struct Retrievability: Equatable, Hashable {
+    public var bins: [Int64: Int64]
+    public var average: Double
+    public var sum: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(bins: [Int64: Int64], average: Double, sum: Double) {
+        self.bins = bins
+        self.average = average
+        self.sum = sum
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Retrievability: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRetrievability: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Retrievability {
+        return
+            try Retrievability(
+                bins: FfiConverterDictionaryInt64Int64.read(from: &buf), 
+                average: FfiConverterDouble.read(from: &buf), 
+                sum: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Retrievability, into buf: inout [UInt8]) {
+        FfiConverterDictionaryInt64Int64.write(value.bins, into: &buf)
+        FfiConverterDouble.write(value.average, into: &buf)
+        FfiConverterDouble.write(value.sum, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRetrievability_lift(_ buf: RustBuffer) throws -> Retrievability {
+    return try FfiConverterTypeRetrievability.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRetrievability_lower(_ value: Retrievability) -> RustBuffer {
+    return FfiConverterTypeRetrievability.lower(value)
+}
+
+
+public struct ReviewCounts: Equatable, Hashable {
+    public var learn: Int64
+    public var relearn: Int64
+    public var young: Int64
+    public var mature: Int64
+    public var filtered: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(learn: Int64, relearn: Int64, young: Int64, mature: Int64, filtered: Int64) {
+        self.learn = learn
+        self.relearn = relearn
+        self.young = young
+        self.mature = mature
+        self.filtered = filtered
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ReviewCounts: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeReviewCounts: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ReviewCounts {
+        return
+            try ReviewCounts(
+                learn: FfiConverterInt64.read(from: &buf), 
+                relearn: FfiConverterInt64.read(from: &buf), 
+                young: FfiConverterInt64.read(from: &buf), 
+                mature: FfiConverterInt64.read(from: &buf), 
+                filtered: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ReviewCounts, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.learn, into: &buf)
+        FfiConverterInt64.write(value.relearn, into: &buf)
+        FfiConverterInt64.write(value.young, into: &buf)
+        FfiConverterInt64.write(value.mature, into: &buf)
+        FfiConverterInt64.write(value.filtered, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReviewCounts_lift(_ buf: RustBuffer) throws -> ReviewCounts {
+    return try FfiConverterTypeReviewCounts.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReviewCounts_lower(_ value: ReviewCounts) -> RustBuffer {
+    return FfiConverterTypeReviewCounts.lower(value)
+}
+
+
+public struct Reviews: Equatable, Hashable {
+    public var count: [Int64: ReviewCounts]
+    public var time: [Int64: ReviewCounts]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(count: [Int64: ReviewCounts], time: [Int64: ReviewCounts]) {
+        self.count = count
+        self.time = time
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Reviews: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeReviews: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Reviews {
+        return
+            try Reviews(
+                count: FfiConverterDictionaryInt64TypeReviewCounts.read(from: &buf), 
+                time: FfiConverterDictionaryInt64TypeReviewCounts.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Reviews, into buf: inout [UInt8]) {
+        FfiConverterDictionaryInt64TypeReviewCounts.write(value.count, into: &buf)
+        FfiConverterDictionaryInt64TypeReviewCounts.write(value.time, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReviews_lift(_ buf: RustBuffer) throws -> Reviews {
+    return try FfiConverterTypeReviews.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReviews_lower(_ value: Reviews) -> RustBuffer {
+    return FfiConverterTypeReviews.lower(value)
+}
+
+
+public struct RevlogEntry: Equatable, Hashable {
+    public var cid: Epd
+    public var ease: Int64
+    public var factor: Int64
+    public var id: Int64
+    public var ivl: Int64
+    public var lastIvl: Int64
+    public var time: Int64
+    public var kind: RevlogReviewKind
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(cid: Epd, ease: Int64, factor: Int64, id: Int64, ivl: Int64, lastIvl: Int64, time: Int64, kind: RevlogReviewKind) {
+        self.cid = cid
+        self.ease = ease
+        self.factor = factor
+        self.id = id
+        self.ivl = ivl
+        self.lastIvl = lastIvl
+        self.time = time
+        self.kind = kind
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension RevlogEntry: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRevlogEntry: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RevlogEntry {
+        return
+            try RevlogEntry(
+                cid: FfiConverterTypeEpd.read(from: &buf), 
+                ease: FfiConverterInt64.read(from: &buf), 
+                factor: FfiConverterInt64.read(from: &buf), 
+                id: FfiConverterInt64.read(from: &buf), 
+                ivl: FfiConverterInt64.read(from: &buf), 
+                lastIvl: FfiConverterInt64.read(from: &buf), 
+                time: FfiConverterInt64.read(from: &buf), 
+                kind: FfiConverterTypeRevlogReviewKind.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: RevlogEntry, into buf: inout [UInt8]) {
+        FfiConverterTypeEpd.write(value.cid, into: &buf)
+        FfiConverterInt64.write(value.ease, into: &buf)
+        FfiConverterInt64.write(value.factor, into: &buf)
+        FfiConverterInt64.write(value.id, into: &buf)
+        FfiConverterInt64.write(value.ivl, into: &buf)
+        FfiConverterInt64.write(value.lastIvl, into: &buf)
+        FfiConverterInt64.write(value.time, into: &buf)
+        FfiConverterTypeRevlogReviewKind.write(value.kind, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRevlogEntry_lift(_ buf: RustBuffer) throws -> RevlogEntry {
+    return try FfiConverterTypeRevlogEntry.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRevlogEntry_lower(_ value: RevlogEntry) -> RustBuffer {
+    return FfiConverterTypeRevlogEntry.lower(value)
+}
+
+
+public struct SchedTiming: Equatable, Hashable {
+    public var daysElapsed: Int64
+    public var nextDayAt: Int64
+    public var now: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(daysElapsed: Int64, nextDayAt: Int64, now: Int64) {
+        self.daysElapsed = daysElapsed
+        self.nextDayAt = nextDayAt
+        self.now = now
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SchedTiming: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSchedTiming: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SchedTiming {
+        return
+            try SchedTiming(
+                daysElapsed: FfiConverterInt64.read(from: &buf), 
+                nextDayAt: FfiConverterInt64.read(from: &buf), 
+                now: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SchedTiming, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.daysElapsed, into: &buf)
+        FfiConverterInt64.write(value.nextDayAt, into: &buf)
+        FfiConverterInt64.write(value.now, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSchedTiming_lift(_ buf: RustBuffer) throws -> SchedTiming {
+    return try FfiConverterTypeSchedTiming.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSchedTiming_lower(_ value: SchedTiming) -> RustBuffer {
+    return FfiConverterTypeSchedTiming.lower(value)
+}
+
+
+public struct StoredStats: Equatable, Hashable {
+    public var epd: Epd
+    public var json: Data
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(epd: Epd, json: Data) {
+        self.epd = epd
+        self.json = json
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension StoredStats: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeStoredStats: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> StoredStats {
+        return
+            try StoredStats(
+                epd: FfiConverterTypeEpd.read(from: &buf), 
+                json: FfiConverterData.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: StoredStats, into buf: inout [UInt8]) {
+        FfiConverterTypeEpd.write(value.epd, into: &buf)
+        FfiConverterData.write(value.json, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStoredStats_lift(_ buf: RustBuffer) throws -> StoredStats {
+    return try FfiConverterTypeStoredStats.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStoredStats_lower(_ value: StoredStats) -> RustBuffer {
+    return FfiConverterTypeStoredStats.lower(value)
+}
+
+
+public struct Streak: Equatable, Hashable {
+    public var current: Int64
+    public var longest: Int64
+    public var studiedToday: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(current: Int64, longest: Int64, studiedToday: Bool) {
+        self.current = current
+        self.longest = longest
+        self.studiedToday = studiedToday
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Streak: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeStreak: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Streak {
+        return
+            try Streak(
+                current: FfiConverterInt64.read(from: &buf), 
+                longest: FfiConverterInt64.read(from: &buf), 
+                studiedToday: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Streak, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.current, into: &buf)
+        FfiConverterInt64.write(value.longest, into: &buf)
+        FfiConverterBool.write(value.studiedToday, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStreak_lift(_ buf: RustBuffer) throws -> Streak {
+    return try FfiConverterTypeStreak.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStreak_lower(_ value: Streak) -> RustBuffer {
+    return FfiConverterTypeStreak.lower(value)
+}
+
+
+public struct StudyDefaults: Equatable, Hashable {
+    public var newPerDay: Int64
+    public var reviewsPerDay: Int64
+    public var practiceMode: PracticeMode
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(newPerDay: Int64, reviewsPerDay: Int64, practiceMode: PracticeMode) {
+        self.newPerDay = newPerDay
+        self.reviewsPerDay = reviewsPerDay
+        self.practiceMode = practiceMode
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension StudyDefaults: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeStudyDefaults: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> StudyDefaults {
+        return
+            try StudyDefaults(
+                newPerDay: FfiConverterInt64.read(from: &buf), 
+                reviewsPerDay: FfiConverterInt64.read(from: &buf), 
+                practiceMode: FfiConverterTypePracticeMode.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: StudyDefaults, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.newPerDay, into: &buf)
+        FfiConverterInt64.write(value.reviewsPerDay, into: &buf)
+        FfiConverterTypePracticeMode.write(value.practiceMode, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStudyDefaults_lift(_ buf: RustBuffer) throws -> StudyDefaults {
+    return try FfiConverterTypeStudyDefaults.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStudyDefaults_lower(_ value: StudyDefaults) -> RustBuffer {
+    return FfiConverterTypeStudyDefaults.lower(value)
+}
+
+
+public struct StudyLineRecord: Equatable, Hashable {
+    public var nodes: [UInt32]
+    /**
+     * Index into `nodes` → the role of your move from there.
+     */
+    public var roles: [UInt32: MoveRole]
+    public var target: Epd
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(nodes: [UInt32], 
+        /**
+         * Index into `nodes` → the role of your move from there.
+         */roles: [UInt32: MoveRole], target: Epd) {
+        self.nodes = nodes
+        self.roles = roles
+        self.target = target
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension StudyLineRecord: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeStudyLineRecord: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> StudyLineRecord {
+        return
+            try StudyLineRecord(
+                nodes: FfiConverterSequenceUInt32.read(from: &buf), 
+                roles: FfiConverterDictionaryUInt32TypeMoveRole.read(from: &buf), 
+                target: FfiConverterTypeEpd.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: StudyLineRecord, into buf: inout [UInt8]) {
+        FfiConverterSequenceUInt32.write(value.nodes, into: &buf)
+        FfiConverterDictionaryUInt32TypeMoveRole.write(value.roles, into: &buf)
+        FfiConverterTypeEpd.write(value.target, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStudyLineRecord_lift(_ buf: RustBuffer) throws -> StudyLineRecord {
+    return try FfiConverterTypeStudyLineRecord.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStudyLineRecord_lower(_ value: StudyLineRecord) -> RustBuffer {
+    return FfiConverterTypeStudyLineRecord.lower(value)
+}
+
+
+public struct Summary: Equatable, Hashable {
+    public var cardCount: Int64
+    public var completion: Double
+    public var computedAt: Timestamp
+    public var configKey: String
+    public var dueCount: Int64
+    public var gapCount: Int64
+    public var matureCount: Int64
+    public var savedMoveCount: Int64?
+    public var suspendedCount: Int64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(cardCount: Int64, completion: Double, computedAt: Timestamp, configKey: String, dueCount: Int64, gapCount: Int64, matureCount: Int64, savedMoveCount: Int64?, suspendedCount: Int64?) {
+        self.cardCount = cardCount
+        self.completion = completion
+        self.computedAt = computedAt
+        self.configKey = configKey
+        self.dueCount = dueCount
+        self.gapCount = gapCount
+        self.matureCount = matureCount
+        self.savedMoveCount = savedMoveCount
+        self.suspendedCount = suspendedCount
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Summary: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSummary: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Summary {
+        return
+            try Summary(
+                cardCount: FfiConverterInt64.read(from: &buf), 
+                completion: FfiConverterDouble.read(from: &buf), 
+                computedAt: FfiConverterTypeTimestamp.read(from: &buf), 
+                configKey: FfiConverterString.read(from: &buf), 
+                dueCount: FfiConverterInt64.read(from: &buf), 
+                gapCount: FfiConverterInt64.read(from: &buf), 
+                matureCount: FfiConverterInt64.read(from: &buf), 
+                savedMoveCount: FfiConverterOptionInt64.read(from: &buf), 
+                suspendedCount: FfiConverterOptionInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Summary, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.cardCount, into: &buf)
+        FfiConverterDouble.write(value.completion, into: &buf)
+        FfiConverterTypeTimestamp.write(value.computedAt, into: &buf)
+        FfiConverterString.write(value.configKey, into: &buf)
+        FfiConverterInt64.write(value.dueCount, into: &buf)
+        FfiConverterInt64.write(value.gapCount, into: &buf)
+        FfiConverterInt64.write(value.matureCount, into: &buf)
+        FfiConverterOptionInt64.write(value.savedMoveCount, into: &buf)
+        FfiConverterOptionInt64.write(value.suspendedCount, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSummary_lift(_ buf: RustBuffer) throws -> Summary {
+    return try FfiConverterTypeSummary.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSummary_lower(_ value: Summary) -> RustBuffer {
+    return FfiConverterTypeSummary.lower(value)
+}
+
+
+public struct Today: Equatable, Hashable {
+    public var answerCount: Int64
+    public var answerMillis: Int64
+    public var correctCount: Int64
+    public var matureCount: Int64
+    public var matureCorrect: Int64
+    public var learnCount: Int64
+    public var reviewCount: Int64
+    public var relearnCount: Int64
+    public var earlyReviewCount: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(answerCount: Int64, answerMillis: Int64, correctCount: Int64, matureCount: Int64, matureCorrect: Int64, learnCount: Int64, reviewCount: Int64, relearnCount: Int64, earlyReviewCount: Int64) {
+        self.answerCount = answerCount
+        self.answerMillis = answerMillis
+        self.correctCount = correctCount
+        self.matureCount = matureCount
+        self.matureCorrect = matureCorrect
+        self.learnCount = learnCount
+        self.reviewCount = reviewCount
+        self.relearnCount = relearnCount
+        self.earlyReviewCount = earlyReviewCount
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Today: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeToday: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Today {
+        return
+            try Today(
+                answerCount: FfiConverterInt64.read(from: &buf), 
+                answerMillis: FfiConverterInt64.read(from: &buf), 
+                correctCount: FfiConverterInt64.read(from: &buf), 
+                matureCount: FfiConverterInt64.read(from: &buf), 
+                matureCorrect: FfiConverterInt64.read(from: &buf), 
+                learnCount: FfiConverterInt64.read(from: &buf), 
+                reviewCount: FfiConverterInt64.read(from: &buf), 
+                relearnCount: FfiConverterInt64.read(from: &buf), 
+                earlyReviewCount: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Today, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.answerCount, into: &buf)
+        FfiConverterInt64.write(value.answerMillis, into: &buf)
+        FfiConverterInt64.write(value.correctCount, into: &buf)
+        FfiConverterInt64.write(value.matureCount, into: &buf)
+        FfiConverterInt64.write(value.matureCorrect, into: &buf)
+        FfiConverterInt64.write(value.learnCount, into: &buf)
+        FfiConverterInt64.write(value.reviewCount, into: &buf)
+        FfiConverterInt64.write(value.relearnCount, into: &buf)
+        FfiConverterInt64.write(value.earlyReviewCount, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeToday_lift(_ buf: RustBuffer) throws -> Today {
+    return try FfiConverterTypeToday.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeToday_lower(_ value: Today) -> RustBuffer {
+    return FfiConverterTypeToday.lower(value)
+}
+
+
+public struct Token: Equatable, Hashable {
+    public var token: String
+    /**
+     * Unix seconds.
+     */
+    public var expiresAt: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(token: String, 
+        /**
+         * Unix seconds.
+         */expiresAt: Int64) {
+        self.token = token
+        self.expiresAt = expiresAt
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Token: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeToken: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Token {
+        return
+            try Token(
+                token: FfiConverterString.read(from: &buf), 
+                expiresAt: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Token, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.token, into: &buf)
+        FfiConverterInt64.write(value.expiresAt, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeToken_lift(_ buf: RustBuffer) throws -> Token {
+    return try FfiConverterTypeToken.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeToken_lower(_ value: Token) -> RustBuffer {
+    return FfiConverterTypeToken.lower(value)
+}
+
+
+public struct TrueRetention: Equatable, Hashable {
+    public var youngPassed: Int64
+    public var youngFailed: Int64
+    public var maturePassed: Int64
+    public var matureFailed: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(youngPassed: Int64, youngFailed: Int64, maturePassed: Int64, matureFailed: Int64) {
+        self.youngPassed = youngPassed
+        self.youngFailed = youngFailed
+        self.maturePassed = maturePassed
+        self.matureFailed = matureFailed
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension TrueRetention: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTrueRetention: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> TrueRetention {
+        return
+            try TrueRetention(
+                youngPassed: FfiConverterInt64.read(from: &buf), 
+                youngFailed: FfiConverterInt64.read(from: &buf), 
+                maturePassed: FfiConverterInt64.read(from: &buf), 
+                matureFailed: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: TrueRetention, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.youngPassed, into: &buf)
+        FfiConverterInt64.write(value.youngFailed, into: &buf)
+        FfiConverterInt64.write(value.maturePassed, into: &buf)
+        FfiConverterInt64.write(value.matureFailed, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTrueRetention_lift(_ buf: RustBuffer) throws -> TrueRetention {
+    return try FfiConverterTypeTrueRetention.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTrueRetention_lower(_ value: TrueRetention) -> RustBuffer {
+    return FfiConverterTypeTrueRetention.lower(value)
+}
+
+
+public struct WeakMove: Equatable, Hashable {
+    public var epd: Epd
+    public var lapses: Int64
+    public var retrievability: Double?
+    public var leech: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(epd: Epd, lapses: Int64, retrievability: Double?, leech: Bool) {
+        self.epd = epd
+        self.lapses = lapses
+        self.retrievability = retrievability
+        self.leech = leech
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension WeakMove: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeWeakMove: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> WeakMove {
+        return
+            try WeakMove(
+                epd: FfiConverterTypeEpd.read(from: &buf), 
+                lapses: FfiConverterInt64.read(from: &buf), 
+                retrievability: FfiConverterOptionDouble.read(from: &buf), 
+                leech: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: WeakMove, into buf: inout [UInt8]) {
+        FfiConverterTypeEpd.write(value.epd, into: &buf)
+        FfiConverterInt64.write(value.lapses, into: &buf)
+        FfiConverterOptionDouble.write(value.retrievability, into: &buf)
+        FfiConverterBool.write(value.leech, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeWeakMove_lift(_ buf: RustBuffer) throws -> WeakMove {
+    return try FfiConverterTypeWeakMove.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeWeakMove_lower(_ value: WeakMove) -> RustBuffer {
+    return FfiConverterTypeWeakMove.lower(value)
+}
+
+
+
+public enum AnswerKind: Equatable, Hashable {
+    
+    case queued
+    case introduce
+    case reviewAhead
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension AnswerKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAnswerKind: FfiConverterRustBuffer {
+    typealias SwiftType = AnswerKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AnswerKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .queued
+        
+        case 2: return .introduce
+        
+        case 3: return .reviewAhead
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: AnswerKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .queued:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .introduce:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .reviewAhead:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAnswerKind_lift(_ buf: RustBuffer) throws -> AnswerKind {
+    return try FfiConverterTypeAnswerKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAnswerKind_lower(_ value: AnswerKind) -> RustBuffer {
+    return FfiConverterTypeAnswerKind.lower(value)
+}
+
+
+
+
+public enum ArrowStyle: Equatable, Hashable {
+    
+    case mine
+    case opponent
+    case gap
+    case hint
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension ArrowStyle: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeArrowStyle: FfiConverterRustBuffer {
+    typealias SwiftType = ArrowStyle
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ArrowStyle {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .mine
+        
+        case 2: return .opponent
+        
+        case 3: return .gap
+        
+        case 4: return .hint
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ArrowStyle, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .mine:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .opponent:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .gap:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .hint:
+            writeInt(&buf, Int32(4))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeArrowStyle_lift(_ buf: RustBuffer) throws -> ArrowStyle {
+    return try FfiConverterTypeArrowStyle.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeArrowStyle_lower(_ value: ArrowStyle) -> RustBuffer {
+    return FfiConverterTypeArrowStyle.lower(value)
+}
+
+
+
+
+public enum CardQueue: Equatable, Hashable {
+    
+    case suspended
+    case new
+    case learn
+    case review
+    case dayLearn
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension CardQueue: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCardQueue: FfiConverterRustBuffer {
+    typealias SwiftType = CardQueue
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CardQueue {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .suspended
+        
+        case 2: return .new
+        
+        case 3: return .learn
+        
+        case 4: return .review
+        
+        case 5: return .dayLearn
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: CardQueue, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .suspended:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .new:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .learn:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .review:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .dayLearn:
+            writeInt(&buf, Int32(5))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCardQueue_lift(_ buf: RustBuffer) throws -> CardQueue {
+    return try FfiConverterTypeCardQueue.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCardQueue_lower(_ value: CardQueue) -> RustBuffer {
+    return FfiConverterTypeCardQueue.lower(value)
+}
+
+
+
+
+public enum CardType: Equatable, Hashable {
+    
+    case new
+    case learn
+    case review
+    case relearn
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension CardType: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCardType: FfiConverterRustBuffer {
+    typealias SwiftType = CardType
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CardType {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .new
+        
+        case 2: return .learn
+        
+        case 3: return .review
+        
+        case 4: return .relearn
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: CardType, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .new:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .learn:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .review:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .relearn:
+            writeInt(&buf, Int32(4))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCardType_lift(_ buf: RustBuffer) throws -> CardType {
+    return try FfiConverterTypeCardType.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCardType_lower(_ value: CardType) -> RustBuffer {
+    return FfiConverterTypeCardType.lower(value)
+}
+
+
 
 public 
-enum CoreError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+enum DocumentError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
-    case InvalidFen(fen: String
+    case Unreadable(message: String
     )
 
     
@@ -545,40 +7982,40 @@ enum CoreError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 }
 
 #if compiler(>=6)
-extension CoreError: Sendable {}
+extension DocumentError: Sendable {}
 #endif
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public struct FfiConverterTypeCoreError: FfiConverterRustBuffer {
-    typealias SwiftType = CoreError
+public struct FfiConverterTypeDocumentError: FfiConverterRustBuffer {
+    typealias SwiftType = DocumentError
 
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoreError {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DocumentError {
         let variant: Int32 = try readInt(&buf)
         switch variant {
 
         
 
         
-        case 1: return .InvalidFen(
-            fen: try FfiConverterString.read(from: &buf)
+        case 1: return .Unreadable(
+            message: try FfiConverterString.read(from: &buf)
             )
 
          default: throw UniffiInternalError.unexpectedEnumCase
         }
     }
 
-    public static func write(_ value: CoreError, into buf: inout [UInt8]) {
+    public static func write(_ value: DocumentError, into buf: inout [UInt8]) {
         switch value {
 
         
 
         
         
-        case let .InvalidFen(fen):
+        case let .Unreadable(message):
             writeInt(&buf, Int32(1))
-            FfiConverterString.write(fen, into: &buf)
+            FfiConverterString.write(message, into: &buf)
             
         }
     }
@@ -588,16 +8025,3222 @@ public struct FfiConverterTypeCoreError: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeCoreError_lift(_ buf: RustBuffer) throws -> CoreError {
-    return try FfiConverterTypeCoreError.lift(buf)
+public func FfiConverterTypeDocumentError_lift(_ buf: RustBuffer) throws -> DocumentError {
+    return try FfiConverterTypeDocumentError.lift(buf)
 }
 
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-public func FfiConverterTypeCoreError_lower(_ value: CoreError) -> RustBuffer {
-    return FfiConverterTypeCoreError.lower(value)
+public func FfiConverterTypeDocumentError_lower(_ value: DocumentError) -> RustBuffer {
+    return FfiConverterTypeDocumentError.lower(value)
 }
+
+
+
+public enum DrillMode: Equatable, Hashable {
+    
+    case study
+    case branch(UInt32
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension DrillMode: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDrillMode: FfiConverterRustBuffer {
+    typealias SwiftType = DrillMode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DrillMode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .study
+        
+        case 2: return .branch(try FfiConverterUInt32.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: DrillMode, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .study:
+            writeInt(&buf, Int32(1))
+        
+        
+        case let .branch(v1):
+            writeInt(&buf, Int32(2))
+            FfiConverterUInt32.write(v1, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDrillMode_lift(_ buf: RustBuffer) throws -> DrillMode {
+    return try FfiConverterTypeDrillMode.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDrillMode_lower(_ value: DrillMode) -> RustBuffer {
+    return FfiConverterTypeDrillMode.lower(value)
+}
+
+
+
+
+public enum ExplorerDatabase: Equatable, Hashable {
+    
+    case masters
+    case lichess(ratings: [Int64], speeds: [ExplorerSpeed]
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension ExplorerDatabase: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeExplorerDatabase: FfiConverterRustBuffer {
+    typealias SwiftType = ExplorerDatabase
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ExplorerDatabase {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .masters
+        
+        case 2: return .lichess(ratings: try FfiConverterSequenceInt64.read(from: &buf), speeds: try FfiConverterSequenceTypeExplorerSpeed.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ExplorerDatabase, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .masters:
+            writeInt(&buf, Int32(1))
+        
+        
+        case let .lichess(ratings,speeds):
+            writeInt(&buf, Int32(2))
+            FfiConverterSequenceInt64.write(ratings, into: &buf)
+            FfiConverterSequenceTypeExplorerSpeed.write(speeds, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorerDatabase_lift(_ buf: RustBuffer) throws -> ExplorerDatabase {
+    return try FfiConverterTypeExplorerDatabase.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorerDatabase_lower(_ value: ExplorerDatabase) -> RustBuffer {
+    return FfiConverterTypeExplorerDatabase.lower(value)
+}
+
+
+
+
+public enum ExplorerSpeed: Equatable, Hashable {
+    
+    case ultraBullet
+    case bullet
+    case blitz
+    case rapid
+    case classical
+    case correspondence
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension ExplorerSpeed: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeExplorerSpeed: FfiConverterRustBuffer {
+    typealias SwiftType = ExplorerSpeed
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ExplorerSpeed {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .ultraBullet
+        
+        case 2: return .bullet
+        
+        case 3: return .blitz
+        
+        case 4: return .rapid
+        
+        case 5: return .classical
+        
+        case 6: return .correspondence
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: ExplorerSpeed, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .ultraBullet:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .bullet:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .blitz:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .rapid:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .classical:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .correspondence:
+            writeInt(&buf, Int32(6))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorerSpeed_lift(_ buf: RustBuffer) throws -> ExplorerSpeed {
+    return try FfiConverterTypeExplorerSpeed.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeExplorerSpeed_lower(_ value: ExplorerSpeed) -> RustBuffer {
+    return FfiConverterTypeExplorerSpeed.lower(value)
+}
+
+
+
+
+public enum Feedback: Equatable, Hashable {
+    
+    case none
+    case correct
+    case wrong(expected: PlayedMove
+    )
+    case alternative
+    case newMove(PlayedMove
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension Feedback: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFeedback: FfiConverterRustBuffer {
+    typealias SwiftType = Feedback
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Feedback {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .none
+        
+        case 2: return .correct
+        
+        case 3: return .wrong(expected: try FfiConverterTypePlayedMove.read(from: &buf)
+        )
+        
+        case 4: return .alternative
+        
+        case 5: return .newMove(try FfiConverterTypePlayedMove.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Feedback, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .none:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .correct:
+            writeInt(&buf, Int32(2))
+        
+        
+        case let .wrong(expected):
+            writeInt(&buf, Int32(3))
+            FfiConverterTypePlayedMove.write(expected, into: &buf)
+            
+        
+        case .alternative:
+            writeInt(&buf, Int32(4))
+        
+        
+        case let .newMove(v1):
+            writeInt(&buf, Int32(5))
+            FfiConverterTypePlayedMove.write(v1, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFeedback_lift(_ buf: RustBuffer) throws -> Feedback {
+    return try FfiConverterTypeFeedback.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFeedback_lower(_ value: Feedback) -> RustBuffer {
+    return FfiConverterTypeFeedback.lower(value)
+}
+
+
+
+
+public enum GapKind: Equatable, Hashable {
+    
+    case missingMove
+    case missingReply(uci: String, san: String
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension GapKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGapKind: FfiConverterRustBuffer {
+    typealias SwiftType = GapKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GapKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .missingMove
+        
+        case 2: return .missingReply(uci: try FfiConverterString.read(from: &buf), san: try FfiConverterString.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: GapKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .missingMove:
+            writeInt(&buf, Int32(1))
+        
+        
+        case let .missingReply(uci,san):
+            writeInt(&buf, Int32(2))
+            FfiConverterString.write(uci, into: &buf)
+            FfiConverterString.write(san, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGapKind_lift(_ buf: RustBuffer) throws -> GapKind {
+    return try FfiConverterTypeGapKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGapKind_lower(_ value: GapKind) -> RustBuffer {
+    return FfiConverterTypeGapKind.lower(value)
+}
+
+
+
+
+public enum GraphRange: Equatable, Hashable {
+    
+    case month
+    case threeMonths
+    case year
+    case all
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension GraphRange: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeGraphRange: FfiConverterRustBuffer {
+    typealias SwiftType = GraphRange
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> GraphRange {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .month
+        
+        case 2: return .threeMonths
+        
+        case 3: return .year
+        
+        case 4: return .all
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: GraphRange, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .month:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .threeMonths:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .year:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .all:
+            writeInt(&buf, Int32(4))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGraphRange_lift(_ buf: RustBuffer) throws -> GraphRange {
+    return try FfiConverterTypeGraphRange.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeGraphRange_lower(_ value: GraphRange) -> RustBuffer {
+    return FfiConverterTypeGraphRange.lower(value)
+}
+
+
+
+
+public enum Lane: Equatable, Hashable {
+    
+    case focus
+    case coverage
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension Lane: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLane: FfiConverterRustBuffer {
+    typealias SwiftType = Lane
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Lane {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .focus
+        
+        case 2: return .coverage
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Lane, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .focus:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .coverage:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLane_lift(_ buf: RustBuffer) throws -> Lane {
+    return try FfiConverterTypeLane.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLane_lower(_ value: Lane) -> RustBuffer {
+    return FfiConverterTypeLane.lower(value)
+}
+
+
+
+
+public enum LineOutcome: Equatable, Hashable {
+    
+    case correct
+    case alternative
+    case wrong(expected: PlayedMove
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension LineOutcome: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLineOutcome: FfiConverterRustBuffer {
+    typealias SwiftType = LineOutcome
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LineOutcome {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .correct
+        
+        case 2: return .alternative
+        
+        case 3: return .wrong(expected: try FfiConverterTypePlayedMove.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: LineOutcome, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .correct:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .alternative:
+            writeInt(&buf, Int32(2))
+        
+        
+        case let .wrong(expected):
+            writeInt(&buf, Int32(3))
+            FfiConverterTypePlayedMove.write(expected, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLineOutcome_lift(_ buf: RustBuffer) throws -> LineOutcome {
+    return try FfiConverterTypeLineOutcome.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLineOutcome_lower(_ value: LineOutcome) -> RustBuffer {
+    return FfiConverterTypeLineOutcome.lower(value)
+}
+
+
+
+
+public enum MoveRole: Equatable, Hashable {
+    
+    case auto
+    case practice
+    case answer(AnswerKind
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension MoveRole: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeMoveRole: FfiConverterRustBuffer {
+    typealias SwiftType = MoveRole
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MoveRole {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .auto
+        
+        case 2: return .practice
+        
+        case 3: return .answer(try FfiConverterTypeAnswerKind.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: MoveRole, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .auto:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .practice:
+            writeInt(&buf, Int32(2))
+        
+        
+        case let .answer(v1):
+            writeInt(&buf, Int32(3))
+            FfiConverterTypeAnswerKind.write(v1, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMoveRole_lift(_ buf: RustBuffer) throws -> MoveRole {
+    return try FfiConverterTypeMoveRole.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMoveRole_lower(_ value: MoveRole) -> RustBuffer {
+    return FfiConverterTypeMoveRole.lower(value)
+}
+
+
+
+
+public enum Phase: Equatable, Hashable {
+    
+    case idle
+    case rewinding
+    case autoplay
+    case userTurn
+    case lineDone
+    case finished
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension Phase: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePhase: FfiConverterRustBuffer {
+    typealias SwiftType = Phase
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Phase {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .idle
+        
+        case 2: return .rewinding
+        
+        case 3: return .autoplay
+        
+        case 4: return .userTurn
+        
+        case 5: return .lineDone
+        
+        case 6: return .finished
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Phase, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .idle:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .rewinding:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .autoplay:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .userTurn:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .lineDone:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .finished:
+            writeInt(&buf, Int32(6))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePhase_lift(_ buf: RustBuffer) throws -> Phase {
+    return try FfiConverterTypePhase.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePhase_lower(_ value: Phase) -> RustBuffer {
+    return FfiConverterTypePhase.lower(value)
+}
+
+
+
+
+public enum PieceKind: Equatable, Hashable {
+    
+    case pawn
+    case knight
+    case bishop
+    case rook
+    case queen
+    case king
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension PieceKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePieceKind: FfiConverterRustBuffer {
+    typealias SwiftType = PieceKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PieceKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .pawn
+        
+        case 2: return .knight
+        
+        case 3: return .bishop
+        
+        case 4: return .rook
+        
+        case 5: return .queen
+        
+        case 6: return .king
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PieceKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .pawn:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .knight:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .bishop:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .rook:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .queen:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .king:
+            writeInt(&buf, Int32(6))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePieceKind_lift(_ buf: RustBuffer) throws -> PieceKind {
+    return try FfiConverterTypePieceKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePieceKind_lower(_ value: PieceKind) -> RustBuffer {
+    return FfiConverterTypePieceKind.lower(value)
+}
+
+
+
+
+public enum PracticeMode: Equatable, Hashable {
+    
+    case individualMoves
+    case completeLinesEveryTime
+    case completeLinesOncePerSession
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension PracticeMode: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePracticeMode: FfiConverterRustBuffer {
+    typealias SwiftType = PracticeMode
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PracticeMode {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .individualMoves
+        
+        case 2: return .completeLinesEveryTime
+        
+        case 3: return .completeLinesOncePerSession
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: PracticeMode, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .individualMoves:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .completeLinesEveryTime:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .completeLinesOncePerSession:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePracticeMode_lift(_ buf: RustBuffer) throws -> PracticeMode {
+    return try FfiConverterTypePracticeMode.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePracticeMode_lower(_ value: PracticeMode) -> RustBuffer {
+    return FfiConverterTypePracticeMode.lower(value)
+}
+
+
+
+
+public enum QueueKind: Equatable, Hashable {
+    
+    case new
+    case learning
+    case review
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension QueueKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeQueueKind: FfiConverterRustBuffer {
+    typealias SwiftType = QueueKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> QueueKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .new
+        
+        case 2: return .learning
+        
+        case 3: return .review
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: QueueKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .new:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .learning:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .review:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeQueueKind_lift(_ buf: RustBuffer) throws -> QueueKind {
+    return try FfiConverterTypeQueueKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeQueueKind_lower(_ value: QueueKind) -> RustBuffer {
+    return FfiConverterTypeQueueKind.lower(value)
+}
+
+
+
+
+public enum QueueState: Equatable, Hashable {
+    
+    case idle
+    case fetching(remaining: UInt64
+    )
+    case rateLimited(until: Int64
+    )
+    case needsLogin
+    case offline
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension QueueState: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeQueueState: FfiConverterRustBuffer {
+    typealias SwiftType = QueueState
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> QueueState {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .idle
+        
+        case 2: return .fetching(remaining: try FfiConverterUInt64.read(from: &buf)
+        )
+        
+        case 3: return .rateLimited(until: try FfiConverterInt64.read(from: &buf)
+        )
+        
+        case 4: return .needsLogin
+        
+        case 5: return .offline
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: QueueState, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .idle:
+            writeInt(&buf, Int32(1))
+        
+        
+        case let .fetching(remaining):
+            writeInt(&buf, Int32(2))
+            FfiConverterUInt64.write(remaining, into: &buf)
+            
+        
+        case let .rateLimited(until):
+            writeInt(&buf, Int32(3))
+            FfiConverterInt64.write(until, into: &buf)
+            
+        
+        case .needsLogin:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .offline:
+            writeInt(&buf, Int32(5))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeQueueState_lift(_ buf: RustBuffer) throws -> QueueState {
+    return try FfiConverterTypeQueueState.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeQueueState_lower(_ value: QueueState) -> RustBuffer {
+    return FfiConverterTypeQueueState.lower(value)
+}
+
+
+
+
+public enum Rating: Equatable, Hashable {
+    
+    case again
+    case hard
+    case good
+    case easy
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension Rating: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRating: FfiConverterRustBuffer {
+    typealias SwiftType = Rating
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Rating {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .again
+        
+        case 2: return .hard
+        
+        case 3: return .good
+        
+        case 4: return .easy
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Rating, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .again:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .hard:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .good:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .easy:
+            writeInt(&buf, Int32(4))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRating_lift(_ buf: RustBuffer) throws -> Rating {
+    return try FfiConverterTypeRating.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRating_lower(_ value: Rating) -> RustBuffer {
+    return FfiConverterTypeRating.lower(value)
+}
+
+
+
+
+public enum RetentionPeriod: Equatable, Hashable {
+    
+    case today
+    case yesterday
+    case week
+    case month
+    case year
+    case allTime
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension RetentionPeriod: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRetentionPeriod: FfiConverterRustBuffer {
+    typealias SwiftType = RetentionPeriod
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RetentionPeriod {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .today
+        
+        case 2: return .yesterday
+        
+        case 3: return .week
+        
+        case 4: return .month
+        
+        case 5: return .year
+        
+        case 6: return .allTime
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: RetentionPeriod, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .today:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .yesterday:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .week:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .month:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .year:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .allTime:
+            writeInt(&buf, Int32(6))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRetentionPeriod_lift(_ buf: RustBuffer) throws -> RetentionPeriod {
+    return try FfiConverterTypeRetentionPeriod.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRetentionPeriod_lower(_ value: RetentionPeriod) -> RustBuffer {
+    return FfiConverterTypeRetentionPeriod.lower(value)
+}
+
+
+
+
+public enum RevlogReviewKind: Equatable, Hashable {
+    
+    case learning
+    case review
+    case relearning
+    case filtered
+    case manual
+    case rescheduled
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension RevlogReviewKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRevlogReviewKind: FfiConverterRustBuffer {
+    typealias SwiftType = RevlogReviewKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RevlogReviewKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .learning
+        
+        case 2: return .review
+        
+        case 3: return .relearning
+        
+        case 4: return .filtered
+        
+        case 5: return .manual
+        
+        case 6: return .rescheduled
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: RevlogReviewKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .learning:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .review:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .relearning:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .filtered:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .manual:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .rescheduled:
+            writeInt(&buf, Int32(6))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRevlogReviewKind_lift(_ buf: RustBuffer) throws -> RevlogReviewKind {
+    return try FfiConverterTypeRevlogReviewKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRevlogReviewKind_lower(_ value: RevlogReviewKind) -> RustBuffer {
+    return FfiConverterTypeRevlogReviewKind.lower(value)
+}
+
+
+
+
+public enum Side: Equatable, Hashable {
+    
+    case white
+    case black
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension Side: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSide: FfiConverterRustBuffer {
+    typealias SwiftType = Side
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Side {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .white
+        
+        case 2: return .black
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Side, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .white:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .black:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSide_lift(_ buf: RustBuffer) throws -> Side {
+    return try FfiConverterTypeSide.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSide_lower(_ value: Side) -> RustBuffer {
+    return FfiConverterTypeSide.lower(value)
+}
+
+
+
+public 
+enum SignInError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case Failed(message: String
+    )
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension SignInError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSignInError: FfiConverterRustBuffer {
+    typealias SwiftType = SignInError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SignInError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Failed(
+            message: try FfiConverterString.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: SignInError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .Failed(message):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(message, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSignInError_lift(_ buf: RustBuffer) throws -> SignInError {
+    return try FfiConverterTypeSignInError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSignInError_lower(_ value: SignInError) -> RustBuffer {
+    return FfiConverterTypeSignInError.lower(value)
+}
+
+
+
+public enum Status: Equatable, Hashable {
+    
+    case required
+    case belowTarget
+    case pending
+    case unknown
+    case gap
+    case transposition(UInt32
+    )
+    case alternative
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension Status: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeStatus: FfiConverterRustBuffer {
+    typealias SwiftType = Status
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Status {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .required
+        
+        case 2: return .belowTarget
+        
+        case 3: return .pending
+        
+        case 4: return .unknown
+        
+        case 5: return .gap
+        
+        case 6: return .transposition(try FfiConverterUInt32.read(from: &buf)
+        )
+        
+        case 7: return .alternative
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Status, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .required:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .belowTarget:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .pending:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .unknown:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .gap:
+            writeInt(&buf, Int32(5))
+        
+        
+        case let .transposition(v1):
+            writeInt(&buf, Int32(6))
+            FfiConverterUInt32.write(v1, into: &buf)
+            
+        
+        case .alternative:
+            writeInt(&buf, Int32(7))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStatus_lift(_ buf: RustBuffer) throws -> Status {
+    return try FfiConverterTypeStatus.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStatus_lower(_ value: Status) -> RustBuffer {
+    return FfiConverterTypeStatus.lower(value)
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionUInt16: FfiConverterRustBuffer {
+    typealias SwiftType = UInt16?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterUInt16.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterUInt16.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionUInt32: FfiConverterRustBuffer {
+    typealias SwiftType = UInt32?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterUInt32.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterUInt32.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionInt64: FfiConverterRustBuffer {
+    typealias SwiftType = Int64?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterInt64.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterInt64.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionDouble: FfiConverterRustBuffer {
+    typealias SwiftType = Double?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterDouble.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterDouble.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionBool: FfiConverterRustBuffer {
+    typealias SwiftType = Bool?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterBool.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterBool.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionString: FfiConverterRustBuffer {
+    typealias SwiftType = String?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterString.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionData: FfiConverterRustBuffer {
+    typealias SwiftType = Data?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterData.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterData.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeLibrarySidecar: FfiConverterRustBuffer {
+    typealias SwiftType = LibrarySidecar?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeLibrarySidecar.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeLibrarySidecar.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypePosition: FfiConverterRustBuffer {
+    typealias SwiftType = Position?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypePosition.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypePosition.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeBoardPiece: FfiConverterRustBuffer {
+    typealias SwiftType = BoardPiece?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeBoardPiece.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeBoardPiece.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeCard: FfiConverterRustBuffer {
+    typealias SwiftType = Card?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeCard.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeCard.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeCoverageGap: FfiConverterRustBuffer {
+    typealias SwiftType = CoverageGap?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeCoverageGap.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeCoverageGap.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeDayLimit: FfiConverterRustBuffer {
+    typealias SwiftType = DayLimit?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeDayLimit.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeDayLimit.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeDeckLimits: FfiConverterRustBuffer {
+    typealias SwiftType = DeckLimits?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeDeckLimits.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeDeckLimits.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeExplorerStats: FfiConverterRustBuffer {
+    typealias SwiftType = ExplorerStats?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeExplorerStats.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeExplorerStats.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeMemoryState: FfiConverterRustBuffer {
+    typealias SwiftType = MemoryState?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeMemoryState.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeMemoryState.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeNode: FfiConverterRustBuffer {
+    typealias SwiftType = Node?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeNode.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeNode.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeNodeCoverage: FfiConverterRustBuffer {
+    typealias SwiftType = NodeCoverage?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeNodeCoverage.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeNodeCoverage.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeOpeningName: FfiConverterRustBuffer {
+    typealias SwiftType = OpeningName?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeOpeningName.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeOpeningName.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypePlayResult: FfiConverterRustBuffer {
+    typealias SwiftType = PlayResult?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypePlayResult.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypePlayResult.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypePlayedMove: FfiConverterRustBuffer {
+    typealias SwiftType = PlayedMove?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypePlayedMove.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypePlayedMove.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeStudyLineRecord: FfiConverterRustBuffer {
+    typealias SwiftType = StudyLineRecord?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeStudyLineRecord.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeStudyLineRecord.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeSummary: FfiConverterRustBuffer {
+    typealias SwiftType = Summary?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeSummary.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeSummary.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypePieceKind: FfiConverterRustBuffer {
+    typealias SwiftType = PieceKind?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypePieceKind.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypePieceKind.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypePracticeMode: FfiConverterRustBuffer {
+    typealias SwiftType = PracticeMode?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypePracticeMode.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypePracticeMode.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeQueueKind: FfiConverterRustBuffer {
+    typealias SwiftType = QueueKind?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeQueueKind.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeQueueKind.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionSequenceString: FfiConverterRustBuffer {
+    typealias SwiftType = [String]?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterSequenceString.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterSequenceString.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionSequenceTypeReplyInfo: FfiConverterRustBuffer {
+    typealias SwiftType = [ReplyInfo]?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterSequenceTypeReplyInfo.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterSequenceTypeReplyInfo.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionSequenceTypeEpd: FfiConverterRustBuffer {
+    typealias SwiftType = [Epd]?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterSequenceTypeEpd.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterSequenceTypeEpd.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeBoardSquare: FfiConverterRustBuffer {
+    typealias SwiftType = BoardSquare?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeBoardSquare.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeBoardSquare.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceUInt32: FfiConverterRustBuffer {
+    typealias SwiftType = [UInt32]
+
+    public static func write(_ value: [UInt32], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterUInt32.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [UInt32] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [UInt32]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterUInt32.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceInt32: FfiConverterRustBuffer {
+    typealias SwiftType = [Int32]
+
+    public static func write(_ value: [Int32], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterInt32.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Int32] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Int32]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterInt32.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceInt64: FfiConverterRustBuffer {
+    typealias SwiftType = [Int64]
+
+    public static func write(_ value: [Int64], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterInt64.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Int64] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Int64]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterInt64.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
+    typealias SwiftType = [String]
+
+    public static func write(_ value: [String], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterString.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [String] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [String]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterString.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeArrow: FfiConverterRustBuffer {
+    typealias SwiftType = [Arrow]
+
+    public static func write(_ value: [Arrow], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeArrow.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Arrow] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Arrow]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeArrow.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeBoardPiece: FfiConverterRustBuffer {
+    typealias SwiftType = [BoardPiece]
+
+    public static func write(_ value: [BoardPiece], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeBoardPiece.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [BoardPiece] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [BoardPiece]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeBoardPiece.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeCard: FfiConverterRustBuffer {
+    typealias SwiftType = [Card]
+
+    public static func write(_ value: [Card], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeCard.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Card] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Card]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeCard.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeChapterInfo: FfiConverterRustBuffer {
+    typealias SwiftType = [ChapterInfo]
+
+    public static func write(_ value: [ChapterInfo], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeChapterInfo.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ChapterInfo] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ChapterInfo]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeChapterInfo.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeCoverageGap: FfiConverterRustBuffer {
+    typealias SwiftType = [CoverageGap]
+
+    public static func write(_ value: [CoverageGap], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeCoverageGap.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [CoverageGap] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [CoverageGap]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeCoverageGap.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeExplorerMove: FfiConverterRustBuffer {
+    typealias SwiftType = [ExplorerMove]
+
+    public static func write(_ value: [ExplorerMove], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeExplorerMove.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ExplorerMove] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ExplorerMove]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeExplorerMove.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeFetch: FfiConverterRustBuffer {
+    typealias SwiftType = [Fetch]
+
+    public static func write(_ value: [Fetch], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeFetch.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Fetch] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Fetch]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeFetch.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeHour: FfiConverterRustBuffer {
+    typealias SwiftType = [Hour]
+
+    public static func write(_ value: [Hour], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeHour.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Hour] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Hour]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeHour.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeNode: FfiConverterRustBuffer {
+    typealias SwiftType = [Node]
+
+    public static func write(_ value: [Node], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeNode.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Node] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Node]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeNode.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypePlayedMove: FfiConverterRustBuffer {
+    typealias SwiftType = [PlayedMove]
+
+    public static func write(_ value: [PlayedMove], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypePlayedMove.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [PlayedMove] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [PlayedMove]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypePlayedMove.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeReplyInfo: FfiConverterRustBuffer {
+    typealias SwiftType = [ReplyInfo]
+
+    public static func write(_ value: [ReplyInfo], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeReplyInfo.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ReplyInfo] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ReplyInfo]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeReplyInfo.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeRetentionRow: FfiConverterRustBuffer {
+    typealias SwiftType = [RetentionRow]
+
+    public static func write(_ value: [RetentionRow], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeRetentionRow.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RetentionRow] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [RetentionRow]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeRetentionRow.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeRevlogEntry: FfiConverterRustBuffer {
+    typealias SwiftType = [RevlogEntry]
+
+    public static func write(_ value: [RevlogEntry], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeRevlogEntry.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [RevlogEntry] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [RevlogEntry]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeRevlogEntry.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeStoredStats: FfiConverterRustBuffer {
+    typealias SwiftType = [StoredStats]
+
+    public static func write(_ value: [StoredStats], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeStoredStats.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [StoredStats] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [StoredStats]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeStoredStats.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeWeakMove: FfiConverterRustBuffer {
+    typealias SwiftType = [WeakMove]
+
+    public static func write(_ value: [WeakMove], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeWeakMove.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [WeakMove] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [WeakMove]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeWeakMove.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeExplorerSpeed: FfiConverterRustBuffer {
+    typealias SwiftType = [ExplorerSpeed]
+
+    public static func write(_ value: [ExplorerSpeed], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeExplorerSpeed.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ExplorerSpeed] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ExplorerSpeed]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeExplorerSpeed.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeBoardSquare: FfiConverterRustBuffer {
+    typealias SwiftType = [BoardSquare]
+
+    public static func write(_ value: [BoardSquare], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeBoardSquare.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [BoardSquare] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [BoardSquare]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeBoardSquare.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeEpd: FfiConverterRustBuffer {
+    typealias SwiftType = [Epd]
+
+    public static func write(_ value: [Epd], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeEpd.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Epd] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Epd]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeEpd.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterDictionaryUInt32Double: FfiConverterRustBuffer {
+    public static func write(_ value: [UInt32: Double], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for (key, value) in value {
+            FfiConverterUInt32.write(key, into: &buf)
+            FfiConverterDouble.write(value, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [UInt32: Double] {
+        let len: Int32 = try readInt(&buf)
+        var dict = [UInt32: Double]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterUInt32.read(from: &buf)
+            let value = try FfiConverterDouble.read(from: &buf)
+            dict[key] = value
+        }
+        return dict
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterDictionaryUInt32TypeMoveRole: FfiConverterRustBuffer {
+    public static func write(_ value: [UInt32: MoveRole], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for (key, value) in value {
+            FfiConverterUInt32.write(key, into: &buf)
+            FfiConverterTypeMoveRole.write(value, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [UInt32: MoveRole] {
+        let len: Int32 = try readInt(&buf)
+        var dict = [UInt32: MoveRole]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterUInt32.read(from: &buf)
+            let value = try FfiConverterTypeMoveRole.read(from: &buf)
+            dict[key] = value
+        }
+        return dict
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterDictionaryInt64Int64: FfiConverterRustBuffer {
+    public static func write(_ value: [Int64: Int64], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for (key, value) in value {
+            FfiConverterInt64.write(key, into: &buf)
+            FfiConverterInt64.write(value, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Int64: Int64] {
+        let len: Int32 = try readInt(&buf)
+        var dict = [Int64: Int64]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterInt64.read(from: &buf)
+            let value = try FfiConverterInt64.read(from: &buf)
+            dict[key] = value
+        }
+        return dict
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterDictionaryInt64TypeReviewCounts: FfiConverterRustBuffer {
+    public static func write(_ value: [Int64: ReviewCounts], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for (key, value) in value {
+            FfiConverterInt64.write(key, into: &buf)
+            FfiConverterTypeReviewCounts.write(value, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Int64: ReviewCounts] {
+        let len: Int32 = try readInt(&buf)
+        var dict = [Int64: ReviewCounts]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterInt64.read(from: &buf)
+            let value = try FfiConverterTypeReviewCounts.read(from: &buf)
+            dict[key] = value
+        }
+        return dict
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterDictionaryStringString: FfiConverterRustBuffer {
+    public static func write(_ value: [String: String], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for (key, value) in value {
+            FfiConverterString.write(key, into: &buf)
+            FfiConverterString.write(value, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [String: String] {
+        let len: Int32 = try readInt(&buf)
+        var dict = [String: String]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterString.read(from: &buf)
+            let value = try FfiConverterString.read(from: &buf)
+            dict[key] = value
+        }
+        return dict
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterDictionaryTypeEpdDouble: FfiConverterRustBuffer {
+    public static func write(_ value: [Epd: Double], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for (key, value) in value {
+            FfiConverterTypeEpd.write(key, into: &buf)
+            FfiConverterDouble.write(value, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Epd: Double] {
+        let len: Int32 = try readInt(&buf)
+        var dict = [Epd: Double]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterTypeEpd.read(from: &buf)
+            let value = try FfiConverterDouble.read(from: &buf)
+            dict[key] = value
+        }
+        return dict
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterDictionaryTypeEpdTypeCard: FfiConverterRustBuffer {
+    public static func write(_ value: [Epd: Card], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for (key, value) in value {
+            FfiConverterTypeEpd.write(key, into: &buf)
+            FfiConverterTypeCard.write(value, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Epd: Card] {
+        let len: Int32 = try readInt(&buf)
+        var dict = [Epd: Card]()
+        dict.reserveCapacity(Int(len))
+        for _ in 0..<len {
+            let key = try FfiConverterTypeEpd.read(from: &buf)
+            let value = try FfiConverterTypeCard.read(from: &buf)
+            dict[key] = value
+        }
+        return dict
+    }
+}
+
+
+public typealias BoardSquare = UInt8
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBoardSquare: FfiConverter {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BoardSquare {
+        return try FfiConverterUInt8.read(from: &buf)
+    }
+
+    public static func write(_ value: BoardSquare, into buf: inout [UInt8]) {
+        return FfiConverterUInt8.write(value, into: &buf)
+    }
+
+    public static func lift(_ value: UInt8) throws -> BoardSquare {
+        return try FfiConverterUInt8.lift(value)
+    }
+
+    public static func lower(_ value: BoardSquare) -> UInt8 {
+        return FfiConverterUInt8.lower(value)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBoardSquare_lift(_ value: UInt8) throws -> BoardSquare {
+    return try FfiConverterTypeBoardSquare.lift(value)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBoardSquare_lower(_ value: BoardSquare) -> UInt8 {
+    return FfiConverterTypeBoardSquare.lower(value)
+}
+
+
+
+public typealias Epd = String
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEpd: FfiConverter {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Epd {
+        return try FfiConverterString.read(from: &buf)
+    }
+
+    public static func write(_ value: Epd, into buf: inout [UInt8]) {
+        return FfiConverterString.write(value, into: &buf)
+    }
+
+    public static func lift(_ value: RustBuffer) throws -> Epd {
+        return try FfiConverterString.lift(value)
+    }
+
+    public static func lower(_ value: Epd) -> RustBuffer {
+        return FfiConverterString.lower(value)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEpd_lift(_ value: RustBuffer) throws -> Epd {
+    return try FfiConverterTypeEpd.lift(value)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEpd_lower(_ value: Epd) -> RustBuffer {
+    return FfiConverterTypeEpd.lower(value)
+}
+
+
+
+public typealias Timestamp = Int64
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeTimestamp: FfiConverter {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Timestamp {
+        return try FfiConverterInt64.read(from: &buf)
+    }
+
+    public static func write(_ value: Timestamp, into buf: inout [UInt8]) {
+        return FfiConverterInt64.write(value, into: &buf)
+    }
+
+    public static func lift(_ value: Int64) throws -> Timestamp {
+        return try FfiConverterInt64.lift(value)
+    }
+
+    public static func lower(_ value: Timestamp) -> Int64 {
+        return FfiConverterInt64.lower(value)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTimestamp_lift(_ value: Int64) throws -> Timestamp {
+    return try FfiConverterTypeTimestamp.lift(value)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeTimestamp_lower(_ value: Timestamp) -> Int64 {
+    return FfiConverterTypeTimestamp.lower(value)
+}
+
 public func coreVersion() -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
         uniffiCallStatus in
@@ -605,11 +11248,404 @@ public func coreVersion() -> String  {
     )
 })
 }
-public func legalMoveCount(fen: String)throws  -> UInt32  {
-    return try  FfiConverterUInt32.lift(try rustCallWithError(FfiConverterTypeCoreError_lift) {
+/**
+ * Opens a repertoire from its files' contents.
+ */
+public func openRepertoire(pgnText: String, sidecar: Data, defaults: StudyDefaults, explorer: Explorer)throws  -> Opened  {
+    return try  FfiConverterTypeOpened_lift(try rustCallWithError(FfiConverterTypeDocumentError_lift) {
         uniffiCallStatus in
-    uniffi_opening_core_fn_func_legal_move_count(
+    uniffi_opening_core_fn_func_open_repertoire(
+        FfiConverterString.lower(pgnText),
+        FfiConverterData.lower(sidecar),
+        FfiConverterTypeStudyDefaults_lower(defaults),
+        FfiConverterTypeExplorer_lower(explorer),uniffiCallStatus
+    )
+})
+}
+/**
+ * A position from a FEN; None when the FEN is not valid.
+ */
+public func positionFromFen(fen: String) -> Position?  {
+    return try!  FfiConverterOptionTypePosition.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_position_from_fen(
         FfiConverterString.lower(fen),uniffiCallStatus
+    )
+})
+}
+/**
+ * Review log entries from a `.otlog.jsonl` file, in id order (bad lines skipped).
+ */
+public func decodeRevlog(data: Data) -> [RevlogEntry]  {
+    return try!  FfiConverterSequenceTypeRevlogEntry.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_decode_revlog(
+        FfiConverterData.lower(data),uniffiCallStatus
+    )
+})
+}
+/**
+ * Expected recall in games: Σ reach × R over your card positions, divided by Σ reach.
+ */
+public func expectedRecall(cards: [Epd: Card], reach: [Epd: Double], nowSecs: Double) -> Double?  {
+    return try!  FfiConverterOptionDouble.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_expected_recall(
+        FfiConverterDictionaryTypeEpdTypeCard.lower(cards),
+        FfiConverterDictionaryTypeEpdDouble.lower(reach),
+        FfiConverterDouble.lower(nowSecs),uniffiCallStatus
+    )
+})
+}
+/**
+ * Reads a sidecar for a library row; None when it is not a sidecar.
+ */
+public func librarySidecar(data: Data) -> LibrarySidecar?  {
+    return try!  FfiConverterOptionTypeLibrarySidecar.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_library_sidecar(
+        FfiConverterData.lower(data),uniffiCallStatus
+    )
+})
+}
+public func lichessAuthorizeUrl(verifier: String, state: String) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_lichess_authorize_url(
+        FfiConverterString.lower(verifier),
+        FfiConverterString.lower(state),uniffiCallStatus
+    )
+})
+}
+public func lichessCallbackScheme() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_lichess_callback_scheme(uniffiCallStatus
+    )
+})
+}
+public func lichessParseAccount(body: Data) -> String?  {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_lichess_parse_account(
+        FfiConverterData.lower(body),uniffiCallStatus
+    )
+})
+}
+/**
+ * The code from the redirect, or None when the user declined.
+ */
+public func lichessParseCallback(url: String, expectedState: String)throws  -> String?  {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeSignInError_lift) {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_lichess_parse_callback(
+        FfiConverterString.lower(url),
+        FfiConverterString.lower(expectedState),uniffiCallStatus
+    )
+})
+}
+public func lichessParseToken(body: Data, nowSecs: Int64)throws  -> Token  {
+    return try  FfiConverterTypeToken_lift(try rustCallWithError(FfiConverterTypeSignInError_lift) {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_lichess_parse_token(
+        FfiConverterData.lower(body),
+        FfiConverterInt64.lower(nowSecs),uniffiCallStatus
+    )
+})
+}
+public func lichessRandomString(random: Data) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_lichess_random_string(
+        FfiConverterData.lower(random),uniffiCallStatus
+    )
+})
+}
+public func lichessTokenRequestBody(code: String, verifier: String) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_lichess_token_request_body(
+        FfiConverterString.lower(code),
+        FfiConverterString.lower(verifier),uniffiCallStatus
+    )
+})
+}
+public func mergeRevlogs(a: [RevlogEntry], b: [RevlogEntry]) -> [RevlogEntry]  {
+    return try!  FfiConverterSequenceTypeRevlogEntry.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_merge_revlogs(
+        FfiConverterSequenceTypeRevlogEntry.lower(a),
+        FfiConverterSequenceTypeRevlogEntry.lower(b),uniffiCallStatus
+    )
+})
+}
+/**
+ * A new, empty repertoire PGN whose chapter is named `name`.
+ */
+public func newRepertoirePgn(name: String) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_new_repertoire_pgn(
+        FfiConverterString.lower(name),uniffiCallStatus
+    )
+})
+}
+/**
+ * The sidecar of a new repertoire.
+ */
+public func newSidecar(id: String, color: Side, database: ExplorerDatabase, targetGames: Int64, minGames: Int64, now: Timestamp) -> Data  {
+    return try!  FfiConverterData.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_new_sidecar(
+        FfiConverterString.lower(id),
+        FfiConverterTypeSide_lower(color),
+        FfiConverterTypeExplorerDatabase_lower(database),
+        FfiConverterInt64.lower(targetGames),
+        FfiConverterInt64.lower(minGames),
+        FfiConverterTypeTimestamp_lower(now),uniffiCallStatus
+    )
+})
+}
+public func revlogExtension() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_revlog_extension(uniffiCallStatus
+    )
+})
+}
+public func sidecarExtension() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_sidecar_extension(uniffiCallStatus
+    )
+})
+}
+/**
+ * Moves you forget most: leeches and most lapses first, then lowest recall.
+ */
+public func weakestMoves(cards: [Epd: Card], nowSecs: Double, limit: UInt32) -> [WeakMove]  {
+    return try!  FfiConverterSequenceTypeWeakMove.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_weakest_moves(
+        FfiConverterDictionaryTypeEpdTypeCard.lower(cards),
+        FfiConverterDouble.lower(nowSecs),
+        FfiConverterUInt32.lower(limit),uniffiCallStatus
+    )
+})
+}
+public func cardIsMature(card: Card) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_card_is_mature(
+        FfiConverterTypeCard_lower(card),uniffiCallStatus
+    )
+})
+}
+public func cardRetrievability(card: Card, nowSecs: Double) -> Double?  {
+    return try!  FfiConverterOptionDouble.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_card_retrievability(
+        FfiConverterTypeCard_lower(card),
+        FfiConverterDouble.lower(nowSecs),uniffiCallStatus
+    )
+})
+}
+public func coverageSeenEvery(coverage: NodeCoverage) -> Int64?  {
+    return try!  FfiConverterOptionInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_coverage_seen_every(
+        FfiConverterTypeNodeCoverage_lower(coverage),uniffiCallStatus
+    )
+})
+}
+public func databaseCacheKey(database: ExplorerDatabase) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_database_cache_key(
+        FfiConverterTypeExplorerDatabase_lower(database),uniffiCallStatus
+    )
+})
+}
+public func databaseDefaultLichess() -> ExplorerDatabase  {
+    return try!  FfiConverterTypeExplorerDatabase_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_database_default_lichess(uniffiCallStatus
+    )
+})
+}
+public func databaseRatingBuckets() -> [Int64]  {
+    return try!  FfiConverterSequenceInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_database_rating_buckets(uniffiCallStatus
+    )
+})
+}
+public func databaseSummary(database: ExplorerDatabase) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_database_summary(
+        FfiConverterTypeExplorerDatabase_lower(database),uniffiCallStatus
+    )
+})
+}
+public func deckLimitsIsEmpty(limits: DeckLimits) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_deck_limits_is_empty(
+        FfiConverterTypeDeckLimits_lower(limits),uniffiCallStatus
+    )
+})
+}
+public func defaultStudyDefaults() -> StudyDefaults  {
+    return try!  FfiConverterTypeStudyDefaults_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_default_study_defaults(uniffiCallStatus
+    )
+})
+}
+public func epdQueryFen(epd: Epd) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_epd_query_fen(
+        FfiConverterTypeEpd_lower(epd),uniffiCallStatus
+    )
+})
+}
+public func epdSideToMove(epd: Epd) -> Side  {
+    return try!  FfiConverterTypeSide_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_epd_side_to_move(
+        FfiConverterTypeEpd_lower(epd),uniffiCallStatus
+    )
+})
+}
+public func explorerMoveScore(mv: ExplorerMove, side: Side) -> Double  {
+    return try!  FfiConverterDouble.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_explorer_move_score(
+        FfiConverterTypeExplorerMove_lower(mv),
+        FfiConverterTypeSide_lower(side),uniffiCallStatus
+    )
+})
+}
+public func explorerSpeedTitle(speed: ExplorerSpeed) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_explorer_speed_title(
+        FfiConverterTypeExplorerSpeed_lower(speed),uniffiCallStatus
+    )
+})
+}
+public func explorerStatsShare(stats: ExplorerStats, uci: String) -> Double  {
+    return try!  FfiConverterDouble.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_explorer_stats_share(
+        FfiConverterTypeExplorerStats_lower(stats),
+        FfiConverterString.lower(uci),uniffiCallStatus
+    )
+})
+}
+public func gapSeenEvery(gap: CoverageGap) -> Int64  {
+    return try!  FfiConverterInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_gap_seen_every(
+        FfiConverterTypeCoverageGap_lower(gap),uniffiCallStatus
+    )
+})
+}
+/**
+ * The Lichess analysis board for a line.
+ */
+public func lichessAnalysisUrl(moves: [PlayedMove], orientation: Side) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_lichess_analysis_url(
+        FfiConverterSequenceTypePlayedMove.lower(moves),
+        FfiConverterTypeSide_lower(orientation),uniffiCallStatus
+    )
+})
+}
+/**
+ * "1. d4 d5 2. c4 c6", numbered from `start_ply` (0 = White's first move).
+ */
+public func moveList(moves: [PlayedMove], startPly: UInt32) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_move_list(
+        FfiConverterSequenceTypePlayedMove.lower(moves),
+        FfiConverterUInt32.lower(startPly),uniffiCallStatus
+    )
+})
+}
+public func practiceModeTitle(mode: PracticeMode) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_practice_mode_title(
+        FfiConverterTypePracticeMode_lower(mode),uniffiCallStatus
+    )
+})
+}
+public func rangeTitle(range: GraphRange) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_range_title(
+        FfiConverterTypeGraphRange_lower(range),uniffiCallStatus
+    )
+})
+}
+public func retentionPeriodTitle(period: RetentionPeriod) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_retention_period_title(
+        FfiConverterTypeRetentionPeriod_lower(period),uniffiCallStatus
+    )
+})
+}
+public func retentionRateMature(r: TrueRetention) -> Double?  {
+    return try!  FfiConverterOptionDouble.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_retention_rate_mature(
+        FfiConverterTypeTrueRetention_lower(r),uniffiCallStatus
+    )
+})
+}
+public func retentionRateTotal(r: TrueRetention) -> Double?  {
+    return try!  FfiConverterOptionDouble.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_retention_rate_total(
+        FfiConverterTypeTrueRetention_lower(r),uniffiCallStatus
+    )
+})
+}
+public func retentionRateYoung(r: TrueRetention) -> Double?  {
+    return try!  FfiConverterOptionDouble.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_retention_rate_young(
+        FfiConverterTypeTrueRetention_lower(r),uniffiCallStatus
+    )
+})
+}
+public func sanLoose(san: String) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_san_loose(
+        FfiConverterString.lower(san),uniffiCallStatus
+    )
+})
+}
+public func squareFromNotation(notation: String) -> BoardSquare?  {
+    return try!  FfiConverterOptionTypeBoardSquare.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_square_from_notation(
+        FfiConverterString.lower(notation),uniffiCallStatus
+    )
+})
+}
+public func squareNotation(square: BoardSquare) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_square_notation(
+        FfiConverterTypeBoardSquare_lower(square),uniffiCallStatus
     )
 })
 }
@@ -632,10 +11668,721 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_core_version() != 63829) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_legal_move_count() != 47267) {
+    if (uniffi_opening_core_checksum_func_open_repertoire() != 42024) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_position_from_fen() != 25452) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_decode_revlog() != 62554) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_expected_recall() != 1693) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_library_sidecar() != 1108) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_lichess_authorize_url() != 53182) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_lichess_callback_scheme() != 60445) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_lichess_parse_account() != 24118) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_lichess_parse_callback() != 45402) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_lichess_parse_token() != 30105) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_lichess_random_string() != 45180) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_lichess_token_request_body() != 2275) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_merge_revlogs() != 19567) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_new_repertoire_pgn() != 30132) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_new_sidecar() != 48299) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_revlog_extension() != 3396) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_sidecar_extension() != 50451) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_weakest_moves() != 51550) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_card_is_mature() != 40773) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_card_retrievability() != 5501) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_coverage_seen_every() != 64908) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_database_cache_key() != 21348) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_database_default_lichess() != 18214) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_database_rating_buckets() != 56408) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_database_summary() != 34840) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_deck_limits_is_empty() != 63688) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_default_study_defaults() != 59748) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_epd_query_fen() != 17386) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_epd_side_to_move() != 65340) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_explorer_move_score() != 9004) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_explorer_speed_title() != 50320) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_explorer_stats_share() != 40798) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_gap_seen_every() != 57806) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_lichess_analysis_url() != 19038) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_move_list() != 58467) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_practice_mode_title() != 10971) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_range_title() != 24563) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_retention_period_title() != 29999) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_retention_rate_mature() != 64138) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_retention_rate_total() != 50753) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_retention_rate_young() != 42904) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_san_loose() != 45020) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_square_from_notation() != 4347) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_square_notation() != 21066) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_documentlistener_changed() != 29813) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_add_line() != 64023) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_add_move() != 51944) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_all_nodes() != 37426) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_can_undo() != 38298) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_card() != 62793) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_card_epds() != 8454) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_card_nodes() != 34477) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_cards() != 767) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_chapters() != 7002) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_child_by_san() != 50956) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_child_by_uci() != 53687) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_color() != 11797) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_count() != 52001) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_coverage() != 26409) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_coverage_root() != 8044) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_database() != 17002) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_delete() != 13030) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_draft_replies() != 58570) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_due_tomorrow() != 32199) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_extend_limits_today() != 1093) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_gaps() != 19080) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_is_ancestor() != 48409) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_is_excluded() != 4286) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_last_line() != 4529) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_later_learning_dues() != 4167) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_learning_progress() != 61859) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_leaves() != 45153) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_limits() != 25752) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_line_text() != 13511) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_load_warnings() != 25675) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_merge_conflict_version() != 60767) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_min_games() != 64357) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_moves() != 45470) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_next_due() != 58239) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_node() != 54471) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_node_following() != 59509) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_nodes_at() != 16352) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_opening_branches() != 25907) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_opening_name() != 9062) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_own_practice_mode() != 38388) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_path() != 40846) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_pgn_saved() != 3068) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_pgn_to_save() != 61479) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_position() != 7466) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_practice_mode() != 46145) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_promote() != 50259) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_reach() != 31189) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_remaining_limits() != 28279) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_remember_line() != 23449) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_remote_pgn() != 50939) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_remote_sidecar() != 13670) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_request_stats() != 9069) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_review_log() != 32743) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_reviews_beyond_limit() != 46016) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_revision() != 11650) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_revlog_appended() != 16614) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_revlog_to_append() != 33864) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_root() != 56) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_saved_move_count() != 51247) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_set_defaults() != 44683) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_set_excluded() != 3974) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_set_listener() != 4405) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_set_note() != 24416) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_sidecar_saved() != 1946) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_sidecar_to_save() != 8739) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_start_coverage_check() != 23033) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_stats() != 33116) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_stop_coverage_check() != 13173) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_study_counts() != 54063) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_subtree() != 7937) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_suspended_card_epds() != 22937) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_target_games() != 21204) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_transposition_target() != 45346) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_unchecked_positions() != 6715) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_undo() != 60684) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_update_settings() != 41962) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_update_study_settings() != 40186) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_cancel_all() != 18791) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_clear() != 54545) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_ensure_loaded() != 36828) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_focus() != 21696) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_on_response() != 16544) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_poll() != 40073) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_remaining() != 44303) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_resume() != 50868) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_set_listener() != 999) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_state() != 5596) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_stats() != 37884) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorerlistener_wake() != 40269) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_statsstore_load() != 17823) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_statsstore_save() != 28187) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_epd() != 53194) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_fen() != 56951) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_fullmove_number() != 43104) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_is_checkmate() != 55555) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_is_promotion() != 51084) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_legal_destinations() != 8448) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_legal_moves() != 2609) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_piece_at() != 19827) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_pieces() != 29049) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_play() != 26439) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_play_san() != 62520) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_play_uci() != 21175) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_position_side_to_move() != 30608) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_arrows() != 47912) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_back() != 60398) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_can_forward() != 27256) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_continuation() != 23703) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_current() != 5231) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_delete() != 44347) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_discard_draft() != 25454) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_draft() != 35277) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_draft_replies() != 39853) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_draft_transposition() != 50602) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_forward() != 52706) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_go() != 20762) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_go_to_biggest_gap() != 24986) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_go_to_gap() != 33675) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_has_draft() != 13479) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_is_user_turn_on_board() != 25846) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_last_move() != 5236) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_moves_to_board() != 53736) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_orientation() != 39036) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_play() != 34834) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_play_uci() != 33029) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_position() != 62384) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_preview() != 12417) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_reach_on_board() != 190) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_save_draft() != 5631) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_set_orientation() != 57006) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_shown_node() != 44751) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_sibling() != 35820) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_transposition_after() != 32066) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_analysis_moves() != 25589) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_answered_count() != 5378) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_arrows() != 24086) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_asked_kind() != 44103) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_browse_node() != 45778) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_check_again() != 49838) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_correct_count() != 52819) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_counts() != 22119) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_current_node() != 17980) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_extend_limits() != 23942) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_feedback() != 22836) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_hint() != 54850) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_is_filtered() != 46961) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_is_user_turn() != 49811) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_last_move() != 61635) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_line() != 5483) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_next_learning_due() != 16797) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_next_line() != 24024) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_phase() != 36700) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_played_nodes() != 1041) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_position() != 41168) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_show_hint() != 50811) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_start() != 1665) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_step() != 42988) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_studied_millis() != 49881) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_user_moved() != 29602) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_drillsession_wrong_timeout() != 50031) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_buttons() != 63201) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_card_counts() != 21542) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_card_info() != 38305) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_difficulty() != 15225) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_future_due() != 50195) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_hours() != 3747) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_intervals() != 3174) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_retrievability() != 16870) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_reviews() != 6063) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_stability() != 26116) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_streak() != 42515) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_today() != 13181) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_true_retention() != 60028) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_cards() != 48720) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_color() != 52504) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_config_key() != 24009) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_database() != 62146) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_due_tomorrow() != 10819) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_estimated_progress() != 24509) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_estimated_study_counts() != 57623) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_id() != 41272) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_later_learning_dues() != 60594) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_min_games() != 7440) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_next_due() != 20903) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_practice_mode() != 982) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_summary() != 20888) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_librarysidecar_target_games() != 30514) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_explorer_new() != 34450) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_position_start() != 24548) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_buildersession_new() != 18008) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_drillsession_new() != 49692) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_graphs_new() != 61351) {
         return InitializationResult.apiChecksumMismatch
     }
 
+    uniffiCallbackInitDocumentListener()
+    uniffiCallbackInitExplorerListener()
+    uniffiCallbackInitStatsStore()
     return InitializationResult.ok
 }()
 
