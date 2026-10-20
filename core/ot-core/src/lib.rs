@@ -8,6 +8,7 @@ pub mod coverage;
 pub mod explorer;
 pub mod pgn;
 pub mod repertoire;
+pub mod training;
 
 use shakmaty::fen::Fen;
 use shakmaty::{CastlingMode, Chess, Position};
