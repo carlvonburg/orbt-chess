@@ -1,5 +1,5 @@
 import Foundation
-import OpeningCore
+import OpeningCoreRust
 
 /// Review logs of library entries, from the open document or read from disk.
 enum StudyLog {
@@ -9,9 +9,10 @@ enum StudyLog {
     }
 
     nonisolated static func read(_ url: URL) async -> [RevlogEntry] {
-        await Task.detached {
+        let data = await Task.detached {
             try? FileManager.default.startDownloadingUbiquitousItem(at: url)
-            return (try? FileAccess.read(url)).map(RevlogFile.decode) ?? []
+            return try? FileAccess.read(url)
         }.value
+        return data.map { decodeRevlog(data: $0) } ?? []
     }
 }

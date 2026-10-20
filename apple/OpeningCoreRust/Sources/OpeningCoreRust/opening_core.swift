@@ -6535,6 +6535,89 @@ public func FfiConverterTypePoll_lower(_ value: Poll) -> RustBuffer {
 }
 
 
+/**
+ * Anki's preset values the settings screen shows.
+ */
+public struct PresetInfo: Equatable, Hashable {
+    public var newPerDay: Int64
+    public var reviewsPerDay: Int64
+    /**
+     * Minutes.
+     */
+    public var learnSteps: [Double]
+    public var relearnSteps: [Double]
+    public var desiredRetention: Double
+    public var learnAheadSecs: Int64
+    public var rolloverHour: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(newPerDay: Int64, reviewsPerDay: Int64, 
+        /**
+         * Minutes.
+         */learnSteps: [Double], relearnSteps: [Double], desiredRetention: Double, learnAheadSecs: Int64, rolloverHour: Int64) {
+        self.newPerDay = newPerDay
+        self.reviewsPerDay = reviewsPerDay
+        self.learnSteps = learnSteps
+        self.relearnSteps = relearnSteps
+        self.desiredRetention = desiredRetention
+        self.learnAheadSecs = learnAheadSecs
+        self.rolloverHour = rolloverHour
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PresetInfo: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePresetInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PresetInfo {
+        return
+            try PresetInfo(
+                newPerDay: FfiConverterInt64.read(from: &buf), 
+                reviewsPerDay: FfiConverterInt64.read(from: &buf), 
+                learnSteps: FfiConverterSequenceDouble.read(from: &buf), 
+                relearnSteps: FfiConverterSequenceDouble.read(from: &buf), 
+                desiredRetention: FfiConverterDouble.read(from: &buf), 
+                learnAheadSecs: FfiConverterInt64.read(from: &buf), 
+                rolloverHour: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PresetInfo, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.newPerDay, into: &buf)
+        FfiConverterInt64.write(value.reviewsPerDay, into: &buf)
+        FfiConverterSequenceDouble.write(value.learnSteps, into: &buf)
+        FfiConverterSequenceDouble.write(value.relearnSteps, into: &buf)
+        FfiConverterDouble.write(value.desiredRetention, into: &buf)
+        FfiConverterInt64.write(value.learnAheadSecs, into: &buf)
+        FfiConverterInt64.write(value.rolloverHour, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePresetInfo_lift(_ buf: RustBuffer) throws -> PresetInfo {
+    return try FfiConverterTypePresetInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePresetInfo_lower(_ value: PresetInfo) -> RustBuffer {
+    return FfiConverterTypePresetInfo.lower(value)
+}
+
+
 public struct Progress: Equatable, Hashable {
     public var cards: Int64
     public var learning: Int64
@@ -10521,6 +10604,31 @@ fileprivate struct FfiConverterSequenceInt64: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceDouble: FfiConverterRustBuffer {
+    typealias SwiftType = [Double]
+
+    public static func write(_ value: [Double], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterDouble.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Double] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Double]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterDouble.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
     typealias SwiftType = [String]
 
@@ -11446,6 +11554,13 @@ public func weakestMoves(cards: [Epd: Card], nowSecs: Double, limit: UInt32) -> 
     )
 })
 }
+public func ankiPreset() -> PresetInfo  {
+    return try!  FfiConverterTypePresetInfo_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_anki_preset(uniffiCallStatus
+    )
+})
+}
 public func cardIsMature(card: Card) -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
         uniffiCallStatus in
@@ -11733,6 +11848,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_weakest_moves() != 51550) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_anki_preset() != 41548) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_card_is_mature() != 40773) {

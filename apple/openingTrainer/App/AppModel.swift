@@ -1,6 +1,6 @@
 import Foundation
 import Observation
-import OpeningCore
+import OpeningCoreRust
 
 enum AppTab: Hashable {
     case repertoires, statistics
@@ -14,9 +14,9 @@ final class AppModel {
     var statisticsScope = StatisticsModel.Scope.all
 
     let auth = LichessAuth()
-    let stats = StatsStore()
+    let stats = ExplorerCacheStore()
     let library = RepertoireLibrary()
-    @ObservationIgnored lazy var queue = ExplorerQueue(store: stats, auth: auth)
+    @ObservationIgnored lazy var queue = ExplorerService(store: stats, auth: auth)
 
     private(set) var documents: [String: RepertoireDocument] = [:]
     /// Why an entry could not be opened, by entry id.
@@ -33,9 +33,9 @@ final class AppModel {
         let task = Task { () -> RepertoireDocument? in
             defer { opening[entry.id] = nil }
             do {
-                let (text, tree) = try await RepertoireDocument.load(entry.pgnURL)
+                let text = try await RepertoireDocument.load(entry.pgnURL)
                 if let existing = documents[entry.id] { return existing }
-                let doc = try RepertoireDocument(entry: entry, text: text, tree: tree, store: stats, queue: queue)
+                let doc = try RepertoireDocument(entry: entry, text: text, explorer: queue)
                 documents[entry.id] = doc
                 openErrors[entry.id] = nil
                 return doc

@@ -749,5 +749,29 @@ pub fn lichess_analysis_url(moves: Vec<PlayedMove>, orientation: Side) -> String
     ot_core::lichess::analysis_url(&moves, orientation)
 }
 
-pub(crate) fn _unused(_: DeckLimits, _: QueueKind, _: RemainingLimits, _: Summary, _: SchedTiming) {
+/// Anki's preset values the settings screen shows.
+#[derive(uniffi::Record)]
+pub struct PresetInfo {
+    pub new_per_day: i64,
+    pub reviews_per_day: i64,
+    /// Minutes.
+    pub learn_steps: Vec<f64>,
+    pub relearn_steps: Vec<f64>,
+    pub desired_retention: f64,
+    pub learn_ahead_secs: i64,
+    pub rollover_hour: i64,
+}
+
+#[uniffi::export]
+pub fn anki_preset() -> PresetInfo {
+    let c = ot_core::training::anki::DeckConfig::default();
+    PresetInfo {
+        new_per_day: c.new_per_day,
+        reviews_per_day: c.reviews_per_day,
+        learn_steps: c.learn_steps,
+        relearn_steps: c.relearn_steps,
+        desired_retention: c.desired_retention,
+        learn_ahead_secs: c.learn_ahead_secs,
+        rollover_hour: SchedTiming::ROLLOVER_HOUR,
+    }
 }

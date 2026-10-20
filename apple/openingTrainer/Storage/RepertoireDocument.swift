@@ -1,10 +1,11 @@
 import Foundation
 import Observation
-import OpeningCore
+import OpeningCoreRust
 
-/// An open repertoire: the move tree from the PGN, the sidecar (settings and cards) and
-/// the coverage engine. Every edit is written back to the PGN shortly after it happens,
-/// and changes made on another device are merged in.
+/// An open repertoire. The Rust core (`RepertoireDoc`) holds the tree, the sidecar and the
+/// coverage and decides what each change means; this does the file IO it asks for: every edit
+/// is written back to the PGN shortly after it happens, and changes made on another device are
+/// handed to the core to merge.
 @Observable
 final class RepertoireDocument {
     private(set) var entryID: String
@@ -12,69 +13,52 @@ final class RepertoireDocument {
     private(set) var sidecarURL: URL
     private(set) var name: String
 
-    private(set) var tree: RepertoireTree {
-        didSet { treeVersion += 1 }
-    }
-    private(set) var sidecar: Sidecar
-    private(set) var coverage: CoverageEngine
+    let core: RepertoireDoc
     /// Bumped on every change so views can refresh derived values.
-    private(set) var revision = 0
+    private(set) var revision: UInt64 = 0
     private(set) var saveError: String?
     private(set) var canUndo = false
 
-    @ObservationIgnored private let store: StatsStore
-    @ObservationIgnored private let queue: ExplorerQueue
-    @ObservationIgnored private var undoStack: [RepertoireTree] = []
-    @ObservationIgnored private var lastWrittenPGN = ""
+    @ObservationIgnored let explorer: ExplorerService
     @ObservationIgnored private var lastWrittenSidecar = Data()
     @ObservationIgnored private var pgnSaveTask: Task<Void, Never>?
     @ObservationIgnored private var sidecarSaveTask: Task<Void, Never>?
     @ObservationIgnored private var presenters: [FilePresenter] = []
-    @ObservationIgnored private var listener: UUID?
-    /// Bumped whenever the tree changes. The trainer and the card positions depend only on the
-    /// tree and your color, so answering a move (which bumps `revision`) keeps them.
-    @ObservationIgnored private var treeVersion = 0
-    @ObservationIgnored private var cachedTrainer: (treeVersion: Int, color: Side, trainer: Trainer)?
-    @ObservationIgnored private var cachedCardSets: (treeVersion: Int, color: Side, cards: Set<EPD>, suspended: Int)?
-    @ObservationIgnored private var cachedProgress: (revision: Int, progress: Trainer.Progress)?
-    @ObservationIgnored private var cachedCounts: (revision: Int, minute: Int64, counts: CardQueues.Counts)?
-    /// Answers not yet appended to the review log.
-    @ObservationIgnored private var pendingRevlog: [RevlogEntry] = []
+    @ObservationIgnored private var cachedCards: (revision: UInt64, cards: [EPD: Card])?
 
-    /// Reads and parses the PGN off the main actor, since a large file takes a moment.
-    nonisolated static func load(_ url: URL) async throws -> (text: String, tree: RepertoireTree) {
+    /// Reads the PGN off the main actor, since a large file takes a moment to download.
+    nonisolated static func load(_ url: URL) async throws -> String {
         try await Task.detached(priority: .userInitiated) {
             try? FileManager.default.startDownloadingUbiquitousItem(at: url)
-            let text = String(decoding: try FileAccess.read(url), as: UTF8.self)
-            return (text, RepertoireTree(pgn: text))
+            return String(decoding: try FileAccess.read(url), as: UTF8.self)
         }.value
     }
 
-    /// `text` and `tree` come from `load(_:)`.
-    init(entry: RepertoireEntry, text: String, tree: RepertoireTree, store: StatsStore, queue: ExplorerQueue) throws {
-        guard let sidecar = entry.sidecar else { throw CocoaError(.fileNoSuchFile) }
+    /// `text` comes from `load(_:)`.
+    init(entry: RepertoireEntry, text: String, explorer: ExplorerService) throws {
+        guard let sidecar = entry.sidecarData else { throw CocoaError(.fileNoSuchFile) }
         self.entryID = entry.id
         self.pgnURL = entry.pgnURL
         self.sidecarURL = entry.sidecarURL
         self.name = entry.name
-        self.store = store
-        self.queue = queue
-        self.sidecar = sidecar
-        self.coverage = CoverageEngine(settings: sidecar.coverageSettings)
-        self.tree = tree
-        lastWrittenPGN = text
+        self.explorer = explorer
+        let opened = try openRepertoire(pgnText: text, sidecar: sidecar, defaults: TrainingDefaults.studyDefaults,
+                                        explorer: explorer.core)
+        core = opened.document
+        lastWrittenSidecar = sidecar
+        core.setListener(listener: Listener(document: self))
+        apply(opened.changes)
         resolveConflicts()
-        // The file repeats lines under every move order (e.g. a Chessbook export): write the
-        // compact version, so later loads are fast.
-        if tree.mergedTranspositions > 0 { schedulePGNSave() }
-
-        store.load(sidecar.database)
-        recomputeCoverage()
-
-        listener = queue.subscribe { [weak self] epd, database in
-            self?.statsArrived(epd, database)
-        }
         startPresenters()
+    }
+
+    /// Applies what the core changed: refreshes views and schedules the saves it asks for.
+    func apply(_ changes: Changes) {
+        if changes.revision != revision { revision = changes.revision }
+        canUndo = core.canUndo()
+        if let ms = changes.savePgnAfterMs { schedulePGNSave(after: ms) }
+        if let ms = changes.saveSidecarAfterMs { scheduleSidecarSave(after: ms) }
+        cachedCards = nil
     }
 
     private func startPresenters() {
@@ -105,340 +89,163 @@ final class RepertoireDocument {
     func close() {
         flush()
         stopPresenters()
-        if let listener { queue.unsubscribe(listener) }
-        listener = nil
     }
 
-    var color: Side { sidecar.color }
-    var database: ExplorerDatabase { sidecar.database }
-    var loadWarnings: [String] { tree.loadWarnings }
+    var color: Side { _ = revision; return core.color() }
+    var database: ExplorerDatabase { _ = revision; return core.database() }
+    var loadWarnings: [String] { core.loadWarnings() }
+
+    /// The move tree, read from the core.
+    var tree: Tree { Tree(core: core, revision: revision) }
+    /// Coverage values, read from the core.
+    var coverage: Coverage { Coverage(core: core, revision: revision) }
+    /// Settings and cards, read from the core.
+    var sidecar: SidecarValues { SidecarValues(document: self) }
+
+    /// The cards, copied once per change.
+    var studyCards: [EPD: Card] {
+        if let cachedCards, cachedCards.revision == revision { return cachedCards.cards }
+        let cards = core.cards()
+        cachedCards = (revision, cards)
+        return cards
+    }
 
     // MARK: Stats
 
     func stats(_ epd: EPD) -> ExplorerStats? {
-        // The store's cache isn't observed; reading `revision`, which `statsArrived` bumps,
+        // The core's cache isn't observed; reading `revision`, which stats arriving bump,
         // redraws views as soon as the stats come in.
         _ = revision
-        return store.stats(epd, sidecar.database)
+        return core.stats(epd: epd)
     }
 
     /// The opening name of a node, or of its nearest ancestor, from stats already loaded.
     func openingName(at id: NodeID) -> String? {
-        var cursor: NodeID? = id
-        while let id = cursor, let n = tree[id] {
-            if let name = stats(n.epd)?.opening?.name { return name }
-            cursor = n.parent
-        }
-        return nil
+        _ = revision
+        return core.openingName(id: id)
     }
 
     /// Fetches stats for the position on screen, ahead of the coverage check.
     func requestStats(for epd: EPD) {
-        queue.focus(epd, sidecar.database)
+        core.requestStats(epd: epd, nowMs: ExplorerService.millis(.now))
     }
 
-    /// How many screens of this repertoire are showing (overview, builder, study). The
-    /// coverage check runs while any is, so the library and the other tabs never fetch.
-    @ObservationIgnored private var coverageViewers = 0
-
-    /// Starts the background coverage check. It only asks for opponent-to-move positions
-    /// you would meet at least once in N games (N = your target), most frequent first, and
-    /// each answer tells which positions below are frequent enough to need a request. So
-    /// the number of requests depends on the target, not on the size of the PGN.
-    func startCoverageCheck() {
-        coverageViewers += 1
-        checkCoverage()
-    }
-
-    func stopCoverageCheck() {
-        coverageViewers = max(coverageViewers - 1, 0)
-        if coverageViewers == 0 { queue.cancelAll(for: sidecar.database) }
-    }
-
-    private func checkCoverage() {
-        guard coverageViewers > 0 else { return }
-        for (epd, reach) in coverage.pendingPositions(tree: tree) {
-            queue.request(epd, sidecar.database, priority: reach)
-        }
-    }
+    /// The coverage check runs while one of this repertoire's screens is showing (overview,
+    /// builder, study), so the library and the other tabs never fetch. It only asks for
+    /// opponent-to-move positions you would meet at least once in N games, most frequent first.
+    func startCoverageCheck() { apply(core.startCoverageCheck()) }
+    func stopCoverageCheck() { core.stopCoverageCheck() }
 
     /// Opponent positions above your target whose stats are not loaded yet.
-    var uncheckedPositions: Int { coverage.root?.pendingCount ?? 0 }
-
-    private func statsArrived(_ epd: EPD, _ database: ExplorerDatabase) {
-        guard database == sidecar.database else { return }
-        let totalsChanged = coverage.statsArrived(for: epd, tree: tree, stats: lookup)
-        revision += 1
-        checkCoverage()
-        // The sidecar's summary (shown in the library) only holds the totals.
-        if totalsChanged { saveSidecar() }
-    }
-
-    private var lookup: CoverageEngine.StatsLookup {
-        let store = store
-        let database = sidecar.database
-        return { store.stats($0, database) }
-    }
-
-    private func recomputeCoverage() {
-        coverage = CoverageEngine(settings: sidecar.coverageSettings)
-        coverage.recomputeAll(tree: tree, stats: lookup)
-        revision += 1
-        syncSuspension()
-        checkCoverage()
-    }
+    var uncheckedPositions: Int { _ = revision; return Int(core.uncheckedPositions()) }
 
     // MARK: Edits
 
     @discardableResult
     func addMove(_ uci: String, after parent: NodeID) -> NodeID? {
-        if let existing = tree.child(of: parent, uci: uci) { return existing }
-        var result: NodeID?
-        perform(changedAt: parent) { tree in
-            result = tree.addMove(uci, after: parent)
-            return result.flatMap { tree[$0]?.epd }.map { [$0] } ?? []
-        }
-        return result
+        let result = core.addMove(uci: uci, parent: parent)
+        apply(result.changes)
+        return result.node
     }
 
     /// Adds moves one after another; returns the last node.
     @discardableResult
     func addLine(_ ucis: [String], after start: NodeID) -> NodeID? {
-        guard !ucis.isEmpty else { return start }
-        if let existing = tree.node(following: ucis, from: start) { return existing }
-        var result: NodeID?
-        perform(changedAt: start) { tree in
-            result = tree.addLine(ucis, after: start)
-            return Set(tree.subtree(of: start).compactMap { tree[$0]?.epd })
-        }
-        return result
+        let result = core.addLine(ucis: ucis, start: start)
+        apply(result.changes)
+        return result.node
     }
 
-    func delete(_ id: NodeID) {
-        guard let parent = tree[id]?.parent else { return }
-        perform(changedAt: parent) { tree in
-            let removed = Set(tree.subtree(of: id).compactMap { tree[$0]?.epd })
-            tree.delete(id)
-            return removed
-        }
-    }
-
-    func promote(_ id: NodeID) {
-        guard let parent = tree[id]?.parent else { return }
-        perform(changedAt: parent) { tree in
-            tree.promote(id)
-            return Set(tree.subtree(of: parent).compactMap { tree[$0]?.epd })
-        }
-    }
-
-    func setNote(_ text: String, for id: NodeID) {
-        guard tree[id]?.note != text else { return }
-        undoStack.append(tree)
-        tree.setNote(text, for: id)
-        didEdit()
-    }
-
-    func undo() {
-        guard let previous = undoStack.popLast() else { return }
-        tree = previous
-        coverage.recomputeAll(tree: tree, stats: lookup)
-        canUndo = !undoStack.isEmpty
-        revision += 1
-        syncSuspension()
-        checkCoverage()
-        schedulePGNSave()
-    }
-
-    private func perform(changedAt node: NodeID, _ edit: (inout RepertoireTree) -> Set<EPD>) {
-        let before = tree
-        var working = tree
-        let epds = edit(&working)
-        guard working.count != before.count || working.root.children != before.root.children
-                || working[node]?.children != before[node]?.children else { return }
-        undoStack.append(before)
-        if undoStack.count > 100 { undoStack.removeFirst() }
-        tree = working
-        coverage.update(changedAt: node, epds: epds, tree: tree, stats: lookup)
-        didEdit()
-    }
-
-    private func didEdit() {
-        canUndo = !undoStack.isEmpty
-        revision += 1
-        syncSuspension()
-        checkCoverage()
-        schedulePGNSave()
-        scheduleSidecarSave(delay: 3)
-    }
+    func delete(_ id: NodeID) { apply(core.delete(id: id)) }
+    func promote(_ id: NodeID) { apply(core.promote(id: id)) }
+    func setNote(_ text: String, for id: NodeID) { apply(core.setNote(text: text, id: id)) }
+    func undo() { apply(core.undo()) }
 
     // MARK: Settings and training
 
     func updateSettings(color: Side, database: ExplorerDatabase, targetGames: Int, minGames: Int) {
-        let databaseChanged = database != sidecar.database
-        if databaseChanged { queue.cancelAll(for: sidecar.database) }
-        sidecar.color = color
-        sidecar.database = database
-        sidecar.targetGames = targetGames
-        sidecar.minGames = minGames
-        sidecar.settingsModified = .now
-        store.load(database)
-        recomputeCoverage()
-        checkCoverage()
-        scheduleSidecarSave(delay: 0.5)
+        apply(core.updateSettings(color: color, database: database, targetGames: Int64(targetGames),
+                                  minGames: Int64(minGames), now: .of(.now)))
     }
 
     /// Excludes an opponent move at `node`'s position from coverage, or includes it again.
     /// Applies wherever the position occurs.
     func setExcluded(_ uci: String, at node: NodeID, _ excluded: Bool) {
-        guard let epd = tree[node]?.epd, sidecar.isExcluded(uci, at: epd) != excluded else { return }
-        sidecar.setExcluded(uci, at: epd, excluded)
-        coverage.settings = sidecar.coverageSettings
-        coverage.exclusionsChanged(at: epd, tree: tree, stats: lookup)
-        revision += 1
-        scheduleSidecarSave(delay: 0.5)
+        apply(core.setExcluded(uci: uci, node: node, excluded: excluded, now: .of(.now)))
     }
 
-    func rememberLine(_ ucis: [String]) {
-        guard sidecar.lastLine != ucis else { return }
-        sidecar.lastLine = ucis
-        scheduleSidecarSave(delay: 3)
+    func isExcluded(_ uci: String, at node: NodeID) -> Bool {
+        _ = revision
+        return core.isExcluded(uci: uci, node: node)
     }
 
-    var trainer: Trainer {
-        if let cachedTrainer, cachedTrainer.treeVersion == treeVersion, cachedTrainer.color == sidecar.color {
-            return cachedTrainer.trainer
-        }
-        let trainer = Trainer(tree: tree, color: sidecar.color)
-        cachedTrainer = (treeVersion, sidecar.color, trainer)
-        return trainer
-    }
+    func rememberLine(_ ucis: [String]) { apply(core.rememberLine(ucis: ucis)) }
 
     var revlogURL: URL { RepertoireLibrary.revlogURL(for: pgnURL) }
 
-    /// The whole repertoire's progress is read by the list, the overview and every save, so it
-    /// is computed once per change; the card positions behind it once per tree change.
-    func learningProgress(under node: NodeID = RepertoireTree.rootID) -> Trainer.Progress {
-        guard node == RepertoireTree.rootID else { return trainer.progress(under: node, cards: sidecar.studyCards) }
-        if let cachedProgress, cachedProgress.revision == revision { return cachedProgress.progress }
-        let sets: (cards: Set<EPD>, suspended: Int)
-        if let cached = cachedCardSets, cached.treeVersion == treeVersion, cached.color == sidecar.color {
-            sets = (cached.cards, cached.suspended)
-        } else {
-            let trainer = trainer
-            sets = (trainer.cardEPDSet, trainer.suspendedCardEPDs().count)
-            cachedCardSets = (treeVersion, sidecar.color, sets.cards, sets.suspended)
-        }
-        var progress = Trainer.Progress(suspended: sets.suspended)
-        for epd in sets.cards {
-            progress.cards += 1
-            if let card = sidecar.studyCards[epd] { progress.add(card) }
-        }
-        cachedProgress = (revision, progress)
-        return progress
+    func learningProgress(under node: NodeID = RepertoireTree.rootID) -> Progress {
+        _ = revision
+        return core.learningProgress(node: node)
     }
 
     /// Every move in the PGN, both sides.
-    var savedMoveCount: Int { max(0, tree.count - 1) }
+    var savedMoveCount: Int { _ = revision; return Int(core.savedMoveCount()) }
 
-    // MARK: Study (Anki)
+    var practiceMode: PracticeMode { _ = revision; return core.practiceMode() }
 
-    /// The default preset; per-repertoire limits are applied by `remainingLimits`.
-    var deckConfig: DeckConfig { TrainingDefaults.config }
-    var scheduler: Scheduler { Scheduler(config: deckConfig) }
-    var practiceMode: PracticeMode { sidecar.practiceMode ?? TrainingDefaults.practiceMode }
-
-    func remainingLimits(_ timing: SchedTiming) -> RemainingLimits {
-        RemainingLimits(config: deckConfig, limits: sidecar.limits ?? DeckLimits(),
-                        stats: sidecar.studyStats ?? DeckStudyStats(), today: timing.daysElapsed)
-    }
-
-    /// How often each position is reached, for ordering new cards and reviews.
-    var reach: [NodeID: Double] {
-        var result: [NodeID: Double] = [:]
-        for id in tree.subtree(of: RepertoireTree.rootID) {
-            if let r = coverage[id]?.reach { result[id] = r }
-        }
-        return result
-    }
-
-    func studySession(branch: NodeID? = nil, timing: SchedTiming = SchedTiming()) -> StudySession {
-        if let branch {
-            return StudySession(trainer: trainer, mode: practiceMode, branch: branch, cards: sidecar.studyCards,
-                                timing: timing, learnAheadSecs: deckConfig.learnAheadSecs, reach: reach)
-        }
-        return StudySession(trainer: trainer, mode: practiceMode, cards: sidecar.studyCards, limits: remainingLimits(timing),
-                            timing: timing, learnAheadSecs: deckConfig.learnAheadSecs, reach: reach)
-    }
+    func remainingLimits(_ timing: SchedTiming) -> RemainingLimits { core.remainingLimits(timing: timing) }
 
     /// Today's New / Learning / To Review counts, as on Anki's deck overview.
-    func studyCounts(timing: SchedTiming = SchedTiming()) -> CardQueues.Counts {
-        let minute = timing.now / 60
-        if let cachedCounts, cachedCounts.revision == revision, cachedCounts.minute == minute { return cachedCounts.counts }
-        let counts = studySession(timing: timing).queue.counts
-        cachedCounts = (revision, minute, counts)
-        return counts
-    }
-
-    /// Answers a card and logs it. Answers outside today's queue (a branch session or a review
-    /// ahead) don't count toward the daily limits, as in an Anki filtered deck.
-    @discardableResult
-    func answer(_ epd: EPD, position: Int, rating: Rating, filtered: Bool, takenMillis: Int,
-                timing: SchedTiming = SchedTiming()) -> Card {
-        let result = scheduler.answer(sidecar.studyCards[epd], epd: epd, position: position, rating: rating,
-                                      timing: timing, filtered: filtered, takenMillis: takenMillis)
-        sidecar.studyCards[epd] = result.card
-        if !filtered {
-            var stats = sidecar.studyStats ?? DeckStudyStats()
-            stats.recordAnswer(fromQueue: result.fromQueue, millis: result.revlog.time, today: timing.daysElapsed)
-            sidecar.studyStats = stats
-        }
-        pendingRevlog.append(result.revlog)
-        revision += 1
-        scheduleSidecarSave(delay: 1)
-        return result.card
+    func studyCounts(timing: SchedTiming = SchedTiming()) -> Counts {
+        _ = revision
+        return core.studyCounts(timing: timing)
     }
 
     /// Anki's custom study "Increase today's new card limit".
     func extendNewLimitToday(by count: Int, timing: SchedTiming = SchedTiming()) {
-        extendLimitsToday(new: count, review: 0, timing: timing)
+        apply(core.extendLimitsToday(new: Int64(count), review: 0, timing: timing))
     }
 
     /// Anki's custom study "Increase today's review card limit".
     func extendReviewLimitToday(by count: Int, timing: SchedTiming = SchedTiming()) {
-        extendLimitsToday(new: 0, review: count, timing: timing)
+        apply(core.extendLimitsToday(new: 0, review: Int64(count), timing: timing))
     }
 
-    /// Reviews due today beyond today's review limit (what Anki's custom study shows as
-    /// "N more available").
+    /// Reviews due today beyond today's review limit.
     func reviewsBeyondLimit(timing: SchedTiming = SchedTiming()) -> Int {
-        let due = sidecar.studyCards.filter { epd, card in
-            (card.queue == .review || card.queue == .dayLearn) && card.due <= Int64(timing.daysElapsed)
-                && trainer.cardEPDSet.contains(epd)
-        }.count
-        return max(0, due - studyCounts(timing: timing).review)
-    }
-
-    private func extendLimitsToday(new: Int, review: Int, timing: SchedTiming) {
-        var stats = sidecar.studyStats ?? DeckStudyStats()
-        stats.extendLimits(today: timing.daysElapsed, new: new, review: review)
-        sidecar.studyStats = stats
-        revision += 1
-        scheduleSidecarSave(delay: 0.5)
+        _ = revision
+        return Int(core.reviewsBeyondLimit(timing: timing))
     }
 
     /// Daily limits ("This deck") and practice mode for this repertoire.
     func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?) {
-        sidecar.limits = limits.isEmpty ? nil : limits
-        sidecar.practiceMode = practiceMode
-        sidecar.settingsModified = .now
-        revision += 1
-        scheduleSidecarSave(delay: 0.5)
+        apply(core.updateStudySettings(limits: limits, practiceMode: practiceMode, now: .of(.now)))
     }
+
+    /// Your-turn positions under `node` where cards are asked.
+    func cardEPDs(under node: NodeID = RepertoireTree.rootID) -> Set<EPD> {
+        _ = revision
+        return Set(core.cardEpds(root: node))
+    }
+
+    func cardNodes(under node: NodeID = RepertoireTree.rootID) -> [NodeID] {
+        _ = revision
+        return core.cardNodes(root: node)
+    }
+
+    func suspendedCardEPDs(under node: NodeID = RepertoireTree.rootID) -> Set<EPD> {
+        _ = revision
+        return Set(core.suspendedCardEpds(root: node))
+    }
+
+    func openingBranches() -> [NodeID] { core.openingBranches() }
+
+    /// How often each node is reached.
+    var reach: [NodeID: Double] { _ = revision; return core.reach() }
 
     /// The whole review log, including answers not written yet.
     func reviewLog() -> [RevlogEntry] {
-        let onDisk = (try? FileAccess.read(revlogURL)).map(RevlogFile.decode) ?? []
-        return RevlogFile.merged(onDisk, pendingRevlog)
+        core.reviewLog(onDisk: (try? FileAccess.read(revlogURL)) ?? Data())
     }
 
     // MARK: Saving
@@ -458,20 +265,20 @@ final class RepertoireDocument {
         saveRevlog()
     }
 
-    private func schedulePGNSave() {
+    private func schedulePGNSave(after ms: UInt32) {
         pgnSaveTask?.cancel()
         pgnSaveTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(800))
+            try? await Task.sleep(for: .milliseconds(Int(ms)))
             guard !Task.isCancelled, let self else { return }
             self.pgnSaveTask = nil
             self.savePGN()
         }
     }
 
-    private func scheduleSidecarSave(delay: Double) {
+    private func scheduleSidecarSave(after ms: UInt32) {
         sidecarSaveTask?.cancel()
         sidecarSaveTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(delay))
+            if ms > 0 { try? await Task.sleep(for: .milliseconds(Int(ms))) }
             guard !Task.isCancelled, let self else { return }
             self.sidecarSaveTask = nil
             self.saveSidecar()
@@ -479,11 +286,10 @@ final class RepertoireDocument {
     }
 
     private func savePGN() {
-        let text = tree.pgnText()
-        guard text != lastWrittenPGN else { return }
+        guard let text = core.pgnToSave() else { return }
         do {
             try FileAccess.write(Data(text.utf8), to: pgnURL, presenter: presenters.first)
-            lastWrittenPGN = text
+            core.pgnSaved(text: text)
             saveError = nil
         } catch {
             saveError = "Could not save \(pgnURL.lastPathComponent): \(error.localizedDescription)"
@@ -491,10 +297,10 @@ final class RepertoireDocument {
     }
 
     private func saveRevlog() {
-        guard !pendingRevlog.isEmpty else { return }
+        guard let lines = core.revlogToAppend() else { return }
         do {
-            try FileAccess.append(RevlogFile.encode(pendingRevlog), to: revlogURL)
-            pendingRevlog = []
+            try FileAccess.append(lines, to: revlogURL)
+            core.revlogAppended()
         } catch {
             saveError = "Could not save the review log: \(error.localizedDescription)"
         }
@@ -502,16 +308,10 @@ final class RepertoireDocument {
 
     private func saveSidecar() {
         saveRevlog()
-        let progress = learningProgress()
-        let root = coverage.root
-        sidecar.summary = Sidecar.Summary(
-            completion: root?.completion ?? 0, gapCount: root?.gapCount ?? 0,
-            cardCount: progress.cards, matureCount: progress.mature, savedMoveCount: savedMoveCount,
-            suspendedCount: progress.suspended, dueCount: studyCounts().review,
-            configKey: sidecar.configKey, computedAt: .now)
-        guard let data = try? sidecar.encoded(), data != lastWrittenSidecar else { return }
+        guard let data = core.sidecarToSave(timing: SchedTiming(), now: .of(.now)) else { return }
         do {
             try FileAccess.write(data, to: sidecarURL, presenter: presenters.last)
+            core.sidecarSaved(data: data)
             lastWrittenSidecar = data
         } catch {
             saveError = "Could not save training data: \(error.localizedDescription)"
@@ -522,83 +322,100 @@ final class RepertoireDocument {
 
     private func pgnChangedOnDisk() {
         guard let data = try? FileAccess.read(pgnURL) else { return }
-        let text = String(decoding: data, as: UTF8.self)
-        guard text != lastWrittenPGN else { return }
-        let remote = RepertoireTree(pgn: text)
-        if pgnSaveTask != nil {
-            // Local edits not written yet: keep both sides.
-            tree.merge(tree: remote)
-        } else {
-            tree = remote
-            lastWrittenPGN = text
-        }
+        apply(core.remotePgn(text: String(decoding: data, as: UTF8.self)))
         resolveConflicts()
-        undoStack = []
-        canUndo = false
-        coverage.recomputeAll(tree: tree, stats: lookup)
-        revision += 1
-        syncSuspension()
-        checkCoverage()
-        if pgnSaveTask != nil || tree.pgnText() != text { schedulePGNSave() }
     }
 
     private func sidecarChangedOnDisk() {
-        guard let data = try? FileAccess.read(sidecarURL), data != lastWrittenSidecar,
-              let remote = try? Sidecar.decode(data) else { return }
-        let settingsBefore = sidecar.configKey
-        let excludedBefore = sidecar.excludedMoves
-        sidecar = sidecar.merged(with: remote)
-        lastWrittenSidecar = data
-        if sidecar.configKey != settingsBefore {
-            store.load(sidecar.database)
-            recomputeCoverage()
-        } else if sidecar.excludedMoves != excludedBefore {
-            recomputeCoverage()
-        } else {
-            revision += 1
-        }
-        // The other device's cards may have been suspended against its own copy of the PGN.
-        syncSuspension()
+        guard let data = try? FileAccess.read(sidecarURL), data != lastWrittenSidecar else { return }
+        apply(core.remoteSidecar(data: data))
     }
 
-    /// Suspends cards below alternative moves and restores the main line's (Anki's suspend).
-    private func syncSuspension() {
-        guard sidecar.syncSuspension(active: trainer.cardEPDs()) else { return }
-        revision += 1
-        scheduleSidecarSave(delay: 1)
-    }
-
+    /// Conflicting iCloud versions of the PGN are merged in, never lost.
     private func resolveConflicts() {
-        var merged = false
         FileAccess.resolveConflicts(at: pgnURL) { data in
-            tree.merge(tree: RepertoireTree(pgn: String(decoding: data, as: UTF8.self)))
-            merged = true
+            apply(core.mergeConflictVersion(text: String(decoding: data, as: UTF8.self)))
         }
-        if merged { schedulePGNSave() }
+    }
+
+    /// Changes the core made by itself (stats arriving), from any thread.
+    private nonisolated final class Listener: DocumentListener, @unchecked Sendable {
+        weak var document: RepertoireDocument?
+        init(document: RepertoireDocument) { self.document = document }
+        func changed(changes: Changes) {
+            Task { @MainActor [weak self] in self?.document?.apply(changes) }
+        }
     }
 }
 
-extension RepertoireTree {
-    /// Follows UCI moves from `start`; nil if any is missing.
-    func node(following ucis: [String], from start: NodeID) -> NodeID? {
-        var cursor = start
-        for uci in ucis {
-            guard let next = child(of: cursor, uci: uci) else { return nil }
-            cursor = next
+// MARK: Read-only views of the core's state
+
+extension RepertoireDocument {
+    /// The move tree. Reading through the document registers the view for its changes.
+    struct Tree {
+        let core: RepertoireDoc
+        let revision: UInt64
+
+        subscript(id: NodeID) -> Node? { core.node(id: id) }
+        var root: Node { core.root() }
+        var count: Int { Int(core.count()) }
+        var nodes: [Node] { core.allNodes() }
+
+        func child(of id: NodeID, uci: String) -> NodeID? { core.childByUci(id: id, uci: uci) }
+        func child(of id: NodeID, san: String) -> NodeID? { core.childBySan(id: id, san: san) }
+        func path(to id: NodeID) -> [NodeID] { core.path(id: id) }
+        func moves(to id: NodeID) -> [PlayedMove] { core.moves(id: id) }
+        func subtree(of id: NodeID) -> [NodeID] { core.subtree(id: id) }
+        func leaves(under id: NodeID) -> [NodeID] { core.leaves(id: id) }
+        func isAncestor(_ a: NodeID, of b: NodeID) -> Bool { core.isAncestor(a: a, b: b) }
+        func transpositionTarget(of id: NodeID) -> NodeID? { core.transpositionTarget(id: id) }
+        func nodes(at epd: EPD) -> [NodeID] { core.nodesAt(epd: epd) }
+        func node(followingUCI moves: [String], from start: NodeID = RepertoireTree.rootID) -> NodeID? {
+            core.nodeFollowing(ucis: moves, start: start)
         }
-        return cursor
+        func position(of id: NodeID) -> Position? { core.position(id: id) }
+        /// SAN line to a node, e.g. "1. e4 c5 2. Nf3".
+        func lineText(to id: NodeID) -> String { core.lineText(id: id) }
     }
 
-    /// SAN line to a node, e.g. "1. e4 c5 2. Nf3".
-    func lineText(to id: NodeID) -> String {
-        let path = path(to: id).dropFirst()
-        var parts: [String] = []
-        for nodeID in path {
-            guard let node = self[nodeID], let move = node.move else { continue }
-            let ply = node.ply - 1
-            if ply % 2 == 0 { parts.append("\(ply / 2 + 1).") } else if parts.isEmpty { parts.append("\(ply / 2 + 1)...") }
-            parts.append(move.san)
+    struct Coverage {
+        let core: RepertoireDoc
+        let revision: UInt64
+
+        subscript(id: NodeID) -> NodeCoverage? { core.coverage(id: id) }
+        var root: NodeCoverage? { core.coverageRoot() }
+        /// All gaps, biggest first.
+        func gaps() -> [CoverageGap] { core.gaps() }
+        /// Replies at a position that is not in the repertoire (a draft on the board).
+        func replies(at epd: EPD, reach: Double?) -> [ReplyInfo]? { core.draftReplies(epd: epd, reach: reach) }
+    }
+
+    struct SidecarValues {
+        let document: RepertoireDocument
+
+        var studyCards: [EPD: Card] { document.studyCards }
+        var color: Side { document.color }
+        var database: ExplorerDatabase { document.database }
+        var targetGames: Int { _ = document.revision; return Int(document.core.targetGames()) }
+        var minGames: Int { _ = document.revision; return Int(document.core.minGames()) }
+        var limits: DeckLimits? { _ = document.revision; return document.core.limits() }
+        var practiceMode: PracticeMode? { _ = document.revision; return document.core.ownPracticeMode() }
+        var lastLine: [String]? { document.core.lastLine() }
+
+        /// When the next card falls due after today's are done.
+        func nextDue(timing: SchedTiming) -> Date? {
+            _ = document.revision
+            return document.core.nextDue(timing: timing).map { Date(timeIntervalSince1970: TimeInterval($0)) }
         }
-        return parts.joined(separator: " ")
+
+        func laterLearningDues(timing: SchedTiming) -> [Date] {
+            _ = document.revision
+            return document.core.laterLearningDues(timing: timing).map { Date(timeIntervalSince1970: TimeInterval($0)) }
+        }
+
+        func dueTomorrow(timing: SchedTiming) -> Int {
+            _ = document.revision
+            return Int(document.core.dueTomorrow(timing: timing))
+        }
     }
 }

@@ -1,16 +1,15 @@
 import AuthenticationServices
-import CryptoKit
 import Foundation
 import Observation
+import OpeningCoreRust
 import SwiftUI
 
 /// Lichess OAuth2 with PKCE. No client registration and no scopes are needed; the
 /// explorer only requires a valid token. Tokens last about a year and have no refresh.
+/// The URLs, the PKCE challenge, the callback check and the token format are in the core;
+/// this runs the browser sheet, the requests and the Keychain.
 @Observable
 final class LichessAuth {
-    static let clientID = "ch.cvb.openingTrainer"
-    static let callbackScheme = "ch.cvb.openingtrainer"
-    static let redirectURI = "\(callbackScheme)://oauth-callback"
     private static let host = URL(string: "https://lichess.org")!
 
     private(set) var token: String?
@@ -35,32 +34,18 @@ final class LichessAuth {
     @discardableResult
     func signIn(using session: WebAuthenticationSession) async -> Bool {
         lastError = nil
-        let verifier = Self.randomString(64)
-        let state = Self.randomString(32)
-        var components = URLComponents(url: Self.host.appending(path: "oauth"), resolvingAgainstBaseURL: false)!
-        components.queryItems = [
-            URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "client_id", value: Self.clientID),
-            URLQueryItem(name: "redirect_uri", value: Self.redirectURI),
-            URLQueryItem(name: "code_challenge_method", value: "S256"),
-            URLQueryItem(name: "code_challenge", value: Self.challenge(for: verifier)),
-            URLQueryItem(name: "state", value: state),
-        ]
+        let verifier = lichessRandomString(random: Self.randomBytes(64))
+        let state = lichessRandomString(random: Self.randomBytes(32))
         do {
             let callback = try await session.authenticate(
-                using: components.url!,
-                callback: .customScheme(Self.callbackScheme),
+                using: URL(string: lichessAuthorizeUrl(verifier: verifier, state: state))!,
+                callback: .customScheme(lichessCallbackScheme()),
                 preferredBrowserSession: .shared,
                 additionalHeaderFields: [:]
             )
-            let params = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
-            func param(_ name: String) -> String? { params.first { $0.name == name }?.value }
-            guard param("state") == state else { throw AuthError.message("State mismatch in Lichess callback") }
-            if let error = param("error") {
-                if error == "access_denied" { return false }
-                throw AuthError.message("Lichess refused sign-in: \(error)")
+            guard let code = try lichessParseCallback(url: callback.absoluteString, expectedState: state) else {
+                return false  // the user declined
             }
-            guard let code = param("code") else { throw AuthError.message("No code in Lichess callback") }
             try await exchange(code: code, verifier: verifier)
             return true
         } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
@@ -98,25 +83,14 @@ final class LichessAuth {
         var request = URLRequest(url: Self.host.appending(path: "api/token"))
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        let body: [(String, String)] = [
-            ("grant_type", "authorization_code"),
-            ("code", code),
-            ("code_verifier", verifier),
-            ("redirect_uri", Self.redirectURI),
-            ("client_id", Self.clientID),
-        ]
-        request.httpBody = body.map { "\($0.0)=\(Self.formEncode($0.1))" }.joined(separator: "&").data(using: .utf8)
+        request.httpBody = Data(lichessTokenRequestBody(code: code, verifier: verifier).utf8)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else {
             throw AuthError.message("Token exchange failed (\((response as? HTTPURLResponse)?.statusCode ?? 0))")
         }
-        struct TokenResponse: Decodable {
-            let access_token: String
-            let expires_in: Double?
-        }
-        let decoded = try JSONDecoder().decode(TokenResponse.self, from: data)
-        token = decoded.access_token
-        expiresAt = Date.now.addingTimeInterval(decoded.expires_in ?? 365 * 86400)
+        let parsed = try lichessParseToken(body: data, nowSecs: Int64(Date.now.timeIntervalSince1970))
+        token = parsed.token
+        expiresAt = Date(timeIntervalSince1970: TimeInterval(parsed.expiresAt))
         username = try? await fetchUsername()
         persist()
     }
@@ -126,8 +100,7 @@ final class LichessAuth {
         var request = URLRequest(url: Self.host.appending(path: "api/account"))
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         let (data, _) = try await URLSession.shared.data(for: request)
-        struct Account: Decodable { let username: String }
-        return try JSONDecoder().decode(Account.self, from: data).username
+        return lichessParseAccount(body: data)
     }
 
     private func persist() {
@@ -153,24 +126,9 @@ final class LichessAuth {
 
     private static let tokenKey = "lichess-token"
 
-    private static func randomString(_ length: Int) -> String {
-        let chars = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~")
+    private static func randomBytes(_ count: Int) -> Data {
         var rng = SystemRandomNumberGenerator()
-        return String((0..<length).map { _ in chars[Int(rng.next() % UInt64(chars.count))] })
-    }
-
-    private static func challenge(for verifier: String) -> String {
-        let digest = SHA256.hash(data: Data(verifier.utf8))
-        return Data(digest).base64EncodedString()
-            .replacingOccurrences(of: "+", with: "-")
-            .replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "=", with: "")
-    }
-
-    private static func formEncode(_ value: String) -> String {
-        var allowed = CharacterSet.alphanumerics
-        allowed.insert(charactersIn: "-._~")
-        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
+        return Data((0..<count).map { _ in UInt8.random(in: 0...255, using: &rng) })
     }
 }
 

@@ -1,6 +1,6 @@
 import Foundation
 import Observation
-import OpeningCore
+import OpeningCoreRust
 
 struct RepertoireEntry: Identifiable, Equatable {
     /// Path of the sidecar, stable across launches.
@@ -8,11 +8,19 @@ struct RepertoireEntry: Identifiable, Equatable {
     var name: String
     var pgnURL: URL
     var sidecarURL: URL
-    /// nil when a PGN was dropped into the folder and has not been set up yet.
-    var sidecar: Sidecar?
+    /// The sidecar file's bytes; nil when a PGN was dropped into the folder and has not been
+    /// set up yet.
+    var sidecarData: Data?
+    /// The sidecar, read by the core, for the library row.
+    var sidecar: LibrarySidecar?
     var isDownloading: Bool
 
     var needsSetup: Bool { sidecar == nil }
+
+    static func == (a: RepertoireEntry, b: RepertoireEntry) -> Bool {
+        a.id == b.id && a.name == b.name && a.pgnURL == b.pgnURL && a.sidecarURL == b.sidecarURL
+            && a.sidecarData == b.sidecarData && a.isDownloading == b.isDownloading
+    }
 }
 
 /// The repertoires in the app's iCloud Drive folder ("Opening Trainer" in Files). Falls back
@@ -20,7 +28,7 @@ struct RepertoireEntry: Identifiable, Equatable {
 @Observable
 final class RepertoireLibrary {
     nonisolated static let containerID = "iCloud.ch.cvb.openingTrainer"
-    static let sidecarExtension = "otrep.json"
+    static let sidecarExtension = OpeningCoreRust.sidecarExtension()
 
     private(set) var folder: URL?
     private(set) var usesICloud = false
@@ -72,11 +80,12 @@ final class RepertoireLibrary {
         }
         for pgn in pgns + placeholders {
             let sidecarURL = Self.sidecarURL(for: pgn)
-            let sidecar = (try? FileAccess.read(sidecarURL)).flatMap { try? Sidecar.decode($0) }
+            let data = try? FileAccess.read(sidecarURL)
+            let sidecar = data.flatMap { librarySidecar(data: $0) }
             if sidecar == nil { try? fm.startDownloadingUbiquitousItem(at: sidecarURL) }
             result.append(RepertoireEntry(id: sidecarURL.path, name: pgn.deletingPathExtension().lastPathComponent,
-                                          pgnURL: pgn, sidecarURL: sidecarURL, sidecar: sidecar,
-                                          isDownloading: placeholders.contains(pgn)))
+                                          pgnURL: pgn, sidecarURL: sidecarURL, sidecarData: sidecar == nil ? nil : data,
+                                          sidecar: sidecar, isDownloading: placeholders.contains(pgn)))
         }
         entries = result.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
@@ -87,22 +96,20 @@ final class RepertoireLibrary {
 
     /// The review log next to a PGN.
     static func revlogURL(for pgn: URL) -> URL {
-        pgn.deletingPathExtension().appendingPathExtension(RevlogFile.fileExtension)
+        pgn.deletingPathExtension().appendingPathExtension(revlogExtension())
     }
 
     func entry(id: String) -> RepertoireEntry? { entries.first { $0.id == id } }
 
-    /// Creates `<name>.pgn` and its sidecar in the repertoire folder.
-    func create(name: String, sidecar: Sidecar) throws -> RepertoireEntry {
+    /// Creates `<name>.pgn` and its sidecar (bytes from `newSidecar`) in the repertoire folder.
+    func create(name: String, sidecar: Data) throws -> RepertoireEntry {
         guard let folder else { throw CocoaError(.fileNoSuchFile) }
         let clean = Self.cleanName(name)
         guard !clean.isEmpty else { throw CocoaError(.fileWriteInvalidFileName) }
         let pgn = folder.appending(path: clean + ".pgn")
         guard !FileManager.default.fileExists(atPath: pgn.path) else { throw CocoaError(.fileWriteFileExists) }
-        var tree = RepertoireTree()
-        tree.renameFirstChapter(clean)
-        try FileAccess.write(Data(tree.pgnText().utf8), to: pgn)
-        try FileAccess.write(sidecar.encoded(), to: Self.sidecarURL(for: pgn))
+        try FileAccess.write(Data(newRepertoirePgn(name: clean).utf8), to: pgn)
+        try FileAccess.write(sidecar, to: Self.sidecarURL(for: pgn))
         refresh()
         return entry(id: Self.sidecarURL(for: pgn).path)!
     }
@@ -129,8 +136,8 @@ final class RepertoireLibrary {
     }
 
     /// Writes a sidecar for a PGN that was imported or dropped into the folder.
-    func saveSidecar(_ sidecar: Sidecar, for entry: RepertoireEntry) throws {
-        try FileAccess.write(sidecar.encoded(), to: entry.sidecarURL)
+    func saveSidecar(_ sidecar: Data, for entry: RepertoireEntry) throws {
+        try FileAccess.write(sidecar, to: entry.sidecarURL)
         refresh()
     }
 
@@ -213,8 +220,3 @@ extension String {
     }
 }
 
-extension RepertoireTree {
-    mutating func renameFirstChapter(_ name: String) {
-        setChapterTag(0, "Event", name)
-    }
-}

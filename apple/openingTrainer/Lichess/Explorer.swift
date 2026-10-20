@@ -1,55 +1,8 @@
 import Foundation
 import Observation
 import os
-import OpeningCore
+import OpeningCoreRust
 import SwiftData
-
-enum ExplorerError: Error, Equatable {
-    case unauthorized
-    /// Seconds from the Retry-After header, if Lichess sent one.
-    case rateLimited(retryAfter: Double?)
-    case offline
-    case http(Int)
-    case decoding
-}
-
-/// Lichess opening explorer. Requires a token since 2025.
-enum ExplorerClient {
-    static let host = URL(string: "https://explorer.lichess.org")!
-
-    static func fetch(_ epd: EPD, database: ExplorerDatabase, token: String) async throws(ExplorerError) -> ExplorerStats {
-        var components = URLComponents(url: host.appending(path: database.path), resolvingAgainstBaseURL: false)!
-        components.queryItems = [
-            URLQueryItem(name: "fen", value: epd.queryFEN),
-            URLQueryItem(name: "moves", value: "30"),
-            URLQueryItem(name: "topGames", value: "0"),
-            URLQueryItem(name: "recentGames", value: "0"),
-        ] + database.queryItems
-        var request = URLRequest(url: components.url!)
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 20
-
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await URLSession.shared.data(for: request)
-        } catch {
-            throw .offline
-        }
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        switch status {
-        case 200: break
-        case 401: throw .unauthorized
-        case 429:
-            let header = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After")
-            throw .rateLimited(retryAfter: header.flatMap(Double.init))
-        default: throw .http(status)
-        }
-        guard let raw = try? JSONDecoder().decode(ExplorerStats.self, from: data) else { throw .decoding }
-        guard let position = ChessPosition(fen: epd.queryFEN) else { return raw }
-        return raw.normalized(for: position)
-    }
-}
 
 /// Cloud evaluations from lichess.org (no token needed). 404 means no eval stored.
 /// Answers, including "none", are kept in memory for the session.
@@ -69,7 +22,7 @@ enum CloudEvalClient {
     static func fetch(_ epd: EPD) async -> Eval? {
         if let cached = cache[epd] { return cached }
         var components = URLComponents(string: "https://lichess.org/api/cloud-eval")!
-        components.queryItems = [URLQueryItem(name: "fen", value: epd.queryFEN), URLQueryItem(name: "multiPv", value: "5")]
+        components.queryItems = [URLQueryItem(name: "fen", value: epdQueryFen(epd: epd)), URLQueryItem(name: "multiPv", value: "5")]
         guard let (data, response) = try? await URLSession.shared.data(from: components.url!) else { return nil }
         switch (response as? HTTPURLResponse)?.statusCode {
         case 200:
@@ -101,16 +54,14 @@ final class ExplorerEntry {
     }
 }
 
-/// Local, unsynced cache of explorer stats keyed by (database, EPD). It can always be
-/// re-fetched, so it is not stored in iCloud. Entries of a database are loaded into
-/// memory once, so lookups during coverage computation are synchronous dictionary reads.
-@Observable
-final class StatsStore {
-    private let context: ModelContext
-    @ObservationIgnored private var memory: [String: (stats: ExplorerStats, fetchedAt: Date)] = [:]
-    @ObservationIgnored private var loaded: Set<String> = []
-
-    init() {
+/// Local, unsynced store of explorer stats keyed by (database, EPD), for the Rust core's
+/// cache. It can always be re-fetched, so it is not stored in iCloud. The core loads a
+/// database's entries once and keeps them in memory.
+///
+/// The core calls it from the thread that called into the core, which is always the main
+/// actor here.
+nonisolated final class ExplorerCacheStore: StatsStore, @unchecked Sendable {
+    @MainActor private lazy var context: ModelContext = {
         let config = ModelConfiguration("ExplorerCache", cloudKitDatabase: .none)
         let container: ModelContainer
         do {
@@ -118,246 +69,127 @@ final class StatsStore {
         } catch {
             container = try! ModelContainer(for: ExplorerEntry.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
         }
-        context = ModelContext(container)
-    }
+        return ModelContext(container)
+    }()
 
-    static func key(_ epd: EPD, _ database: ExplorerDatabase) -> String {
-        database.cacheKey + "|" + epd.rawValue
-    }
+    static func key(_ epd: EPD, databaseKey: String) -> String { databaseKey + "|" + epd }
 
-    func load(_ database: ExplorerDatabase) {
-        let db = database.cacheKey
-        guard !loaded.contains(db) else { return }
-        loaded.insert(db)
-        let descriptor = FetchDescriptor<ExplorerEntry>(predicate: #Predicate { $0.database == db })
-        let decoder = JSONDecoder()
-        for entry in (try? context.fetch(descriptor)) ?? [] {
-            if let stats = try? decoder.decode(ExplorerStats.self, from: entry.payload) {
-                memory[entry.key] = (stats, entry.fetchedAt)
+    func load(databaseKey: String) -> [StoredStats] {
+        MainActor.assumeIsolated {
+            let descriptor = FetchDescriptor<ExplorerEntry>(predicate: #Predicate { $0.database == databaseKey })
+            let prefix = databaseKey + "|"
+            return ((try? context.fetch(descriptor)) ?? []).map { entry in
+                StoredStats(epd: String(entry.key.dropFirst(prefix.count)), json: entry.payload)
             }
         }
     }
 
-    func stats(_ epd: EPD, _ database: ExplorerDatabase) -> ExplorerStats? {
-        load(database)
-        return memory[Self.key(epd, database)]?.stats
-    }
-
-    func isStale(_ epd: EPD, _ database: ExplorerDatabase) -> Bool {
-        guard let entry = memory[Self.key(epd, database)] else { return true }
-        return Date.now.timeIntervalSince(entry.fetchedAt) > database.maxAge
-    }
-
-    func save(_ stats: ExplorerStats, for epd: EPD, _ database: ExplorerDatabase) {
-        let key = Self.key(epd, database)
-        memory[key] = (stats, .now)
-        guard let payload = try? JSONEncoder().encode(stats) else { return }
-        let descriptor = FetchDescriptor<ExplorerEntry>(predicate: #Predicate { $0.key == key })
-        if let existing = try? context.fetch(descriptor).first {
-            existing.payload = payload
-            existing.fetchedAt = .now
-        } else {
-            context.insert(ExplorerEntry(key: key, database: database.cacheKey, payload: payload, fetchedAt: .now))
+    func save(databaseKey: String, epd: Epd, json: Data) {
+        MainActor.assumeIsolated {
+            let key = Self.key(epd, databaseKey: databaseKey)
+            let descriptor = FetchDescriptor<ExplorerEntry>(predicate: #Predicate { $0.key == key })
+            if let existing = try? context.fetch(descriptor).first {
+                existing.payload = json
+                existing.fetchedAt = .now
+            } else {
+                context.insert(ExplorerEntry(key: key, database: databaseKey, payload: json, fetchedAt: .now))
+            }
+            try? context.save()
         }
-        try? context.save()
     }
 
-    var entryCount: Int { (try? context.fetchCount(FetchDescriptor<ExplorerEntry>())) ?? 0 }
+    @MainActor var entryCount: Int { (try? context.fetchCount(FetchDescriptor<ExplorerEntry>())) ?? 0 }
 
-    func clear() {
+    @MainActor func clear() {
         try? context.delete(model: ExplorerEntry.self)
         try? context.save()
-        memory = [:]
-        loaded = []
     }
 }
 
-/// Explorer fetching. The position on screen is fetched directly, once it has stayed on
-/// screen for 300 ms. The coverage check goes through a separate queue: one request in flight,
-/// deduplicated, highest priority first, spaced out. Both share the 429 pause (Lichess limits
-/// per account): 60 s or Retry-After, kept across launches. A 401 asks for login, offline
-/// retries later.
+/// Runs the core's explorer queue: performs the requests it hands out (with the Lichess
+/// token) and reports the answers. The rules (300 ms focus, one paced coverage request at a
+/// time, the shared 429 pause, offline retry, 401) are in the core.
 @Observable
-final class ExplorerQueue {
-    enum State: Equatable {
-        case idle
-        case fetching(remaining: Int)
-        case rateLimited(until: Date)
-        case needsLogin
-        case offline
-    }
+final class ExplorerService {
+    private(set) var state: QueueState = .idle
 
-    private(set) var state: State = .idle
-
-    private struct Request {
-        let epd: EPD
-        let database: ExplorerDatabase
-        var priority: Double
-    }
-
-    @ObservationIgnored private var pending: [String: Request] = [:]
-    @ObservationIgnored private var worker: Task<Void, Never>?
-    @ObservationIgnored private var onScreen: Task<Void, Never>?
-    @ObservationIgnored private var listeners: [UUID: (EPD, ExplorerDatabase) -> Void] = [:]
-
-    let store: StatsStore
+    let core: Explorer
+    let store: ExplorerCacheStore
     let auth: LichessAuth
-
-    init(store: StatsStore, auth: LichessAuth) {
-        self.store = store
-        self.auth = auth
-    }
-
-    var remaining: Int { pending.count }
-
-    /// Fetches the position on screen, outside the coverage queue. It waits 300 ms first, and
-    /// the next call cancels it, so positions you click past cost nothing.
-    func focus(_ epd: EPD, _ database: ExplorerDatabase) {
-        onScreen?.cancel()
-        if store.stats(epd, database) != nil, !store.isStale(epd, database) { return }
-        onScreen = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(300))
-            guard !Task.isCancelled, let self else { return }
-            while !Task.isCancelled {
-                await waitForBan()
-                guard !Task.isCancelled, let token = auth.token else { return }
-                // Once sent, the request finishes even if you move on: it is cached either way.
-                let outcome = await Task { await self.fetch(epd, database, token: token) }.value
-                if outcome == .offline { state = .offline }
-                if outcome != .retry { return }
-            }
-        }
-    }
-
-    /// Queues stats for the coverage check unless they are cached and fresh. Higher
-    /// priority is fetched first.
-    func request(_ epd: EPD, _ database: ExplorerDatabase, priority: Double) {
-        if store.stats(epd, database) != nil, !store.isStale(epd, database) { return }
-        let key = StatsStore.key(epd, database)
-        if var existing = pending[key] {
-            existing.priority = max(existing.priority, priority)
-            pending[key] = existing
-        } else {
-            pending[key] = Request(epd: epd, database: database, priority: priority)
-        }
-        startIfNeeded()
-    }
-
-    func cancelAll(for database: ExplorerDatabase) {
-        pending = pending.filter { $0.value.database != database }
-        onScreen?.cancel()
-    }
-
-    func subscribe(_ handler: @escaping (EPD, ExplorerDatabase) -> Void) -> UUID {
-        let id = UUID()
-        listeners[id] = handler
-        return id
-    }
-
-    func unsubscribe(_ id: UUID) {
-        listeners[id] = nil
-    }
-
-    /// Call after signing in or when the network is back.
-    func resume() {
-        if state == .needsLogin || state == .offline { state = .idle }
-        startIfNeeded()
-    }
-
-    private func startIfNeeded() {
-        guard worker == nil, !pending.isEmpty else { return }
-        worker = Task { [weak self] in
-            await self?.run()
-            self?.worker = nil
-        }
-    }
-
-    /// Seconds from one coverage request's start to the next. Lichess publishes no number;
-    /// nginx limits each user by the tier lila's /auth/check returns. Measured 2026-10-18 with
-    /// a normal account, cold cache: 0.7 s got a 429 after 28 requests, 2 s after 61, while
-    /// 3.5 s ran 136 without one (about 20 a minute plus a burst of about 20). Lichess's own
-    /// explorer crawl script uses 1 s. A 429 slows this down for good.
-    /// The launch argument `-explorerInterval <seconds>` overrides it for testing.
-    private static let baseInterval: Double = {
-        let override = UserDefaults.standard.double(forKey: "explorerInterval")
-        return override > 0 ? override : 1.2
-    }()
-    /// Never shrinks again after a 429, as Lichess asks.
-    @ObservationIgnored private var interval = baseInterval
+    @ObservationIgnored private var wake: Task<Void, Never>?
 
     /// The end of a ban, kept across launches: a relaunch must not restart Lichess's penalty.
     private static let bannedUntilKey = "explorerBannedUntil"
-
     private static let log = Logger(subsystem: "ch.cvb.openingTrainer", category: "explorer")
 
-    private var bannedUntil: Date? {
-        guard let until = UserDefaults.standard.object(forKey: Self.bannedUntilKey) as? Date, until > .now else { return nil }
-        return until
+    init(store: ExplorerCacheStore, auth: LichessAuth) {
+        self.store = store
+        self.auth = auth
+        let bannedUntil = (UserDefaults.standard.object(forKey: Self.bannedUntilKey) as? Date).map(Self.millis)
+        // The launch argument `-explorerInterval <seconds>` overrides the pace for testing.
+        let override = UserDefaults.standard.double(forKey: "explorerInterval")
+        core = Explorer(store: store, bannedUntil: bannedUntil, baseIntervalMs: override > 0 ? Int64(override * 1000) : nil)
+        core.setListener(listener: Listener(service: self))
     }
 
-    private func waitForBan() async {
-        guard let until = bannedUntil else { return }
-        state = .rateLimited(until: until)
-        try? await Task.sleep(for: .seconds(until.timeIntervalSinceNow))
-        if case .rateLimited = state, bannedUntil == nil { state = .idle }
+    var remaining: Int { Int(core.remaining()) }
+
+    static func millis(_ date: Date) -> Int64 { Int64(date.timeIntervalSince1970 * 1000) }
+
+    /// Call after signing in or when the network is back.
+    func resume() { core.resume() }
+
+    /// Sends what the queue hands out and sleeps until it wants to be asked again.
+    func pump() {
+        let poll = core.poll(nowMs: Self.millis(.now), hasToken: auth.token != nil)
+        state = core.state()
+        for fetch in poll.fetches {
+            Task { await perform(fetch) }
+        }
+        wake?.cancel()
+        if let wakeAt = poll.wakeAt {
+            wake = Task { [weak self] in
+                let delay = Double(wakeAt - Self.millis(.now)) / 1000
+                if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
+                guard !Task.isCancelled else { return }
+                self?.pump()
+            }
+        }
     }
 
-    private enum Outcome { case done, retry, offline, stop }
-
-    /// One request, from either path. Saves the answer and tells the listeners.
-    private func fetch(_ epd: EPD, _ database: ExplorerDatabase, token: String) async -> Outcome {
+    private func perform(_ fetch: Fetch) async {
+        guard let token = auth.token, let url = URL(string: fetch.url) else {
+            _ = core.onResponse(fetch: fetch, status: nil, retryAfterSecs: nil, body: Data(), nowMs: Self.millis(.now))
+            return
+        }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        request.timeoutInterval = 20
         let started = ContinuousClock.now
-        do {
-            let stats = try await ExplorerClient.fetch(epd, database: database, token: token)
-            Self.log.info("explorer \(database.cacheKey, privacy: .public) took \(started.duration(to: .now).description, privacy: .public), interval \(self.interval)s, \(self.pending.count) queued")
-            pending[StatsStore.key(epd, database)] = nil
-            store.save(stats, for: epd, database)
-            for listener in listeners.values { listener(epd, database) }
-            return .done
-        } catch .rateLimited(let retryAfter) {
-            interval = min(interval * 1.5, 10)
-            let wait = retryAfter ?? 60
-            let until = Date.now.addingTimeInterval(wait)
-            if until > bannedUntil ?? .distantPast {
-                UserDefaults.standard.set(until, forKey: Self.bannedUntilKey)
-            }
-            Self.log.error("explorer 429, waiting \(wait)s, interval now \(self.interval)s")
-            state = .rateLimited(until: until)
-            return .retry
-        } catch .unauthorized {
-            auth.tokenRejected()
-            state = .needsLogin
-            return .stop
-        } catch .offline {
-            return .offline
-        } catch {
-            // Unexpected answer for this position: drop it so the queue keeps moving.
-            pending[StatsStore.key(epd, database)] = nil
-            return .done
+        var status: UInt16?
+        var retryAfter: Int64?
+        var body = Data()
+        if let (data, response) = try? await URLSession.shared.data(for: request), let http = response as? HTTPURLResponse {
+            status = UInt16(http.statusCode)
+            retryAfter = http.value(forHTTPHeaderField: "Retry-After").flatMap(Double.init).map { Int64($0) }
+            body = data
         }
+        Self.log.info("explorer \(fetch.database.cacheKey, privacy: .public) \(status.map(String.init) ?? "offline", privacy: .public) in \(started.duration(to: .now).description, privacy: .public), \(self.remaining) queued")
+        let outcome = core.onResponse(fetch: fetch, status: status, retryAfterSecs: retryAfter, body: body, nowMs: Self.millis(.now))
+        if outcome.unauthorized { auth.tokenRejected() }
+        if let until = outcome.bannedUntil {
+            UserDefaults.standard.set(Date(timeIntervalSince1970: TimeInterval(until) / 1000), forKey: Self.bannedUntilKey)
+            Self.log.error("explorer 429, paused until \(until)")
+        }
+        state = core.state()
     }
 
-    private func run() async {
-        while let request = pending.max(by: { $0.value.priority < $1.value.priority })?.value {
-            await waitForBan()
-            guard let token = auth.token else {
-                state = .needsLogin
-                return
-            }
-            state = .fetching(remaining: pending.count)
-            let started = ContinuousClock.now
-            switch await fetch(request.epd, request.database, token: token) {
-            case .done:
-                if !pending.isEmpty { try? await Task.sleep(until: started + .seconds(interval)) }
-            case .retry:
-                continue
-            case .offline:
-                state = .offline
-                try? await Task.sleep(for: .seconds(30))
-            case .stop:
-                return
-            }
+    /// The core asks to be polled; hop to the main actor so it is not re-entered.
+    private nonisolated final class Listener: ExplorerListener, @unchecked Sendable {
+        weak var service: ExplorerService?
+        init(service: ExplorerService) { self.service = service }
+        func wake() {
+            Task { @MainActor [weak self] in self?.service?.pump() }
         }
-        state = .idle
     }
 }
