@@ -36,30 +36,46 @@ pub fn start_ply(fen: Option<&str>) -> usize {
 }
 
 /// Writes `alternatives[0]` with `alternatives[1..]` as variations, then continues the main line.
+/// Uses a work stack rather than recursion: a line nests one level per ply.
 fn write_line(alternatives: &[PgnMove], ply: usize, force_number: bool, tokens: &mut Vec<String>) {
-    let Some(main) = alternatives.first() else {
-        return;
-    };
-    write_move(main, ply, force_number, tokens);
-    let mut needs_number = !main.comments.is_empty();
-
-    for variation in &alternatives[1..] {
-        let mut inner: Vec<String> = Vec::new();
-        write_move(variation, ply, true, &mut inner);
-        write_line(
-            &variation.children,
-            ply + 1,
-            !variation.comments.is_empty(),
-            &mut inner,
-        );
-        if let Some(first) = inner.first_mut() {
-            first.insert(0, '(');
-            inner.last_mut().expect("non-empty").push(')');
-        }
-        tokens.extend(inner);
-        needs_number = true;
+    enum Task<'a> {
+        Line(&'a [PgnMove], usize, bool),
+        /// The first move of a variation, written after "(".
+        Variation(&'a PgnMove, usize),
+        Close,
     }
-    write_line(&main.children, ply + 1, needs_number, tokens);
+    let mut stack = vec![Task::Line(alternatives, ply, force_number)];
+    while let Some(task) = stack.pop() {
+        match task {
+            Task::Line(alternatives, ply, force_number) => {
+                let Some(main) = alternatives.first() else {
+                    continue;
+                };
+                write_move(main, ply, force_number, tokens);
+                let variations = &alternatives[1..];
+                let needs_number = !main.comments.is_empty() || !variations.is_empty();
+                stack.push(Task::Line(&main.children, ply + 1, needs_number));
+                for variation in variations.iter().rev() {
+                    stack.push(Task::Close);
+                    stack.push(Task::Line(
+                        &variation.children,
+                        ply + 1,
+                        !variation.comments.is_empty(),
+                    ));
+                    stack.push(Task::Variation(variation, ply));
+                }
+            }
+            Task::Variation(variation, ply) => {
+                let start = tokens.len();
+                write_move(variation, ply, true, tokens);
+                tokens[start].insert(0, '(');
+            }
+            Task::Close => tokens
+                .last_mut()
+                .expect("a variation wrote a move")
+                .push(')'),
+        }
+    }
 }
 
 fn write_move(m: &PgnMove, ply: usize, force_number: bool, tokens: &mut Vec<String>) {

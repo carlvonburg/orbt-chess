@@ -576,8 +576,31 @@ impl RepertoireTree {
 
     /// Moves below `id` as PGN, restricted to `chapter` if given.
     pub fn pgn_moves(&self, id: NodeId, chapter: Option<usize>) -> Vec<PgnMove> {
+        // Each frame: the move being built and its children still to visit. A work stack
+        // rather than recursion, because a line nests one level per ply.
+        let mut stack = vec![(PgnMove::default(), self.written_children(id, chapter))];
+        loop {
+            let (_, rest) = stack.last_mut().expect("non-empty until `id` is done");
+            if let Some((child_id, pgn_move)) = rest.next() {
+                stack.push((pgn_move, self.written_children(child_id, chapter)));
+                continue;
+            }
+            let (mut done, _) = stack.pop().expect("non-empty");
+            match stack.last_mut() {
+                Some((parent, _)) => parent.children.push(done),
+                None => return std::mem::take(&mut done.children),
+            }
+        }
+    }
+
+    /// The children of `id` that `chapter` writes, as PGN moves without their children.
+    fn written_children(
+        &self,
+        id: NodeId,
+        chapter: Option<usize>,
+    ) -> std::vec::IntoIter<(NodeId, PgnMove)> {
         let Some(node) = self.get(id) else {
-            return Vec::new();
+            return Vec::new().into_iter();
         };
         node.children
             .iter()
@@ -602,15 +625,17 @@ impl RepertoireTree {
                 } else {
                     child.pre_comments.clone()
                 };
-                PgnMove {
+                let pgn_move = PgnMove {
                     san: mv.san.clone(),
                     nags: child.nags.clone(),
                     pre_comments,
                     comments: child.comments.clone(),
-                    children: self.pgn_moves(child_id, chapter),
-                }
+                    children: Vec::new(),
+                };
+                (child_id, pgn_move)
             })
-            .collect()
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
     /// Whether some chapter writes `id` as a variation, i.e. not first among its siblings there.
