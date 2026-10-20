@@ -99,8 +99,9 @@ impl Sidecar {
         serde_json::from_slice(data)
     }
 
+    /// The file's bytes, exactly as the Swift build wrote them.
     pub fn encoded(&self) -> Vec<u8> {
-        serde_json::to_vec_pretty(self).expect("sidecar serializes")
+        super::apple_json::to_vec_pretty(self)
     }
 
     pub fn coverage_settings(&self) -> CoverageSettings {

@@ -147,9 +147,10 @@ impl ExplorerSpeed {
 pub enum ExplorerDatabase {
     Masters {},
     /// `ratings` are Lichess bucket lower bounds: 0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500.
+    // Fields in key order, so the JSON keys come out sorted like the Swift build's.
     Lichess {
-        speeds: Vec<ExplorerSpeed>,
         ratings: Vec<i64>,
+        speeds: Vec<ExplorerSpeed>,
     },
 }
 
@@ -241,7 +242,7 @@ mod tests {
         let lichess = serde_json::to_string(&ExplorerDatabase::default_lichess()).unwrap();
         assert_eq!(
             lichess,
-            r#"{"lichess":{"speeds":["blitz","rapid","classical"],"ratings":[1600,1800,2000]}}"#
+            r#"{"lichess":{"ratings":[1600,1800,2000],"speeds":["blitz","rapid","classical"]}}"#
         );
         let back: ExplorerDatabase = serde_json::from_str(&lichess).unwrap();
         assert_eq!(back, ExplorerDatabase::default_lichess());

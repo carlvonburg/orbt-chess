@@ -1,7 +1,8 @@
 //! The repertoire's files besides the PGN: the sidecar `<Name>.otrep.json` and the review log
-//! `<Name>.otlog.jsonl`. Field names and value shapes match what the Swift build wrote, so
-//! existing files open unchanged; formatting (spacing) may differ.
+//! `<Name>.otlog.jsonl`. They are written byte for byte as the Swift build wrote them
+//! (`apple_json`), so existing files open unchanged and an unchanged file is never rewritten.
 
+pub mod apple_json;
 mod date;
 pub mod revlog;
 mod sidecar;

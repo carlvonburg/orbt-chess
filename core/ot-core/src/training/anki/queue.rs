@@ -229,7 +229,34 @@ impl CardQueues {
         }
     }
 
-    fn learn_ahead_cutoff(&self) -> i64 {
+    /// The main queue (new, review, interday learning) in order, for inspection.
+    pub fn main_entries(&self) -> impl Iterator<Item = (&Epd, QueueKind)> {
+        self.main.iter().map(|e| {
+            let kind = match e.kind {
+                MainKind::New => QueueKind::New,
+                MainKind::Review => QueueKind::Review,
+                MainKind::InterdayLearning => QueueKind::Learning,
+            };
+            (&e.epd, kind)
+        })
+    }
+
+    /// Intraday learning cards in order: (position, due, reps), for inspection.
+    pub fn intraday_entries(&self) -> impl Iterator<Item = (&Epd, i64, i64)> {
+        self.intraday_learning
+            .iter()
+            .map(|e| (&e.epd, e.due, e.reps))
+    }
+
+    pub fn current_learning_cutoff(&self) -> i64 {
+        self.current_learning_cutoff
+    }
+
+    pub fn learn_ahead_secs(&self) -> i64 {
+        self.learn_ahead_secs
+    }
+
+    pub fn learn_ahead_cutoff(&self) -> i64 {
         self.current_learning_cutoff + self.learn_ahead_secs
     }
 

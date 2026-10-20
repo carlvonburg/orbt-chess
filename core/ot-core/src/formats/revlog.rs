@@ -21,10 +21,8 @@ pub fn decode(data: &[u8]) -> Vec<RevlogEntry> {
 pub fn encode(entries: &[RevlogEntry]) -> Vec<u8> {
     let mut data = Vec::new();
     for entry in entries {
-        if let Ok(line) = serde_json::to_vec(entry) {
-            data.extend(line);
-            data.push(b'\n');
-        }
+        data.extend(super::apple_json::to_vec_compact(entry));
+        data.push(b'\n');
     }
     data
 }
