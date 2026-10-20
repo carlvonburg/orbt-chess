@@ -7,7 +7,10 @@ use std::path::PathBuf;
 use serde_json::Value;
 
 pub fn dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../fixtures")
+    // At run time, so the tests still find the fixtures after the checkout moved.
+    let crate_dir =
+        std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| env!("CARGO_MANIFEST_DIR").into());
+    PathBuf::from(crate_dir).join("../fixtures")
 }
 
 /// The file's bytes, from `<path>` or else `<path>.gz`.

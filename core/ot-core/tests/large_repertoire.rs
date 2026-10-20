@@ -1,5 +1,5 @@
-//! Timings on a real repertoire, like LargeRepertoireTests.swift. Set OT_LARGE_PGN to a PGN path
-//! and run with `cargo test --release --test large_repertoire -- --nocapture`.
+//! Timings on a real repertoire. Set OT_LARGE_PGN to a PGN path (e.g. one in `testData/`) and
+//! run with `cargo test --release --test large_repertoire -- --nocapture`.
 
 use std::time::Instant;
 

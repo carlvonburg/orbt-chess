@@ -67,6 +67,8 @@ One folder per platform around a shared core (Android and web would be `android/
     committed), the generated `opening_core.swift` (never edit by hand) and `Additions.swift`
     (hand-written conveniences: names, conformances; no rules).
 - `Design/` — app icon sources.
+- `testData/` — real repertoires for testing by hand and timing (`OT_LARGE_PGN`): a 3.8k-move
+  Berlin and a 1.2 MB Chessbook Semi-Slav export.
 - `FUTURE.md` — web, Android, other storage providers, a sync server.
 
 ## Transpositions (see `repertoire::tree`, `RepertoireTree::merge`)

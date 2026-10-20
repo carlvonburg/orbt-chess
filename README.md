@@ -30,6 +30,7 @@ cached locally by position (FEN without move counters), so each position is fetc
 - `apple/`: the iPhone, iPad and Mac app (SwiftUI) and its Swift package over the core.
 - `FUTURE.md`: what could come next (web, Android, sync).
 - `Design/`: app icon sources.
+- `testData/`: real repertoire PGNs for testing.
 
 ## Building
 Requires Xcode 26 (iOS 26, macOS 26) and Rust (`brew install rustup`, then `rustup default stable`).

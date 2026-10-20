@@ -23,8 +23,8 @@ README name the uncompressed file: read `<path>.gz` when `<path>` is absent (Rus
 `pgn/semislav.written.pgn.gz` — compare after decompressing. `-n` leaves out the name and
 time, so reruns are byte-identical.
 
-The two large inputs are read from `../testData` next to the repo (override with
-`OT_TESTDATA=<dir>`); they are copied into `inputs/`. Plain `swift test` skips the suite.
+The two large inputs were read from `testData/` (then next to the repo, now in it; override
+with `OT_TESTDATA=<dir>`); they are copied into `inputs/`. Plain `swift test` skips the suite.
 A rerun rewrites every file; with unchanged Swift sources the output is byte-identical
 (see "Unordered fields" for the one place where Swift's order is not deterministic and how
 the fixtures avoid it).

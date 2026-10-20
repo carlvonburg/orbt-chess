@@ -11,10 +11,10 @@ use super::states::leech_threshold_met;
 use super::{LearningSteps, Scheduler};
 
 fn vectors() -> Value {
-    let path = concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../fixtures/scheduler/vectors.json"
-    );
+    // At run time, so the tests still find the fixtures after the checkout moved.
+    let crate_dir =
+        std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| env!("CARGO_MANIFEST_DIR").into());
+    let path = format!("{crate_dir}/../fixtures/scheduler/vectors.json");
     serde_json::from_slice(&std::fs::read(path).expect("fixture")).expect("JSON")
 }
 
