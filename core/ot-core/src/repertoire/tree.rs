@@ -589,15 +589,46 @@ impl RepertoireTree {
                 {
                     return None;
                 }
-                Some(PgnMove {
+                Some((child_id, child, mv))
+            })
+            .enumerate()
+            .map(|(index, (child_id, child, mv))| {
+                // A pre-comment is read back only at the start of a variation; elsewhere it
+                // becomes the comment of the move (or game) before it. When another chapter
+                // writes this move as a variation, that chapter keeps the comment, and writing
+                // it here too would copy it to this chapter on every save.
+                let pre_comments = if index == 0 && self.starts_variation(child_id) {
+                    Vec::new()
+                } else {
+                    child.pre_comments.clone()
+                };
+                PgnMove {
                     san: mv.san.clone(),
                     nags: child.nags.clone(),
-                    pre_comments: child.pre_comments.clone(),
+                    pre_comments,
                     comments: child.comments.clone(),
                     children: self.pgn_moves(child_id, chapter),
-                })
+                }
             })
             .collect()
+    }
+
+    /// Whether some chapter writes `id` as a variation, i.e. not first among its siblings there.
+    fn starts_variation(&self, id: NodeId) -> bool {
+        let Some(node) = self.get(id) else {
+            return false;
+        };
+        let Some(parent) = node.parent.and_then(|p| self.get(p)) else {
+            return false;
+        };
+        node.chapters.iter().any(|chapter| {
+            parent
+                .children
+                .iter()
+                .filter_map(|&c| self.get(c))
+                .find(|c| c.mv.is_some() && c.chapters.contains(chapter))
+                .is_some_and(|first| first.id != id)
+        })
     }
 
     // Private

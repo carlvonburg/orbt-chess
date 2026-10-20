@@ -172,3 +172,18 @@ fn lines_stay_in_their_chapter() {
     let b = RepertoireTree::from_games(vec![games[1].clone()]);
     assert!(b.find("d4 d5 Nf3 Nf6 c4 c6 e3").is_some());
 }
+
+#[test]
+fn shared_pre_comments_stay_in_their_variation() {
+    // d4 and c5 start a variation in the first game and the main line in the second.
+    let text = "1. e4 ({ pre d4 } 1. d4 d5) 1... e5 ({ pre c5 } 1... c5) *\n\n\
+                1. d4 d5 *\n\n1. e4 c5 *\n";
+    let tree = RepertoireTree::from_pgn(text);
+    let saved = tree.pgn_text();
+    assert_eq!(
+        saved,
+        "1. e4 ({ pre d4 } 1. d4 d5) 1... e5 ({ pre c5 } 1... c5) *\n\n\
+         1. d4 d5 *\n\n1. e4 c5 *\n"
+    );
+    assert_eq!(RepertoireTree::from_pgn(&saved).pgn_text(), saved);
+}

@@ -12,8 +12,8 @@ expression: tree.pgn_text()
 Bb7 12. Bc2 Re8 13. Nf1 Bf8 14. Ng3 g6 15. a4 c5 16. d5 c4 17. Bg5 h6 18. Be3
 Nc5 19. Qd2 h5 1-0
 
-{ pre variation } 1. d4?! d5 2. c4 dxc4 3. e4 b5 4. a4 c6 5. axb5 cxb5 6. Qf3
-Nc6 7. Qxf7+ Kd7 8. Qf5+ Ke8 9. Qh5+ g6 10. Qxb5 *
+1. d4?! d5 2. c4 dxc4 3. e4 b5 4. a4 c6 5. axb5 cxb5 6. Qf3 Nc6 7. Qxf7+ Kd7
+8. Qf5+ Ke8 9. Qh5+ g6 10. Qxb5 *
 
 [Event "No result token above"]
 
