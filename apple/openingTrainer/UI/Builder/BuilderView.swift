@@ -599,7 +599,7 @@ struct CandidatesSection: View {
     let title: String
     var savedAt: Node?
     let select: (String) -> Void
-    @State private var eval: CloudEvalClient.Eval?
+    @State private var eval: CloudEval?
     @State private var showOthers = false
 
     var body: some View {
@@ -778,16 +778,6 @@ struct SavedMove {
     var tag: String? {
         if index > 0 { return "Alternative · not trained" }
         return siblings > 1 ? "Main" : nil
-    }
-}
-
-extension CloudEvalClient.Eval {
-    /// Eval after `uci`, from White's point of view, if it is one of the cloud lines.
-    func text(for uci: String) -> String? {
-        guard let pv = pvs.first(where: { $0.moves.hasPrefix(uci) }) else { return nil }
-        if let mate = pv.mate { return "#\(mate)" }
-        guard let cp = pv.cp else { return nil }
-        return String(format: "%+.1f", Double(cp) / 100)
     }
 }
 

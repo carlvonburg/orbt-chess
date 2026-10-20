@@ -6,12 +6,10 @@ import SwiftUI
 
 /// Lichess OAuth2 with PKCE. No client registration and no scopes are needed; the
 /// explorer only requires a valid token. Tokens last about a year and have no refresh.
-/// The URLs, the PKCE challenge, the callback check and the token format are in the core;
-/// this runs the browser sheet, the requests and the Keychain.
+/// The requests, the PKCE challenge, the callback check and the answers are in the core;
+/// this runs the browser sheet, sends the requests and keeps the token in the Keychain.
 @Observable
 final class LichessAuth {
-    private static let host = URL(string: "https://lichess.org")!
-
     private(set) var token: String?
     private(set) var username: String?
     private(set) var expiresAt: Date?
@@ -58,10 +56,7 @@ final class LichessAuth {
 
     func signOut() async {
         if let token {
-            var request = URLRequest(url: Self.host.appending(path: "api/token"))
-            request.httpMethod = "DELETE"
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-            _ = try? await URLSession.shared.data(for: request)
+            _ = await HTTP.send(lichessRevokeRequest(token: token))
         }
         clear()
     }
@@ -80,27 +75,14 @@ final class LichessAuth {
     }
 
     private func exchange(code: String, verifier: String) async throws {
-        var request = URLRequest(url: Self.host.appending(path: "api/token"))
-        request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-        request.httpBody = Data(lichessTokenRequestBody(code: code, verifier: verifier).utf8)
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-            throw AuthError.message("Token exchange failed (\((response as? HTTPURLResponse)?.statusCode ?? 0))")
+        guard let response = await HTTP.send(lichessTokenRequest(code: code, verifier: verifier)) else {
+            throw AuthError.message("Could not reach Lichess")
         }
-        let parsed = try lichessParseToken(body: data, nowSecs: Int64(Date.now.timeIntervalSince1970))
+        let parsed = try lichessParseToken(response: response, nowSecs: Int64(Date.now.timeIntervalSince1970))
         token = parsed.token
         expiresAt = Date(timeIntervalSince1970: TimeInterval(parsed.expiresAt))
-        username = try? await fetchUsername()
+        username = await HTTP.send(lichessAccountRequest(token: parsed.token)).flatMap(lichessParseAccount)
         persist()
-    }
-
-    private func fetchUsername() async throws -> String? {
-        guard let token else { return nil }
-        var request = URLRequest(url: Self.host.appending(path: "api/account"))
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        let (data, _) = try await URLSession.shared.data(for: request)
-        return lichessParseAccount(body: data)
     }
 
     private func persist() {

@@ -286,3 +286,10 @@ extension Dictionary where Key == Int64 {
 extension Dictionary where Key == Int64, Value == Int64 {
     public var ints: [Int: Int] { Dictionary<Int, Int>(uniqueKeysWithValues: map { (Int($0.key), Int($0.value)) }) }
 }
+
+// MARK: Lichess
+
+extension CloudEval {
+    /// Eval after `uci`, from White's point of view, if it is one of the cloud lines.
+    public func text(for uci: String) -> String? { cloudEvalText(eval: self, uci: uci) }
+}

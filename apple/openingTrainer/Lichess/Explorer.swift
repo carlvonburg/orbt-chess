@@ -4,37 +4,17 @@ import os
 import OpeningCoreRust
 import SwiftData
 
-/// Cloud evaluations from lichess.org (no token needed). 404 means no eval stored.
-/// Answers, including "none", are kept in memory for the session.
+/// Cloud evaluations from lichess.org (no token needed). The request, the answer and the
+/// session cache (a 404 is remembered, other failures are asked again) are in the core.
 enum CloudEvalClient {
-    private static var cache: [EPD: Eval?] = [:]
+    private static let core = CloudEvals()
 
-    struct Eval: Decodable, Sendable {
-        struct PV: Decodable, Sendable {
-            let moves: String
-            let cp: Int?
-            let mate: Int?
-        }
-        let depth: Int
-        let pvs: [PV]
-    }
-
-    static func fetch(_ epd: EPD) async -> Eval? {
-        if let cached = cache[epd] { return cached }
-        var components = URLComponents(string: "https://lichess.org/api/cloud-eval")!
-        components.queryItems = [URLQueryItem(name: "fen", value: epdQueryFen(epd: epd)), URLQueryItem(name: "multiPv", value: "5")]
-        guard let (data, response) = try? await URLSession.shared.data(from: components.url!) else { return nil }
-        switch (response as? HTTPURLResponse)?.statusCode {
-        case 200:
-            let eval = try? JSONDecoder().decode(Eval.self, from: data)
-            cache[epd] = eval
+    static func fetch(_ epd: EPD) async -> CloudEval? {
+        switch core.lookup(epd: epd) {
+        case .cached(let eval):
             return eval
-        case 404:
-            cache[epd] = .some(nil)
-            return nil
-        default:
-            // Rate limited or a server error: ask again next time.
-            return nil
+        case .fetch(let request):
+            return core.onResponse(epd: epd, response: await HTTP.send(request))
         }
     }
 }
@@ -106,8 +86,8 @@ nonisolated final class ExplorerCacheStore: StatsStore, @unchecked Sendable {
     }
 }
 
-/// Runs the core's explorer queue: performs the requests it hands out (with the Lichess
-/// token) and reports the answers. The rules (300 ms focus, one paced coverage request at a
+/// Runs the core's explorer queue: sends the requests it hands out (the core adds the
+/// Lichess token) and reports the answers. The rules (300 ms focus, one paced coverage request at a
 /// time, the shared 429 pause, offline retry, 401) are in the core.
 @Observable
 final class ExplorerService {
@@ -141,7 +121,7 @@ final class ExplorerService {
 
     /// Sends what the queue hands out and sleeps until it wants to be asked again.
     func pump() {
-        let poll = core.poll(nowMs: Self.millis(.now), hasToken: auth.token != nil)
+        let poll = core.poll(nowMs: Self.millis(.now), token: auth.token)
         state = core.state()
         for fetch in poll.fetches {
             Task { await perform(fetch) }
@@ -158,24 +138,10 @@ final class ExplorerService {
     }
 
     private func perform(_ fetch: Fetch) async {
-        guard let token = auth.token, let url = URL(string: fetch.url) else {
-            _ = core.onResponse(fetch: fetch, status: nil, retryAfterSecs: nil, body: Data(), nowMs: Self.millis(.now))
-            return
-        }
-        var request = URLRequest(url: url)
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 20
         let started = ContinuousClock.now
-        var status: UInt16?
-        var retryAfter: Int64?
-        var body = Data()
-        if let (data, response) = try? await URLSession.shared.data(for: request), let http = response as? HTTPURLResponse {
-            status = UInt16(http.statusCode)
-            retryAfter = http.value(forHTTPHeaderField: "Retry-After").flatMap(Double.init).map { Int64($0) }
-            body = data
-        }
-        Self.log.info("explorer \(fetch.database.cacheKey, privacy: .public) \(status.map(String.init) ?? "offline", privacy: .public) in \(started.duration(to: .now).description, privacy: .public), \(self.remaining) queued")
-        let outcome = core.onResponse(fetch: fetch, status: status, retryAfterSecs: retryAfter, body: body, nowMs: Self.millis(.now))
+        let response = await HTTP.send(fetch.request)
+        Self.log.info("explorer \(fetch.database.cacheKey, privacy: .public) \(response.map { String($0.status) } ?? "offline", privacy: .public) in \(started.duration(to: .now).description, privacy: .public), \(self.remaining) queued")
+        let outcome = core.onResponse(fetch: fetch, response: response, nowMs: Self.millis(.now))
         if outcome.unauthorized { auth.tokenRejected() }
         if let until = outcome.bannedUntil {
             UserDefaults.standard.set(Date(timeIntervalSince1970: TimeInterval(until) / 1000), forKey: Self.bannedUntilKey)

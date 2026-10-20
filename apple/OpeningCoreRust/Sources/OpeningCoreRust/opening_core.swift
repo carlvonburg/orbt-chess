@@ -1154,6 +1154,159 @@ public func FfiConverterTypeBuilderSession_lower(_ value: BuilderSession) -> UIn
 
 
 /**
+ * Lichess cloud evals of this session: the platform sends what `lookup` asks for and
+ * passes the answer to `on_response`.
+ */
+public protocol CloudEvalsProtocol: AnyObject, Sendable {
+    
+    func lookup(epd: Epd)  -> CloudEvalLookup
+    
+    /**
+     * The answer to a `CloudEvalLookup::Fetch` (None: no answer, e.g. offline).
+     */
+    func onResponse(epd: Epd, response: HttpResponse?)  -> CloudEval?
+    
+}
+/**
+ * Lichess cloud evals of this session: the platform sends what `lookup` asks for and
+ * passes the answer to `on_response`.
+ */
+open class CloudEvals: CloudEvalsProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_cloudevals(self.handle, $0) }
+    }
+public convenience init() {
+    let handle =
+        try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_cloudevals_new(uniffiCallStatus
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_cloudevals(handle, $0) }
+    }
+
+    
+
+    
+open func lookup(epd: Epd) -> CloudEvalLookup  {
+    return try!  FfiConverterTypeCloudEvalLookup_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_cloudevals_lookup(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEpd_lower(epd),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The answer to a `CloudEvalLookup::Fetch` (None: no answer, e.g. offline).
+     */
+open func onResponse(epd: Epd, response: HttpResponse?) -> CloudEval?  {
+    return try!  FfiConverterOptionTypeCloudEval.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_cloudevals_on_response(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEpd_lower(epd),
+        FfiConverterOptionTypeHttpResponse.lower(response),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCloudEvals: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = CloudEvals
+
+    public static func lift(_ handle: UInt64) throws -> CloudEvals {
+        return CloudEvals(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: CloudEvals) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CloudEvals {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CloudEvals, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCloudEvals_lift(_ handle: UInt64) throws -> CloudEvals {
+    return try FfiConverterTypeCloudEvals.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCloudEvals_lower(_ value: CloudEvals) -> UInt64 {
+    return FfiConverterTypeCloudEvals.lower(value)
+}
+
+
+
+
+
+
+/**
  * Told about changes the core made by itself (stats arriving for this repertoire).
  */
 public protocol DocumentListener: AnyObject, Sendable {
@@ -1832,14 +1985,15 @@ public protocol ExplorerProtocol: AnyObject, Sendable {
     func focus(epd: Epd, database: ExplorerDatabase, nowMs: Int64) 
     
     /**
-     * An HTTP answer (`status` None: no answer, e.g. offline).
+     * The answer to a fetch (`response` None: no answer, e.g. offline).
      */
-    func onResponse(fetch: Fetch, status: UInt16?, retryAfterSecs: Int64?, body: Data, nowMs: Int64)  -> FetchOutcome
+    func onResponse(fetch: Fetch, response: HttpResponse?, nowMs: Int64)  -> FetchOutcome
     
     /**
-     * The requests to send now (with `Authorization: Bearer <token>`), and when to poll again.
+     * The requests to send now, and when to poll again. `token`: the Lichess token, if
+     * signed in.
      */
-    func poll(nowMs: Int64, hasToken: Bool)  -> Poll
+    func poll(nowMs: Int64, token: String?)  -> Poll
     
     /**
      * Coverage requests waiting.
@@ -1975,32 +2129,31 @@ open func focus(epd: Epd, database: ExplorerDatabase, nowMs: Int64)  {try! rustC
 }
     
     /**
-     * An HTTP answer (`status` None: no answer, e.g. offline).
+     * The answer to a fetch (`response` None: no answer, e.g. offline).
      */
-open func onResponse(fetch: Fetch, status: UInt16?, retryAfterSecs: Int64?, body: Data, nowMs: Int64) -> FetchOutcome  {
+open func onResponse(fetch: Fetch, response: HttpResponse?, nowMs: Int64) -> FetchOutcome  {
     return try!  FfiConverterTypeFetchOutcome_lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_explorer_on_response(
             self.uniffiCloneHandle(),
         FfiConverterTypeFetch_lower(fetch),
-        FfiConverterOptionUInt16.lower(status),
-        FfiConverterOptionInt64.lower(retryAfterSecs),
-        FfiConverterData.lower(body),
+        FfiConverterOptionTypeHttpResponse.lower(response),
         FfiConverterInt64.lower(nowMs),uniffiCallStatus
     )
 })
 }
     
     /**
-     * The requests to send now (with `Authorization: Bearer <token>`), and when to poll again.
+     * The requests to send now, and when to poll again. `token`: the Lichess token, if
+     * signed in.
      */
-open func poll(nowMs: Int64, hasToken: Bool) -> Poll  {
+open func poll(nowMs: Int64, token: String?) -> Poll  {
     return try!  FfiConverterTypePoll_lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_explorer_poll(
             self.uniffiCloneHandle(),
         FfiConverterInt64.lower(nowMs),
-        FfiConverterBool.lower(hasToken),uniffiCallStatus
+        FfiConverterOptionString.lower(token),uniffiCallStatus
     )
 })
 }
@@ -5357,6 +5510,60 @@ public func FfiConverterTypeChapterInfo_lower(_ value: ChapterInfo) -> RustBuffe
 }
 
 
+public struct CloudEval: Equatable, Hashable {
+    public var depth: UInt32
+    public var pvs: [Pv]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(depth: UInt32, pvs: [Pv]) {
+        self.depth = depth
+        self.pvs = pvs
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CloudEval: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCloudEval: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CloudEval {
+        return
+            try CloudEval(
+                depth: FfiConverterUInt32.read(from: &buf), 
+                pvs: FfiConverterSequenceTypePv.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CloudEval, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.depth, into: &buf)
+        FfiConverterSequenceTypePv.write(value.pvs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCloudEval_lift(_ buf: RustBuffer) throws -> CloudEval {
+    return try FfiConverterTypeCloudEval.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCloudEval_lower(_ value: CloudEval) -> RustBuffer {
+    return FfiConverterTypeCloudEval.lower(value)
+}
+
+
 public struct Counts: Equatable, Hashable {
     public var new: Int64
     public var learning: Int64
@@ -5792,16 +5999,22 @@ public struct Fetch: Equatable, Hashable {
     public var lane: Lane
     public var epd: Epd
     public var database: ExplorerDatabase
-    public var url: String
+    /**
+     * Send this as it is (it carries the token).
+     */
+    public var request: HttpRequest
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(id: UInt64, lane: Lane, epd: Epd, database: ExplorerDatabase, url: String) {
+    public init(id: UInt64, lane: Lane, epd: Epd, database: ExplorerDatabase, 
+        /**
+         * Send this as it is (it carries the token).
+         */request: HttpRequest) {
         self.id = id
         self.lane = lane
         self.epd = epd
         self.database = database
-        self.url = url
+        self.request = request
     }
 
     
@@ -5824,7 +6037,7 @@ public struct FfiConverterTypeFetch: FfiConverterRustBuffer {
                 lane: FfiConverterTypeLane.read(from: &buf), 
                 epd: FfiConverterTypeEpd.read(from: &buf), 
                 database: FfiConverterTypeExplorerDatabase.read(from: &buf), 
-                url: FfiConverterString.read(from: &buf)
+                request: FfiConverterTypeHttpRequest.read(from: &buf)
         )
     }
 
@@ -5833,7 +6046,7 @@ public struct FfiConverterTypeFetch: FfiConverterRustBuffer {
         FfiConverterTypeLane.write(value.lane, into: &buf)
         FfiConverterTypeEpd.write(value.epd, into: &buf)
         FfiConverterTypeExplorerDatabase.write(value.database, into: &buf)
-        FfiConverterString.write(value.url, into: &buf)
+        FfiConverterTypeHttpRequest.write(value.request, into: &buf)
     }
 }
 
@@ -6048,6 +6261,60 @@ public func FfiConverterTypeGraphParts_lower(_ value: GraphParts) -> RustBuffer 
 }
 
 
+public struct Header: Equatable, Hashable {
+    public var name: String
+    public var value: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(name: String, value: String) {
+        self.name = name
+        self.value = value
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Header: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeHeader: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Header {
+        return
+            try Header(
+                name: FfiConverterString.read(from: &buf), 
+                value: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Header, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.name, into: &buf)
+        FfiConverterString.write(value.value, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHeader_lift(_ buf: RustBuffer) throws -> Header {
+    return try FfiConverterTypeHeader.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHeader_lower(_ value: Header) -> RustBuffer {
+    return FfiConverterTypeHeader.lower(value)
+}
+
+
 public struct Hour: Equatable, Hashable {
     public var total: Int64
     public var correct: Int64
@@ -6099,6 +6366,130 @@ public func FfiConverterTypeHour_lift(_ buf: RustBuffer) throws -> Hour {
 #endif
 public func FfiConverterTypeHour_lower(_ value: Hour) -> RustBuffer {
     return FfiConverterTypeHour.lower(value)
+}
+
+
+public struct HttpRequest: Equatable, Hashable {
+    public var method: HttpMethod
+    public var url: String
+    public var headers: [Header]
+    public var body: Data
+    public var timeoutSecs: UInt32?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(method: HttpMethod, url: String, headers: [Header], body: Data, timeoutSecs: UInt32?) {
+        self.method = method
+        self.url = url
+        self.headers = headers
+        self.body = body
+        self.timeoutSecs = timeoutSecs
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension HttpRequest: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeHttpRequest: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> HttpRequest {
+        return
+            try HttpRequest(
+                method: FfiConverterTypeHttpMethod.read(from: &buf), 
+                url: FfiConverterString.read(from: &buf), 
+                headers: FfiConverterSequenceTypeHeader.read(from: &buf), 
+                body: FfiConverterData.read(from: &buf), 
+                timeoutSecs: FfiConverterOptionUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: HttpRequest, into buf: inout [UInt8]) {
+        FfiConverterTypeHttpMethod.write(value.method, into: &buf)
+        FfiConverterString.write(value.url, into: &buf)
+        FfiConverterSequenceTypeHeader.write(value.headers, into: &buf)
+        FfiConverterData.write(value.body, into: &buf)
+        FfiConverterOptionUInt32.write(value.timeoutSecs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHttpRequest_lift(_ buf: RustBuffer) throws -> HttpRequest {
+    return try FfiConverterTypeHttpRequest.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHttpRequest_lower(_ value: HttpRequest) -> RustBuffer {
+    return FfiConverterTypeHttpRequest.lower(value)
+}
+
+
+public struct HttpResponse: Equatable, Hashable {
+    public var status: UInt16
+    public var headers: [Header]
+    public var body: Data
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(status: UInt16, headers: [Header], body: Data) {
+        self.status = status
+        self.headers = headers
+        self.body = body
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension HttpResponse: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeHttpResponse: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> HttpResponse {
+        return
+            try HttpResponse(
+                status: FfiConverterUInt16.read(from: &buf), 
+                headers: FfiConverterSequenceTypeHeader.read(from: &buf), 
+                body: FfiConverterData.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: HttpResponse, into buf: inout [UInt8]) {
+        FfiConverterUInt16.write(value.status, into: &buf)
+        FfiConverterSequenceTypeHeader.write(value.headers, into: &buf)
+        FfiConverterData.write(value.body, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHttpResponse_lift(_ buf: RustBuffer) throws -> HttpResponse {
+    return try FfiConverterTypeHttpResponse.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHttpResponse_lower(_ value: HttpResponse) -> RustBuffer {
+    return FfiConverterTypeHttpResponse.lower(value)
 }
 
 
@@ -6969,6 +7360,64 @@ public func FfiConverterTypeProgress_lift(_ buf: RustBuffer) throws -> Progress 
 #endif
 public func FfiConverterTypeProgress_lower(_ value: Progress) -> RustBuffer {
     return FfiConverterTypeProgress.lower(value)
+}
+
+
+public struct Pv: Equatable, Hashable {
+    public var moves: String
+    public var cp: Int32?
+    public var mate: Int32?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(moves: String, cp: Int32?, mate: Int32?) {
+        self.moves = moves
+        self.cp = cp
+        self.mate = mate
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Pv: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePv: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Pv {
+        return
+            try Pv(
+                moves: FfiConverterString.read(from: &buf), 
+                cp: FfiConverterOptionInt32.read(from: &buf), 
+                mate: FfiConverterOptionInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Pv, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.moves, into: &buf)
+        FfiConverterOptionInt32.write(value.cp, into: &buf)
+        FfiConverterOptionInt32.write(value.mate, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePv_lift(_ buf: RustBuffer) throws -> Pv {
+    return try FfiConverterTypePv.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePv_lower(_ value: Pv) -> RustBuffer {
+    return FfiConverterTypePv.lower(value)
 }
 
 
@@ -8386,6 +8835,78 @@ public func FfiConverterTypeCardType_lower(_ value: CardType) -> RustBuffer {
 
 
 
+
+public enum CloudEvalLookup: Equatable, Hashable {
+    
+    case cached(CloudEval?
+    )
+    case fetch(HttpRequest
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension CloudEvalLookup: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCloudEvalLookup: FfiConverterRustBuffer {
+    typealias SwiftType = CloudEvalLookup
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CloudEvalLookup {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .cached(try FfiConverterOptionTypeCloudEval.read(from: &buf)
+        )
+        
+        case 2: return .fetch(try FfiConverterTypeHttpRequest.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: CloudEvalLookup, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .cached(v1):
+            writeInt(&buf, Int32(1))
+            FfiConverterOptionTypeCloudEval.write(v1, into: &buf)
+            
+        
+        case let .fetch(v1):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypeHttpRequest.write(v1, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCloudEvalLookup_lift(_ buf: RustBuffer) throws -> CloudEvalLookup {
+    return try FfiConverterTypeCloudEvalLookup.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCloudEvalLookup_lower(_ value: CloudEvalLookup) -> RustBuffer {
+    return FfiConverterTypeCloudEvalLookup.lower(value)
+}
+
+
+
 public 
 enum DocumentError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
@@ -8933,6 +9454,79 @@ public func FfiConverterTypeGraphRange_lift(_ buf: RustBuffer) throws -> GraphRa
 #endif
 public func FfiConverterTypeGraphRange_lower(_ value: GraphRange) -> RustBuffer {
     return FfiConverterTypeGraphRange.lower(value)
+}
+
+
+
+
+public enum HttpMethod: Equatable, Hashable {
+    
+    case get
+    case post
+    case delete
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension HttpMethod: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeHttpMethod: FfiConverterRustBuffer {
+    typealias SwiftType = HttpMethod
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> HttpMethod {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .get
+        
+        case 2: return .post
+        
+        case 3: return .delete
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: HttpMethod, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .get:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .post:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .delete:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHttpMethod_lift(_ buf: RustBuffer) throws -> HttpMethod {
+    return try FfiConverterTypeHttpMethod.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeHttpMethod_lower(_ value: HttpMethod) -> RustBuffer {
+    return FfiConverterTypeHttpMethod.lower(value)
 }
 
 
@@ -10097,30 +10691,6 @@ public func FfiConverterTypeStatus_lower(_ value: Status) -> RustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
-fileprivate struct FfiConverterOptionUInt16: FfiConverterRustBuffer {
-    typealias SwiftType = UInt16?
-
-    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
-        guard let value = value else {
-            writeInt(&buf, Int8(0))
-            return
-        }
-        writeInt(&buf, Int8(1))
-        FfiConverterUInt16.write(value, into: &buf)
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
-        switch try readInt(&buf) as Int8 {
-        case 0: return nil
-        case 1: return try FfiConverterUInt16.read(from: &buf)
-        default: throw UniffiInternalError.unexpectedOptionalTag
-        }
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
 fileprivate struct FfiConverterOptionUInt32: FfiConverterRustBuffer {
     typealias SwiftType = UInt32?
 
@@ -10137,6 +10707,30 @@ fileprivate struct FfiConverterOptionUInt32: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterUInt32.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionInt32: FfiConverterRustBuffer {
+    typealias SwiftType = Int32?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterInt32.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterInt32.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -10385,6 +10979,30 @@ fileprivate struct FfiConverterOptionTypeCard: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeCloudEval: FfiConverterRustBuffer {
+    typealias SwiftType = CloudEval?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeCloudEval.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeCloudEval.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeCoverageGap: FfiConverterRustBuffer {
     typealias SwiftType = CoverageGap?
 
@@ -10473,6 +11091,30 @@ fileprivate struct FfiConverterOptionTypeExplorerStats: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeExplorerStats.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeHttpResponse: FfiConverterRustBuffer {
+    typealias SwiftType = HttpResponse?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeHttpResponse.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeHttpResponse.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -11167,6 +11809,31 @@ fileprivate struct FfiConverterSequenceTypeGraphParts: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeHeader: FfiConverterRustBuffer {
+    typealias SwiftType = [Header]
+
+    public static func write(_ value: [Header], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeHeader.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Header] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Header]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeHeader.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeHour: FfiConverterRustBuffer {
     typealias SwiftType = [Hour]
 
@@ -11259,6 +11926,31 @@ fileprivate struct FfiConverterSequenceTypePlayedMove: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypePlayedMove.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypePv: FfiConverterRustBuffer {
+    typealias SwiftType = [Pv]
+
+    public static func write(_ value: [Pv], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypePv.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Pv] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Pv]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypePv.read(from: &buf))
         }
         return seq
     }
@@ -11767,6 +12459,14 @@ public func librarySidecar(data: Data) -> LibrarySidecar?  {
     )
 })
 }
+public func lichessAccountRequest(token: String) -> HttpRequest  {
+    return try!  FfiConverterTypeHttpRequest_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_lichess_account_request(
+        FfiConverterString.lower(token),uniffiCallStatus
+    )
+})
+}
 public func lichessAuthorizeUrl(verifier: String, state: String) -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
         uniffiCallStatus in
@@ -11783,11 +12483,14 @@ public func lichessCallbackScheme() -> String  {
     )
 })
 }
-public func lichessParseAccount(body: Data) -> String?  {
+/**
+ * The username from the account request's answer.
+ */
+public func lichessParseAccount(response: HttpResponse) -> String?  {
     return try!  FfiConverterOptionString.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_func_lichess_parse_account(
-        FfiConverterData.lower(body),uniffiCallStatus
+        FfiConverterTypeHttpResponse_lower(response),uniffiCallStatus
     )
 })
 }
@@ -11803,11 +12506,11 @@ public func lichessParseCallback(url: String, expectedState: String)throws  -> S
     )
 })
 }
-public func lichessParseToken(body: Data, nowSecs: Int64)throws  -> Token  {
+public func lichessParseToken(response: HttpResponse, nowSecs: Int64)throws  -> Token  {
     return try  FfiConverterTypeToken_lift(try rustCallWithError(FfiConverterTypeSignInError_lift) {
         uniffiCallStatus in
     uniffi_opening_core_fn_func_lichess_parse_token(
-        FfiConverterData.lower(body),
+        FfiConverterTypeHttpResponse_lower(response),
         FfiConverterInt64.lower(nowSecs),uniffiCallStatus
     )
 })
@@ -11820,10 +12523,24 @@ public func lichessRandomString(random: Data) -> String  {
     )
 })
 }
-public func lichessTokenRequestBody(code: String, verifier: String) -> String  {
-    return try!  FfiConverterString.lift(try! rustCall() {
+/**
+ * Signing out: revokes the token.
+ */
+public func lichessRevokeRequest(token: String) -> HttpRequest  {
+    return try!  FfiConverterTypeHttpRequest_lift(try! rustCall() {
         uniffiCallStatus in
-    uniffi_opening_core_fn_func_lichess_token_request_body(
+    uniffi_opening_core_fn_func_lichess_revoke_request(
+        FfiConverterString.lower(token),uniffiCallStatus
+    )
+})
+}
+/**
+ * Exchanges the code from the callback for a token.
+ */
+public func lichessTokenRequest(code: String, verifier: String) -> HttpRequest  {
+    return try!  FfiConverterTypeHttpRequest_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_lichess_token_request(
         FfiConverterString.lower(code),
         FfiConverterString.lower(verifier),uniffiCallStatus
     )
@@ -11913,6 +12630,18 @@ public func cardRetrievability(card: Card, nowSecs: Double) -> Double?  {
     uniffi_opening_core_fn_func_card_retrievability(
         FfiConverterTypeCard_lower(card),
         FfiConverterDouble.lower(nowSecs),uniffiCallStatus
+    )
+})
+}
+/**
+ * The eval after `uci` ("+0.3", "#-2"), if it starts one of the cloud lines.
+ */
+public func cloudEvalText(eval: CloudEval, uci: String) -> String?  {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_cloud_eval_text(
+        FfiConverterTypeCloudEval_lower(eval),
+        FfiConverterString.lower(uci),uniffiCallStatus
     )
 })
 }
@@ -12160,25 +12889,31 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_library_sidecar() != 1108) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_func_lichess_account_request() != 41549) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_func_lichess_authorize_url() != 53182) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_lichess_callback_scheme() != 60445) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_lichess_parse_account() != 24118) {
+    if (uniffi_opening_core_checksum_func_lichess_parse_account() != 48987) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_lichess_parse_callback() != 45402) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_lichess_parse_token() != 30105) {
+    if (uniffi_opening_core_checksum_func_lichess_parse_token() != 55513) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_lichess_random_string() != 45180) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_lichess_token_request_body() != 2275) {
+    if (uniffi_opening_core_checksum_func_lichess_revoke_request() != 48529) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_lichess_token_request() != 54561) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_merge_revlogs() != 19567) {
@@ -12206,6 +12941,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_card_retrievability() != 5501) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_cloud_eval_text() != 13251) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_coverage_seen_every() != 64908) {
@@ -12535,6 +13273,12 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_update_study_settings() != 40186) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_cloudevals_lookup() != 60633) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_cloudevals_on_response() != 26948) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_explorer_cancel_all() != 18791) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -12547,10 +13291,10 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_explorer_focus() != 21696) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_explorer_on_response() != 16544) {
+    if (uniffi_opening_core_checksum_method_explorer_on_response() != 1233) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_explorer_poll() != 40073) {
+    if (uniffi_opening_core_checksum_method_explorer_poll() != 19813) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_explorer_remaining() != 44303) {
@@ -12869,6 +13613,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_librarysidecar_target_games() != 30514) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_cloudevals_new() != 216) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_constructor_explorer_new() != 34450) {
