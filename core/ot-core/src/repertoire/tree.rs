@@ -242,9 +242,14 @@ impl RepertoireTree {
     }
 
     /// For a node without moves: the node with the same position that holds its lines
-    /// (the first one that has moves). Never an ancestor, so following it cannot loop.
+    /// (the first one that has moves, preferring one in the node's own chapters, where
+    /// loading merged them). Never an ancestor, so following it cannot loop.
     pub fn transposition_target(&self, id: NodeId) -> Option<NodeId> {
-        self.transposition_target_in(id, None)
+        let chapters = &self.get(id)?.chapters;
+        chapters
+            .iter()
+            .find_map(|&chapter| self.transposition_target_in(id, Some(chapter)))
+            .or_else(|| self.transposition_target_in(id, None))
     }
 
     fn transposition_target_in(&self, id: NodeId, chapter: Option<usize>) -> Option<NodeId> {
@@ -484,18 +489,16 @@ impl RepertoireTree {
                 0
             }
         });
+        self.mark_existing(moves, id, chapter);
         let mut stack: Vec<(&PgnMove, NodeId)> = moves.iter().rev().map(|m| (m, id)).collect();
         while let Some((pgn_move, parent)) = stack.pop() {
             let Some(parent_node) = self.get(parent) else {
                 continue;
             };
-            let target = if let Some(existing) = self.child_by_san(parent, &pgn_move.san) {
+            let target = if let Some(existing) = self.existing_child(parent, &pgn_move.san) {
                 existing
             } else if let Some((mv, next)) = parent_node.position.play_san(&pgn_move.san) {
-                match self.child_by_uci(parent, &mv.uci) {
-                    Some(existing) => existing,
-                    None => self.insert(mv, next, parent, BTreeSet::new()),
-                }
+                self.insert(mv, next, parent, BTreeSet::new())
             } else {
                 let line: Vec<String> = self.moves(parent).into_iter().map(|m| m.san).collect();
                 let after = if line.is_empty() {
@@ -531,6 +534,30 @@ impl RepertoireTree {
             stack.extend(pgn_move.children.iter().rev().map(|m| (m, continuation)));
         }
         self.count - before
+    }
+
+    /// Adds `chapter` to the nodes the moves pass through that exist already, before merging:
+    /// whether a transposition's lines move to another node depends on that node being in
+    /// the chapter, which must not depend on the order of the variations in the file.
+    fn mark_existing(&mut self, moves: &[PgnMove], id: NodeId, chapter: usize) {
+        let mut stack: Vec<(&PgnMove, NodeId)> = moves.iter().map(|m| (m, id)).collect();
+        while let Some((pgn_move, parent)) = stack.pop() {
+            let Some(child) = self.existing_child(parent, &pgn_move.san) else {
+                continue;
+            };
+            if let Some(node) = self.get_mut(child) {
+                node.chapters.insert(chapter);
+            }
+            stack.extend(pgn_move.children.iter().map(|m| (m, child)));
+        }
+    }
+
+    /// The child reached by `san`, also when written differently ("Ngf3" for "Nf3").
+    fn existing_child(&self, parent: NodeId, san: &str) -> Option<NodeId> {
+        self.child_by_san(parent, san).or_else(|| {
+            let (mv, _) = self.get(parent)?.position.play_san(san)?;
+            self.child_by_uci(parent, &mv.uci)
+        })
     }
 
     /// Union of both trees (used when the file changed elsewhere). Chapters are matched by index.

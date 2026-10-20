@@ -17,6 +17,7 @@ sha2.workspace = true
 
 [dev-dependencies]
 insta.workspace = true
+proptest.workspace = true
 
 # fsrs pulls in rand; on the web, getrandom needs its JS backend.
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]

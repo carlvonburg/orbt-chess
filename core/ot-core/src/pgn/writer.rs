@@ -16,7 +16,7 @@ pub fn write_game(game: &PgnGame) -> String {
         out.push('\n');
     }
 
-    let mut tokens: Vec<String> = game.comments.iter().map(|c| format!("{{ {c} }}")).collect();
+    let mut tokens: Vec<String> = game.comments.iter().map(|c| comment_token(c)).collect();
     write_line(&game.moves, start_ply(game.start_fen()), true, &mut tokens);
     tokens.push(game.result.clone());
     out += &wrap(&tokens, 80);
@@ -80,7 +80,7 @@ fn write_line(alternatives: &[PgnMove], ply: usize, force_number: bool, tokens: 
 
 fn write_move(m: &PgnMove, ply: usize, force_number: bool, tokens: &mut Vec<String>) {
     for comment in &m.pre_comments {
-        tokens.push(format!("{{ {comment} }}"));
+        tokens.push(comment_token(comment));
     }
     let number = ply / 2 + 1;
     let mut text = String::new();
@@ -104,7 +104,17 @@ fn write_move(m: &PgnMove, ply: usize, force_number: bool, tokens: &mut Vec<Stri
     tokens.push(text);
     tokens.extend(nag_tokens);
     for comment in &m.comments {
-        tokens.push(format!("{{ {comment} }}"));
+        tokens.push(comment_token(comment));
+    }
+}
+
+/// `{ comment }`. A "}" would end the comment early (a `;` comment or a note can contain
+/// one), so it is dropped, as python-chess does.
+fn comment_token(comment: &str) -> String {
+    if comment.contains('}') {
+        format!("{{ {} }}", comment.replace('}', "").trim())
+    } else {
+        format!("{{ {comment} }}")
     }
 }
 
