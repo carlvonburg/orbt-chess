@@ -21,6 +21,11 @@ source it follows (Anki, fsrs-rs, lichess's crates). Each entry says why.
 - **FEN after an en-passant capture.** chesskit-swift kept the ep square and counted the
   halfmove clock up (`b - f6 1 17`); shakmaty clears it and resets the clock (`b - - 0 17`).
   Only the in-memory FEN differs; the EPD is the same.
+- **Undo in the builder keeps the board on a saved position.** The Swift build left the
+  builder on a node the undo had removed (an empty panel); `Builder::undo` goes back along the
+  same moves as far as they are still saved.
+- **Statistics scoping and the builder's outline, search and gap names live in the core**
+  (`statistics::scope`, `document::outline`), moved unchanged from the Swift views.
 - **Tree nodes keep their position** instead of a FEN string that is re-parsed on every
   access. `RepertoireNode::fen()` produces the same FEN.
 

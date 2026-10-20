@@ -1,6 +1,6 @@
 # Opening Trainer
 
-A free, open-source opening repertoire trainer for iPhone and iPad, in the spirit of
+A free, open-source opening repertoire trainer for iPhone, iPad and Mac, in the spirit of
 Chessbook, without a subscription.
 
 - **Your repertoire is a PGN** in iCloud Drive (Files › Opening Trainer). Create one, or
@@ -27,11 +27,12 @@ cached locally by position (FEN without move counters), so each position is fetc
 ## Layout
 - `core/`: the Rust core shared by every platform (chess, PGN, repertoire, coverage,
   training). No IO or platform APIs.
-- `apple/`: the iPhone and iPad app (SwiftUI) and its Swift package over the core.
+- `apple/`: the iPhone, iPad and Mac app (SwiftUI) and its Swift package over the core.
+- `FUTURE.md`: what could come next (web, Android, sync).
 - `Design/`: app icon sources.
 
 ## Building
-Requires Xcode 26, iOS 26 and Rust (`brew install rustup`, then `rustup default stable`).
+Requires Xcode 26 (iOS 26, macOS 26) and Rust (`brew install rustup`, then `rustup default stable`).
 
 ```
 core/scripts/build-apple.sh
@@ -46,6 +47,4 @@ AGPL-3.0-or-later. The study scheduler is ported from
 [Anki](https://github.com/ankitects/anki) (AGPL-3.0, Ankitects Pty Ltd and contributors) and
 [fsrs-rs](https://github.com/open-spaced-repetition/fsrs-rs) (BSD-3-Clause, Open Spaced
 Repetition). Piece set "cburnett" (GPLv2+) via Lichess. Chess rules by
-[shakmaty](https://github.com/niklasf/shakmaty) (GPL-3.0-or-later) in the Rust core, and
-[chesskit-swift](https://github.com/chesskit-app/chesskit-swift) (MIT) in the Swift core it
-replaces.
+[shakmaty](https://github.com/niklasf/shakmaty) (GPL-3.0-or-later).
