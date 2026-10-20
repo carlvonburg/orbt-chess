@@ -9,6 +9,7 @@ pub mod explorer;
 pub mod formats;
 pub mod pgn;
 pub mod repertoire;
+pub mod statistics;
 pub mod training;
 
 use shakmaty::fen::Fen;
