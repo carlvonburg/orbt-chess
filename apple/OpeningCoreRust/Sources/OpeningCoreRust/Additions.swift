@@ -50,8 +50,19 @@ extension Side: CaseIterable, RawRepresentable, Codable {
         default: return nil
         }
     }
-    public var rawValue: String { self == .white ? "white" : "black" }
-    public var opposite: Side { self == .white ? .black : .white }
+    // A switch, not `==`: with RawRepresentable, `==` compares raw values and would recurse.
+    public var rawValue: String {
+        switch self {
+        case .white: "white"
+        case .black: "black"
+        }
+    }
+    public var opposite: Side {
+        switch self {
+        case .white: .black
+        case .black: .white
+        }
+    }
 }
 
 extension PieceKind: CaseIterable, RawRepresentable {

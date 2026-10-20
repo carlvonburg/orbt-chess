@@ -176,6 +176,11 @@ impl BuilderSession {
         self.act(|b, doc, stats| b.delete(doc, id, stats))
     }
 
+    /// Undoes the last edit, keeping the board on a saved position.
+    pub fn undo(&self) -> Changes {
+        self.act(|b, doc, stats| b.undo(doc, stats))
+    }
+
     pub fn go_to_biggest_gap(&self) -> Changes {
         self.act(|b, doc, stats| b.go_to_biggest_gap(doc, stats))
     }

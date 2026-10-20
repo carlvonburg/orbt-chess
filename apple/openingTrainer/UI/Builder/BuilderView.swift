@@ -118,7 +118,7 @@ struct BuilderView: View {
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Menu("More", systemImage: "ellipsis") {
-                Button("Undo", systemImage: "arrow.uturn.backward") { document.undo() }
+                Button("Undo", systemImage: "arrow.uturn.backward") { model.undo() }
                     .disabled(!document.canUndo)
                 Divider()
                 Button("Outline", systemImage: "list.bullet.indent") { sheet = .outline }

@@ -740,6 +740,11 @@ public protocol BuilderSessionProtocol: AnyObject, Sendable {
     
     func transpositionAfter(uci: String)  -> UInt32?
     
+    /**
+     * Undoes the last edit, keeping the board on a saved position.
+     */
+    func undo()  -> Changes
+    
 }
 /**
  * The builder's navigation over a repertoire.
@@ -1082,6 +1087,18 @@ open func transpositionAfter(uci: String) -> UInt32?  {
     uniffi_opening_core_fn_method_buildersession_transposition_after(
             self.uniffiCloneHandle(),
         FfiConverterString.lower(uci),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Undoes the last edit, keeping the board on a saved position.
+     */
+open func undo() -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_undo(
+            self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
 }
@@ -12684,6 +12701,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_buildersession_transposition_after() != 32066) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_undo() != 31506) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_drillsession_analysis_moves() != 25589) {

@@ -107,6 +107,9 @@ final class BuilderModel {
 
     func delete(_ id: NodeID) { act(session.delete(id: id)) }
 
+    /// Undoes the last edit; the board stays on a saved position.
+    func undo() { act(session.undo()) }
+
     /// Goes to the biggest gap below the current node, or in the whole repertoire.
     func goToBiggestGap() { act(session.goToBiggestGap()) }
 

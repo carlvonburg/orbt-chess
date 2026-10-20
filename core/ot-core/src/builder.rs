@@ -408,6 +408,32 @@ impl Builder {
         changes
     }
 
+    /// Undoes the last edit. When it removed the position on the board, goes back along the
+    /// same moves as far as they are still saved.
+    pub fn undo(&mut self, doc: &mut Repertoire, stats: &dyn StatsSource) -> Changes {
+        let ucis: Vec<String> = doc
+            .tree()
+            .moves(self.current)
+            .into_iter()
+            .map(|m| m.uci)
+            .collect();
+        let mut changes = doc.undo(stats);
+        let tree = doc.tree();
+        let mut node = RepertoireTree::ROOT;
+        for uci in &ucis {
+            match tree.child_by_uci(node, uci) {
+                Some(child) => node = child,
+                None => break,
+            }
+        }
+        if node != self.current || tree.get(self.current).is_none() {
+            self.draft.clear();
+            self.current = node;
+            merge(&mut changes, self.remember(doc));
+        }
+        changes
+    }
+
     /// Goes to the biggest gap below the current node, or in the whole repertoire.
     pub fn go_to_biggest_gap(&mut self, doc: &mut Repertoire, stats: &dyn StatsSource) -> Changes {
         let gap = doc
@@ -561,6 +587,21 @@ mod tests {
         assert_eq!(d.line_text(b.current), "1. e4 c5");
         let reopened = Builder::new(&d, None);
         assert_eq!(d.line_text(reopened.current), "1. e4 c5");
+    }
+
+    #[test]
+    fn undo_goes_back_to_a_saved_position() {
+        let mut d = doc("1. e4 e5 *", Side::White);
+        let mut b = Builder::new(&d, None);
+        b.play_uci(&mut d, "e2e4", &none());
+        b.play_uci(&mut d, "c7c5", &none());
+        b.play_uci(&mut d, "g1f3", &none());
+        b.save_draft(&mut d, &none());
+        assert_eq!(d.line_text(b.current), "1. e4 c5 2. Nf3");
+        let changes = b.undo(&mut d, &none());
+        assert!(changes.tree_changed);
+        assert_eq!(d.line_text(b.current), "1. e4");
+        assert!(d.tree().get(b.current).is_some());
     }
 
     #[test]
