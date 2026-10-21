@@ -179,14 +179,14 @@ private struct TableDownloadRow: View {
             }
         } else if let file {
             Button("Download Again", systemImage: "arrow.down.circle") {
-                Task { await coverage.download(file) }
+                Task { await coverage.retry(database) }
             }
         } else {
             Label("Not available offline: coverage uses the Lichess explorer", systemImage: "icloud.slash")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
-        if let error = coverage.lastError {
+        if let file, !coverage.isReady(database), let error = coverage.failures[file.file] {
             Text(error).font(.footnote).foregroundStyle(.red)
         }
     }

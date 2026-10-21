@@ -17,7 +17,8 @@ final class CoverageTables {
     private(set) var available: [CoverageFile] = []
     /// Downloads in progress: file name → fraction done.
     private(set) var downloads: [String: Double] = [:]
-    var lastError: String?
+    /// Why the last download of a file failed, by file name.
+    private(set) var failures: [String: String] = [:]
 
     private let explorer: ExplorerService
     @ObservationIgnored private var loadedFiles: Set<String> = []
@@ -107,11 +108,18 @@ final class CoverageTables {
         }
     }
 
+    /// Reads the server's list again, then downloads the database's table (the button after a
+    /// failed download: the list may have changed since).
+    func retry(_ database: ExplorerDatabase) async {
+        await refreshManifest()
+        if let file = file(for: database), !isReady(database) { await download(file) }
+    }
+
     /// Downloads a table, checks it, replaces any other file for the same selection and loads it.
     func download(_ file: CoverageFile) async {
         guard downloads[file.file] == nil else { return }
         downloads[file.file] = 0
-        lastError = nil
+        failures[file.file] = nil
         // No Lichess requests for this database meanwhile: the table answers most of them.
         explorer.core.expectCoverageTable(database: file.database)
         defer {
@@ -129,7 +137,7 @@ final class CoverageTables {
             }.value
             guard intact else {
                 try? FileManager.default.removeItem(at: temporary)
-                lastError = "The download was damaged. Try again."
+                failures[file.file] = "The download does not match the server's list of tables. Try again later."
                 return
             }
             for other in available where other.database == file.database && other.file != file.file {
@@ -141,7 +149,7 @@ final class CoverageTables {
             loadedFiles.remove(Self.directory.standardizedFileURL.path + "/" + file.file)
             await load(from: Self.directory)
         } catch {
-            lastError = "Could not download the table: \(error.localizedDescription)"
+            failures[file.file] = "Could not download the table: \(error.localizedDescription)"
         }
     }
 
