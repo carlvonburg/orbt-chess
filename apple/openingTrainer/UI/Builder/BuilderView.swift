@@ -10,6 +10,9 @@ struct BuilderView: View {
     @State private var sheet: Sheet?
     @State private var drill: DrillRequest?
     @State private var analysis: WebPage?
+    /// Board and panel side by side (iPad landscape, Mac): actions move from the bottom
+    /// bar to the top, move navigation under the board, the gap finder into the panel.
+    @State private var wide = false
 
     enum Sheet: String, Identifiable {
         case outline, gaps, note, settings, cardInfo
@@ -26,18 +29,31 @@ struct BuilderView: View {
     var body: some View {
         let _ = document.revision
         GeometryReader { geo in
-            if sizeClass == .regular && geo.size.width > geo.size.height {
+            if isWide(geo.size) {
+                // The board as large as the height allows (below it the move strip, about
+                // 44 pt, and the padding), keeping at least 380 pt for the panel, which
+                // takes the rest of the width.
+                let side = max(240, min(geo.size.height - 76, geo.size.width - 380 - 32))
                 HStack(alignment: .top, spacing: 0) {
                     VStack(spacing: 12) {
                         board
-                        MovePathStrip(model: model)
+                            .frame(width: side, height: side)
+                        // Move navigation under the board it steps through.
+                        HStack(spacing: 12) {
+                            MovePathStrip(model: model)
+                            HStack(spacing: 8) { navigationButtons }
+                                .labelStyle(.iconOnly)
+                                .buttonStyle(.glass)
+                                .buttonBorderShape(.circle)
+                                .controlSize(.large)
+                        }
                         Spacer(minLength: 0)
                     }
+                    .frame(width: side)
                     .padding()
-                    .frame(maxWidth: .infinity)
-                    List { panelRows }
+                    List { panelRows(onGap: { model.goToBiggestGap() }) }
                         .listStyle(.plain)
-                        .frame(width: 420)
+                        .frame(maxWidth: .infinity)
                 }
             } else {
                 // A List so saved moves can be swiped to delete.
@@ -51,13 +67,14 @@ struct BuilderView: View {
                         MovePathStrip(model: model)
                             .builderRow(separator: false)
                     }
-                    panelRows
+                    panelRows(onGap: nil)
                 }
                 .listStyle(.plain)
                 .environment(\.defaultMinListRowHeight, 0)
                 .scrollDismissesKeyboard(.immediately)
             }
         }
+        .onGeometryChange(for: Bool.self) { isWide($0.size) } action: { wide = $0 }
         .navigationTitle(document.name)
         .inlineNavigationTitle()
         .toolbar { toolbar }
@@ -79,12 +96,15 @@ struct BuilderView: View {
         }
     }
 
+    private func isWide(_ size: CGSize) -> Bool {
+        sizeClass == .regular && size.width > size.height
+    }
+
     private var board: some View {
         BoardView(position: model.position, orientation: model.orientation, lastMove: model.lastMove,
                   arrows: model.arrows, movableSide: model.position.sideToMove()) { from, to, promotion in
             model.play(from: from, to: to, promotion: promotion)
         }
-        .frame(maxWidth: 680)
     }
 
     private func analyze() {
@@ -99,12 +119,13 @@ struct BuilderView: View {
     // MARK: Panel
 
     /// The panel as List rows: header rows without separators, then one row per move.
+    /// With `onGap`, the header's gap count goes to the biggest gap.
     @ViewBuilder
-    private var panelRows: some View {
+    private func panelRows(onGap: (() -> Void)?) -> some View {
         if model.hasDraft {
             DraftPanel(model: model)
         } else if let node = model.node {
-            NodeHeader(model: model, node: node, onNote: { sheet = .note })
+            NodeHeader(model: model, node: node, onNote: { sheet = .note }, onGap: onGap)
                 .builderRow(separator: false)
             // At a transposition the panels show the moves stored for this position elsewhere.
             let shown = model.shownNode ?? node
@@ -122,8 +143,46 @@ struct BuilderView: View {
 
     // MARK: Toolbar
 
+    /// On a phone (and iPad portrait) the actions are in the bottom bar with move
+    /// navigation; side by side they are top trailing, before the menu, and move
+    /// navigation and the gap finder are next to what they act on.
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
+        let actions: ToolbarItemPlacement = wide ? .trailingBar : .bottomActions
+        if !wide {
+            ToolbarItemGroup(placement: .bottomActions) { navigationButtons }
+            ToolbarSpacer(.flexible, placement: .bottomActions)
+        }
+        if model.hasDraft {
+            // While a new line is on the board: keep it or drop it.
+            ToolbarItemGroup(placement: actions) {
+                Button("Analyze on Lichess", systemImage: "cpu") { analyze() }
+                Button("Discard", systemImage: "xmark", role: .destructive) { model.discardDraft() }
+            }
+            ToolbarSpacer(.fixed, placement: actions)
+            ToolbarItem(placement: actions) {
+                Button { model.saveDraft() } label: {
+                    Label(model.draft.count == 1 ? "Save" : "Save \(model.draft.count)", systemImage: "checkmark")
+                        .labelStyle(.titleAndIcon)
+                }
+                .buttonStyle(.glassProminent)
+            }
+        } else {
+            ToolbarItemGroup(placement: actions) {
+                if !wide {
+                    Button("Biggest Gap", systemImage: "scope") { model.goToBiggestGap() }
+                        .disabled(document.coverage.root?.biggestGap == nil)
+                }
+                Button("Study Branch", systemImage: "graduationcap") {
+                    drill = DrillRequest(mode: .branch(model.current))
+                }
+                .disabled(document.learningProgress(under: model.current).cards == 0)
+                Button("Analyze on Lichess", systemImage: "cpu") { analyze() }
+            }
+        }
+        if wide {
+            ToolbarSpacer(.fixed, placement: .trailingBar)
+        }
         ToolbarItem(placement: .trailingBar) {
             Menu("More", systemImage: "ellipsis") {
                 Button("Undo", systemImage: "arrow.uturn.backward") { model.undo() }
@@ -140,43 +199,20 @@ struct BuilderView: View {
                 Button("Repertoire Settings", systemImage: "gearshape") { sheet = .settings }
             }
         }
-        ToolbarItemGroup(placement: .bottomActions) {
-            Button("Back", systemImage: "chevron.backward") { model.back() }
-                .keyboardShortcut(.leftArrow, modifiers: [])
-                .disabled(model.current == RepertoireTree.rootID && !model.hasDraft)
-            Button("Forward", systemImage: "chevron.forward") { model.forward() }
-                .keyboardShortcut(.rightArrow, modifiers: [])
-                .disabled(!model.canForward)
-        }
-        ToolbarSpacer(.flexible, placement: .bottomActions)
-        if model.hasDraft {
-            // While a new line is on the board: keep it or drop it.
-            ToolbarItemGroup(placement: .bottomActions) {
-                Button("Analyze on Lichess", systemImage: "cpu") { analyze() }
-                Button("Discard", systemImage: "xmark", role: .destructive) { model.discardDraft() }
-            }
-            ToolbarSpacer(.fixed, placement: .bottomActions)
-            ToolbarItem(placement: .bottomActions) {
-                Button { model.saveDraft() } label: {
-                    Label(model.draft.count == 1 ? "Save" : "Save \(model.draft.count)", systemImage: "checkmark")
-                        .labelStyle(.titleAndIcon)
-                }
-                .buttonStyle(.glassProminent)
-            }
-        } else {
-            ToolbarItemGroup(placement: .bottomActions) {
-                Button("Biggest Gap", systemImage: "scope") { model.goToBiggestGap() }
-                    .disabled(document.coverage.root?.biggestGap == nil)
-                Button("Study Branch", systemImage: "graduationcap") {
-                    drill = DrillRequest(mode: .branch(model.current))
-                }
-                .disabled(document.learningProgress(under: model.current).cards == 0)
-                Button("Analyze on Lichess", systemImage: "cpu") { analyze() }
-            }
-        }
         #if os(iOS)
         ToolbarItem(placement: .keyboard) { siblingButtons }
         #endif
+    }
+
+    /// Back and forward, with ←/→ (in the bottom bar, or under the board when wide).
+    @ViewBuilder
+    private var navigationButtons: some View {
+        Button("Back", systemImage: "chevron.backward") { model.back() }
+            .keyboardShortcut(.leftArrow, modifiers: [])
+            .disabled(model.current == RepertoireTree.rootID && !model.hasDraft)
+        Button("Forward", systemImage: "chevron.forward") { model.forward() }
+            .keyboardShortcut(.rightArrow, modifiers: [])
+            .disabled(!model.canForward)
     }
 
     /// ↑/↓ switch to the previous/next sibling line.
@@ -346,6 +382,8 @@ struct NodeHeader: View {
     let model: BuilderModel
     let node: Node
     let onNote: () -> Void
+    /// Goes to the biggest gap (side by side, where the toolbar has no gap button).
+    var onGap: (() -> Void)?
 
     var body: some View {
         let document = model.document
@@ -382,6 +420,17 @@ struct NodeHeader: View {
                     Text("\(saved.formatted()) \(saved == 1 ? "move" : "moves")").foregroundStyle(.secondary)
                 }
                 .font(.caption2.monospacedDigit())
+            }
+            if let onGap, document.coverage.root?.biggestGap != nil {
+                // The biggest gap under this position, else in the whole repertoire.
+                let here = (info?.gapCount ?? 0) > 0
+                Button(action: onGap) {
+                    Label(here ? "Biggest Gap Here" : "Biggest Gap", systemImage: "scope")
+                        .font(.callout.weight(.medium))
+                }
+                .buttonStyle(.bordered)
+                .tint(.orange)
+                .foregroundStyle(.orange)
             }
             if !node.note.isEmpty {
                 Button(action: onNote) {
