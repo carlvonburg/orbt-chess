@@ -152,7 +152,7 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
   when chosen or when a repertoire using it opens. The stats cache answers from Lichess-fetched
   entries first, then the table; positions in the table are never queued, and queued requests a
   new table answers are dropped. Positions it lacks still come from the explorer (Classical:
-  the masters explorer). The tables are built outside this repo (`data/`, never committed).
+  the masters explorer from 2000, Lichess rapid games of the same bin below). The tables are built outside this repo (`data/`, never committed).
 - Build:
   1. `core/scripts/build-apple.sh` after changing Rust code and once after cloning (Rust from
      rustup, which installs the pinned toolchain; it builds iOS, iOS simulator and macOS slices
