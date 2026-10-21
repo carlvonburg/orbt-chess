@@ -1,0 +1,4 @@
+#!/bin/zsh
+# After a rebase (`git pull --rebase`): rebuild the xcframework if the Rust core changed.
+[[ "$1" == rebase ]] || exit 0
+exec "${0:A:h}/rebuild-core.sh" ORIG_HEAD HEAD

@@ -1,0 +1,3 @@
+#!/bin/zsh
+# After a merge or pull: rebuild the xcframework if the Rust core changed.
+exec "${0:A:h}/rebuild-core.sh" ORIG_HEAD HEAD

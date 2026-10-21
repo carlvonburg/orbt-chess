@@ -41,6 +41,9 @@ xcodebuild -project apple/openingTrainer.xcodeproj -scheme openingTrainer -desti
 core/scripts/check.sh
 ```
 
+Once per clone, `git config core.hooksPath core/scripts/git-hooks` turns on hooks that rebuild
+the xcframework (not committed) when a pull, merge, rebase or branch switch changes the Rust core.
+
 Lichess login uses OAuth with PKCE and needs no client registration.
 
 ## License

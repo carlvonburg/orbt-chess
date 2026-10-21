@@ -57,7 +57,9 @@ One folder per platform around a shared core (Android and web would be `android/
   - `rust-toolchain.toml` pins the Rust version, components and targets; `deny.toml` configures
     cargo-deny (licenses compatible with AGPL-3.0-or-later, RustSec advisories, bans, sources).
   - `scripts/check.sh` (fmt, clippy -D warnings, tests, wasm32 check, cargo deny),
-    `scripts/build-apple.sh`.
+    `scripts/build-apple.sh`, `scripts/git-hooks/` (git hooks, on with
+    `git config core.hooksPath core/scripts/git-hooks`: rebuild the xcframework when a merge,
+    pull, rebase or branch switch changes the core, so it never lags the committed bindings).
   - `fuzz/` — cargo-fuzz targets for what the app reads (PGN, sidecar, review log, explorer
     answers), outside the workspace; `fuzz/run.sh [seconds]` runs them all (nightly).
     The core must not panic or recurse per ply on any input: the app calls it on small

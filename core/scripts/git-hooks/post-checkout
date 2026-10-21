@@ -1,0 +1,5 @@
+#!/bin/zsh
+# After switching branches ($3 = 1; not for file checkouts): rebuild the xcframework if the
+# Rust core changed.
+[[ "$3" == 1 ]] || exit 0
+exec "${0:A:h}/rebuild-core.sh" "$1" "$2"
