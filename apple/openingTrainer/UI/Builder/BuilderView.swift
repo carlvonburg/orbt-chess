@@ -377,7 +377,7 @@ struct NodeHeader: View {
                 HStack(spacing: 0) {
                     if let gaps = info?.gapCount, gaps > 0 {
                         Text("\(gaps.formatted()) \(gaps == 1 ? "gap" : "gaps")").foregroundStyle(.orange)
-                        + Text(" · ").foregroundStyle(.secondary)
+                        Text(" · ").foregroundStyle(.secondary)
                     }
                     Text("\(saved.formatted()) \(saved == 1 ? "move" : "moves")").foregroundStyle(.secondary)
                 }

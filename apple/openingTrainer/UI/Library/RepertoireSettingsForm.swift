@@ -177,7 +177,7 @@ private struct TableDownloadRow: View {
             ProgressView(value: fraction) {
                 Text("Downloading \(ByteCountFormatter.string(fromByteCount: file.bytes, countStyle: .file))")
             }
-        } else if let file {
+        } else if file != nil {
             Button("Download Again", systemImage: "arrow.down.circle") {
                 Task { await coverage.retry(database) }
             }
