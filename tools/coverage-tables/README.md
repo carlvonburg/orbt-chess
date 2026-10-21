@@ -28,7 +28,7 @@ core/scripts/coverage-manifest.py <lichess tables dir> <otb tables dir>
   2200 (to 2499), 2500+.
 - Counts per move: the games that played the move in the position (as the Lichess explorer),
   over the first 70 plies.
-- Walk, for both colours: own moves with ≥ 5% share, opponent moves while p·share ≥ 1/N, stop where a
+- Walk, for both colours: every own move, opponent moves while p·share ≥ 1/N, stop where a
   position has fewer than 25 games; files for N = 200 and 800 (the app downloads 800).
 - Evals copied from the Lichess tables where they have the position.
 - Prints the counts per filter step (the build report).

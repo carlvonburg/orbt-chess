@@ -145,7 +145,7 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
   time control and one rating bin — Blitz or Rapid (Lichess games, Lichess rating) or Classical
   (over-the-board games since 2000 by FIDE rating, Lumbra's Gigabase, CC BY-NC 4.0: credit it, no
   commercial use). Each table holds the positions a repertoire can reach at 1 in 800 (own moves
-  ≥ 5%, lines stop below 25 games), downloaded from Cloudflare R2 (`manifest.json`, written by
+  ≥ 5%, Classical every own move; lines stop below 25 games), downloaded from Cloudflare R2 (`manifest.json`, written by
   `core/scripts/coverage-manifest.py`; always the deepest file) into Application Support/Coverage
   when chosen or when a repertoire using it opens. The stats cache answers from Lichess-fetched
   entries first, then the table; positions in the table are never queued, and queued requests a
