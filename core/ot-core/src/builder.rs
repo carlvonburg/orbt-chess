@@ -220,7 +220,7 @@ impl Builder {
         let s = stats.stats(&epd)?;
         Some(
             doc.coverage()
-                .draft_replies(&epd, s, self.reach_on_board(doc, stats)),
+                .draft_replies(&epd, &s, self.reach_on_board(doc, stats)),
         )
     }
 

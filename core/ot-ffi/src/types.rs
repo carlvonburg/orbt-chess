@@ -8,6 +8,7 @@ use ot_core::chess::{BoardPiece, BoardSquare, Epd, PieceKind, PlayedMove, Side};
 use ot_core::coverage::{CoverageGap, GapKind, NodeCoverage, ReplyInfo, Status};
 use ot_core::document::{Changes, OutlineItem, StudyDefaults};
 use ot_core::drill::{DrillMode, Feedback, Phase};
+use ot_core::explorer::manifest::{CoverageFile, CoverageManifest};
 use ot_core::explorer::queue::{Lane, QueueState};
 use ot_core::explorer::{
     ExplorerDatabase, ExplorerMove, ExplorerSpeed, ExplorerStats, OpeningName,
@@ -156,6 +157,18 @@ pub enum ExplorerDatabase {
         ratings: Vec<i64>,
         speeds: Vec<ExplorerSpeed>,
     },
+    Otb {
+        ratings: Vec<i64>,
+    },
+}
+
+#[uniffi::remote(Record)]
+pub struct CoverageFile {
+    pub file: String,
+    pub database: ExplorerDatabase,
+    pub target_games: i64,
+    pub bytes: i64,
+    pub sha256: String,
 }
 
 #[uniffi::remote(Record)]
@@ -733,6 +746,44 @@ pub fn database_summary(database: ExplorerDatabase) -> String {
 #[uniffi::export]
 pub fn database_rating_buckets() -> Vec<i64> {
     ExplorerDatabase::RATING_BUCKETS.to_vec()
+}
+
+/// The tables listed in a downloaded `manifest.json` (None if it can't be read).
+#[uniffi::export]
+pub fn coverage_manifest_files(json: Vec<u8>) -> Option<Vec<CoverageFile>> {
+    CoverageManifest::parse(&json).ok().map(|m| m.files)
+}
+
+/// The file to download for `database` (its deepest).
+#[uniffi::export]
+pub fn coverage_file_for(
+    files: Vec<CoverageFile>,
+    database: ExplorerDatabase,
+) -> Option<CoverageFile> {
+    CoverageManifest { version: 1, files }
+        .file_for(&database)
+        .cloned()
+}
+
+/// One file per database (its deepest), for listing the selections.
+#[uniffi::export]
+pub fn coverage_selections(files: Vec<CoverageFile>) -> Vec<CoverageFile> {
+    CoverageManifest { version: 1, files }
+        .selections()
+        .into_iter()
+        .cloned()
+        .collect()
+}
+
+/// Whether downloaded bytes are `file` (size and SHA-256).
+#[uniffi::export]
+pub fn coverage_file_verify(file: CoverageFile, bytes: Vec<u8>) -> bool {
+    file.verify(&bytes)
+}
+
+#[uniffi::export]
+pub fn database_elo_bins() -> Vec<i64> {
+    ExplorerDatabase::ELO_BINS.to_vec()
 }
 
 #[uniffi::export]

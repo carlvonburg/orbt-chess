@@ -97,6 +97,18 @@ impl RepertoireDoc {
         }
     }
 
+    /// An offline coverage table for this database was added: its positions need no fetching.
+    pub(crate) fn table_added(&self, database: &ExplorerDatabase) {
+        if self.lock().database() != database {
+            return;
+        }
+        let changes = self.change(|doc, stats| doc.recompute_coverage(stats));
+        let listener = self.listener.lock().expect("listener lock").clone();
+        if let Some(l) = listener {
+            l.changed(changes);
+        }
+    }
+
     fn read<R>(&self, f: impl FnOnce(&Repertoire, &dyn StatsSource) -> R) -> R {
         let doc = self.lock();
         let database = doc.database().clone();
@@ -311,7 +323,7 @@ impl RepertoireDoc {
     // Stats and coverage
 
     pub fn stats(&self, epd: Epd) -> Option<ExplorerStats> {
-        self.read(|_, stats| stats.stats(&epd).cloned())
+        self.read(|_, stats| stats.stats(&epd).map(|s| s.into_owned()))
     }
 
     /// The opening name of a node, or of its nearest ancestor, from stats already loaded.
@@ -341,7 +353,7 @@ impl RepertoireDoc {
     pub fn draft_replies(&self, epd: Epd, reach: Option<f64>) -> Option<Vec<ReplyInfo>> {
         self.read(|doc, stats| {
             let s = stats.stats(&epd)?;
-            Some(doc.coverage().draft_replies(&epd, s, reach))
+            Some(doc.coverage().draft_replies(&epd, &s, reach))
         })
     }
 

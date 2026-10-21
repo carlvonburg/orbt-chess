@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{CoverageGap, CoverageSettings, GapKind, NodeCoverage, ReplyInfo, Status};
@@ -5,14 +6,15 @@ use crate::chess::Epd;
 use crate::explorer::ExplorerStats;
 use crate::repertoire::{NodeId, RepertoireNode, RepertoireTree};
 
-/// Where the engine reads explorer stats for a position.
+/// Where the engine reads explorer stats for a position. Owned when decoded on demand (an
+/// offline coverage table), borrowed from a cache otherwise.
 pub trait StatsSource {
-    fn stats(&self, epd: &Epd) -> Option<&ExplorerStats>;
+    fn stats(&self, epd: &Epd) -> Option<Cow<'_, ExplorerStats>>;
 }
 
 impl StatsSource for HashMap<Epd, ExplorerStats> {
-    fn stats(&self, epd: &Epd) -> Option<&ExplorerStats> {
-        self.get(epd)
+    fn stats(&self, epd: &Epd) -> Option<Cow<'_, ExplorerStats>> {
+        self.get(epd).map(Cow::Borrowed)
     }
 }
 
@@ -244,6 +246,7 @@ impl CoverageEngine {
         } else {
             None
         };
+        let node_stats = node_stats.as_deref();
         for (index, &child) in node.children.iter().enumerate() {
             let Some(mv) = tree.get(child).and_then(|n| n.mv.as_ref()) else {
                 continue;
@@ -297,7 +300,7 @@ impl CoverageEngine {
         } else {
             None
         };
-        if let Some(s) = node_stats {
+        if let Some(s) = node_stats.as_deref() {
             c.replies = self.replies(node, s, c.reach, tree);
         }
 

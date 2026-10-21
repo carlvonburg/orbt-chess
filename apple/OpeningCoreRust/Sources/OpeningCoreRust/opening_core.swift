@@ -1307,6 +1307,143 @@ public func FfiConverterTypeCloudEvals_lower(_ value: CloudEvals) -> UInt64 {
 
 
 /**
+ * An offline coverage table read from its file, ready to add to the explorer. Reading
+ * decompresses it, so do it off the main thread.
+ */
+public protocol CoverageTableFileProtocol: AnyObject, Sendable {
+    
+    func info()  -> CoverageTableInfo
+    
+}
+/**
+ * An offline coverage table read from its file, ready to add to the explorer. Reading
+ * decompresses it, so do it off the main thread.
+ */
+open class CoverageTableFile: CoverageTableFileProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_coveragetablefile(self.handle, $0) }
+    }
+    /**
+     * `bytes`: the file's contents, zstd-compressed or not.
+     */
+public convenience init(bytes: Data)throws  {
+    let handle =
+        try rustCallWithError(FfiConverterTypeCoverageTableError_lift) {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_coveragetablefile_new(
+        FfiConverterData.lower(bytes),uniffiCallStatus
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_coveragetablefile(handle, $0) }
+    }
+
+    
+
+    
+open func info() -> CoverageTableInfo  {
+    return try!  FfiConverterTypeCoverageTableInfo_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_coveragetablefile_info(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoverageTableFile: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = CoverageTableFile
+
+    public static func lift(_ handle: UInt64) throws -> CoverageTableFile {
+        return CoverageTableFile(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: CoverageTableFile) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoverageTableFile {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: CoverageTableFile, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoverageTableFile_lift(_ handle: UInt64) throws -> CoverageTableFile {
+    return try FfiConverterTypeCoverageTableFile.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoverageTableFile_lower(_ value: CoverageTableFile) -> UInt64 {
+    return FfiConverterTypeCoverageTableFile.lower(value)
+}
+
+
+
+
+
+
+/**
  * Told about changes the core made by itself (stats arriving for this repertoire).
  */
 public protocol DocumentListener: AnyObject, Sendable {
@@ -1967,6 +2104,12 @@ public func FfiConverterTypeDrillSession_lower(_ value: DrillSession) -> UInt64 
  */
 public protocol ExplorerProtocol: AnyObject, Sendable {
     
+    /**
+     * Adds an offline coverage table (once; a table for the same selection is replaced) and
+     * recomputes the coverage of the repertoires that use its database.
+     */
+    func addCoverageTable(file: CoverageTableFile) 
+    
     func cancelAll(database: ExplorerDatabase) 
     
     /**
@@ -1983,6 +2126,11 @@ public protocol ExplorerProtocol: AnyObject, Sendable {
      * The position on screen.
      */
     func focus(epd: Epd, database: ExplorerDatabase, nowMs: Int64) 
+    
+    /**
+     * Whether the database has an offline coverage table.
+     */
+    func hasCoverageTable(database: ExplorerDatabase)  -> Bool
     
     /**
      * The answer to a fetch (`response` None: no answer, e.g. offline).
@@ -2082,6 +2230,19 @@ public convenience init(store: StatsStore, bannedUntil: Int64?, baseIntervalMs: 
     
 
     
+    /**
+     * Adds an offline coverage table (once; a table for the same selection is replaced) and
+     * recomputes the coverage of the repertoires that use its database.
+     */
+open func addCoverageTable(file: CoverageTableFile)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_add_coverage_table(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeCoverageTableFile_lower(file),uniffiCallStatus
+    )
+}
+}
+    
 open func cancelAll(database: ExplorerDatabase)  {try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_explorer_cancel_all(
@@ -2126,6 +2287,19 @@ open func focus(epd: Epd, database: ExplorerDatabase, nowMs: Int64)  {try! rustC
         FfiConverterInt64.lower(nowMs),uniffiCallStatus
     )
 }
+}
+    
+    /**
+     * Whether the database has an offline coverage table.
+     */
+open func hasCoverageTable(database: ExplorerDatabase) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_has_coverage_table(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeExplorerDatabase_lower(database),uniffiCallStatus
+    )
+})
 }
     
     /**
@@ -5621,6 +5795,72 @@ public func FfiConverterTypeCounts_lower(_ value: Counts) -> RustBuffer {
 }
 
 
+public struct CoverageFile: Equatable, Hashable {
+    public var file: String
+    public var database: ExplorerDatabase
+    public var targetGames: Int64
+    public var bytes: Int64
+    public var sha256: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(file: String, database: ExplorerDatabase, targetGames: Int64, bytes: Int64, sha256: String) {
+        self.file = file
+        self.database = database
+        self.targetGames = targetGames
+        self.bytes = bytes
+        self.sha256 = sha256
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CoverageFile: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoverageFile: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoverageFile {
+        return
+            try CoverageFile(
+                file: FfiConverterString.read(from: &buf), 
+                database: FfiConverterTypeExplorerDatabase.read(from: &buf), 
+                targetGames: FfiConverterInt64.read(from: &buf), 
+                bytes: FfiConverterInt64.read(from: &buf), 
+                sha256: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CoverageFile, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.file, into: &buf)
+        FfiConverterTypeExplorerDatabase.write(value.database, into: &buf)
+        FfiConverterInt64.write(value.targetGames, into: &buf)
+        FfiConverterInt64.write(value.bytes, into: &buf)
+        FfiConverterString.write(value.sha256, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoverageFile_lift(_ buf: RustBuffer) throws -> CoverageFile {
+    return try FfiConverterTypeCoverageFile.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoverageFile_lower(_ value: CoverageFile) -> RustBuffer {
+    return FfiConverterTypeCoverageFile.lower(value)
+}
+
+
 public struct CoverageGap: Equatable, Hashable {
     public var node: UInt32
     public var kind: GapKind
@@ -5676,6 +5916,76 @@ public func FfiConverterTypeCoverageGap_lift(_ buf: RustBuffer) throws -> Covera
 #endif
 public func FfiConverterTypeCoverageGap_lower(_ value: CoverageGap) -> RustBuffer {
     return FfiConverterTypeCoverageGap.lower(value)
+}
+
+
+public struct CoverageTableInfo: Equatable, Hashable {
+    /**
+     * The selection it answers for: one speed and the Elo bins it spans.
+     */
+    public var database: ExplorerDatabase
+    /**
+     * It holds every position needed at 1 in this many games, or fewer.
+     */
+    public var targetGames: Int64
+    public var positions: UInt64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * The selection it answers for: one speed and the Elo bins it spans.
+         */database: ExplorerDatabase, 
+        /**
+         * It holds every position needed at 1 in this many games, or fewer.
+         */targetGames: Int64, positions: UInt64) {
+        self.database = database
+        self.targetGames = targetGames
+        self.positions = positions
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension CoverageTableInfo: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoverageTableInfo: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoverageTableInfo {
+        return
+            try CoverageTableInfo(
+                database: FfiConverterTypeExplorerDatabase.read(from: &buf), 
+                targetGames: FfiConverterInt64.read(from: &buf), 
+                positions: FfiConverterUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: CoverageTableInfo, into buf: inout [UInt8]) {
+        FfiConverterTypeExplorerDatabase.write(value.database, into: &buf)
+        FfiConverterInt64.write(value.targetGames, into: &buf)
+        FfiConverterUInt64.write(value.positions, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoverageTableInfo_lift(_ buf: RustBuffer) throws -> CoverageTableInfo {
+    return try FfiConverterTypeCoverageTableInfo.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoverageTableInfo_lower(_ value: CoverageTableInfo) -> RustBuffer {
+    return FfiConverterTypeCoverageTableInfo.lower(value)
 }
 
 
@@ -8903,6 +9213,81 @@ public func FfiConverterTypeCloudEvalLookup_lower(_ value: CloudEvalLookup) -> R
 
 
 public 
+enum CoverageTableError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case Unreadable(message: String
+    )
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension CoverageTableError: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeCoverageTableError: FfiConverterRustBuffer {
+    typealias SwiftType = CoverageTableError
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> CoverageTableError {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Unreadable(
+            message: try FfiConverterString.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: CoverageTableError, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .Unreadable(message):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(message, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoverageTableError_lift(_ buf: RustBuffer) throws -> CoverageTableError {
+    return try FfiConverterTypeCoverageTableError.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeCoverageTableError_lower(_ value: CoverageTableError) -> RustBuffer {
+    return FfiConverterTypeCoverageTableError.lower(value)
+}
+
+
+public 
 enum DocumentError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
@@ -9052,6 +9437,8 @@ public enum ExplorerDatabase: Equatable, Hashable {
     case masters
     case lichess(ratings: [Int64], speeds: [ExplorerSpeed]
     )
+    case otb(ratings: [Int64]
+    )
 
 
 
@@ -9078,6 +9465,9 @@ public struct FfiConverterTypeExplorerDatabase: FfiConverterRustBuffer {
         case 2: return .lichess(ratings: try FfiConverterSequenceInt64.read(from: &buf), speeds: try FfiConverterSequenceTypeExplorerSpeed.read(from: &buf)
         )
         
+        case 3: return .otb(ratings: try FfiConverterSequenceInt64.read(from: &buf)
+        )
+        
         default: throw UniffiInternalError.unexpectedEnumCase
         }
     }
@@ -9094,6 +9484,11 @@ public struct FfiConverterTypeExplorerDatabase: FfiConverterRustBuffer {
             writeInt(&buf, Int32(2))
             FfiConverterSequenceInt64.write(ratings, into: &buf)
             FfiConverterSequenceTypeExplorerSpeed.write(speeds, into: &buf)
+            
+        
+        case let .otb(ratings):
+            writeInt(&buf, Int32(3))
+            FfiConverterSequenceInt64.write(ratings, into: &buf)
             
         }
     }
@@ -10998,6 +11393,30 @@ fileprivate struct FfiConverterOptionTypeCloudEval: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeCoverageFile: FfiConverterRustBuffer {
+    typealias SwiftType = CoverageFile?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeCoverageFile.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeCoverageFile.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeCoverageGap: FfiConverterRustBuffer {
     typealias SwiftType = CoverageGap?
 
@@ -11406,6 +11825,30 @@ fileprivate struct FfiConverterOptionSequenceString: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionSequenceTypeCoverageFile: FfiConverterRustBuffer {
+    typealias SwiftType = [CoverageFile]?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterSequenceTypeCoverageFile.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterSequenceTypeCoverageFile.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionSequenceTypeReplyInfo: FfiConverterRustBuffer {
     typealias SwiftType = [ReplyInfo]?
 
@@ -11696,6 +12139,31 @@ fileprivate struct FfiConverterSequenceTypeChapterInfo: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeChapterInfo.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeCoverageFile: FfiConverterRustBuffer {
+    typealias SwiftType = [CoverageFile]
+
+    public static func write(_ value: [CoverageFile], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeCoverageFile.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [CoverageFile] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [CoverageFile]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeCoverageFile.read(from: &buf))
         }
         return seq
     }
@@ -12640,11 +13108,57 @@ public func cloudEvalText(eval: CloudEval, uci: String) -> String?  {
     )
 })
 }
+/**
+ * The file to download for `database` (its deepest).
+ */
+public func coverageFileFor(files: [CoverageFile], database: ExplorerDatabase) -> CoverageFile?  {
+    return try!  FfiConverterOptionTypeCoverageFile.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_coverage_file_for(
+        FfiConverterSequenceTypeCoverageFile.lower(files),
+        FfiConverterTypeExplorerDatabase_lower(database),uniffiCallStatus
+    )
+})
+}
+/**
+ * Whether downloaded bytes are `file` (size and SHA-256).
+ */
+public func coverageFileVerify(file: CoverageFile, bytes: Data) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_coverage_file_verify(
+        FfiConverterTypeCoverageFile_lower(file),
+        FfiConverterData.lower(bytes),uniffiCallStatus
+    )
+})
+}
+/**
+ * The tables listed in a downloaded `manifest.json` (None if it can't be read).
+ */
+public func coverageManifestFiles(json: Data) -> [CoverageFile]?  {
+    return try!  FfiConverterOptionSequenceTypeCoverageFile.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_coverage_manifest_files(
+        FfiConverterData.lower(json),uniffiCallStatus
+    )
+})
+}
 public func coverageSeenEvery(coverage: NodeCoverage) -> Int64?  {
     return try!  FfiConverterOptionInt64.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_func_coverage_seen_every(
         FfiConverterTypeNodeCoverage_lower(coverage),uniffiCallStatus
+    )
+})
+}
+/**
+ * One file per database (its deepest), for listing the selections.
+ */
+public func coverageSelections(files: [CoverageFile]) -> [CoverageFile]  {
+    return try!  FfiConverterSequenceTypeCoverageFile.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_coverage_selections(
+        FfiConverterSequenceTypeCoverageFile.lower(files),uniffiCallStatus
     )
 })
 }
@@ -12660,6 +13174,13 @@ public func databaseDefaultLichess() -> ExplorerDatabase  {
     return try!  FfiConverterTypeExplorerDatabase_lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_func_database_default_lichess(uniffiCallStatus
+    )
+})
+}
+public func databaseEloBins() -> [Int64]  {
+    return try!  FfiConverterSequenceInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_database_elo_bins(uniffiCallStatus
     )
 })
 }
@@ -12941,13 +13462,28 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_cloud_eval_text() != 13251) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_func_coverage_file_for() != 12110) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_coverage_file_verify() != 63208) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_coverage_manifest_files() != 26932) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_func_coverage_seen_every() != 64908) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_coverage_selections() != 38704) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_database_cache_key() != 21348) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_database_default_lichess() != 18214) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_database_elo_bins() != 46910) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_database_rating_buckets() != 56408) {
@@ -13274,6 +13810,12 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_cloudevals_on_response() != 26948) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_coveragetablefile_info() != 6683) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_add_coverage_table() != 58574) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_explorer_cancel_all() != 18791) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -13284,6 +13826,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_explorer_focus() != 21696) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_has_coverage_table() != 42896) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_explorer_on_response() != 1233) {
@@ -13611,6 +14156,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_constructor_cloudevals_new() != 216) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_coveragetablefile_new() != 16221) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_constructor_explorer_new() != 34450) {

@@ -209,6 +209,13 @@ impl ExplorerQueue {
         }
     }
 
+    /// Drops the coverage requests of `database` that `answered` says need no fetch any more
+    /// (an offline table now holds them).
+    pub fn drop_answered(&mut self, database: &ExplorerDatabase, answered: impl Fn(&Epd) -> bool) {
+        self.pending
+            .retain(|_, r| &r.database != database || !answered(&r.epd));
+    }
+
     /// After signing in or when the network is back.
     pub fn resume(&mut self) {
         if matches!(self.state, QueueState::NeedsLogin | QueueState::Offline) {
@@ -417,6 +424,16 @@ mod tests {
             ("Authorization", "Bearer lio_x")
         );
         assert_eq!(r.timeout_secs, Some(20));
+    }
+
+    #[test]
+    fn drops_requests_a_table_answers() {
+        let mut q = ExplorerQueue::new(None, None);
+        q.request(epd("e4"), db(), 1.0, false);
+        q.request(epd("d4"), db(), 0.5, false);
+        q.request(epd("e4"), ExplorerDatabase::masters(), 0.5, false);
+        q.drop_answered(&db(), |e| *e == epd("e4"));
+        assert_eq!(q.remaining(), 2);
     }
 
     #[test]

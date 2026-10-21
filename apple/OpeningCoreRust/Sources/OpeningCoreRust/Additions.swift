@@ -118,6 +118,8 @@ extension ExplorerSpeed: CaseIterable, RawRepresentable, Identifiable {
 extension ExplorerDatabase {
     public static var defaultLichess: ExplorerDatabase { databaseDefaultLichess() }
     public static var ratingBuckets: [Int] { databaseRatingBuckets().map(Int.init) }
+    /// The offline coverage tables' Elo bins (Lichess's 0 split into 0, 600 and 800).
+    public static var eloBins: [Int] { databaseEloBins().map(Int.init) }
     public var cacheKey: String { databaseCacheKey(database: self) }
     public var summary: String { databaseSummary(database: self) }
 }

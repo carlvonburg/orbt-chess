@@ -9,11 +9,17 @@ struct OpeningTrainerApp: App {
         WindowGroup {
             RootView()
                 .environment(model)
-                .task { await model.library.setUp() }
+                .task {
+                    await model.library.setUp()
+                    await model.setUpCoverageTables()
+                }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { model.flushAll() }
-            if phase == .active { model.library.refresh() }
+            if phase == .active {
+                model.library.refresh()
+                Task { await model.reloadCoverageTables() }
+            }
         }
     }
 }

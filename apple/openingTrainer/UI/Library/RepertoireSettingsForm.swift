@@ -1,12 +1,40 @@
 import OpeningCoreRust
 import SwiftUI
 
+/// Where a repertoire's opponent move frequencies come from: games of one time control in one
+/// rating bin, from an offline table downloaded when chosen. Blitz and rapid are Lichess games
+/// (Lichess ratings), classical are over-the-board games (FIDE ratings, Lumbra's Gigabase).
+enum CoverageSource: Hashable, CaseIterable {
+    case blitz, rapid, classical
+
+    var title: String {
+        switch self {
+        case .blitz: "Blitz"
+        case .rapid: "Rapid"
+        case .classical: "Classical"
+        }
+    }
+
+    func database(rating: Int) -> ExplorerDatabase {
+        switch self {
+        case .blitz: .lichess(ratings: [Int64(rating)], speeds: [.blitz])
+        case .rapid: .lichess(ratings: [Int64(rating)], speeds: [.rapid])
+        case .classical: .otb(ratings: [Int64(rating)])
+        }
+    }
+
+    /// Whether a table's database is one of this source's bins.
+    func matches(_ database: ExplorerDatabase) -> Bool {
+        database == self.database(rating: database.lowestRating)
+    }
+}
+
 /// Editable repertoire settings: color, coverage database and coverage target.
 struct RepertoireSettingsDraft: Equatable {
     var color: Side = .white
-    var useMasters = false
-    var speeds: Set<ExplorerSpeed> = [.blitz, .rapid, .classical]
-    var ratings: Set<Int> = [1600, 1800, 2000]
+    var source = CoverageSource.blitz
+    /// The rating bin (lower bound, one of `ExplorerDatabase.eloBins`).
+    var rating = 1600
     var targetGames = CoverageDepth.bulletproof.games
     var minGames = 25
 
@@ -14,23 +42,27 @@ struct RepertoireSettingsDraft: Equatable {
 
     init(_ sidecar: RepertoireDocument.SidecarValues) {
         color = sidecar.color
+        // Older repertoires chose several speeds and buckets, or the masters database: show the
+        // closest single choice.
         switch sidecar.database {
         case .masters:
-            useMasters = true
+            source = .classical
+            rating = 2200
+        case let .otb(ratings):
+            source = .classical
+            rating = Int(ratings.min() ?? 2200)
         case let .lichess(ratings, speeds):
-            self.speeds = Set(speeds)
-            self.ratings = Set(ratings.map(Int.init))
+            source = speeds.contains(.blitz) || !speeds.contains(.rapid) ? .blitz : .rapid
+            let low = Int(ratings.min() ?? 1600)
+            rating = ExplorerDatabase.eloBins.last { $0 <= low } ?? 1600
         }
         targetGames = sidecar.targetGames
         minGames = sidecar.minGames
     }
 
-    var database: ExplorerDatabase {
-        if useMasters { return .masters }
-        return .lichess(ratings: ratings.sorted().map(Int64.init), speeds: ExplorerSpeed.allCases.filter(speeds.contains))
-    }
+    var database: ExplorerDatabase { source.database(rating: rating) }
 
-    var isValid: Bool { useMasters || (!speeds.isEmpty && !ratings.isEmpty) }
+    var isValid: Bool { true }
 
     /// The sidecar file of a new repertoire with these settings.
     func makeSidecar() -> Data {
@@ -40,8 +72,13 @@ struct RepertoireSettingsDraft: Equatable {
 }
 
 struct RepertoireSettingsForm: View {
+    @Environment(AppModel.self) private var model
     @Binding var draft: RepertoireSettingsDraft
     @State private var customTarget = false
+
+    private var coverage: CoverageTables { model.coverage }
+    /// Every offline selection: on the server or on this device.
+    private var tables: [ExplorerDatabase] { coverage.selections }
 
     var body: some View {
         Section("I play") {
@@ -53,20 +90,17 @@ struct RepertoireSettingsForm: View {
         }
 
         Section {
-            Picker("Database", selection: $draft.useMasters) {
-                Text("Lichess players").tag(false)
-                Text("Masters").tag(true)
+            Picker("Database", selection: $draft.source) {
+                ForEach(CoverageSource.allCases, id: \.self) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
-            if !draft.useMasters {
-                ChipGrid(title: "Speeds", items: ExplorerSpeed.allCases, label: \.title, selection: $draft.speeds)
-                ChipGrid(title: "Opponent rating", items: ExplorerDatabase.ratingBuckets,
-                         label: { $0 == 0 ? "<1000" : $0 == 2500 ? "2500+" : "\($0)" }, selection: $draft.ratings)
-            }
+            ratingPicker
         } header: {
             Text("Coverage database")
         } footer: {
-            Text("Opponent move frequencies come from this Lichess explorer database.")
+            Text(draft.source == .classical
+                 ? "Opponent move frequencies come from over-the-board games since 2000 at this average FIDE rating (Lumbra's Gigabase, CC BY-NC 4.0), downloaded to this device. Positions it doesn't hold come from the Lichess masters explorer."
+                 : "Opponent move frequencies come from Lichess \(draft.source.title.lowercased()) games at this average rating, downloaded to this device. Positions it doesn't hold come from the Lichess explorer.")
         }
 
         Section {
@@ -97,6 +131,75 @@ struct RepertoireSettingsForm: View {
         } footer: {
             Text("Every opponent move you would meet at least once in this many games must have an answer in your repertoire. Deeper goals mean more lines to learn.")
         }
+    }
+}
+
+extension RepertoireSettingsForm {
+    /// The rating bins with a table for the chosen time control, the chosen one's download
+    /// state, and the download itself, started as soon as a bin is chosen.
+    @ViewBuilder private var ratingPicker: some View {
+        let bins = tables.filter(draft.source.matches).map(\.lowestRating).sorted()
+        Picker("Opponent rating", selection: $draft.rating) {
+            ForEach(bins.contains(draft.rating) ? bins : bins + [draft.rating], id: \.self) { bin in
+                Text(ExplorerDatabase.ratingLabel(bin)).tag(bin)
+            }
+        }
+        .onChange(of: draft.source) {
+            // Keep the rating when the new time control has it, else take the nearest bin.
+            let bins = tables.filter(draft.source.matches).map(\.lowestRating)
+            if !bins.isEmpty, !bins.contains(draft.rating) {
+                draft.rating = bins.min { abs($0 - draft.rating) < abs($1 - draft.rating) } ?? draft.rating
+            }
+        }
+        TableDownloadRow(coverage: coverage, database: draft.database)
+            .task(id: "\(draft.database.cacheKey) \(coverage.available.count)") {
+                // Not tied to this view: the download finishes after the sheet closes.
+                coverage.ensure(draft.database)
+            }
+    }
+}
+
+/// Whether the chosen table is on this device, and a button to download it.
+private struct TableDownloadRow: View {
+    let coverage: CoverageTables
+    let database: ExplorerDatabase
+
+    var body: some View {
+        let file = coverage.file(for: database)
+        if coverage.isReady(database) {
+            Label("On this device", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.secondary)
+        } else if let file, let fraction = coverage.downloads[file.file] {
+            ProgressView(value: fraction) {
+                Text("Downloading \(ByteCountFormatter.string(fromByteCount: file.bytes, countStyle: .file))")
+            }
+        } else if let file {
+            Button("Download Again", systemImage: "arrow.down.circle") {
+                Task { await coverage.download(file) }
+            }
+        } else {
+            Label("Not available offline: coverage uses the Lichess explorer", systemImage: "icloud.slash")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        if let error = coverage.lastError {
+            Text(error).font(.footnote).foregroundStyle(.red)
+        }
+    }
+}
+
+extension ExplorerDatabase {
+    var lowestRating: Int {
+        switch self {
+        case let .lichess(ratings, _), let .otb(ratings): Int(ratings.min() ?? 0)
+        case .masters: 0
+        }
+    }
+
+    /// "2000–2199", "<600", "2500+" for a bin's lower bound.
+    static func ratingLabel(_ low: Int) -> String {
+        guard let next = eloBins.first(where: { $0 > low }) else { return "\(low)+" }
+        return low == 0 ? "<\(next)" : "\(low)–\(next - 1)"
     }
 }
 

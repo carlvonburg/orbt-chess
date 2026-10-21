@@ -140,22 +140,31 @@ impl ExplorerSpeed {
 
 /// Which explorer database a repertoire measures coverage against.
 ///
-/// In JSON: `{"masters":{}}` or
-/// `{"lichess":{"speeds":[...],"ratings":[...]}}`.
+/// In JSON: `{"masters":{}}`, `{"lichess":{"speeds":[...],"ratings":[...]}}` or
+/// `{"otb":{"ratings":[...]}}`.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum ExplorerDatabase {
     Masters {},
-    /// `ratings` are Lichess bucket lower bounds: 0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500.
+    /// `ratings` are bin lower bounds: Lichess's buckets (0, 1000, 1200, …, 2500), or the
+    /// offline tables' finer bins (`ELO_BINS`), which split Lichess's 0 into 0, 600 and 800.
     // Fields in key order, so the JSON keys come out sorted.
     Lichess {
         ratings: Vec<i64>,
         speeds: Vec<ExplorerSpeed>,
     },
+    /// Classical (over-the-board) games by average FIDE rating bin (`ELO_BINS`), from an
+    /// offline coverage table built from Lumbra's Gigabase. Positions the table lacks come
+    /// from the Lichess masters explorer, which has no rating filter.
+    Otb {
+        ratings: Vec<i64>,
+    },
 }
 
 impl ExplorerDatabase {
     pub const RATING_BUCKETS: [i64; 9] = [0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500];
+    /// The offline coverage tables' Elo bins.
+    pub const ELO_BINS: [i64; 11] = [0, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500];
 
     pub fn masters() -> ExplorerDatabase {
         ExplorerDatabase::Masters {}
@@ -184,6 +193,12 @@ impl ExplorerDatabase {
                 let r: Vec<String> = r.iter().map(i64::to_string).collect();
                 format!("lichess:{}:{}", s.join(","), r.join(","))
             }
+            ExplorerDatabase::Otb { ratings } => {
+                let mut r = ratings.clone();
+                r.sort();
+                let r: Vec<String> = r.iter().map(i64::to_string).collect();
+                format!("otb:{}", r.join(","))
+            }
         }
     }
 
@@ -200,23 +215,46 @@ impl ExplorerDatabase {
                 let (Some(&low), Some(&high)) = (ratings.iter().min(), ratings.iter().max()) else {
                     return format!("Lichess · {s}");
                 };
-                let range = match Self::RATING_BUCKETS.iter().find(|&&b| b > high) {
+                let bins: &[i64] = if ratings.iter().all(|r| Self::RATING_BUCKETS.contains(r)) {
+                    &Self::RATING_BUCKETS
+                } else {
+                    &Self::ELO_BINS
+                };
+                let range = match bins.iter().find(|&&b| b > high) {
                     Some(next) => format!("{low}–{}", next - 1),
                     None => format!("{low}+"),
                 };
                 format!("Lichess {range} · {s}")
             }
+            ExplorerDatabase::Otb { ratings } => match Self::range(ratings, &Self::ELO_BINS) {
+                Some(range) => format!("Classical {range}"),
+                None => "Classical".to_owned(),
+            },
         }
+    }
+
+    /// "1600–1799", "2500+" for the bins from the lowest to the highest rating.
+    fn range(ratings: &[i64], bins: &[i64]) -> Option<String> {
+        let (low, high) = (ratings.iter().min()?, ratings.iter().max()?);
+        Some(match bins.iter().find(|&&b| b > *high) {
+            Some(next) => format!("{low}–{}", next - 1),
+            None => format!("{low}+"),
+        })
     }
 
     /// Query parameters for the explorer endpoint, unencoded.
     pub fn query_items(&self) -> Vec<(&'static str, String)> {
         match self {
-            ExplorerDatabase::Masters {} => Vec::new(),
+            ExplorerDatabase::Masters {} | ExplorerDatabase::Otb { .. } => Vec::new(),
             ExplorerDatabase::Lichess { speeds, ratings } => {
                 let s: Vec<&str> = speeds.iter().map(|s| s.raw()).collect();
-                let mut r = ratings.clone();
+                // Lichess has no 600 and 800 buckets: they are part of its 0 (under 1000).
+                let mut r: Vec<i64> = ratings
+                    .iter()
+                    .map(|&r| if r < 1000 { 0 } else { r })
+                    .collect();
                 r.sort();
+                r.dedup();
                 let r: Vec<String> = r.iter().map(i64::to_string).collect();
                 vec![("speeds", s.join(",")), ("ratings", r.join(","))]
             }
@@ -225,7 +263,7 @@ impl ExplorerDatabase {
 
     pub fn path(&self) -> &'static str {
         match self {
-            ExplorerDatabase::Masters {} => "masters",
+            ExplorerDatabase::Masters {} | ExplorerDatabase::Otb { .. } => "masters",
             ExplorerDatabase::Lichess { .. } => "lichess",
         }
     }
@@ -257,6 +295,23 @@ mod tests {
         assert_eq!(db.cache_key(), "lichess:blitz,rapid:1600,2000");
         assert_eq!(db.summary(), "Lichess 1600–2199 · Blitz, Rapid");
         assert_eq!(ExplorerDatabase::masters().cache_key(), "masters");
+        let fine = ExplorerDatabase::Lichess {
+            speeds: vec![ExplorerSpeed::Rapid],
+            ratings: vec![600, 800],
+        };
+        assert_eq!(fine.summary(), "Lichess 600–999 · Rapid");
+        assert_eq!(fine.query_items()[1].1, "0");
+        let otb = ExplorerDatabase::Otb {
+            ratings: vec![2200],
+        };
+        assert_eq!(otb.cache_key(), "otb:2200");
+        assert_eq!(otb.summary(), "Classical 2200–2499");
+        assert_eq!(otb.path(), "masters");
+        assert!(otb.query_items().is_empty());
+        assert_eq!(
+            serde_json::to_string(&otb).unwrap(),
+            r#"{"otb":{"ratings":[2200]}}"#
+        );
     }
 
     #[test]

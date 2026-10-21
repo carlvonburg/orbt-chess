@@ -225,11 +225,14 @@ struct Synthetic<'a> {
 }
 
 impl StatsSource for Synthetic<'_> {
-    fn stats(&self, epd: &Epd) -> Option<&ExplorerStats> {
+    fn stats(&self, epd: &Epd) -> Option<std::borrow::Cow<'_, ExplorerStats>> {
         if self.missing.contains(epd) {
             return None;
         }
-        self.cache.get(epd).and_then(Option::as_ref)
+        self.cache
+            .get(epd)
+            .and_then(Option::as_ref)
+            .map(std::borrow::Cow::Borrowed)
     }
 }
 

@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex, Weak};
 use ot_core::chess::Epd;
 use ot_core::explorer::cache::StatsCache;
 use ot_core::explorer::queue::{self, ExplorerQueue, Lane, QueueState};
+use ot_core::explorer::table::CoverageTable;
 use ot_core::explorer::{ExplorerDatabase, ExplorerStats};
 use ot_core::http::{HttpRequest, HttpResponse};
 use ot_core::lichess::cloud_eval::{self, CloudEval, CloudEvalLookup};
@@ -76,6 +77,54 @@ pub struct FetchOutcome {
     pub unauthorized: bool,
     /// Persist this end of a ban (milliseconds since 1970).
     pub banned_until: Option<i64>,
+}
+
+#[derive(Debug, thiserror::Error, uniffi::Error)]
+pub enum CoverageTableError {
+    #[error("{message}")]
+    Unreadable { message: String },
+}
+
+/// An offline coverage table read from its file, ready to add to the explorer. Reading
+/// decompresses it, so do it off the main thread.
+#[derive(uniffi::Object)]
+pub struct CoverageTableFile {
+    table: Mutex<Option<CoverageTable>>,
+    info: CoverageTableInfo,
+}
+
+#[derive(uniffi::Record, Clone)]
+pub struct CoverageTableInfo {
+    /// The selection it answers for: one speed and the Elo bins it spans.
+    pub database: ExplorerDatabase,
+    /// It holds every position needed at 1 in this many games, or fewer.
+    pub target_games: i64,
+    pub positions: u64,
+}
+
+#[uniffi::export]
+impl CoverageTableFile {
+    /// `bytes`: the file's contents, zstd-compressed or not.
+    #[uniffi::constructor]
+    pub fn new(bytes: Vec<u8>) -> Result<Arc<CoverageTableFile>, CoverageTableError> {
+        let table =
+            CoverageTable::from_bytes(bytes).map_err(|e| CoverageTableError::Unreadable {
+                message: e.to_string(),
+            })?;
+        let info = CoverageTableInfo {
+            database: table.database().clone(),
+            target_games: table.target_games(),
+            positions: table.len() as u64,
+        };
+        Ok(Arc::new(CoverageTableFile {
+            table: Mutex::new(Some(table)),
+            info,
+        }))
+    }
+
+    pub fn info(&self) -> CoverageTableInfo {
+        self.info.clone()
+    }
 }
 
 struct Inner {
@@ -187,7 +236,36 @@ impl Explorer {
             .expect("explorer lock")
             .cache
             .get(&database, &epd)
-            .cloned()
+            .map(|s| s.into_owned())
+    }
+
+    /// Adds an offline coverage table (once; a table for the same selection is replaced) and
+    /// recomputes the coverage of the repertoires that use its database.
+    pub fn add_coverage_table(&self, file: Arc<CoverageTableFile>) {
+        let Some(table) = file.table.lock().expect("table lock").take() else {
+            return;
+        };
+        let database = table.database().clone();
+        let documents: Vec<Arc<RepertoireDoc>> = {
+            let mut inner = self.inner.lock().expect("explorer lock");
+            inner.cache.set_table(table);
+            let Inner { cache, queue, .. } = &mut *inner;
+            queue.drop_answered(&database, |epd| cache.is_fresh(&database, epd));
+            inner.documents.iter().filter_map(Weak::upgrade).collect()
+        };
+        for doc in documents {
+            doc.table_added(&database);
+        }
+    }
+
+    /// Whether the database has an offline coverage table.
+    pub fn has_coverage_table(&self, database: ExplorerDatabase) -> bool {
+        self.inner
+            .lock()
+            .expect("explorer lock")
+            .cache
+            .table(&database)
+            .is_some()
     }
 
     /// Forgets the stats in memory (after the platform cleared its store).

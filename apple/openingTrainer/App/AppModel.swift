@@ -17,6 +17,7 @@ final class AppModel {
     let stats = ExplorerCacheStore()
     let library = RepertoireLibrary()
     @ObservationIgnored lazy var queue = ExplorerService(store: stats, auth: auth)
+    @ObservationIgnored lazy var coverage = CoverageTables(explorer: queue)
 
     private(set) var documents: [String: RepertoireDocument] = [:]
     /// Why an entry could not be opened, by entry id.
@@ -24,6 +25,17 @@ final class AppModel {
     @ObservationIgnored private var opening: [String: Task<RepertoireDocument?, Never>] = [:]
     /// Old entry id → new one, for renamed repertoires, so open screens keep their document.
     private var renamedIDs: [String: String] = [:]
+
+    /// Loads the offline coverage tables and reads which ones the server offers.
+    func setUpCoverageTables() async {
+        await coverage.setUp(appFolder: library.folder)
+    }
+
+    /// Picks up tables added to the app folder's "Coverage" subfolder.
+    func reloadCoverageTables() async {
+        guard let folder = library.folder else { return }
+        await coverage.load(from: folder.appending(path: "Coverage", directoryHint: .isDirectory))
+    }
 
     /// Opens (or returns the already open) document for a library entry. The PGN is parsed
     /// in the background; concurrent calls for the same entry share one load.
@@ -36,6 +48,7 @@ final class AppModel {
                 let text = try await RepertoireDocument.load(entry.pgnURL)
                 if let existing = documents[entry.id] { return existing }
                 let doc = try RepertoireDocument(entry: entry, text: text, explorer: queue)
+                coverage.want(doc.sidecar.database)
                 documents[entry.id] = doc
                 openErrors[entry.id] = nil
                 return doc

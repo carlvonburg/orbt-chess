@@ -169,8 +169,8 @@ impl Repertoire {
     pub fn opening_name(&self, id: NodeId, stats: &dyn StatsSource) -> Option<String> {
         let mut cursor = Some(id);
         while let Some(node) = cursor.and_then(|c| self.tree.get(c)) {
-            if let Some(opening) = stats.stats(&node.epd).and_then(|s| s.opening.as_ref()) {
-                return Some(opening.name.clone());
+            if let Some(opening) = stats.stats(&node.epd).and_then(|s| s.opening.clone()) {
+                return Some(opening.name);
             }
             cursor = node.parent;
         }

@@ -40,7 +40,8 @@ One folder per platform around a shared core (Android and web would be `android/
 - `core/` — the Rust core (Cargo workspace), the only place for domain rules:
   - `ot-core/` — pure Rust, no IO, no async, no OS APIs; must keep building for wasm32. Modules:
     `chess` (shakmaty), `pgn` (our parser and byte-exact writer), `repertoire` (tree,
-    transpositions, merge), `explorer` (stats, sans-IO request queue, cache), `coverage`,
+    transpositions, merge), `explorer` (stats, sans-IO request queue, cache, offline coverage tables and their
+    manifest), `coverage`,
     `training` (`anki/` is Anki's scheduler; trainer, study session, line run), `statistics`
     (Anki's graphs, scoping, chess stats), `formats` (sidecar and revlog), `document` (the open repertoire: edits, undo, save hints, remote merges,
     outline/search), `builder`, `drill` (state machines behind the two main screens), `lichess`
@@ -121,6 +122,16 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
   1-in-400 and 156 at 1-in-500, about 8-9 minutes at 3.5 s).
   Never fetch every position of a PGN.
   Cached stats never expire for now (the core keeps every entry it loads; there is no age check).
+- Offline coverage tables (`explorer::table`, OTCB files): a repertoire's coverage database is one
+  time control and one rating bin — Blitz or Rapid (Lichess games, Lichess rating) or Classical
+  (over-the-board games since 2000 by FIDE rating, Lumbra's Gigabase, CC BY-NC 4.0: credit it, no
+  commercial use). Each table holds the positions a repertoire can reach at 1 in 800 (own moves
+  ≥ 5%, lines stop below 25 games), downloaded from Cloudflare R2 (`manifest.json`, written by
+  `core/scripts/coverage-manifest.py`; always the deepest file) into Application Support/Coverage
+  when chosen or when a repertoire using it opens. The stats cache answers from Lichess-fetched
+  entries first, then the table; positions in the table are never queued, and queued requests a
+  new table answers are dropped. Positions it lacks still come from the explorer (Classical:
+  the masters explorer). The tables are built outside this repo (`data/`, never committed).
 - Build:
   1. `core/scripts/build-apple.sh` after changing Rust code and once after cloning (Rust from
      rustup; it builds iOS, iOS simulator and macOS slices and regenerates the bindings).
