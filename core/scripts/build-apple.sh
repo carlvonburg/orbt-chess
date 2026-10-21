@@ -2,6 +2,7 @@
 # Builds the Rust core for Apple platforms and refreshes the OpeningCoreRust Swift package:
 #   apple/OpeningCoreRust/OpeningCoreFFI.xcframework   (static libraries + C headers, not committed)
 #   apple/OpeningCoreRust/Sources/OpeningCoreRust/      (generated Swift bindings, committed)
+#   apple/OpeningCoreRust/OpeningCoreFFI.sources        (core-fingerprint.sh of a release build)
 # Usage: core/scripts/build-apple.sh [--debug]
 set -euo pipefail
 
@@ -21,6 +22,11 @@ if [[ "${1:-}" == "--debug" ]]; then
 fi
 
 targets=(aarch64-apple-ios aarch64-apple-ios-sim aarch64-apple-darwin x86_64-apple-darwin)
+
+# Removed first so a failed or half-done build is never taken as current or copied.
+stamp="$package_dir/OpeningCoreFFI.sources"
+rm -f "$stamp"
+fingerprint="$("$core_dir/scripts/core-fingerprint.sh")"
 
 cd "$core_dir"
 for target in $targets; do
@@ -56,4 +62,5 @@ xcodebuild -create-xcframework \
 sources="$package_dir/Sources/OpeningCoreRust"
 mkdir -p "$sources"
 cp "$work/generated/"*.swift "$sources/"
+[[ "$profile" == release ]] && echo "$fingerprint" > "$stamp"
 echo "updated $package_dir"

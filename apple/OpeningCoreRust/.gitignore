@@ -1,4 +1,5 @@
 # Built by core/scripts/build-apple.sh
 /OpeningCoreFFI.xcframework
+/OpeningCoreFFI.sources
 /.build
 /.swiftpm
