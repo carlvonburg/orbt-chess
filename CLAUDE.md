@@ -150,8 +150,9 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
   downloaded from Cloudflare R2 (`manifest.json`, written by
   `core/scripts/coverage-manifest.py`; always the deepest file) into Application Support/Coverage
   when chosen or when a repertoire using it opens. The stats cache answers from Lichess-fetched
-  entries first, then the table; positions in the table are never queued, and queued requests a
-  new table answers are dropped. Positions it lacks still come from the explorer (Classical:
+  entries first, then the table (Classical: the table first, Lichess is only its backup); while
+  a table downloads nothing is fetched for its database; positions in the table are never
+  queued, and queued requests a new table answers are dropped. Positions it lacks still come from the explorer (Classical:
   the masters explorer from 2000, Lichess rapid games one bin up below). The tables are built outside this repo (`data/`, never committed).
 - Build:
   1. `core/scripts/build-apple.sh` after changing Rust code and once after cloning (Rust from

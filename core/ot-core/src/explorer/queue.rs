@@ -6,8 +6,10 @@
 //! cancels it). The coverage check goes through a queue: one request in flight, deduplicated,
 //! highest priority first, spaced out. Both share the 429 pause (Lichess limits per account):
 //! 60 s or Retry-After, kept across launches. A 401 asks for login, offline retries later.
+//! While a database's offline table is downloading, nothing is fetched for it (`hold`): the
+//! table answers most of it, and fetched stats would be kept over the table's.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use super::{ExplorerDatabase, ExplorerStats};
 use crate::chess::{ChessPosition, Epd};
@@ -136,6 +138,8 @@ pub struct ExplorerQueue {
     needs_login: bool,
     state: QueueState,
     next_id: u64,
+    /// Databases (cache keys) whose offline table is on its way.
+    held: HashSet<String>,
 }
 
 fn key(epd: &Epd, database: &ExplorerDatabase) -> String {
@@ -156,6 +160,7 @@ impl ExplorerQueue {
             needs_login: false,
             state: QueueState::Idle,
             next_id: 1,
+            held: HashSet::new(),
         }
     }
 
@@ -211,11 +216,32 @@ impl ExplorerQueue {
         }
     }
 
-    /// Drops the coverage requests of `database` that `answered` says need no fetch any more
-    /// (an offline table now holds them).
+    /// Drops the requests of `database` that `answered` says need no fetch any more (an
+    /// offline table now holds them).
     pub fn drop_answered(&mut self, database: &ExplorerDatabase, answered: impl Fn(&Epd) -> bool) {
         self.pending
             .retain(|_, r| &r.database != database || !answered(&r.epd));
+        if self
+            .focus
+            .as_ref()
+            .is_some_and(|f| f.in_flight.is_none() && &f.database == database && answered(&f.epd))
+        {
+            self.focus = None;
+        }
+    }
+
+    /// Fetches nothing for `database` until `release`: its offline table is downloading.
+    pub fn hold(&mut self, database: &ExplorerDatabase) {
+        self.held.insert(database.cache_key());
+    }
+
+    /// The table arrived (call `drop_answered` first) or could not be had: fetch again.
+    pub fn release(&mut self, database: &ExplorerDatabase) {
+        self.held.remove(&database.cache_key());
+    }
+
+    fn is_held(&self, database: &ExplorerDatabase) -> bool {
+        self.held.contains(&database.cache_key())
     }
 
     /// After signing in or when the network is back.
@@ -244,8 +270,13 @@ impl ExplorerQueue {
         };
 
         // The position on screen.
+        let focus_held = self
+            .focus
+            .as_ref()
+            .is_some_and(|f| self.is_held(&f.database));
         if let Some(focus) = &mut self.focus
             && focus.in_flight.is_none()
+            && !focus_held
         {
             if focus.due_at > now {
                 wake(focus.due_at);
@@ -266,18 +297,22 @@ impl ExplorerQueue {
         }
 
         // The coverage check.
-        if self.in_flight.is_none() && !self.pending.is_empty() && !self.needs_login {
+        let next = self
+            .pending
+            .iter()
+            .filter(|(_, r)| !self.is_held(&r.database))
+            .max_by(|a, b| a.1.priority.total_cmp(&b.1.priority).then(b.0.cmp(a.0)))
+            .map(|(k, r)| (k.clone(), r.clone()));
+        let has_next = next.is_some();
+        if self.in_flight.is_none()
+            && let Some((k, request)) = next
+            && !self.needs_login
+        {
             let resume_at = self.next_coverage_at.max(self.offline_until.unwrap_or(0));
             if resume_at > now {
                 wake(resume_at);
             } else if let Some(token) = token {
                 self.offline_until = None;
-                let (k, request) = self
-                    .pending
-                    .iter()
-                    .max_by(|a, b| a.1.priority.total_cmp(&b.1.priority).then(b.0.cmp(a.0)))
-                    .map(|(k, r)| (k.clone(), r.clone()))
-                    .expect("pending not empty");
                 let id = self.next_id;
                 self.next_id += 1;
                 self.in_flight = Some((id, k, now));
@@ -295,7 +330,7 @@ impl ExplorerQueue {
                 self.needs_login = true;
                 self.state = QueueState::NeedsLogin;
             }
-        } else if self.pending.is_empty()
+        } else if !has_next
             && self.in_flight.is_none()
             && matches!(self.state, QueueState::Fetching { .. })
         {
@@ -451,6 +486,31 @@ mod tests {
         q.request(epd("e4"), ExplorerDatabase::masters(), 0.5, false);
         q.drop_answered(&db(), |e| *e == epd("e4"));
         assert_eq!(q.remaining(), 2);
+    }
+
+    #[test]
+    fn nothing_is_fetched_for_a_database_whose_table_is_downloading() {
+        let mut q = ExplorerQueue::new(None, None);
+        q.hold(&db());
+        q.focus(epd("e4"), db(), false, 0);
+        q.request(epd("d4"), db(), 1.0, false);
+        q.request(epd("c4"), db(), 0.8, false);
+        q.request(epd("e4"), ExplorerDatabase::masters(), 0.5, false);
+        // Only the other database's request goes out.
+        let p = q.poll(1_000, TOKEN);
+        assert_eq!(p.fetches.len(), 1);
+        assert_eq!(p.fetches[0].database, ExplorerDatabase::masters());
+        q.on_response(&p.fetches[0], Some(&ok(STATS)), 1_100);
+        assert!(q.poll(5_000, TOKEN).fetches.is_empty());
+        // The table answers the focus and d4; c4 is fetched once it is in.
+        q.drop_answered(&db(), |e| *e == epd("e4") || *e == epd("d4"));
+        q.release(&db());
+        let p = q.poll(6_000, TOKEN);
+        assert_eq!(p.fetches.len(), 1);
+        assert_eq!(
+            (p.fetches[0].lane, &p.fetches[0].epd),
+            (Lane::Coverage, &epd("c4"))
+        );
     }
 
     #[test]

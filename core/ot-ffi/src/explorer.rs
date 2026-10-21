@@ -251,11 +251,34 @@ impl Explorer {
             inner.cache.set_table(table);
             let Inner { cache, queue, .. } = &mut *inner;
             queue.drop_answered(&database, |epd| cache.is_fresh(&database, epd));
+            queue.release(&database);
             inner.documents.iter().filter_map(Weak::upgrade).collect()
         };
         for doc in documents {
             doc.table_added(&database);
         }
+        self.wake();
+    }
+
+    /// The database's offline table is downloading: fetch nothing for it until
+    /// `coverage_table_download_ended`.
+    pub fn expect_coverage_table(&self, database: ExplorerDatabase) {
+        self.inner
+            .lock()
+            .expect("explorer lock")
+            .queue
+            .hold(&database);
+    }
+
+    /// The download is over (the table was added, or it failed): fetch again what no table
+    /// answers.
+    pub fn coverage_table_download_ended(&self, database: ExplorerDatabase) {
+        self.inner
+            .lock()
+            .expect("explorer lock")
+            .queue
+            .release(&database);
+        self.wake();
     }
 
     /// Whether the database has an offline coverage table.

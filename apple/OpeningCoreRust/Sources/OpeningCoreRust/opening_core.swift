@@ -2118,9 +2118,21 @@ public protocol ExplorerProtocol: AnyObject, Sendable {
     func clear() 
     
     /**
+     * The download is over (the table was added, or it failed): fetch again what no table
+     * answers.
+     */
+    func coverageTableDownloadEnded(database: ExplorerDatabase) 
+    
+    /**
      * Loads a database's stored stats once.
      */
     func ensureLoaded(database: ExplorerDatabase) 
+    
+    /**
+     * The database's offline table is downloading: fetch nothing for it until
+     * `coverage_table_download_ended`.
+     */
+    func expectCoverageTable(database: ExplorerDatabase) 
     
     /**
      * The position on screen.
@@ -2264,11 +2276,37 @@ open func clear()  {try! rustCall() {
 }
     
     /**
+     * The download is over (the table was added, or it failed): fetch again what no table
+     * answers.
+     */
+open func coverageTableDownloadEnded(database: ExplorerDatabase)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_coverage_table_download_ended(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeExplorerDatabase_lower(database),uniffiCallStatus
+    )
+}
+}
+    
+    /**
      * Loads a database's stored stats once.
      */
 open func ensureLoaded(database: ExplorerDatabase)  {try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_explorer_ensure_loaded(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeExplorerDatabase_lower(database),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * The database's offline table is downloading: fetch nothing for it until
+     * `coverage_table_download_ended`.
+     */
+open func expectCoverageTable(database: ExplorerDatabase)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_explorer_expect_coverage_table(
             self.uniffiCloneHandle(),
         FfiConverterTypeExplorerDatabase_lower(database),uniffiCallStatus
     )
@@ -13707,7 +13745,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_explorer_clear() != 54545) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_explorer_coverage_table_download_ended() != 16316) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_explorer_ensure_loaded() != 36828) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_explorer_expect_coverage_table() != 21996) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_explorer_focus() != 21696) {

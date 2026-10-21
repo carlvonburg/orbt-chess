@@ -112,7 +112,12 @@ final class CoverageTables {
         guard downloads[file.file] == nil else { return }
         downloads[file.file] = 0
         lastError = nil
-        defer { downloads[file.file] = nil }
+        // No Lichess requests for this database meanwhile: the table answers most of them.
+        explorer.core.expectCoverageTable(database: file.database)
+        defer {
+            downloads[file.file] = nil
+            explorer.core.coverageTableDownloadEnded(database: file.database)
+        }
         do {
             let temporary = try await Self.fetch(Self.server.appending(path: file.file)) { [weak self] fraction in
                 self?.downloads[file.file] = fraction
