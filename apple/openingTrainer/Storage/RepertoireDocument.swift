@@ -226,9 +226,9 @@ final class RepertoireDocument {
 
     // MARK: Settings and training
 
-    func updateSettings(color: Side, database: ExplorerDatabase, targetGames: Int, minGames: Int) {
+    func updateSettings(color: Side, database: ExplorerDatabase, targetGames: Int) {
         apply(core.updateSettings(color: color, database: database, targetGames: Int64(targetGames),
-                                  minGames: Int64(minGames), now: .of(.now)))
+                                  now: .of(.now)))
     }
 
     /// Excludes an opponent move at `node`'s position from coverage, or includes it again.
@@ -594,7 +594,6 @@ extension RepertoireDocument {
         var color: Side { document.color }
         var database: ExplorerDatabase { document.database }
         var targetGames: Int { _ = document.revision; return Int(document.core.targetGames()) }
-        var minGames: Int { _ = document.revision; return Int(document.core.minGames()) }
         var limits: DeckLimits? { _ = document.revision; return document.core.limits() }
         var practiceMode: PracticeMode? { _ = document.revision; return document.core.ownPracticeMode() }
         var lastLine: [String]? { document.core.lastLine() }

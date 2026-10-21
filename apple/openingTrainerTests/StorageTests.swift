@@ -99,7 +99,7 @@ import Testing
 
     private func sidecar(modified: String, targetGames: Int, cards: [String: Int]) -> Data {
         let base = newSidecar(id: "6F9619FF-8B86-D011-B42D-00C04FC964FF", color: .white, database: .masters,
-                              targetGames: Int64(targetGames), minGames: 30, now: .of(.now))
+                              targetGames: Int64(targetGames), now: .of(.now))
         var json = try! JSONSerialization.jsonObject(with: base) as! [String: Any]
         json["settingsModified"] = modified
         json["studyCards"] = cards.mapValues { last -> [String: Any] in

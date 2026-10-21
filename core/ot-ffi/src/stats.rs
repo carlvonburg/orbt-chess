@@ -190,10 +190,6 @@ impl LibrarySidecar {
         self.0.target_games
     }
 
-    pub fn min_games(&self) -> i64 {
-        self.0.min_games
-    }
-
     pub fn practice_mode(&self) -> Option<PracticeMode> {
         self.0.practice_mode
     }
@@ -254,13 +250,11 @@ pub fn new_sidecar(
     color: Side,
     database: ExplorerDatabase,
     target_games: i64,
-    min_games: i64,
     now: Timestamp,
 ) -> Vec<u8> {
     let mut s = Sidecar::new(id, color, now);
     s.database = database;
     s.target_games = target_games;
-    s.min_games = min_games;
     s.encoded()
 }
 

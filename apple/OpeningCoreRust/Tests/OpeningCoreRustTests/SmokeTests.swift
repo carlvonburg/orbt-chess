@@ -16,7 +16,7 @@ final class NoStats: StatsStore {
 
 @Test func opensARepertoire() throws {
     let sidecar = newSidecar(id: "smoke", color: .white, database: .masters, targetGames: 100,
-                             minGames: 10, now: .of(.now))
+                             now: .of(.now))
     let explorer = Explorer(store: NoStats(), bannedUntil: nil, baseIntervalMs: nil)
     let opened = try openRepertoire(pgnText: "1. e4 e5 2. Nf3 Nc6 (2... Nf6) *", sidecar: sidecar,
                                     defaults: defaultStudyDefaults(), explorer: explorer)

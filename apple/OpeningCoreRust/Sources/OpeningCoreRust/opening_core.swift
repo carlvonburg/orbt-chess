@@ -2958,8 +2958,6 @@ public protocol LibrarySidecarProtocol: AnyObject, Sendable {
     
     func laterLearningDues(timing: SchedTiming)  -> [Int64]
     
-    func minGames()  -> Int64
-    
     func nextDue(timing: SchedTiming)  -> Int64?
     
     func practiceMode()  -> PracticeMode?
@@ -3121,15 +3119,6 @@ open func laterLearningDues(timing: SchedTiming) -> [Int64]  {
     uniffi_opening_core_fn_method_librarysidecar_later_learning_dues(
             self.uniffiCloneHandle(),
         FfiConverterTypeSchedTiming_lower(timing),uniffiCallStatus
-    )
-})
-}
-    
-open func minGames() -> Int64  {
-    return try!  FfiConverterInt64.lift(try! rustCall() {
-        uniffiCallStatus in
-    uniffi_opening_core_fn_method_librarysidecar_min_games(
-            self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
 }
@@ -3589,8 +3578,6 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     
     func mergeConflictVersion(text: String)  -> Changes
     
-    func minGames()  -> Int64
-    
     func moves(id: UInt32)  -> [PlayedMove]
     
     /**
@@ -3731,7 +3718,7 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     /**
      * Changes the coverage settings (loading the new database's stats first).
      */
-    func updateSettings(color: Side, database: ExplorerDatabase, targetGames: Int64, minGames: Int64, now: Timestamp)  -> Changes
+    func updateSettings(color: Side, database: ExplorerDatabase, targetGames: Int64, now: Timestamp)  -> Changes
     
     func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?, now: Timestamp)  -> Changes
     
@@ -4141,15 +4128,6 @@ open func mergeConflictVersion(text: String) -> Changes  {
     uniffi_opening_core_fn_method_repertoiredoc_merge_conflict_version(
             self.uniffiCloneHandle(),
         FfiConverterString.lower(text),uniffiCallStatus
-    )
-})
-}
-    
-open func minGames() -> Int64  {
-    return try!  FfiConverterInt64.lift(try! rustCall() {
-        uniffiCallStatus in
-    uniffi_opening_core_fn_method_repertoiredoc_min_games(
-            self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
 }
@@ -4647,7 +4625,7 @@ open func undo() -> Changes  {
     /**
      * Changes the coverage settings (loading the new database's stats first).
      */
-open func updateSettings(color: Side, database: ExplorerDatabase, targetGames: Int64, minGames: Int64, now: Timestamp) -> Changes  {
+open func updateSettings(color: Side, database: ExplorerDatabase, targetGames: Int64, now: Timestamp) -> Changes  {
     return try!  FfiConverterTypeChanges_lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_repertoiredoc_update_settings(
@@ -4655,7 +4633,6 @@ open func updateSettings(color: Side, database: ExplorerDatabase, targetGames: I
         FfiConverterTypeSide_lower(color),
         FfiConverterTypeExplorerDatabase_lower(database),
         FfiConverterInt64.lower(targetGames),
-        FfiConverterInt64.lower(minGames),
         FfiConverterTypeTimestamp_lower(now),uniffiCallStatus
     )
 })
@@ -12927,7 +12904,7 @@ public func newRepertoirePgn(name: String) -> String  {
 /**
  * The sidecar of a new repertoire.
  */
-public func newSidecar(id: String, color: Side, database: ExplorerDatabase, targetGames: Int64, minGames: Int64, now: Timestamp) -> Data  {
+public func newSidecar(id: String, color: Side, database: ExplorerDatabase, targetGames: Int64, now: Timestamp) -> Data  {
     return try!  FfiConverterData.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_func_new_sidecar(
@@ -12935,7 +12912,6 @@ public func newSidecar(id: String, color: Side, database: ExplorerDatabase, targ
         FfiConverterTypeSide_lower(color),
         FfiConverterTypeExplorerDatabase_lower(database),
         FfiConverterInt64.lower(targetGames),
-        FfiConverterInt64.lower(minGames),
         FfiConverterTypeTimestamp_lower(now),uniffiCallStatus
     )
 })
@@ -13339,7 +13315,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_new_repertoire_pgn() != 33509) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_new_sidecar() != 48299) {
+    if (uniffi_opening_core_checksum_func_new_sidecar() != 58506) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_revlog_extension() != 3396) {
@@ -13555,9 +13531,6 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_merge_conflict_version() != 60767) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_repertoiredoc_min_games() != 64357) {
-        return InitializationResult.apiChecksumMismatch
-    }
     if (uniffi_opening_core_checksum_method_repertoiredoc_moves() != 45470) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -13696,7 +13669,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_undo() != 60684) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_repertoiredoc_update_settings() != 41962) {
+    if (uniffi_opening_core_checksum_method_repertoiredoc_update_settings() != 46430) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_update_study_settings() != 40186) {
@@ -14036,9 +14009,6 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_librarysidecar_later_learning_dues() != 60594) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_opening_core_checksum_method_librarysidecar_min_games() != 7440) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_librarysidecar_next_due() != 20903) {

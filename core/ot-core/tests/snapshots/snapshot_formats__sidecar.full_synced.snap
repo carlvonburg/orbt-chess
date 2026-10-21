@@ -39,7 +39,6 @@ changed: true
       "today": 2400
     }
   },
-  "minGames": 30,
   "practiceMode": "completeLinesOncePerSession",
   "settingsModified": "2026-09-21T14:13:20.250Z",
   "studyCards": {

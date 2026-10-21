@@ -15,7 +15,7 @@ target/release/tables <LumbrasGigabase_OTB.pgn> <out dir> <lichess tables dir (f
 zstd -19 <out dir>/*.otcb
 target/release/verify <out dir>/*.otcb.zst -- "e2e4" "d2d4"
 ```
-About 70 s and 5.5 GB RAM for the full PGN. Then write the manifest with every table folder and
+About 100 s and 7.6 GB RAM for the full PGN. Then write the manifest with every table folder and
 upload the tables and `manifest.json` to `coverage_bins/` on R2:
 ```
 core/scripts/coverage-manifest.py <lichess tables dir> <otb tables dir>
@@ -29,7 +29,8 @@ core/scripts/coverage-manifest.py <lichess tables dir> <otb tables dir>
 - Counts per move: the games that played the move in the position (as the Lichess explorer),
   over the first 70 plies.
 - Walk, for both colours: every own move, opponent moves while p·share ≥ 1/N, stop where a
-  position has fewer than 25 games; files for N = 200 and 800 (the app downloads 800).
+  position has fewer than 10 games (the app requires nothing there for Classical); files for
+  N = 200 and 800 (the app downloads 800).
 - Evals copied from the Lichess tables where they have the position.
 - Prints the counts per filter step (the build report).
 

@@ -54,7 +54,6 @@ pub struct Sidecar {
     /// "This deck" and "Today only" daily limits; None uses the default preset.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limits: Option<DeckLimits>,
-    pub min_games: i64,
     /// Overrides the default practice mode.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub practice_mode: Option<PracticeMode>,
@@ -82,7 +81,6 @@ impl Sidecar {
             id,
             last_line: None,
             limits: None,
-            min_games: 25,
             practice_mode: None,
             settings_modified: now,
             study_cards: BTreeMap::new(),
@@ -111,7 +109,7 @@ impl Sidecar {
             .collect();
         CoverageSettings {
             excluded,
-            ..CoverageSettings::new(self.color, self.target_games, self.min_games)
+            ..CoverageSettings::new(self.color, self.target_games, self.database.min_games())
         }
     }
 
@@ -124,7 +122,7 @@ impl Sidecar {
             "{}|{}|{}|{color}",
             self.database.cache_key(),
             self.target_games,
-            self.min_games
+            self.database.min_games()
         )
     }
 

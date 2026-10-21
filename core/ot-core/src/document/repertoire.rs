@@ -389,14 +389,12 @@ impl Repertoire {
         color: Side,
         database: ExplorerDatabase,
         target_games: i64,
-        min_games: i64,
         now: Timestamp,
         stats: &dyn StatsSource,
     ) -> Changes {
         self.sidecar.color = color;
         self.sidecar.database = database;
         self.sidecar.target_games = target_games;
-        self.sidecar.min_games = min_games;
         self.sidecar.settings_modified = now;
         self.recompute_coverage_inner(stats);
         self.request_sidecar_save(save_delay::SIDECAR_AFTER_SETTINGS_MS);

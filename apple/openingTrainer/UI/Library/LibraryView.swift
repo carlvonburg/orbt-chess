@@ -882,7 +882,7 @@ struct RepertoireSettingsSheet: View {
                                 }
                             }
                             document.updateSettings(color: draft.color, database: draft.database,
-                                                    targetGames: draft.targetGames, minGames: draft.minGames)
+                                                    targetGames: draft.targetGames)
                             dismiss()
                         }
                     }

@@ -207,6 +207,15 @@ impl ExplorerDatabase {
         }
     }
 
+    /// Positions with fewer games create no coverage requirements: what the offline tables
+    /// are built for (Classical stops below 10 games, the Lichess tables below 25).
+    pub fn min_games(&self) -> i64 {
+        match self {
+            ExplorerDatabase::Otb { .. } => 10,
+            ExplorerDatabase::Masters {} | ExplorerDatabase::Lichess { .. } => 25,
+        }
+    }
+
     /// Stable key for the stats cache.
     pub fn cache_key(&self) -> String {
         match self {

@@ -8,7 +8,7 @@
 //! Games from FROM_YEAR on. Counts: per move, the games that played it in the position (reached by
 //! any move order), once per game, over the first MAX_PLY plies; positions keyed by Zobrist hash of
 //! the 4-field FEN (ep only when legal). Walk: every own move, opponent moves while
-//! p·share ≥ 1/N, stop below MIN_GAMES, both colours, union.
+//! p·share ≥ 1/N, stop below MIN_GAMES (the app's `min_games` for Classical), both colours, union.
 #[path = "../otcb.rs"]
 #[allow(dead_code)]
 mod otcb;
@@ -27,7 +27,7 @@ use shakmaty::{zobrist::Zobrist64, Chess, Color, EnPassantMode, Position};
 const MAX_PLY: usize = 70;
 /// Games from this year on (games without a year are dropped).
 const FROM_YEAR: u32 = 2000;
-const MIN_GAMES: u64 = 25;
+const MIN_GAMES: u64 = 10;
 /// Average-Elo bins: (lower bound, file label). Index 6 is Masters.
 const BINS: [(u32, &str); 6] = [(1400, "1400-1599"), (1600, "1600-1799"), (1800, "1800-1999"), (2000, "2000-2199"), (2200, "2200-2499"), (2500, "2500plus")];
 const NB: usize = 7;

@@ -161,10 +161,6 @@ impl RepertoireDoc {
         self.lock().sidecar().target_games
     }
 
-    pub fn min_games(&self) -> i64 {
-        self.lock().sidecar().min_games
-    }
-
     /// The repertoire's own practice mode, if it overrides the default.
     pub fn own_practice_mode(&self) -> Option<PracticeMode> {
         self.lock().sidecar().practice_mode
@@ -389,7 +385,6 @@ impl RepertoireDoc {
         color: Side,
         database: ExplorerDatabase,
         target_games: i64,
-        min_games: i64,
         now: Timestamp,
     ) -> Changes {
         let old = self.lock().database().clone();
@@ -399,7 +394,7 @@ impl RepertoireDoc {
         self.explorer.ensure_loaded(database.clone());
         let mut doc = self.lock();
         let changes = self.explorer.with_stats(&database, |stats| {
-            doc.update_settings(color, database.clone(), target_games, min_games, now, stats)
+            doc.update_settings(color, database.clone(), target_games, now, stats)
         });
         let requests = doc.coverage_requests();
         drop(doc);

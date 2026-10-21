@@ -98,7 +98,8 @@ game; games from another position (SetUp/FEN) are kept verbatim and written back
 ## Coverage model (see `core/ot-core/src/coverage`)
 Reach probability p: root 1; own moves keep p; opponent move multiplies by its share at
 the parent (move games / position games). Opponent reply required when p·f ≥ 1/N and the
-position has ≥ minGames games. Gaps: own-turn node with p ≥ 1/N and no saved move (and no
+position has ≥ minGames games (fixed by the database, what its tables are built for: 10 for
+Classical, 25 otherwise). Gaps: own-turn node with p ≥ 1/N and no saved move (and no
 transposition), or a missing required reply. Completion C is the frequency-weighted mean
 over required replies. Opponent moves the user excludes (sidecar `excludedMoves`, keyed by
 the EPD before the move, so they apply at every transposition) are never required; a move
@@ -144,8 +145,9 @@ Study All runs repertoires one after another (Anki would mix a parent deck's rev
 - Offline coverage tables (`explorer::table`, OTCB files): a repertoire's coverage database is one
   time control and one rating bin — Blitz or Rapid (Lichess games, Lichess rating) or Classical
   (over-the-board games since 2000 by FIDE rating, Lumbra's Gigabase, CC BY-NC 4.0: credit it, no
-  commercial use). Each table holds the positions a repertoire can reach at 1 in 800 (own moves
-  ≥ 5%, Classical every own move; lines stop below 25 games), downloaded from Cloudflare R2 (`manifest.json`, written by
+  commercial use). Each table holds the positions a repertoire can reach at 1 in 800 (Lichess:
+  own moves ≥ 5%, lines stop below 25 games; Classical: every own move, below 10 games),
+  downloaded from Cloudflare R2 (`manifest.json`, written by
   `core/scripts/coverage-manifest.py`; always the deepest file) into Application Support/Coverage
   when chosen or when a repertoire using it opens. The stats cache answers from Lichess-fetched
   entries first, then the table; positions in the table are never queued, and queued requests a

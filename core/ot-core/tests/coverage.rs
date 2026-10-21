@@ -7,7 +7,8 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use common::{FixtureStats, Rng, TreeExt, make_synthetic};
 use ot_core::chess::{Epd, Side};
 use ot_core::coverage::{CoverageEngine, CoverageSettings, GapKind, StatsSource, Status};
-use ot_core::explorer::ExplorerStats;
+use ot_core::explorer::{ExplorerDatabase, ExplorerStats};
+use ot_core::formats::{Sidecar, Timestamp};
 use ot_core::repertoire::RepertoireTree;
 
 fn close(a: f64, b: f64) -> bool {
@@ -66,6 +67,19 @@ fn completion_gaps_and_pending() {
     assert!(!e4.replies.iter().find(|r| r.san == "c6").unwrap().required);
     let seen: Vec<i64> = engine.gaps().iter().map(|g| g.seen_every()).collect();
     assert_eq!(seen, [5, 7]);
+}
+
+#[test]
+fn min_games_follows_the_database() {
+    // What the offline tables are built for: Classical stops below 10 games, Lichess below 25.
+    let mut sidecar = Sidecar::new("id".into(), Side::White, Timestamp(0));
+    assert_eq!(sidecar.coverage_settings().min_games, 25);
+    sidecar.database = ExplorerDatabase::Otb {
+        ratings: vec![1600],
+    };
+    assert_eq!(sidecar.coverage_settings().min_games, 10);
+    sidecar.database = ExplorerDatabase::masters();
+    assert_eq!(sidecar.coverage_settings().min_games, 25);
 }
 
 #[test]

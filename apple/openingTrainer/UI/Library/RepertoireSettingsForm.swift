@@ -36,7 +36,6 @@ struct RepertoireSettingsDraft: Equatable {
     /// The rating bin (lower bound, one of `ExplorerDatabase.eloBins`).
     var rating = 1600
     var targetGames = CoverageDepth.bulletproof.games
-    var minGames = 25
 
     init() {}
 
@@ -57,7 +56,6 @@ struct RepertoireSettingsDraft: Equatable {
             rating = ExplorerDatabase.eloBins.last { $0 <= low } ?? 1600
         }
         targetGames = sidecar.targetGames
-        minGames = sidecar.minGames
     }
 
     var database: ExplorerDatabase { source.database(rating: rating) }
@@ -67,7 +65,7 @@ struct RepertoireSettingsDraft: Equatable {
     /// The sidecar file of a new repertoire with these settings.
     func makeSidecar() -> Data {
         newSidecar(id: UUID().uuidString, color: color, database: database, targetGames: Int64(targetGames),
-                   minGames: Int64(minGames), now: .of(.now))
+                   now: .of(.now))
     }
 }
 
@@ -125,7 +123,6 @@ struct RepertoireSettingsForm: View {
             if customTarget || !isPreset {
                 Stepper("1 in \(draft.targetGames.formatted()) games", value: $draft.targetGames, in: 20...20000, step: 50)
             }
-            Stepper("Ignore positions under \(draft.minGames) games", value: $draft.minGames, in: 1...500, step: 5)
         } header: {
             Text("How much do you want to learn?")
         } footer: {

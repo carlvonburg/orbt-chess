@@ -38,7 +38,6 @@ expression: text(&full.merged(&other))
       "today": 2400
     }
   },
-  "minGames": 30,
   "practiceMode": "completeLinesOncePerSession",
   "settingsModified": "2026-09-21T14:13:30.250Z",
   "studyCards": {

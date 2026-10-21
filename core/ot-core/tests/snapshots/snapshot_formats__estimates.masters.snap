@@ -2,7 +2,7 @@
 source: ot-core/tests/snapshot_formats.rs
 expression: estimates
 ---
-config key masters|1000|5|white
+config key masters|1000|25|white
 database masters (Masters)
 progress Progress { cards: 0, learning: 0, young: 0, mature: 0, suspended: 0 }
 counts Counts { new: 0, learning: 0, review: 0 }
