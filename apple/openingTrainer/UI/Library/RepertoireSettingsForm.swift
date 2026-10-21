@@ -97,7 +97,7 @@ struct RepertoireSettingsForm: View {
             Text("Coverage database")
         } footer: {
             Text(draft.source == .classical
-                 ? "Opponent move frequencies come from over-the-board games since 2000 at this average FIDE rating (Lumbra's Gigabase, CC BY-NC 4.0), downloaded to this device. Positions it doesn't hold come from the Lichess explorer: masters games from 2000, Lichess rapid games at this rating below."
+                 ? "Opponent move frequencies come from over-the-board games since 2000 at this average FIDE rating (Lumbra's Gigabase, CC BY-NC 4.0), downloaded to this device. Positions it doesn't hold come from the Lichess explorer: masters games from 2000, below that Lichess rapid games one rating bin up (Lichess ratings run higher)."
                  : "Opponent move frequencies come from Lichess \(draft.source.title.lowercased()) games at this average rating, downloaded to this device. Positions it doesn't hold come from the Lichess explorer.")
         }
 

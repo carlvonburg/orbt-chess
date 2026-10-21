@@ -181,8 +181,8 @@ pub enum ExplorerDatabase {
     },
     /// Classical (over-the-board) games by average FIDE rating bin (`ELO_BINS`), from an
     /// offline coverage table built from Lumbra's Gigabase. Positions the table lacks come
-    /// from the Lichess explorer (`fetched_as`): masters from 2000, rapid games of the same
-    /// rating bin below.
+    /// from the Lichess explorer (`fetched_as`): masters from 2000, rapid games one rating bin
+    /// up below.
     Otb {
         ratings: Vec<i64>,
     },
@@ -278,15 +278,21 @@ impl ExplorerDatabase {
         })
     }
 
-    /// Query parameters for the explorer endpoint, unencoded.
     /// The Lichess explorer database asked for positions: itself, or for Classical (whose table
-    /// answers first) the masters from 2000 and rapid games of the same bin below, as the
-    /// masters explorer has no rating filter and too few games under 2000.
+    /// answers first) the masters from 2000, and below rapid games one bin up (Lichess ratings
+    /// run above FIDE ratings at club level), as the masters explorer has no rating filter and
+    /// too few games under 2000.
     pub fn fetched_as(&self) -> ExplorerDatabase {
         match self {
             ExplorerDatabase::Otb { ratings } if ratings.iter().any(|&r| r < 2000) => {
+                let up = |r: i64| {
+                    Self::RATING_BUCKETS
+                        .into_iter()
+                        .find(|&b| b > r)
+                        .unwrap_or(r)
+                };
                 ExplorerDatabase::Lichess {
-                    ratings: ratings.clone(),
+                    ratings: ratings.iter().map(|&r| up(r)).collect(),
                     speeds: vec![ExplorerSpeed::Rapid],
                 }
             }
@@ -295,6 +301,7 @@ impl ExplorerDatabase {
         }
     }
 
+    /// Query parameters for the explorer endpoint, unencoded.
     pub fn query_items(&self) -> Vec<(&'static str, String)> {
         match self {
             ExplorerDatabase::Otb { .. } => self.fetched_as().query_items(),
@@ -381,7 +388,7 @@ mod tests {
         assert_eq!(otb.summary(), "Classical 2200–2499");
         assert_eq!(otb.path(), "masters");
         assert!(otb.query_items().is_empty());
-        // Below 2000 the masters explorer has too few games: rapid games of the same bin.
+        // Below 2000 the masters explorer has too few games: rapid games one bin up.
         let club = ExplorerDatabase::Otb {
             ratings: vec![1800],
         };
@@ -390,7 +397,7 @@ mod tests {
             club.query_items(),
             [
                 ("speeds", "rapid".to_owned()),
-                ("ratings", "1800".to_owned())
+                ("ratings", "2000".to_owned())
             ]
         );
         assert_eq!(
