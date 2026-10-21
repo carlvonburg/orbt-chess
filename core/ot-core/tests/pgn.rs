@@ -83,3 +83,21 @@ fn start_ply_from_fen() {
     assert_eq!(pgn::start_ply(None), 0);
     assert_eq!(pgn::start_ply(Some("8/8/8/4k3/8/8/4P3/4K3 b - - 0 12")), 23);
 }
+
+#[test]
+fn a_closing_brace_in_a_comment_is_dropped_when_written() {
+    // A ";" comment can contain "}", which would end a "{ }" comment early.
+    let games = pgn::parse("1. e4 ; best } by test\n1... e5 *");
+    assert_eq!(games[0].moves[0].comments, ["best } by test"]);
+    let written = pgn::write_games(&games);
+    assert_eq!(written, "1. e4 { best  by test } 1... e5 *\n");
+    assert_eq!(pgn::write_games(&pgn::parse(&written)), written);
+}
+
+#[test]
+fn a_lone_glyph_is_not_a_game() {
+    // It was read as an empty game, written as "*", which reads back as no game.
+    assert!(pgn::parse("?").is_empty());
+    assert!(pgn::parse("!! *").is_empty());
+    assert_eq!(pgn::parse("1. e4 !! *")[0].moves[0].nags, [3]);
+}

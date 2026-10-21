@@ -1,0 +1,6 @@
+---
+source: ot-core/tests/snapshot_pgn.rs
+expression: tree.pgn_text()
+---
+1. d4 d5 2. c4 (2. Nf3 Nf6 3. c4 c6) (2. Bf4 Nf6 3. Nf3 c6 4. c4) 2... c6 3. Nf3
+Nf6 4. Nc3 *

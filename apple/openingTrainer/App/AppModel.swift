@@ -23,6 +23,9 @@ final class AppModel {
     /// Why an entry could not be opened, by entry id.
     private(set) var openErrors: [String: String] = [:]
     @ObservationIgnored private var opening: [String: Task<RepertoireDocument?, Never>] = [:]
+    /// Closed documents' last saves (done ones return at once); opening the entry again waits
+    /// for them.
+    @ObservationIgnored private var closing: [String: Task<Void, Never>] = [:]
     /// Old entry id → new one, for renamed repertoires, so open screens keep their document.
     private var renamedIDs: [String: String] = [:]
 
@@ -37,17 +40,29 @@ final class AppModel {
         await coverage.load(from: folder.appending(path: "Coverage", directoryHint: .isDirectory))
     }
 
-    /// Opens (or returns the already open) document for a library entry. The PGN is parsed
-    /// in the background; concurrent calls for the same entry share one load.
+    /// Opens (or returns the already open) document for a library entry. The files are read
+    /// and parsed in the background; concurrent calls for the same entry share one load.
     func open(_ entry: RepertoireEntry) async -> RepertoireDocument? {
         if let existing = documents[entry.id] { return existing }
         if let task = opening[entry.id] { return await task.value }
         let task = Task { () -> RepertoireDocument? in
             defer { opening[entry.id] = nil }
+            await closing[entry.id]?.value
             do {
-                let text = try await RepertoireDocument.load(entry.pgnURL)
+                let loaded = try await RepertoireDocument.load(pgnURL: entry.pgnURL, sidecarURL: entry.sidecarURL,
+                                                              defaults: TrainingDefaults.studyDefaults, explorer: queue.core)
                 if let existing = documents[entry.id] { return existing }
-                let doc = try RepertoireDocument(entry: entry, text: text, explorer: queue)
+                let doc = RepertoireDocument(entry: entry, loaded: loaded, explorer: queue)
+                doc.onRemoved = { [weak self, weak doc] in
+                    guard let self, let doc, self.documents[doc.entryID] === doc else { return }
+                    self.documents[doc.entryID] = nil
+                    Task { await self.library.refresh() }
+                }
+                doc.onRenamed = { [weak self, weak doc] oldID in
+                    guard let self, let doc else { return }
+                    self.moved(doc, from: oldID)
+                    Task { await self.library.refresh() }
+                }
                 coverage.want(doc.sidecar.database)
                 documents[entry.id] = doc
                 openErrors[entry.id] = nil
@@ -61,11 +76,15 @@ final class AppModel {
         return await task.value
     }
 
-    func rename(_ document: RepertoireDocument, to name: String) throws {
+    func rename(_ document: RepertoireDocument, to name: String) async throws {
         let oldID = document.entryID
-        try document.rename(to: name, in: library)
+        try await document.rename(to: name, in: library)
+        moved(document, from: oldID)
+    }
+
+    private func moved(_ document: RepertoireDocument, from oldID: String) {
         guard document.entryID != oldID else { return }
-        documents[oldID] = nil
+        if documents[oldID] === document { documents[oldID] = nil }
         documents[document.entryID] = document
         renamedIDs[oldID] = document.entryID
     }
@@ -77,14 +96,30 @@ final class AppModel {
         return id
     }
 
+    /// Closes the document; it finishes saving in the background.
     func close(_ entryID: String) {
-        documents[entryID]?.close()
-        documents[entryID] = nil
         openErrors[entryID] = nil
+        guard let doc = documents.removeValue(forKey: entryID) else { return }
+        let previous = closing[entryID]
+        closing[entryID] = Task {
+            await previous?.value
+            await doc.close()
+        }
     }
 
-    func flushAll() {
-        for doc in documents.values { doc.flush() }
+    /// Deletes a repertoire's files. Its open document is dropped without saving, so nothing
+    /// writes the files again.
+    func delete(_ entry: RepertoireEntry) async throws {
+        documents.removeValue(forKey: entry.id)?.discard()
+        openErrors[entry.id] = nil
+        await closing[entry.id]?.value
+        try await library.delete(entry)
+    }
+
+    /// Writes every pending change, including documents still closing.
+    func flushAll() async {
+        for doc in documents.values { await doc.flush() }
+        for task in closing.values { await task.value }
     }
 
     func closeAll() {

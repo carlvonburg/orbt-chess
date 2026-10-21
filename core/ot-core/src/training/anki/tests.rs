@@ -5,7 +5,10 @@
 
 use std::collections::HashMap;
 
-use super::fuzz::{constrained_fuzz_bounds, minimum_review_fuzz_interval, with_review_fuzz};
+use super::fuzz::{
+    constrained_fuzz_bounds, learning_interval_with_fuzz, minimum_review_fuzz_interval,
+    with_review_fuzz,
+};
 use super::queue::intersperse;
 use super::states::{StateContext, leech_threshold_met};
 use super::*;
@@ -170,6 +173,23 @@ fn minimum_review_fuzz_interval_vectors() {
 }
 
 // review.rs
+
+/// Anki draws the learning fuzz from a u32 range (`learning_ivl_with_fuzz`); a draw over i64
+/// gives other delays for the same seed.
+#[test]
+fn learning_fuzz_draws_like_anki() {
+    use rand::prelude::*;
+    for seed in [0, 1, 42, u64::MAX] {
+        for secs in [60u32, 600, 3600, 86_400] {
+            let upper = secs + ((secs as f32) * 0.25).min(300.0).floor() as u32;
+            let anki = StdRng::seed_from_u64(seed).random_range(secs..upper);
+            let ours = learning_interval_with_fuzz(Some(seed), i64::from(secs));
+            assert_eq!(ours, i64::from(anki), "seed {seed} secs {secs}");
+        }
+    }
+    assert_eq!(learning_interval_with_fuzz(Some(1), -5), 0);
+    assert_eq!(learning_interval_with_fuzz(None, 600), 600);
+}
 
 #[test]
 fn leech_threshold() {

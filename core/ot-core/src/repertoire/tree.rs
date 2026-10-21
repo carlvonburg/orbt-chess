@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 
 use super::comment;
 use crate::chess::{ChessPosition, Epd, PlayedMove, Side, san};
@@ -23,8 +23,6 @@ pub struct RepertoireNode {
     pub comments: Vec<String>,
     pub pre_comments: Vec<String>,
     pub nags: Vec<i32>,
-    /// Indices of the chapters (PGN games) that contain this node.
-    pub chapters: BTreeSet<usize>,
 }
 
 impl RepertoireNode {
@@ -47,40 +45,41 @@ impl RepertoireNode {
     }
 }
 
-/// One PGN game of the file. Games that start from a non-standard position are kept
-/// verbatim in `passthrough` and written back unchanged.
+/// The tags, game comments and result of the repertoire's game.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Chapter {
+pub struct GameHeader {
     pub tags: Vec<PgnTag>,
     pub comments: Vec<String>,
     pub result: String,
-    pub passthrough: Option<PgnGame>,
 }
 
-impl Chapter {
-    fn standard() -> Chapter {
-        Chapter {
+impl Default for GameHeader {
+    fn default() -> GameHeader {
+        GameHeader {
             tags: RepertoireTree::default_tags("Repertoire"),
             comments: Vec::new(),
             result: "*".to_owned(),
-            passthrough: None,
         }
-    }
-
-    pub fn name(&self) -> &str {
-        let tag = |name: &str| self.tags.iter().find(|t| t.name == name);
-        tag("ChapterName")
-            .or_else(|| tag("Event"))
-            .map(|t| t.value.as_str())
-            .unwrap_or("")
     }
 }
 
 #[derive(Clone, Debug)]
 pub struct RepertoireTree {
     nodes: Vec<Option<RepertoireNode>>,
+    /// By node id: an ancestor to jump to (skew-binary jump pointers), so `is_ancestor` takes
+    /// O(log depth) steps rather than one per ply.
+    jumps: Vec<NodeId>,
+    /// By node id: how many ancestors have the same position. When every other node with a
+    /// position is an ancestor (a line repeating it), no transposition needs a search.
+    repeats: Vec<u32>,
     count: usize,
-    pub chapters: Vec<Chapter>,
+    /// The game's header: the first game's that starts from the standard position (the
+    /// others are merged into the tree and their headers dropped). None until there is one.
+    pub header: Option<GameHeader>,
+    /// Games from another start position (SetUp/FEN): not part of the tree, written back
+    /// unchanged. The tree's game is written after the first `games_before` of them.
+    pub other_games: Vec<PgnGame>,
+    games_before: usize,
     epd_index: HashMap<Epd, Vec<NodeId>>,
     /// Moves that could not be played when loading (illegal or unreadable SAN).
     pub load_warnings: Vec<String>,
@@ -120,12 +119,15 @@ impl RepertoireTree {
             comments: Vec::new(),
             pre_comments: Vec::new(),
             nags: Vec::new(),
-            chapters: BTreeSet::new(),
         };
         RepertoireTree {
             nodes: vec![Some(root)],
+            jumps: vec![Self::ROOT],
+            repeats: vec![0],
             count: 1,
-            chapters: Vec::new(),
+            header: None,
+            other_games: Vec::new(),
+            games_before: 0,
             epd_index: HashMap::from([(epd, vec![Self::ROOT])]),
             load_warnings: Vec::new(),
             merged_transpositions: 0,
@@ -244,48 +246,41 @@ impl RepertoireTree {
     /// For a node without moves: the node with the same position that holds its lines
     /// (the first one that has moves). Never an ancestor, so following it cannot loop.
     pub fn transposition_target(&self, id: NodeId) -> Option<NodeId> {
-        self.transposition_target_in(id, None)
-    }
-
-    fn transposition_target_in(&self, id: NodeId, chapter: Option<usize>) -> Option<NodeId> {
         let node = self.get(id)?;
         if !node.children.is_empty() {
             return None;
         }
         let candidates = self.epd_index.get(&node.epd)?;
-        if candidates.len() < 2 {
-            return None;
+        if candidates.len() <= self.repeats.get(id as usize).map_or(0, |&r| r as usize + 1) {
+            return None; // the others are all above it
         }
-        candidates
-            .iter()
-            .copied()
-            .filter(|&candidate| {
-                let Some(c) = self.get(candidate) else {
-                    return false;
-                };
-                if candidate == id || c.children.is_empty() {
-                    return false;
-                }
-                // Moves are written per chapter, so lines only move to a node of the same chapter.
-                if let Some(chapter) = chapter
-                    && !c.chapters.contains(&chapter)
-                {
-                    return false;
-                }
-                !self.is_ancestor(candidate, id)
-            })
-            .min()
+        // Ids only grow, so the first match is the lowest.
+        candidates.iter().copied().find(|&candidate| {
+            candidate != id
+                && self.get(candidate).is_some_and(|c| !c.children.is_empty())
+                && !self.is_ancestor(candidate, id)
+        })
     }
 
+    /// Whether `a` is above `b` (not `b` itself).
     pub fn is_ancestor(&self, a: NodeId, b: NodeId) -> bool {
-        let mut cursor = self.get(b).and_then(|n| n.parent);
-        while let Some(c) = cursor {
-            if c == a {
-                return true;
+        let (Some(above), Some(mut cursor)) = (self.get(a), self.get(b)) else {
+            return false;
+        };
+        // Plies grow by one per move, so `a` is the ancestor of `b` at its ply, if any.
+        while cursor.ply > above.ply {
+            let jump = self
+                .jumps
+                .get(cursor.id as usize)
+                .and_then(|&j| self.get(j))
+                .filter(|j| j.ply >= above.ply);
+            let next = jump.or_else(|| cursor.parent.and_then(|p| self.get(p)));
+            match next {
+                Some(next) if next.ply < cursor.ply => cursor = next,
+                _ => return false,
             }
-            cursor = self.get(c).and_then(|n| n.parent);
         }
-        false
+        cursor.id == a && a != b
     }
 
     /// Leaves under `id` (lines ending there).
@@ -326,8 +321,7 @@ impl RepertoireTree {
         if let Some(existing) = self.child_by_uci(parent, &mv.uci) {
             return Some(existing);
         }
-        let chapter = self.default_chapter(parent);
-        Some(self.insert(mv, next, parent, BTreeSet::from([chapter])))
+        Some(self.insert(mv, next, parent))
     }
 
     /// Adds a sequence of moves; returns the last node.
@@ -401,29 +395,26 @@ impl RepertoireTree {
         };
     }
 
-    pub fn set_chapter_tag(&mut self, index: usize, name: &str, value: &str) {
-        self.ensure_chapter();
-        let Some(chapter) = self.chapters.get_mut(index) else {
-            return;
-        };
-        match chapter.tags.iter_mut().find(|t| t.name == name) {
+    pub fn set_tag(&mut self, name: &str, value: &str) {
+        let header = self.header.get_or_insert_with(GameHeader::default);
+        match header.tags.iter_mut().find(|t| t.name == name) {
             Some(tag) => tag.value = value.to_owned(),
-            None => chapter.tags.insert(0, PgnTag::new(name, value)),
+            None => header.tags.insert(0, PgnTag::new(name, value)),
         }
     }
 
     // PGN
 
-    /// Builds a tree from PGN games. Games from the standard position are merged into one tree.
+    /// Builds a tree from PGN games. Games from the standard position are merged into one
+    /// tree (one game, with the first one's header); the others are kept as they are.
     pub fn from_games(games: Vec<PgnGame>) -> RepertoireTree {
         let mut tree = RepertoireTree::default();
+        if games.is_empty() {
+            tree.header = Some(GameHeader::default());
+        }
         for game in games {
-            tree.append_chapter(game);
+            tree.append_game(game);
         }
-        if tree.chapters.is_empty() {
-            tree.chapters = vec![Chapter::standard()];
-        }
-        tree.reset_root_chapters();
         tree
     }
 
@@ -439,63 +430,38 @@ impl RepertoireTree {
         ]
     }
 
-    fn reset_root_chapters(&mut self) {
-        let standard: BTreeSet<usize> = (0..self.chapters.len())
-            .filter(|&i| self.chapters[i].passthrough.is_none())
-            .collect();
-        self.get_mut(Self::ROOT).expect("root").chapters = standard;
-    }
-
-    fn append_chapter(&mut self, game: PgnGame) {
-        let index = self.chapters.len();
+    fn append_game(&mut self, game: PgnGame) {
         let root_epd = self.root().epd.clone();
         if let Some(fen) = game.start_fen()
             && let Some(position) = ChessPosition::from_fen(fen)
             && position.epd() != root_epd
         {
-            self.chapters.push(Chapter {
-                tags: game.tags.clone(),
-                comments: game.comments.clone(),
-                result: game.result.clone(),
-                passthrough: Some(game),
-            });
+            self.other_games.push(game);
             return;
         }
-        self.chapters.push(Chapter {
-            tags: game.tags,
-            comments: game.comments,
-            result: game.result,
-            passthrough: None,
-        });
-        self.get_mut(Self::ROOT)
-            .expect("root")
-            .chapters
-            .insert(index);
-        self.merge_moves(&game.moves, Self::ROOT, Some(index));
+        if self.header.is_none() {
+            self.games_before = self.other_games.len();
+            self.header = Some(GameHeader {
+                tags: game.tags,
+                comments: game.comments,
+                result: game.result,
+            });
+        }
+        self.merge_moves(&game.moves, Self::ROOT);
     }
 
     /// Merges PGN moves (with variations) below `id`. Returns the number of new nodes.
-    pub fn merge_moves(&mut self, moves: &[PgnMove], id: NodeId, chapter: Option<usize>) -> usize {
+    pub fn merge_moves(&mut self, moves: &[PgnMove], id: NodeId) -> usize {
         let before = self.count;
-        let chapter = chapter.unwrap_or_else(|| {
-            if self.get(id).is_some() {
-                self.default_chapter(id)
-            } else {
-                0
-            }
-        });
         let mut stack: Vec<(&PgnMove, NodeId)> = moves.iter().rev().map(|m| (m, id)).collect();
         while let Some((pgn_move, parent)) = stack.pop() {
             let Some(parent_node) = self.get(parent) else {
                 continue;
             };
-            let target = if let Some(existing) = self.child_by_san(parent, &pgn_move.san) {
+            let target = if let Some(existing) = self.existing_child(parent, &pgn_move.san) {
                 existing
             } else if let Some((mv, next)) = parent_node.position.play_san(&pgn_move.san) {
-                match self.child_by_uci(parent, &mv.uci) {
-                    Some(existing) => existing,
-                    None => self.insert(mv, next, parent, BTreeSet::new()),
-                }
+                self.insert(mv, next, parent)
             } else {
                 let line: Vec<String> = self.moves(parent).into_iter().map(|m| m.san).collect();
                 let after = if line.is_empty() {
@@ -508,7 +474,6 @@ impl RepertoireTree {
                 continue;
             };
             let node = self.get_mut(target).expect("target exists");
-            node.chapters.insert(chapter);
             append_unique(&mut node.comments, &pgn_move.comments);
             append_unique(&mut node.pre_comments, &pgn_move.pre_comments);
             for &nag in &pgn_move.nags {
@@ -522,8 +487,7 @@ impl RepertoireTree {
             let continuation = if pgn_move.children.is_empty() {
                 target
             } else {
-                self.transposition_target_in(target, Some(chapter))
-                    .unwrap_or(target)
+                self.transposition_target(target).unwrap_or(target)
             };
             if continuation != target {
                 self.merged_transpositions += 1;
@@ -533,100 +497,108 @@ impl RepertoireTree {
         self.count - before
     }
 
-    /// Union of both trees (used when the file changed elsewhere). Chapters are matched by index.
-    pub fn merge_tree(&mut self, other: &RepertoireTree) -> usize {
-        let mut added = 0;
-        for (index, game) in other.pgn_games().into_iter().enumerate() {
-            if index < self.chapters.len() {
-                if self.chapters[index].passthrough.is_none()
-                    && other.chapters[index].passthrough.is_none()
-                {
-                    added += self.merge_moves(&game.moves, Self::ROOT, Some(index));
-                }
-            } else {
-                let before = self.count;
-                self.append_chapter(game);
-                self.reset_root_chapters();
-                added += self.count - before;
-            }
-        }
-        added
+    /// The child reached by `san`, also when written differently ("Ngf3" for "Nf3").
+    fn existing_child(&self, parent: NodeId, san: &str) -> Option<NodeId> {
+        self.child_by_san(parent, san).or_else(|| {
+            let (mv, _) = self.get(parent)?.position.play_san(san)?;
+            self.child_by_uci(parent, &mv.uci)
+        })
     }
 
-    /// Writes all chapters back as PGN games.
+    /// Union of both trees (used when the file changed elsewhere).
+    pub fn merge_tree(&mut self, other: &RepertoireTree) -> usize {
+        if self.header.is_none() {
+            self.header.clone_from(&other.header);
+        }
+        for game in &other.other_games {
+            if !self.other_games.contains(game) {
+                self.other_games.push(game.clone());
+            }
+        }
+        self.merge_moves(&other.pgn_moves(Self::ROOT), Self::ROOT)
+    }
+
+    /// Writes the repertoire back as PGN games: its game, and those from other positions.
     pub fn pgn_games(&self) -> Vec<PgnGame> {
-        self.chapters
-            .iter()
-            .enumerate()
-            .map(|(index, chapter)| match &chapter.passthrough {
-                Some(passthrough) => passthrough.clone(),
-                None => PgnGame {
-                    tags: chapter.tags.clone(),
-                    comments: chapter.comments.clone(),
-                    moves: self.pgn_moves(Self::ROOT, Some(index)),
-                    result: chapter.result.clone(),
-                },
-            })
-            .collect()
+        let header = match &self.header {
+            Some(header) => header.clone(),
+            None if !self.root().children.is_empty() => GameHeader::default(),
+            None => return self.other_games.clone(),
+        };
+        let mut games = self.other_games.clone();
+        let game = PgnGame {
+            tags: header.tags,
+            comments: header.comments,
+            moves: self.pgn_moves(Self::ROOT),
+            result: header.result,
+        };
+        games.insert(self.games_before.min(games.len()), game);
+        games
     }
 
     pub fn pgn_text(&self) -> String {
         pgn::write_games(&self.pgn_games())
     }
 
-    /// Moves below `id` as PGN, restricted to `chapter` if given.
-    pub fn pgn_moves(&self, id: NodeId, chapter: Option<usize>) -> Vec<PgnMove> {
+    /// Moves below `id` as PGN.
+    pub fn pgn_moves(&self, id: NodeId) -> Vec<PgnMove> {
+        // Each frame: the move being built and its children still to visit. A work stack
+        // rather than recursion, because a line nests one level per ply.
+        let mut stack = vec![(PgnMove::default(), self.written_children(id))];
+        loop {
+            let (_, rest) = stack.last_mut().expect("non-empty until `id` is done");
+            if let Some((child_id, pgn_move)) = rest.next() {
+                stack.push((pgn_move, self.written_children(child_id)));
+                continue;
+            }
+            let (mut done, _) = stack.pop().expect("non-empty");
+            match stack.last_mut() {
+                Some((parent, _)) => parent.children.push(done),
+                None => return std::mem::take(&mut done.children),
+            }
+        }
+    }
+
+    /// The children of `id` as PGN moves without their children.
+    fn written_children(&self, id: NodeId) -> std::vec::IntoIter<(NodeId, PgnMove)> {
         let Some(node) = self.get(id) else {
-            return Vec::new();
+            return Vec::new().into_iter();
         };
         node.children
             .iter()
             .filter_map(|&child_id| {
                 let child = self.get(child_id)?;
-                let mv = child.mv.as_ref()?;
-                if let Some(chapter) = chapter
-                    && !child.chapters.contains(&chapter)
-                {
-                    return None;
-                }
-                Some(PgnMove {
-                    san: mv.san.clone(),
+                let pgn_move = PgnMove {
+                    san: child.mv.as_ref()?.san.clone(),
                     nags: child.nags.clone(),
                     pre_comments: child.pre_comments.clone(),
                     comments: child.comments.clone(),
-                    children: self.pgn_moves(child_id, chapter),
-                })
+                    children: Vec::new(),
+                };
+                Some((child_id, pgn_move))
             })
-            .collect()
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
     // Private
 
-    fn default_chapter(&self, parent: NodeId) -> usize {
-        self.get(parent)
-            .and_then(|p| p.chapters.first().copied())
-            .or_else(|| self.chapters.iter().position(|c| c.passthrough.is_none()))
-            .unwrap_or(0)
-    }
-
-    fn ensure_chapter(&mut self) {
-        if self.chapters.is_empty() {
-            self.chapters = vec![Chapter::standard()];
-            self.get_mut(Self::ROOT).expect("root").chapters = BTreeSet::from([0]);
-        }
-    }
-
-    fn insert(
-        &mut self,
-        mv: PlayedMove,
-        position: ChessPosition,
-        parent: NodeId,
-        chapters: BTreeSet<usize>,
-    ) -> NodeId {
-        self.ensure_chapter();
+    fn insert(&mut self, mv: PlayedMove, position: ChessPosition, parent: NodeId) -> NodeId {
         let id = self.nodes.len() as NodeId;
         let parent_ply = self.get(parent).map_or(0, |p| p.ply);
         let epd = position.epd();
+        self.jumps.push(self.jump_for_child_of(parent));
+        // The nearest ancestor with this position is the one with the highest id.
+        let repeats = self
+            .epd_index
+            .get(&epd)
+            .and_then(|ids| {
+                ids.iter()
+                    .rev()
+                    .find(|&&c| c == parent || self.is_ancestor(c, parent))
+            })
+            .map_or(0, |&c| self.repeats.get(c as usize).map_or(0, |r| r + 1));
+        self.repeats.push(repeats);
         self.nodes.push(Some(RepertoireNode {
             id,
             parent: Some(parent),
@@ -638,7 +610,6 @@ impl RepertoireTree {
             comments: Vec::new(),
             pre_comments: Vec::new(),
             nags: Vec::new(),
-            chapters,
         }));
         self.count += 1;
         if let Some(p) = self.get_mut(parent) {
@@ -646,6 +617,21 @@ impl RepertoireTree {
         }
         self.epd_index.entry(epd).or_default().push(id);
         id
+    }
+}
+
+impl RepertoireTree {
+    /// Myers' skew-binary jump: the parent's jump's jump when the two jumps span the same
+    /// number of plies, else the parent.
+    fn jump_for_child_of(&self, parent: NodeId) -> NodeId {
+        let ply = |id: NodeId| self.get(id).map_or(0, |n| n.ply);
+        let jump = |id: NodeId| self.jumps.get(id as usize).copied().unwrap_or(Self::ROOT);
+        let (p_jump, p_jump_jump) = (jump(parent), jump(jump(parent)));
+        if ply(parent) - ply(p_jump) == ply(p_jump) - ply(p_jump_jump) {
+            p_jump_jump
+        } else {
+            parent
+        }
     }
 }
 

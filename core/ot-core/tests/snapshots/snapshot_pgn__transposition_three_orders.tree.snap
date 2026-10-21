@@ -1,0 +1,23 @@
+---
+source: ot-core/tests/snapshot_pgn.rs
+expression: tree_text(&tree)
+---
+17 nodes, 1 merged transpositions
+header: 
+0 root ply 0 -> [1] | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -
+1 d4 ply 1 <- 0 -> [2] | rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -
+2 d5 ply 2 <- 1 -> [3, 8, 12] | rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -
+3 c4 ply 3 <- 2 -> [4] | rnbqkbnr/ppp1pppp/8/3p4/2PP4/8/PP2PPPP/RNBQKBNR b KQkq -
+4 c6 ply 4 <- 3 -> [5] | rnbqkbnr/pp2pppp/2p5/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq -
+5 Nf3 ply 5 <- 4 -> [6] | rnbqkbnr/pp2pppp/2p5/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq -
+6 Nf6 ply 6 <- 5 -> [7] | rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq -
+7 Nc3 ply 7 <- 6 | rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/2N2N2/PP2PPPP/R1BQKB1R b KQkq -
+8 Nf3 ply 3 <- 2 -> [9] | rnbqkbnr/ppp1pppp/8/3p4/3P4/5N2/PPP1PPPP/RNBQKB1R b KQkq -
+9 Nf6 ply 4 <- 8 -> [10] | rnbqkb1r/ppp1pppp/5n2/3p4/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq -
+10 c4 ply 5 <- 9 -> [11] | rnbqkb1r/ppp1pppp/5n2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R b KQkq -
+11 c6 ply 6 <- 10 transposes to 6 | rnbqkb1r/pp2pppp/2p2n2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq -
+12 Bf4 ply 3 <- 2 -> [13] | rnbqkbnr/ppp1pppp/8/3p4/3P1B2/8/PPP1PPPP/RN1QKBNR b KQkq -
+13 Nf6 ply 4 <- 12 -> [14] | rnbqkb1r/ppp1pppp/5n2/3p4/3P1B2/8/PPP1PPPP/RN1QKBNR w KQkq -
+14 Nf3 ply 5 <- 13 -> [15] | rnbqkb1r/ppp1pppp/5n2/3p4/3P1B2/5N2/PPP1PPPP/RN1QKB1R b KQkq -
+15 c6 ply 6 <- 14 -> [16] | rnbqkb1r/pp2pppp/2p2n2/3p4/3P1B2/5N2/PPP1PPPP/RN1QKB1R w KQkq -
+16 c4 ply 7 <- 15 | rnbqkb1r/pp2pppp/2p2n2/3p4/2PP1B2/5N2/PP2PPPP/RN1QKB1R b KQkq -

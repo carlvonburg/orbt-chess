@@ -27,21 +27,47 @@ fn add_reuses_delete_promote() {
 }
 
 #[test]
-fn new_moves_go_to_parents_chapter() {
-    let mut tree =
-        RepertoireTree::from_pgn("[Event \"A\"]\n\n1. e4 e5 *\n\n[Event \"B\"]\n\n1. d4 d5 *");
-    let d4 = tree.child_by_san(ROOT, "d4").unwrap();
-    let d5 = tree.child_by_san(d4, "d5").unwrap();
-    tree.add_move_san("c4", d5);
+fn games_from_the_start_position_become_one_game() {
+    let text = "[Event \"A\"]\n\n{ Intro A } 1. e4 e5 2. Nf3 *\n\n\
+                [Event \"B\"]\n[White \"Me\"]\n\n{ Intro B } 1. e4 c5 (1... e5 2. Bc4) 2. Nf3 *\n\n\
+                [Event \"C\"]\n\n1. d4 d5 *";
+    let tree = RepertoireTree::from_pgn(text);
+    for line in ["e4 e5 Nf3", "e4 e5 Bc4", "e4 c5 Nf3", "d4 d5"] {
+        assert!(tree.find(line).is_some(), "{line}");
+    }
+    assert_eq!(tree.count(), 9);
+    // One game, with the first game's header.
     let games = pgn::parse(&tree.pgn_text());
-    let first: Vec<&str> = games[0].moves.iter().map(|m| m.san.as_str()).collect();
-    assert_eq!(first, ["e4"]);
-    let after_d5: Vec<&str> = games[1].moves[0].children[0]
-        .children
-        .iter()
-        .map(|m| m.san.as_str())
-        .collect();
-    assert_eq!(after_d5, ["c4"]);
+    assert_eq!(games.len(), 1);
+    assert_eq!(games[0].tag("Event"), Some("A"));
+    assert_eq!(games[0].tag("White"), None);
+    assert_eq!(games[0].comments, ["Intro A"]);
+    // New moves are part of that game.
+    let mut tree = tree;
+    let d5 = tree.find("d4 d5").unwrap();
+    tree.add_move_san("c4", d5);
+    let saved = tree.pgn_text();
+    assert_eq!(pgn::parse(&saved).len(), 1);
+    assert_eq!(RepertoireTree::from_pgn(&saved).pgn_text(), saved);
+    assert!(RepertoireTree::from_pgn(&saved).find("d4 d5 c4").is_some());
+}
+
+#[test]
+fn a_game_from_another_position_stays_separate() {
+    let endgame = "[Event \"Endgame\"]\n[SetUp \"1\"]\n[FEN \"8/8/8/4k3/8/8/4P3/4K3 w - - 0 1\"]\n\n\
+                   1. Kd2 { keep } *";
+    let text = format!("{endgame}\n\n[Event \"A\"]\n\n1. e4 e5 *\n\n[Event \"B\"]\n\n1. d4 *\n");
+    let mut tree = RepertoireTree::from_pgn(&text);
+    assert_eq!(tree.count(), 4);
+    assert_eq!(tree.other_games.len(), 1);
+    let e5 = tree.find("e4 e5").unwrap();
+    tree.add_move_san("Nf3", e5);
+    let saved = tree.pgn_text();
+    assert_eq!(
+        saved,
+        format!("{endgame}\n\n[Event \"A\"]\n\n1. e4 (1. d4) 1... e5 2. Nf3 *\n")
+    );
+    assert_eq!(RepertoireTree::from_pgn(&saved).pgn_text(), saved);
 }
 
 #[test]
@@ -98,19 +124,19 @@ const SAMPLE: &str = r#"[Event "Sicilian: Chapter 1"]
 fn round_trips_through_tree() {
     let tree = RepertoireTree::from_pgn(SAMPLE);
     assert!(tree.load_warnings.is_empty());
-    assert_eq!(tree.chapters.len(), 2);
     let text = tree.pgn_text();
     let reparsed = RepertoireTree::from_pgn(&text);
     assert_eq!(reparsed.count(), tree.count());
     assert_eq!(reparsed.pgn_text(), text);
-    // chapter 2 only contains its own line
+    // Both games are one now.
     let games = pgn::parse(&text);
-    let replies: Vec<&str> = games[1].moves[0].children[0].children[0]
+    assert_eq!(games.len(), 1);
+    let replies: Vec<&str> = games[0].moves[0].children[0].children[0]
         .children
         .iter()
         .map(|m| m.san.as_str())
         .collect();
-    assert_eq!(replies, ["Nc6"]);
+    assert_eq!(replies, ["d6", "Nc6"]);
     assert!(text.contains("2. c3!? { Alapin }"));
     assert!(text.contains("[%cal Gd2d4] Main move"));
 }
@@ -161,14 +187,40 @@ fn writing_keeps_every_move_order_and_line() {
 }
 
 #[test]
-fn lines_stay_in_their_chapter() {
+fn games_transpose_into_each_other() {
     let text = "[Event \"A\"]\n\n1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 *\n\n[Event \"B\"]\n\n1. d4 d5 2. Nf3 Nf6 3. c4 c6 4. e3 *";
     let tree = RepertoireTree::from_pgn(text);
     let other = tree.find("d4 d5 Nf3 Nf6 c4 c6").unwrap();
-    // Chapter B's node keeps its own move, so writing chapter B loses nothing.
-    assert_eq!(tree[other].children.len(), 1);
-    let games = pgn::parse(&tree.pgn_text());
-    assert_eq!(games.len(), 2);
-    let b = RepertoireTree::from_games(vec![games[1].clone()]);
-    assert!(b.find("d4 d5 Nf3 Nf6 c4 c6 e3").is_some());
+    let main = tree.find("d4 d5 c4 c6 Nf3 Nf6").unwrap();
+    assert!(tree[other].children.is_empty());
+    assert_eq!(tree.transposition_target(other), Some(main));
+    assert!(tree.child_by_san(main, "Nc3").is_some());
+    assert!(tree.child_by_san(main, "e3").is_some());
+}
+
+#[test]
+fn pre_comments_stay_in_their_variation() {
+    // d4 and c5 start a variation in the first game and the main line in the others.
+    let text = "1. e4 ({ pre d4 } 1. d4 d5) 1... e5 ({ pre c5 } 1... c5) *\n\n\
+                1. d4 d5 *\n\n1. e4 c5 *\n";
+    let tree = RepertoireTree::from_pgn(text);
+    let saved = tree.pgn_text();
+    assert_eq!(
+        saved,
+        "1. e4 ({ pre d4 } 1. d4 d5) 1... e5 ({ pre c5 } 1... c5) *\n"
+    );
+    assert_eq!(RepertoireTree::from_pgn(&saved).pgn_text(), saved);
+}
+
+#[test]
+fn merging_does_not_depend_on_the_order_of_variations() {
+    // The second game reaches "1. Nc3 Nc6" (which the first continues) only in a variation
+    // that comes after the line transposing into it.
+    let pgn = "[Event \"One\"]\n\n1. Nc3 Nc6 2. Na4 *\n\n\
+               [Event \"Two\"]\n\n1. Nc3 Na6 (1... Nc6) 2. Na4 Nb4 3. Nc3 Nc6 4. Na4 *\n";
+    let tree = RepertoireTree::from_pgn(pgn);
+    let text = tree.pgn_text();
+    assert_eq!(RepertoireTree::from_pgn(&text).pgn_text(), text);
+    let leaf = tree.find_san("Nc3 Na6 Na4 Nb4 Nc3 Nc6").unwrap();
+    assert_eq!(tree.transposition_target(leaf), tree.find_san("Nc3 Nc6"));
 }

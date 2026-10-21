@@ -264,11 +264,11 @@ pub fn new_sidecar(
     s.encoded()
 }
 
-/// A new, empty repertoire PGN whose chapter is named `name`.
+/// A new, empty repertoire PGN whose game is named `name`.
 #[uniffi::export]
 pub fn new_repertoire_pgn(name: String) -> String {
     let mut tree = RepertoireTree::default();
-    tree.set_chapter_tag(0, "Event", &name);
+    tree.set_tag("Event", &name);
     tree.pgn_text()
 }
 
@@ -281,6 +281,23 @@ pub fn decode_revlog(data: Vec<u8>) -> Vec<RevlogEntry> {
 #[uniffi::export]
 pub fn merge_revlogs(a: Vec<RevlogEntry>, b: Vec<RevlogEntry>) -> Vec<RevlogEntry> {
     revlog::merged(&a, &b)
+}
+
+/// Two copies of a review log file (iCloud conflict versions) as one file: union by id.
+#[uniffi::export]
+pub fn merge_revlog_data(a: Vec<u8>, b: Vec<u8>) -> Vec<u8> {
+    revlog::encode(&revlog::merged(&revlog::decode(&a), &revlog::decode(&b)))
+}
+
+/// Two copies of a sidecar file (iCloud conflict versions) as one file: cards by latest
+/// review, settings by latest change. An unreadable copy is dropped; None when neither reads.
+#[uniffi::export]
+pub fn merge_sidecar_data(a: Vec<u8>, b: Vec<u8>) -> Option<Vec<u8>> {
+    match (Sidecar::decode(&a), Sidecar::decode(&b)) {
+        (Ok(a), Ok(b)) => Some(a.merged(&b).encoded()),
+        (Ok(s), Err(_)) | (Err(_), Ok(s)) => Some(s.encoded()),
+        (Err(_), Err(_)) => None,
+    }
 }
 
 #[uniffi::export]

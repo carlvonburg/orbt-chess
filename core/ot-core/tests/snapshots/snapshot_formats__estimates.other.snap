@@ -1,0 +1,10 @@
+---
+source: ot-core/tests/snapshot_formats.rs
+expression: estimates
+---
+config key lichess:blitz,rapid:1800,2000|600|30|black
+database lichess:blitz,rapid:1800,2000 (Lichess 1800–2199 · Blitz, Rapid)
+progress Progress { cards: 120, learning: 0, young: 2, mature: 0, suspended: 3 }
+counts Counts { new: 8, learning: 0, review: 0 }
+next due Some(1907532800), due tomorrow 0
+later learning dues []

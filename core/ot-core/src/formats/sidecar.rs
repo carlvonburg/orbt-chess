@@ -151,6 +151,16 @@ impl Sidecar {
         self.settings_modified = now;
     }
 
+    /// Equal apart from the summary, which each device computes from its own coverage and
+    /// clock: a different summary alone is no reason to write the file.
+    pub fn same_content(&self, other: &Sidecar) -> bool {
+        let without_summary = |s: &Sidecar| Sidecar {
+            summary: None,
+            ..s.clone()
+        };
+        without_summary(self) == without_summary(other)
+    }
+
     /// Merges a version written elsewhere: cards by latest review, settings by latest change,
     /// today's study counts by the larger.
     pub fn merged(&self, other: &Sidecar) -> Sidecar {

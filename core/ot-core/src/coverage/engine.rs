@@ -227,6 +227,8 @@ impl CoverageEngine {
         Mode::Normal
     }
 
+    /// Sets reach and mode below `id`, then aggregates each node after its children, in the
+    /// order a recursive depth-first walk would. A work stack, because lines can be very long.
     fn compute_subtree(
         &mut self,
         id: NodeId,
@@ -235,23 +237,30 @@ impl CoverageEngine {
         tree: &RepertoireTree,
         stats: &dyn StatsSource,
     ) {
-        let Some(node) = tree.get(id) else { return };
-        let c = self.info.entry(id).or_default();
-        c.reach = reach;
-        c.counts = mode == Mode::Normal;
-
-        let opponent_to_move = node.side_to_move() != self.settings.color;
-        let node_stats = if opponent_to_move {
-            stats.stats(&node.epd)
-        } else {
-            None
-        };
-        let node_stats = node_stats.as_deref();
-        for (index, &child) in node.children.iter().enumerate() {
-            let Some(mv) = tree.get(child).and_then(|n| n.mv.as_ref()) else {
+        // Each frame: the node, its reach and mode, and the next child to visit.
+        let mut stack: Vec<(&RepertoireNode, Option<f64>, Mode, usize)> = Vec::new();
+        if let Some(node) = tree.get(id) {
+            self.enter(node, reach, mode);
+            stack.push((node, reach, mode, 0));
+        }
+        while let Some((node, reach, mode, next)) = stack.last_mut() {
+            let (node, reach, mode) = (*node, *reach, *mode);
+            let Some(&child) = node.children.get(*next) else {
+                stack.pop();
+                self.aggregate(node.id, tree, stats);
                 continue;
             };
+            let index = *next;
+            *next += 1;
+            let Some(child_node) = tree.get(child) else {
+                continue;
+            };
+            let Some(mv) = child_node.mv.as_ref() else {
+                continue;
+            };
+            let opponent_to_move = node.side_to_move() != self.settings.color;
             let child_reach = if opponent_to_move {
+                let node_stats = stats.stats(&node.epd);
                 match (reach, node_stats) {
                     (Some(r), Some(s)) => Some(r * s.share(&mv.uci)),
                     _ => None,
@@ -264,9 +273,15 @@ impl CoverageEngine {
             } else {
                 Mode::Normal
             };
-            self.compute_subtree(child, child_reach, child_mode, tree, stats);
+            self.enter(child_node, child_reach, child_mode);
+            stack.push((child_node, child_reach, child_mode, 0));
         }
-        self.aggregate(id, tree, stats);
+    }
+
+    fn enter(&mut self, node: &RepertoireNode, reach: Option<f64>, mode: Mode) {
+        let c = self.info.entry(node.id).or_default();
+        c.reach = reach;
+        c.counts = mode == Mode::Normal;
     }
 
     fn refresh_ancestors(&mut self, id: NodeId, tree: &RepertoireTree, stats: &dyn StatsSource) {

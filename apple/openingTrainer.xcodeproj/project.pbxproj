@@ -10,7 +10,18 @@
 		AA00000000000000000000B1 /* OpeningCoreRust in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000000000000000000B3 /* OpeningCoreRust */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		BB0000000000000000000005 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 1F1758793083B5B8003B959B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1F1758803083B5B8003B959B;
+			remoteInfo = openingTrainer;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		BB0000000000000000000001 /* openingTrainerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = openingTrainerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1F1758813083B5B8003B959B /* openingTrainer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = openingTrainer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000000B4 /* OpeningCoreRust */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = OpeningCoreRust; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -19,6 +30,11 @@
 		1F1758833083B5B8003B959B /* openingTrainer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = openingTrainer;
+			sourceTree = "<group>";
+		};
+		BB0000000000000000000002 /* openingTrainerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = openingTrainerTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +48,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BB0000000000000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -40,6 +63,7 @@
 			children = (
 				AA00000000000000000000B4 /* OpeningCoreRust */,
 				1F1758833083B5B8003B959B /* openingTrainer */,
+				BB0000000000000000000002 /* openingTrainerTests */,
 				1F1758823083B5B8003B959B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -48,6 +72,7 @@
 			isa = PBXGroup;
 			children = (
 				1F1758813083B5B8003B959B /* openingTrainer.app */,
+				BB0000000000000000000001 /* openingTrainerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -78,6 +103,29 @@
 			productReference = 1F1758813083B5B8003B959B /* openingTrainer.app */;
 			productType = "com.apple.product-type.application";
 		};
+		BB0000000000000000000003 /* openingTrainerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BB000000000000000000000A /* Build configuration list for PBXNativeTarget "openingTrainerTests" */;
+			buildPhases = (
+				BB0000000000000000000007 /* Sources */,
+				BB0000000000000000000006 /* Frameworks */,
+				BB0000000000000000000008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BB0000000000000000000004 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				BB0000000000000000000002 /* openingTrainerTests */,
+			);
+			name = openingTrainerTests;
+			packageProductDependencies = (
+			);
+			productName = openingTrainerTests;
+			productReference = BB0000000000000000000001 /* openingTrainerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -90,6 +138,10 @@
 				TargetAttributes = {
 					1F1758803083B5B8003B959B = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					BB0000000000000000000003 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = 1F1758803083B5B8003B959B;
 					};
 				};
 			};
@@ -111,12 +163,20 @@
 			projectRoot = "";
 			targets = (
 				1F1758803083B5B8003B959B /* openingTrainer */,
+				BB0000000000000000000003 /* openingTrainerTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		1F17587F3083B5B8003B959B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BB0000000000000000000008 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -133,7 +193,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BB0000000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BB0000000000000000000004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1F1758803083B5B8003B959B /* openingTrainer */;
+			targetProxy = BB0000000000000000000005 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		1F17588A3083B5B9003B959B /* Debug */ = {
@@ -265,15 +340,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/openingTrainer.entitlements;
-				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = Config/openingTrainer-macOS.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/openingTrainer-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5UQ3MTX86T;
 				"ENABLE_APP_SANDBOX[sdk=macosx*]" = YES;
 				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				"ENABLE_OUTGOING_NETWORK_CONNECTIONS[sdk=macosx*]" = YES;
-				"ENABLE_USER_SELECTED_FILES[sdk=macosx*]" = readwrite;
 				ENABLE_PREVIEWS = YES;
+				"ENABLE_USER_SELECTED_FILES[sdk=macosx*]" = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Opening Trainer";
@@ -293,16 +368,16 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ch.cvb.openingTrainer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -314,15 +389,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Config/openingTrainer.entitlements;
-				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = Config/openingTrainer-macOS.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/openingTrainer-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5UQ3MTX86T;
 				"ENABLE_APP_SANDBOX[sdk=macosx*]" = YES;
 				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
 				"ENABLE_OUTGOING_NETWORK_CONNECTIONS[sdk=macosx*]" = YES;
-				"ENABLE_USER_SELECTED_FILES[sdk=macosx*]" = readwrite;
 				ENABLE_PREVIEWS = YES;
+				"ENABLE_USER_SELECTED_FILES[sdk=macosx*]" = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Opening Trainer";
@@ -342,18 +417,64 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = ch.cvb.openingTrainer;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SDKROOT = auto;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		BB000000000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5UQ3MTX86T;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.cvb.openingTrainerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/openingTrainer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/openingTrainer";
+			};
+			name = Debug;
+		};
+		BB000000000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5UQ3MTX86T;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.cvb.openingTrainerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/openingTrainer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/openingTrainer";
 			};
 			name = Release;
 		};
@@ -374,6 +495,15 @@
 			buildConfigurations = (
 				1F17588D3083B5B9003B959B /* Debug */,
 				1F17588E3083B5B9003B959B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BB000000000000000000000A /* Build configuration list for PBXNativeTarget "openingTrainerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB000000000000000000000B /* Debug */,
+				BB000000000000000000000C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

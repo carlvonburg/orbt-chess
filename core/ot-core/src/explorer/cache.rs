@@ -27,6 +27,7 @@ impl StatsCache {
     pub fn load(&mut self, database: &ExplorerDatabase, entries: Vec<(Epd, ExplorerStats)>) {
         let key = database.cache_key();
         self.loaded.insert(key.clone());
+        let entries = entries.into_iter().map(|(epd, s)| (epd, s.clamped()));
         self.stats.entry(key).or_default().extend(entries);
     }
 
@@ -58,7 +59,7 @@ impl StatsCache {
         self.stats
             .entry(database.cache_key())
             .or_default()
-            .insert(epd, stats);
+            .insert(epd, stats.clamped());
     }
 
     /// Forgets the fetched stats (the tables stay: they are files, not cache).
