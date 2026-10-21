@@ -97,7 +97,7 @@ struct RepertoireSettingsForm: View {
             Text("Coverage database")
         } footer: {
             Text(draft.source == .classical
-                 ? "Opponent move frequencies come from over-the-board games since 2000 at this average FIDE rating (Lumbra's Gigabase, CC BY-NC 4.0), downloaded to this device. Positions it doesn't hold come from the Lichess explorer: masters games from 2000, below that Lichess rapid games one rating bin up (Lichess ratings run higher)."
+                 ? "Opponent move frequencies come from over-the-board games since 2000 at this average FIDE rating (Lumbra's Gigabase, CC BY-NC 4.0), downloaded to this device. Only positions it doesn't hold come from the Lichess explorer (\(classicalBackup))."
                  : "Opponent move frequencies come from Lichess \(draft.source.title.lowercased()) games at this average rating, downloaded to this device. Positions it doesn't hold come from the Lichess explorer.")
         }
 
@@ -134,6 +134,13 @@ struct RepertoireSettingsForm: View {
 extension RepertoireSettingsForm {
     /// The rating bins with a table for the chosen time control, the chosen one's download
     /// state, and the download itself, started as soon as a bin is chosen.
+    /// Which Lichess games answer the positions a Classical table lacks, for the footer.
+    private var classicalBackup: String {
+        let backup = draft.database.fetchedAs
+        if case .masters = backup { return "masters games" }
+        return "\(backup.summary), one rating bin up, as Lichess ratings run higher than FIDE"
+    }
+
     @ViewBuilder private var ratingPicker: some View {
         let bins = tables.filter(draft.source.matches).map(\.lowestRating).sorted()
         Picker("Opponent rating", selection: $draft.rating) {

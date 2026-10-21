@@ -122,6 +122,8 @@ extension ExplorerDatabase {
     public static var eloBins: [Int] { databaseEloBins().map(Int.init) }
     public var cacheKey: String { databaseCacheKey(database: self) }
     public var summary: String { databaseSummary(database: self) }
+    /// What the Lichess explorer is asked for positions the offline table doesn't hold.
+    public var fetchedAs: ExplorerDatabase { databaseFetchedAs(database: self) }
 }
 
 extension ExplorerMove {

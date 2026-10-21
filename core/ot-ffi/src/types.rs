@@ -741,6 +741,12 @@ pub fn database_summary(database: ExplorerDatabase) -> String {
     database.summary()
 }
 
+/// The Lichess explorer database asked for positions the database's table doesn't hold.
+#[uniffi::export]
+pub fn database_fetched_as(database: ExplorerDatabase) -> ExplorerDatabase {
+    database.fetched_as()
+}
+
 #[uniffi::export]
 pub fn database_rating_buckets() -> Vec<i64> {
     ExplorerDatabase::RATING_BUCKETS.to_vec()

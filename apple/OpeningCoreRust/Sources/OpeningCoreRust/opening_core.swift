@@ -13055,6 +13055,17 @@ public func databaseEloBins() -> [Int64]  {
     )
 })
 }
+/**
+ * The Lichess explorer database asked for positions the database's table doesn't hold.
+ */
+public func databaseFetchedAs(database: ExplorerDatabase) -> ExplorerDatabase  {
+    return try!  FfiConverterTypeExplorerDatabase_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_database_fetched_as(
+        FfiConverterTypeExplorerDatabase_lower(database),uniffiCallStatus
+    )
+})
+}
 public func databaseRatingBuckets() -> [Int64]  {
     return try!  FfiConverterSequenceInt64.lift(try! rustCall() {
         uniffiCallStatus in
@@ -13361,6 +13372,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_database_elo_bins() != 46910) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_database_fetched_as() != 28744) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_database_rating_buckets() != 56408) {
