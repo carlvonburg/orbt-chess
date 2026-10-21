@@ -5,3 +5,4 @@ xcuserdata/
 *.xcuserstate
 .swiftpm/
 /data/
+/tools/coverage-tables/target/
