@@ -23,6 +23,8 @@ final class CoverageTables {
     @ObservationIgnored private var loadedFiles: Set<String> = []
     /// Databases of open repertoires, downloaded once the manifest is known.
     @ObservationIgnored private var wanted: Set<ExplorerDatabase> = []
+    /// Downloaded files the server has a different version of (rebuilt tables keep their names).
+    @ObservationIgnored private var stale: Set<String> = []
 
     static let server = URL(string: "https://pub-7bc2c6c30e4d4311a454d55fb34e57ba.r2.dev/coverage_bins/")!
     static let directory = URL.applicationSupportDirectory.appending(path: "Coverage", directoryHint: .isDirectory)
@@ -47,7 +49,7 @@ final class CoverageTables {
     func isReady(_ database: ExplorerDatabase) -> Bool {
         guard let table = table(for: database) else { return false }
         guard let file = file(for: database) else { return true }
-        return table.targetGames >= file.targetGames
+        return table.targetGames >= file.targetGames && !stale.contains(file.file)
     }
 
     /// Downloads the table of an opened repertoire's database, now or once the manifest is read.
@@ -92,6 +94,13 @@ final class CoverageTables {
             }
             available = files
             try? data.write(to: Self.savedManifest, options: .atomic)
+            let directory = Self.directory
+            stale = await Task.detached {
+                Set(files.filter { file in
+                    guard let bytes = try? Data(contentsOf: directory.appending(path: file.file)) else { return false }
+                    return !coverageFileVerify(file: file, bytes: bytes)
+                }.map(\.file))
+            }.value
             for database in wanted { ensure(database) }
         } catch {
             Self.log.error("coverage manifest: \(error.localizedDescription, privacy: .public)")
@@ -123,6 +132,8 @@ final class CoverageTables {
             }
             try? FileManager.default.removeItem(at: destination)
             try FileManager.default.moveItem(at: temporary, to: destination)
+            stale.remove(file.file)
+            loadedFiles.remove(Self.directory.standardizedFileURL.path + "/" + file.file)
             await load(from: Self.directory)
         } catch {
             lastError = "Could not download the table: \(error.localizedDescription)"
