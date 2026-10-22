@@ -12,7 +12,7 @@ struct StudyAllView: View {
         if index < entries.count {
             let entry = entries[index]
             OpenDocument(entry: entry) { doc in
-                DrillView(document: doc, mode: .study, pushed: true, next: nextRepertoire)
+                DrillView(document: doc, mode: .study, next: nextRepertoire)
                     .id(entry.id)
             } placeholder: {
                 ProgressView("Opening \(entry.name)…")

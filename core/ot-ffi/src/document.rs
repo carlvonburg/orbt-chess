@@ -189,6 +189,10 @@ impl RepertoireDoc {
         self.lock().can_undo()
     }
 
+    pub fn undo_depth(&self) -> u32 {
+        u32::try_from(self.lock().undo_depth()).unwrap_or(u32::MAX)
+    }
+
     pub fn load_warnings(&self) -> Vec<String> {
         self.lock().tree().load_warnings.clone()
     }

@@ -18,6 +18,13 @@ final class RepertoireDocument {
     private(set) var revision: UInt64 = 0
     private(set) var saveError: String?
     private(set) var canUndo = false
+    /// The window's undo stack, kept in step with the core's: one step per edit, so Edit >
+    /// Undo, ⌘Z and the undo gesture undo the core's edits (see `attachUndo`).
+    @ObservationIgnored private weak var undoManager: UndoManager?
+    /// What an undo step runs: the builder's undo while one is open (it also leaves a
+    /// position the undo removes), else the document's.
+    @ObservationIgnored private var undoAction: (() -> Void)?
+    @ObservationIgnored private var undoDepth = 0
 
     @ObservationIgnored let explorer: ExplorerService
     /// Told when the PGN was deleted, or moved out of the folder, by someone else.
@@ -79,6 +86,7 @@ final class RepertoireDocument {
     func apply(_ changes: Changes) {
         if changes.revision != revision { revision = changes.revision }
         canUndo = core.canUndo()
+        syncUndo()
         if let ms = changes.savePgnAfterMs { schedulePGNSave(after: ms) }
         if let ms = changes.saveSidecarAfterMs { scheduleSidecarSave(after: ms) }
         cachedCards = nil
@@ -223,6 +231,33 @@ final class RepertoireDocument {
     func promote(_ id: NodeID) { apply(core.promote(id: id)) }
     func setNote(_ text: String, for id: NodeID) { apply(core.setNote(text: text, id: id)) }
     func undo() { apply(core.undo()) }
+
+    /// Mirrors the core's undo stack in the window's, with `action` as what undoing runs.
+    func attachUndo(_ manager: UndoManager?, action: @escaping () -> Void) {
+        undoManager?.removeAllActions(withTarget: self)
+        undoManager = manager
+        undoAction = action
+        undoDepth = 0
+        syncUndo()
+    }
+
+    /// One step per edit the core can undo. Undoing through the window's stack pops its step
+    /// itself; the core's stack shrinking otherwise (the builder's Undo, or cleared by a
+    /// remote change) rebuilds the steps. The core has no redo, so none is registered.
+    private func syncUndo() {
+        let depth = Int(core.undoDepth())
+        defer { undoDepth = depth }
+        guard let undoManager, !undoManager.isUndoing, depth != undoDepth else { return }
+        if depth < undoDepth {
+            undoManager.removeAllActions(withTarget: self)
+            undoDepth = 0
+        }
+        for _ in undoDepth..<depth {
+            undoManager.registerUndo(withTarget: self) { document in
+                (document.undoAction ?? document.undo)()
+            }
+        }
+    }
 
     // MARK: Settings and training
 

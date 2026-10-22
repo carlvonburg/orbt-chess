@@ -94,6 +94,7 @@ fn edits_save_undo_and_reuse_moves() {
         Some(save_delay::SIDECAR_AFTER_EDIT_MS)
     );
     assert!(doc.can_undo());
+    assert_eq!(doc.undo_depth(), 1);
     // The same move again is reused and changes nothing.
     let (again, changes) = doc.add_move("b8c6", find(&doc, "e4 c5 Nf3"), &no_stats());
     assert_eq!((again, changes), (Some(nc6), Changes::default()));
@@ -106,8 +107,10 @@ fn edits_save_undo_and_reuse_moves() {
     assert_eq!(doc.tree()[find(&doc, "e4 c5 Nf3")].children[0], nc6);
     doc.delete(nc6, &no_stats());
     assert!(doc.tree().get(nc6).is_none());
+    assert_eq!(doc.undo_depth(), 3);
     doc.undo(&no_stats());
     assert!(doc.tree().get(nc6).is_some());
+    assert_eq!(doc.undo_depth(), 2);
     doc.undo(&no_stats());
     doc.undo(&no_stats());
     assert!(doc.tree().get(nc6).is_none());

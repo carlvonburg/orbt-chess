@@ -159,6 +159,12 @@ impl Repertoire {
         !self.undo.is_empty()
     }
 
+    /// Edits that can be undone, one at a time. The platform mirrors it in its own undo
+    /// stack (UndoManager): it grows by one per edit and is cleared by remote changes.
+    pub fn undo_depth(&self) -> usize {
+        self.undo.len()
+    }
+
     /// Every move in the PGN, both sides.
     pub fn saved_move_count(&self) -> i64 {
         self.tree.count() as i64 - 1

@@ -196,19 +196,19 @@ struct LibraryView: View {
         case .builder(let id):
             destination(id) { BuilderView(document: $0) }
         case .study(let id):
-            destination(id) { DrillView(document: $0, mode: .study, pushed: true) }
+            destination(id) { DrillView(document: $0, mode: .study) }
         case .learnMore(let id):
-            destination(id) { DrillView(document: $0, mode: .study, pushed: true, learnMore: TrainingDefaults.learnMoreCount) }
+            destination(id) { DrillView(document: $0, mode: .study, learnMore: TrainingDefaults.learnMoreCount) }
         case .gaps(let id):
             destination(id) { BuilderView(document: $0, showGaps: true) }
         case .studyAll(let ids):
             StudyAllView(entries: ids.compactMap { model.library.entry(id: $0) })
         case .practice(let id):
-            destination(id) { DrillView(document: $0, mode: .branch(RepertoireTree.rootID), pushed: true) }
+            destination(id) { DrillView(document: $0, mode: .branch(RepertoireTree.rootID)) }
         case .browse(let id, let node):
             destination(id) { BuilderView(document: $0, start: node) }
         case .branch(let id, let node):
-            destination(id) { DrillView(document: $0, mode: .branch(node), pushed: true) }
+            destination(id) { DrillView(document: $0, mode: .branch(node)) }
         }
     }
 
@@ -472,16 +472,17 @@ private struct BoardColumnView: View {
             case .drill(let model):
                 DrillBoardColumn(model: model)
             case nil:
+                // Only the statistics have a title; a board's bar has its buttons.
                 ScrollView {
                     InlineStatistics(scope: statisticsScope)
                         .id(statisticsScope)
                         .padding(.horizontal)
                         .padding(.bottom, 24)
                 }
+                .navigationTitle("Statistics")
+                .inlineNavigationTitle()
             }
         }
-        .navigationTitle(column.board == nil ? "Statistics" : "")
-        .inlineNavigationTitle()
         .toolbar {
             if case .builder(let model, let presentation) = column.board {
                 // Move navigation leads the bar; Lichess and the menu, which act on the board, end it.

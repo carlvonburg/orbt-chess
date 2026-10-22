@@ -173,7 +173,6 @@ final class DrillModel {
 }
 
 struct DrillView: View {
-    @Environment(\.dismiss) private var dismiss
     /// Set in the split view (iPad, Mac): the board is in the board column, this is the panel.
     @Environment(\.boardColumn) private var boardColumn
     @Environment(\.screenRoute) private var screenRoute
@@ -189,25 +188,18 @@ struct DrillView: View {
 
     /// The next repertoire when studying all of them: its name and how to go on.
     private let next: (name: String, start: () -> Void)?
-    /// Pushed onto the caller's navigation stack (Study Now) instead of presented full screen.
-    private let pushed: Bool
 
-    init(document: RepertoireDocument, mode: DrillMode, pushed: Bool = false, learnMore: Int = 0,
+    /// Pushed onto the caller's navigation stack (Study Now, Study Branch, Study All).
+    init(document: RepertoireDocument, mode: DrillMode, learnMore: Int = 0,
          next: (name: String, start: () -> Void)? = nil) {
         _model = State(initialValue: DrillModel(document: document, mode: mode, learnMore: learnMore))
-        self.pushed = pushed
         self.next = next
     }
 
     var body: some View {
-        Group {
-            if pushed {
-                content.hidesTabBar()
-            } else {
-                NavigationStack { content }
-            }
-        }
-        .task { model.start() }
+        content
+            .hidesTabBar()
+            .task { model.start() }
         .onAppear {
             if let screenRoute { boardColumn?.show(.drill(model), for: screenRoute) }
         }
@@ -265,14 +257,6 @@ struct DrillView: View {
                         .font(.subheadline.monospacedDigit().weight(.semibold))
                 }
                 .sharedBackgroundVisibility(.hidden)
-            }
-            if !pushed {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close", systemImage: "xmark") {
-                        model.stop()
-                        dismiss()
-                    }
-                }
             }
             if !model.finished {
                 // In the split view the actions are in the panel's bar, as in the builder.

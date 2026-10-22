@@ -23,6 +23,7 @@ struct OpeningTrainerApp: App {
                     await model.setUpCoverageTables()
                 }
         }
+        .commands { BuilderCommands() }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { flushInBackground() }
             if phase == .active {

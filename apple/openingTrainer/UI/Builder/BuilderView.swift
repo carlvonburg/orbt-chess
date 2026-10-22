@@ -8,6 +8,7 @@ struct BuilderView: View {
     /// Set in the split view (iPad, Mac): the board is in the board column, this is the panel.
     @Environment(\.boardColumn) private var boardColumn
     @Environment(\.screenRoute) private var screenRoute
+    @Environment(\.undoManager) private var undoManager
     @Environment(\.openScreen) private var openScreen
     @State private var model: BuilderModel
     @State private var presentation: BuilderPresentation
@@ -47,16 +48,21 @@ struct BuilderView: View {
         .scrollDismissesKeyboard(.immediately)
         .onAppear {
             if let screenRoute { boardColumn?.show(.builder(model, presentation), for: screenRoute) }
+            // Edit > Undo and ⌘Z undo through the builder, which also leaves a removed position.
+            document.attachUndo(undoManager) { [weak model, weak document] in
+                if let model { model.undo() } else { document?.undo() }
+            }
         }
+        // The menu bar's Move commands act on this builder, unless a sheet has the keys.
+        .focusedSceneValue(\.builder, presentation.sheet == nil ? model : nil)
         .navigationTitle(document.name)
         .inlineNavigationTitle()
         .toolbar { toolbar }
         .hidesTabBar()
         .sheet(item: $presentation.sheet) { sheet in sheetContent(sheet).sheetFrame() }
         .webPage($presentation.analysis)
-        .background { keyboardShortcuts.opacity(0).accessibilityHidden(true) }
         .navigationDestination(item: $presentation.drill) { request in
-            DrillView(document: document, mode: request.mode, pushed: true)
+            DrillView(document: document, mode: request.mode)
         }
         .checksCoverage(document)
         .onChange(of: model.current, initial: true) { requestStats() }
@@ -151,30 +157,6 @@ struct BuilderView: View {
         if !split {
             ToolbarItem(placement: .trailingBar) { BuilderMoreMenu(model: model, presentation: presentation) }
         }
-        #if os(iOS)
-        ToolbarItem(placement: .keyboard) { siblingButtons }
-        #endif
-    }
-
-    /// ↑/↓ switch to the previous/next sibling line.
-    private var siblingButtons: some View {
-        HStack {
-            Button("Previous line") { model.sibling(-1) }.keyboardShortcut(.upArrow, modifiers: [])
-            Button("Next line") { model.sibling(1) }.keyboardShortcut(.downArrow, modifiers: [])
-        }
-    }
-
-    /// Hardware keyboard: ⌘Z undoes (the menu's shortcuts only work while it is open); on
-    /// macOS, which has no keyboard bar, also ↑/↓.
-    private var keyboardShortcuts: some View {
-        HStack {
-            Button("Undo") { model.undo() }
-                .keyboardShortcut("z", modifiers: .command)
-                .disabled(!document.canUndo)
-            #if os(macOS)
-            siblingButtons
-            #endif
-        }
     }
 
     @ViewBuilder
@@ -251,17 +233,52 @@ struct BuilderBoard: View {
     }
 }
 
-/// Back and forward, with ←/→: in the bottom bar on a phone, over the board in the split view.
+/// Back and forward: in the bottom bar on a phone, over the board in the split view. Their
+/// keys (←/→) are in the menu bar's Move menu.
 struct BuilderNavigationButtons: View {
     let model: BuilderModel
 
     var body: some View {
         Button("Back", systemImage: "chevron.backward") { model.back() }
-            .keyboardShortcut(.leftArrow, modifiers: [])
-            .disabled(model.current == RepertoireTree.rootID && !model.hasDraft)
+            .disabled(!model.canBack)
         Button("Forward", systemImage: "chevron.forward") { model.forward() }
-            .keyboardShortcut(.rightArrow, modifiers: [])
             .disabled(!model.canForward)
+    }
+}
+
+extension FocusedValues {
+    /// The builder on screen, for the menu bar's Move commands.
+    @Entry var builder: BuilderModel?
+}
+
+/// The builder's moves in the menu bar (iPad, Mac; listed when ⌘ is held on iPad and iPhone),
+/// with their keys: ←/→ through the line, ↑/↓ to the previous or next line.
+struct BuilderCommands: Commands {
+    @FocusedValue(\.builder) private var model
+
+    var body: some Commands {
+        CommandMenu("Move") {
+            Button("Back") { model?.back() }
+                .keyboardShortcut(.leftArrow, modifiers: [])
+                .disabled(!(model?.canBack ?? false))
+            Button("Forward") { model?.forward() }
+                .keyboardShortcut(.rightArrow, modifiers: [])
+                .disabled(!(model?.canForward ?? false))
+            Divider()
+            Button("Previous Line") { model?.sibling(-1) }
+                .keyboardShortcut(.upArrow, modifiers: [])
+                .disabled(model == nil)
+            Button("Next Line") { model?.sibling(1) }
+                .keyboardShortcut(.downArrow, modifiers: [])
+                .disabled(model == nil)
+            Divider()
+            Button("Biggest Gap") { model?.goToBiggestGap() }
+                .keyboardShortcut("g", modifiers: [.command, .shift])
+                .disabled(model?.document.coverage.root?.biggestGap == nil)
+            Button("Flip Board") { model.map { $0.orientation = $0.orientation.opposite } }
+                .keyboardShortcut("f", modifiers: [.command, .shift])
+                .disabled(model == nil)
+        }
     }
 }
 

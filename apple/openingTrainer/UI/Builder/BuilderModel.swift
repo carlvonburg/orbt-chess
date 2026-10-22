@@ -59,6 +59,8 @@ final class BuilderModel {
     /// The node whose moves the panels show: the current one, or where its lines continue.
     var shownNode: Node? { observe(); return tree[session.shownNode()] }
 
+    /// Not at the start position with nothing played on the board.
+    var canBack: Bool { current != RepertoireTree.rootID || hasDraft }
     var canForward: Bool { observe(); return session.canForward() }
     var lastMove: PlayedMove? { observe(); return session.lastMove() }
     var isUserTurnOnBoard: Bool { observe(); return session.isUserTurnOnBoard() }

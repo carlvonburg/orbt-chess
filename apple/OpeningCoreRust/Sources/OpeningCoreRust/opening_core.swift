@@ -3753,6 +3753,8 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     
     func undo()  -> Changes
     
+    func undoDepth()  -> UInt32
+    
     /**
      * Changes the coverage settings (loading the new database's stats first).
      */
@@ -4655,6 +4657,15 @@ open func undo() -> Changes  {
     return try!  FfiConverterTypeChanges_lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_repertoiredoc_undo(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func undoDepth() -> UInt32  {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_undo_depth(
             self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
@@ -13719,6 +13730,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_undo() != 60684) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_undo_depth() != 55055) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_update_settings() != 46430) {
