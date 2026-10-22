@@ -21,6 +21,7 @@ struct AnalysisScreen: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     let model: AnalysisModel
     @State private var page: WebPage?
+    @State private var showsSettings = false
     /// The evaluation last written to the move list, so it is written once per depth.
     @State private var recorded: (key: EngineService.Key, depth: UInt32)?
 
@@ -52,6 +53,7 @@ struct AnalysisScreen: View {
             .toolbar { toolbar }
         }
         .webPage($page)
+        .sheet(isPresented: $showsSettings, onDismiss: reanalyse) { EngineSettingsSheet() }
         .task(id: EngineTask(key: model.engineKey, on: model.engineOn)) {
             if model.engineOn {
                 engine.analyse(model.engineKey, epd: model.position.epd())
@@ -64,6 +66,13 @@ struct AnalysisScreen: View {
             engine.stop()
             model.finish()
         }
+    }
+
+    /// Analyses the position again with the settings just changed.
+    private func reanalyse() {
+        guard model.engineOn else { return }
+        engine.stop()
+        engine.analyse(model.engineKey, epd: model.position.epd())
     }
 
     private struct EngineTask: Hashable {
@@ -146,8 +155,32 @@ struct AnalysisScreen: View {
                 Button("Open in Lichess", systemImage: "safari") {
                     page = WebPage(url: LichessLinks.analysis(moves: model.movesToBoard, orientation: model.orientation))
                 }
+                Divider()
+                Button("Engine Settings", systemImage: "gearshape") { showsSettings = true }
             }
         }
+    }
+}
+
+/// The engine's settings over the analysis board, the same as in Settings.
+private struct EngineSettingsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            Form { EngineSettingsSection() }
+                .formStyle(.grouped)
+                .navigationTitle("Engine Settings")
+                #if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+                #endif
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done", systemImage: "checkmark") { dismiss() }
+                    }
+                }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 

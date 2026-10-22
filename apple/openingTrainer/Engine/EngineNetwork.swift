@@ -62,17 +62,10 @@ final class EngineNetwork {
     }
 
     private nonisolated static func fetch(progress: @escaping @Sendable (Double) -> Void) async -> State {
-        let delegate = ProgressDelegate(progress: progress)
         do {
-            let (temporary, response) = try await URLSession.shared.download(from: source, delegate: delegate)
-            guard (response as? HTTPURLResponse)?.statusCode == 200 else {
-                return .failed("The server did not send the network.")
-            }
             // The check reads the whole file: named after its hash, so a partial or wrong file
             // never reaches the engine.
-            let named = temporary.deletingLastPathComponent().appending(path: fileName)
-            try? FileManager.default.removeItem(at: named)
-            try FileManager.default.moveItem(at: temporary, to: named)
+            let named = try await downloadFile(progress: progress)
             guard engineNetworkIsValid(path: named.path) else {
                 try? FileManager.default.removeItem(at: named)
                 return .failed("The downloaded network is damaged.")
@@ -83,14 +76,38 @@ final class EngineNetwork {
             return .ready
         } catch is CancellationError {
             return .absent
+        } catch let error as URLError where error.code == .cancelled {
+            return .absent
         } catch {
             return .failed(error.localizedDescription)
         }
     }
 
-    /// Reports the download's progress (the server compresses it, so it counts the file's size).
-    private nonisolated final class ProgressDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+    /// Downloads the network next to URLSession's temporary file, named after its hash. A
+    /// download task with a session delegate: the async `download(from:delegate:)` never
+    /// reports progress.
+    private nonisolated static func downloadFile(progress: @escaping @Sendable (Double) -> Void) async throws -> URL {
+        let delegate = DownloadDelegate(progress: progress)
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        defer { session.finishTasksAndInvalidate() }
+        let task = session.downloadTask(with: source)
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                delegate.continuation = continuation
+                task.resume()
+            }
+        } onCancel: {
+            task.cancel()
+        }
+    }
+
+    /// Reports the download's progress (the server compresses it, so it counts the file's size)
+    /// and moves the file out before URLSession deletes it. Its callbacks run one at a time on
+    /// the session's queue.
+    private nonisolated final class DownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
         let progress: @Sendable (Double) -> Void
+        var continuation: CheckedContinuation<URL, Error>?
+        private var result: Result<URL, Error>?
 
         init(progress: @escaping @Sendable (Double) -> Void) { self.progress = progress }
 
@@ -99,6 +116,28 @@ final class EngineNetwork {
             progress(min(1, Double(totalBytesWritten) / Double(EngineNetwork.byteCount)))
         }
 
-        func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {}
+        func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+            guard (downloadTask.response as? HTTPURLResponse)?.statusCode == 200 else {
+                result = .failure(DownloadError.notSent)
+                return
+            }
+            let named = location.deletingLastPathComponent().appending(path: EngineNetwork.fileName)
+            try? FileManager.default.removeItem(at: named)
+            result = Result { try FileManager.default.moveItem(at: location, to: named); return named }
+        }
+
+        func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+            if let error {
+                continuation?.resume(throwing: error)
+            } else {
+                continuation?.resume(with: result ?? .failure(DownloadError.notSent))
+            }
+            continuation = nil
+        }
+    }
+
+    private nonisolated enum DownloadError: LocalizedError {
+        case notSent
+        var errorDescription: String? { "The server did not send the network." }
     }
 }

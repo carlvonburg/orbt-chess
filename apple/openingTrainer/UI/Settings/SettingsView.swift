@@ -9,10 +9,6 @@ struct SettingsView: View {
     @AppStorage(TrainingDefaults.newPerDayKey) private var newPerDay = Int(TrainingDefaults.preset.newPerDay)
     @AppStorage(TrainingDefaults.reviewsPerDayKey) private var reviewsPerDay = Int(TrainingDefaults.preset.reviewsPerDay)
     @AppStorage(TrainingDefaults.practiceModeKey) private var practiceMode = PracticeMode.default
-    @AppStorage(EngineDefaults.searchTimeKey) private var searchTime = EngineDefaults.searchTime
-    @AppStorage(EngineDefaults.linesKey) private var engineLines = EngineDefaults.lines
-    @AppStorage(EngineDefaults.cloudKey) private var cloudEvals = EngineDefaults.cloud
-    @AppStorage(EngineDefaults.fullNetworkKey) private var fullNetwork = EngineDefaults.fullNetwork
 
     var body: some View {
         NavigationStack {
@@ -61,23 +57,7 @@ struct SettingsView: View {
                     Text("Anki's defaults with FSRS.")
                 }
 
-                Section {
-                    LabeledContent("Search time") {
-                        Text("\(searchTime) s").monospacedDigit()
-                    }
-                    Slider(value: Binding(get: { Double(searchTime) }, set: { searchTime = Int($0) }),
-                           in: Double(EngineDefaults.searchTimes.lowerBound)...Double(EngineDefaults.searchTimes.upperBound),
-                           step: 1) {
-                        Text("Search time")
-                    }
-                    Stepper("Lines: \(engineLines)", value: $engineLines, in: EngineDefaults.lineCounts)
-                    Toggle("Lichess cloud evaluations", isOn: $cloudEvals)
-                    EngineNetworkRow(network: model.engineNetwork, use: $fullNetwork)
-                } header: {
-                    Text("Analysis engine")
-                } footer: {
-                    Text("Stockfish 19 runs on this device, with its 1 MB network built in; the full network is stronger. Where Lichess has a deep cloud evaluation of a position, it is shown and the engine does not run.")
-                }
+                EngineSettingsSection()
 
                 Section {
                     LabeledContent("Storage", value: model.library.usesICloud ? "iCloud Drive › Opening Trainer" : "On this device")
@@ -118,6 +98,35 @@ struct SettingsView: View {
 
     private func steps(_ minutes: [Double]) -> String {
         minutes.map { $0 < 60 ? "\(Int($0))m" : "\(Int($0 / 60))h" }.joined(separator: " ")
+    }
+}
+
+/// The analysis engine's settings, in Settings and on the analysis board.
+struct EngineSettingsSection: View {
+    @Environment(AppModel.self) private var model
+    @AppStorage(EngineDefaults.searchTimeKey) private var searchTime = EngineDefaults.searchTime
+    @AppStorage(EngineDefaults.linesKey) private var engineLines = EngineDefaults.lines
+    @AppStorage(EngineDefaults.cloudKey) private var cloudEvals = EngineDefaults.cloud
+    @AppStorage(EngineDefaults.fullNetworkKey) private var fullNetwork = EngineDefaults.fullNetwork
+
+    var body: some View {
+        Section {
+            LabeledContent("Search time") {
+                Text("\(searchTime) s").monospacedDigit()
+            }
+            Slider(value: Binding(get: { Double(searchTime) }, set: { searchTime = Int($0) }),
+                   in: Double(EngineDefaults.searchTimes.lowerBound)...Double(EngineDefaults.searchTimes.upperBound),
+                   step: 1) {
+                Text("Search time")
+            }
+            Stepper("Lines: \(engineLines)", value: $engineLines, in: EngineDefaults.lineCounts)
+            Toggle("Lichess cloud evaluations", isOn: $cloudEvals)
+            EngineNetworkRow(network: model.engineNetwork, use: $fullNetwork)
+        } header: {
+            Text("Analysis engine")
+        } footer: {
+            Text("Stockfish 19 runs on this device, with its 1 MB network built in; the full network is stronger. Where Lichess has a deep cloud evaluation of a position, it is shown and the engine does not run.")
+        }
     }
 }
 
