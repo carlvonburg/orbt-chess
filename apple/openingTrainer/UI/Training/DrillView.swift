@@ -402,6 +402,7 @@ struct LineHistory: View {
                 }
                 .padding(.vertical, 4)
             }
+            .contentMargins(.horizontal, 8, for: .scrollContent)
             .onChange(of: nodes.last) { if let last = nodes.last { proxy.scrollTo(last, anchor: .trailing) } }
         }
     }

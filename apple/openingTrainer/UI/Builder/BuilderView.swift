@@ -393,6 +393,8 @@ struct MovePathStrip: View {
                 }
                 .padding(.vertical, 4)
             }
+            // Room at both ends, so the first and last moves (highlighted) clear the bar's edge.
+            .contentMargins(.horizontal, 8, for: .scrollContent)
             .onAppear { proxy.scrollTo(target, anchor: .center) }
             .onChange(of: target) {
                 withAnimation { proxy.scrollTo(target, anchor: .center) }
