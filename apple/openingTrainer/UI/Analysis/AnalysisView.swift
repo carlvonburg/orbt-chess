@@ -123,8 +123,9 @@ struct AnalysisScreen: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .confirmationAction) {
-            Button("Done", systemImage: "checkmark") { dismiss() }
+        // Close, not Done: leaving adds nothing to the repertoire (Browse gets an unsaved draft).
+        ToolbarItem(placement: .cancellationAction) {
+            Button(role: .close) { dismiss() }
         }
         ToolbarItemGroup(placement: .bottomActions) {
             Button("Back", systemImage: "chevron.backward") { model.back() }
