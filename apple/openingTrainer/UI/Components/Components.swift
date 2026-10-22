@@ -25,6 +25,22 @@ struct BoardColumnLayout<Board: View, Below: View>: View {
 }
 
 extension View {
+    /// The title of Browse and Study. In the split view the panel names the repertoire (the
+    /// board column names the screen). On a phone the screen is named, with the repertoire as
+    /// its subtitle, inline as on any pushed screen whose content fills it.
+    @ViewBuilder
+    func boardScreenTitle(_ screen: String, repertoire: String, inSplitView: Bool) -> some View {
+        if inSplitView {
+            navigationTitle(repertoire)
+        } else {
+            navigationTitle(screen)
+                .navigationSubtitle(repertoire)
+                .toolbarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+extension View {
     /// A screen's action buttons, as the HIG asks: all the same size, the most likely one in
     /// the prominent style and the others bordered ("use style, not size").
     @ViewBuilder

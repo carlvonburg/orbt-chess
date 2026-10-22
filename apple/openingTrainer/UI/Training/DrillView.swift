@@ -230,30 +230,28 @@ struct DrillView: View {
                     // Edge to edge on a phone, as in the builder.
                     DrillBoard(model: model)
                         .frame(maxWidth: 680)
-                    // Laid out like the builder: move list, then opening name; then what to do.
+                    // Laid out like the builder: move list, then opening name; then what to do,
+                    // with the counts (status, not a control, so not in a bar).
                     VStack(alignment: .leading, spacing: 8) {
                         LineHistory(tree: model.document.tree, nodes: model.playedNodes)
                         openingName
-                        status
+                        HStack(alignment: .firstTextBaseline) {
+                            status
+                            Spacer()
+                            StudyCountsView(counts: model.counts, highlight: model.askedKind)
+                                .font(.headline.monospacedDigit())
+                        }
                     }
                     .frame(maxWidth: 680, alignment: .leading)
                     .padding(.horizontal)
                     Spacer(minLength: 0)
                 }
-                .padding(.vertical)
+                // The board under the bar, as in the builder.
+                .padding(.bottom)
             }
         }
-        // In the split view the repertoire, as in Browse; the board column names the mode.
-        .navigationTitle(inSplitView ? model.document.name : model.mode.title)
-        .modifier(Subtitle(text: inSplitView ? nil : model.document.name))
+        .boardScreenTitle(model.mode.title, repertoire: model.document.name, inSplitView: inSplitView)
         .toolbar {
-            // In the split view the counts are in the panel, with what each means.
-            if !model.finished && !inSplitView {
-                ToolbarItem(placement: .trailingBar) {
-                    StudyCountsView(counts: model.counts, highlight: model.askedKind)
-                        .font(.subheadline.monospacedDigit().weight(.semibold))
-                }
-            }
             if !model.finished {
                 // In the split view the actions are in the panel's bar, as in the builder.
                 let split = inSplitView
@@ -349,15 +347,6 @@ struct DrillScreen: View {
     }
 }
 
-/// A navigation subtitle when there is one (Study's repertoire on a phone).
-private struct Subtitle: ViewModifier {
-    let text: String?
-
-    func body(content: Content) -> some View {
-        if let text { content.navigationSubtitle(text) } else { content }
-    }
-}
-
 /// The study board: moves played on it answer the card.
 struct DrillBoard: View {
     let model: DrillModel
@@ -420,7 +409,7 @@ struct StudyCountsView: View {
             number(counts.learning, .red, .learning)
             number(counts.review, .green, .review)
         }
-        // The toolbar would truncate the numbers; let the title truncate instead.
+        // Next to the status the numbers never truncate; the status wraps instead.
         .fixedSize()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(counts.new) new, \(counts.learning) learning, \(counts.review) to review")
