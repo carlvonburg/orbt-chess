@@ -15,6 +15,9 @@ struct OpeningTrainerApp: App {
         WindowGroup {
             RootView()
                 .environment(model)
+                // Settings-style forms on every platform: iOS's default, and on the Mac what
+                // System Settings uses (the Mac's default is a column layout).
+                .formStyle(.grouped)
                 .task {
                     #if os(macOS)
                     appDelegate.model = model
@@ -23,6 +26,8 @@ struct OpeningTrainerApp: App {
                     await model.setUpCoverageTables()
                 }
         }
+        // The first window's size; macOS restores the size people give it after that.
+        .defaultSize(width: 1400, height: 900)
         .commands { BuilderCommands() }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active { flushInBackground() }
@@ -38,6 +43,7 @@ struct OpeningTrainerApp: App {
         Settings {
             SettingsView()
                 .environment(model)
+                .formStyle(.grouped)
                 .frame(width: 480, height: 600)
         }
         #endif

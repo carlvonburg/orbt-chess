@@ -24,23 +24,16 @@ struct BoardColumnLayout<Board: View, Below: View>: View {
     }
 }
 
-/// Thin horizontal progress bar.
-struct CompletionBar: View {
-    let value: Double
-    var tint: Color = .green
-    var height: CGFloat = 6
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Capsule().fill(.quaternary)
-                Capsule().fill(tint)
-                    .frame(width: max(0, min(1, value)) * geo.size.width)
-            }
+extension View {
+    /// A screen's action buttons, as the HIG asks: all the same size, the most likely one in
+    /// the prominent style and the others bordered ("use style, not size").
+    @ViewBuilder
+    func actionButton(prominent: Bool) -> some View {
+        Group {
+            if prominent { buttonStyle(.borderedProminent) } else { buttonStyle(.bordered) }
         }
-        .frame(height: height)
-        .accessibilityElement()
-        .accessibilityValue(Text(value, format: .percent.precision(.fractionLength(0))))
+        .controlSize(.large)
+        .buttonSizing(.flexible)
     }
 }
 

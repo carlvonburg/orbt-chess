@@ -51,7 +51,7 @@ struct OutlineSheet: View {
                     .fontWeight(item.id == model.current ? .bold : .regular)
                     .lineLimit(2)
                 HStack(spacing: 6) {
-                    CompletionBar(value: completion, tint: .green, height: 4).frame(width: 60)
+                    ProgressView(value: completion).tint(.green).frame(width: 60)
                     if gaps > 0 { Text("\(gaps) gaps").font(.caption2).foregroundStyle(.orange) }
                 }
             }

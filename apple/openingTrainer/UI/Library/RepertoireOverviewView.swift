@@ -1,8 +1,9 @@
 import OpeningCoreRust
 import SwiftUI
 
-/// Anki's deck overview for one repertoire: coverage progress, today's counts and Options,
-/// and a short version of its statistics. The study action is pinned at the bottom (iOS 26).
+/// Anki's deck overview for one repertoire: coverage and study progress and what is due
+/// today, each section ending with its action (Browse / Edit, Study): the same buttons, the
+/// most likely one prominent, building while there are gaps, else studying. Its history is in Statistics (beside it in the split view).
 struct RepertoireOverviewView: View {
     @Environment(AppModel.self) private var app
     /// Set in the split view (iPad, Mac), whose board column shows this repertoire's statistics.
@@ -12,7 +13,6 @@ struct RepertoireOverviewView: View {
     let study: () -> Void
     let practice: () -> Void
     @State private var sheet: Sheet?
-    @State private var graphs: Graphs?
 
     private enum Sheet: String, Identifiable {
         case settings, options
@@ -25,17 +25,14 @@ struct RepertoireOverviewView: View {
             coverageSection(stats)
             studySection(stats)
         }
-        .safeAreaBar(edge: .bottom) {
-            // A phone's actions are at the bottom; in the split view in their sections.
-            if !inSplitView { studyBar(stats) }
-        }
         .checksCoverage(document)
-        // A detail screen with its own actions at the bottom, like the study screen.
-        .hidesTabBar()
         .navigationTitle(document.name)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("Repertoire Settings", systemImage: "gearshape") { sheet = .settings }
+                Menu("Repertoire", systemImage: "gearshape") {
+                    Button("Repertoire Settings…", systemImage: "gearshape") { sheet = .settings }
+                    Button("Study Options…", systemImage: "slider.horizontal.3") { sheet = .options }
+                }
             }
         }
         .sheet(item: $sheet) { sheet in
@@ -46,12 +43,6 @@ struct RepertoireOverviewView: View {
                 }
             }
             .presentationSizing(.form)
-        }
-        .task(id: document.revision) {
-            let revlog = await document.reviewLog()
-            graphs = Graphs(cards: Array(document.sidecar.studyCards.values), newCount: 0, suspendedNewCount: 0,
-                            revlog: revlog, timing: SchedTiming(),
-                            localOffsetSecs: Int64(TimeZone.current.secondsFromGMT()))
         }
     }
 
@@ -69,14 +60,11 @@ struct RepertoireOverviewView: View {
                             .foregroundStyle(.orange)
                     }
                 }
-                CompletionBar(value: stats.completion, tint: .green)
+                ProgressView(value: stats.completion).tint(.green)
                 CoverageCheckStatus(document: document)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
-            if inSplitView {
-                Button("Browse / Edit", action: editLines)
-                    .modifier(ActionButtonStyle(prominent: buildFirst(stats)))
-            }
+            Button("Browse / Edit", action: editLines).actionButton(prominent: buildFirst(stats))
         } header: {
             Text("Coverage")
         }
@@ -118,16 +106,8 @@ struct RepertoireOverviewView: View {
                 Label(doneText(stats), systemImage: stats.progress.studied > 0 ? "checkmark.circle.fill" : "checkmark.circle")
                     .foregroundStyle(stats.progress.studied > 0 ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
             }
-            if let graphs {
-                let today = graphs.today()
-                LabeledContent("Today", value: today.answerCount == 0 ? "Not studied"
-                               : "\(today.answerCount) \(today.answerCount == 1 ? "move" : "moves") · \(Int((Double(today.answerMillis) / 60_000).rounded())) min")
-                if let retention = graphs.retentionTable()[.month]?.total {
-                    LabeledContent("True retention (month)", value: Format.percent(retention))
-                }
-            }
-            if inSplitView && stats.progress.cards > 0 {
-                studyButton(stats, prominent: !buildFirst(stats))
+            if stats.progress.cards > 0 {
+                studyButton(stats).actionButton(prominent: !buildFirst(stats))
             }
             // The split view shows the statistics beside the overview.
             if !inSplitView {
@@ -145,11 +125,7 @@ struct RepertoireOverviewView: View {
                 .tint(.primary)
             }
         } header: {
-            HStack {
-                Text("Study")
-                Spacer()
-                Button("Options", systemImage: "slider.horizontal.3") { sheet = .options }
-            }
+            Text("Study")
         }
     }
 
@@ -181,45 +157,13 @@ struct RepertoireOverviewView: View {
         stats.gaps > 0 || stats.progress.cards == 0
     }
 
-    /// The actions on a phone, pinned at the bottom, the main one first: Browse / Edit while
-    /// there are gaps (or nothing of yours to study), else studying (Study Now while moves are
-    /// due, Study More Today once done for today).
-    private func studyBar(_ stats: EntryStats) -> some View {
-        let buildFirst = self.buildFirst(stats)
-        return VStack(spacing: 12) {
-            if stats.progress.cards > 0 {
-                if !buildFirst { studyButton(stats, prominent: true) }
-                Button("Browse / Edit", action: editLines)
-                    .modifier(ActionButtonStyle(prominent: buildFirst))
-                if buildFirst { studyButton(stats, prominent: false) }
-            } else {
-                Button("Browse / Edit", action: editLines).buttonStyle(.glassProminent)
-            }
-        }
-        .controlSize(.extraLarge)
-        .buttonSizing(.flexible)
-        .padding()
-    }
-
+    /// Study Now while moves are due, Study More Today once done for today.
     @ViewBuilder
-    private func studyButton(_ stats: EntryStats, prominent: Bool) -> some View {
+    private func studyButton(_ stats: EntryStats) -> some View {
         if stats.counts.total > 0 {
-            Button("Study Now", action: study).modifier(ActionButtonStyle(prominent: prominent))
+            Button("Study Now", action: study)
         } else {
-            studyMoreMenu(stats).modifier(ActionButtonStyle(prominent: prominent))
-        }
-    }
-
-    /// Glass in the phone's bottom bar; the standard styles in the content (split view).
-    private struct ActionButtonStyle: ViewModifier {
-        @Environment(\.inSplitView) private var inSplitView
-        let prominent: Bool
-        func body(content: Content) -> some View {
-            if inSplitView {
-                if prominent { content.buttonStyle(.borderedProminent) } else { content.buttonStyle(.bordered) }
-            } else {
-                if prominent { content.buttonStyle(.glassProminent) } else { content.buttonStyle(.glass) }
-            }
+            studyMoreMenu(stats)
         }
     }
 

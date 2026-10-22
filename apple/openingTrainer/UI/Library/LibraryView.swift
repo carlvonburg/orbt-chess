@@ -173,11 +173,14 @@ struct LibraryView: View {
             content
                 .navigationTitle("Repertoires")
                 .toolbar { libraryToolbar }
+                // Starting widths only (the board takes the rest); people can drag the dividers.
+                .navigationSplitViewColumnWidth(ideal: 260)
         } content: {
             NavigationStack(path: $path) {
                 middleRoot
                     .navigationDestination(for: LibraryRoute.self, destination: route)
             }
+            .navigationSplitViewColumnWidth(ideal: 380)
         } detail: {
             NavigationStack {
                 BoardColumnView(board: board, statisticsScope: statisticsScope)
@@ -213,13 +216,18 @@ struct LibraryView: View {
     private var todayColumn: some View {
         let stats = entryStats
         return List {
-            Section {
-                TodayProgress(studied: Int(today.today?.cardCount ?? 0),
-                              due: Int(stats.values.reduce(0) { $0 + $1.counts.total }))
-            }
-            Section { todayCard(stats) }
+            Section { todayRows(stats) }
         }
         .navigationTitle("Today")
+    }
+
+    /// Today's progress ring, then what is left to do: in the library's Today section on a
+    /// phone, in the Today column in the split view.
+    @ViewBuilder
+    private func todayRows(_ stats: [String: EntryStats]) -> some View {
+        TodayProgress(studied: Int(today.today?.cardCount ?? 0),
+                      due: Int(stats.values.reduce(0) { $0 + $1.counts.total }))
+        todayCard(stats)
     }
 
     /// What the sidebar selects: today across every repertoire, or one repertoire.
@@ -398,7 +406,7 @@ struct LibraryView: View {
                 .badge(Int(stats.values.reduce(0) { $0 + $1.counts.total }))
                 .tag(SidebarItem.today)
         } else {
-            Section("Today") { todayCard(stats) }
+            Section("Today") { todayRows(stats) }
         }
         // Grouped by side, as Chessbook does; by name within each group.
         ForEach(LibraryGroup.allCases) { group in
@@ -606,33 +614,27 @@ private struct TodayCard: View {
         return .caughtUp
     }
 
+    /// List rows: what today looks like, then its actions (a menu when several repertoires
+    /// could take one), the same buttons, the most likely one prominent.
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             switch phase {
             case .due:
-                // Titled by what holds it: the library's Today section, or the Today column.
+                // What was studied is the ring above (and Statistics): here what is left.
                 HStack(alignment: .firstTextBaseline) {
-                    Text(studiedText).font(.footnote).foregroundStyle(.secondary)
+                    if streak.current > 0 { streakLabel }
                     Spacer()
                     dueCounts
                 }
-                if streak.current > 0 { streakLabel }
-                Button("Study All", action: studyAll)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .buttonSizing(.flexible)
             case .empty:
                 Text("Nothing to study yet").font(.headline)
                 Text("Enter the moves from a book or video, then study them here.")
                     .font(.footnote).foregroundStyle(.secondary)
-                action("Add Moves", entries, prominent: true, detail: { _ in nil }) { .builder($0) }
             case .doneForNow(let count, let at):
                 doneHeader("Done for Now", "checkmark.circle.fill")
-                if studiedToday { studiedLine }
                 Label("\(count) learning \(count == 1 ? "move" : "moves") due at \(at.formatted(date: .omitted, time: .shortened))",
                       systemImage: "clock")
                     .font(.footnote).foregroundStyle(.secondary)
-                moreActions
             case .nothingDue:
                 header { Text("Nothing Due Today") } trailing: { streakBadge }
                 if streak.current > 0 {
@@ -640,20 +642,25 @@ private struct TodayCard: View {
                         .font(.footnote).foregroundStyle(.orange)
                 }
                 nextLine
-                action("Learn \(TrainingDefaults.learnMoreCount) New Moves", unlearned, prominent: true,
-                       detail: { "\($0.progress.notStudied) not studied" }) { .learnMore($0) }
-                if !withGaps.isEmpty { gapsAction }
             case .caughtUp:
                 doneHeader("All Caught Up", "checkmark.seal.fill")
-                if studiedToday { studiedLine }
                 if unlearned.isEmpty && withGaps.isEmpty {
                     Text("Every move you've saved is learned.").font(.footnote).foregroundStyle(.secondary)
                 }
                 nextLine
-                moreActions
             }
         }
-        .padding(.vertical, 4)
+        switch phase {
+        case .due:
+            Button("Study All", action: studyAll).actionButton(prominent: true)
+        case .empty:
+            action("Add Moves", entries, main: true, detail: { _ in nil }) { .builder($0) }
+        case .nothingDue:
+            learnAction(main: true)
+            if !withGaps.isEmpty { gapsAction }
+        case .doneForNow, .caughtUp:
+            moreActions
+        }
     }
 
     // MARK: Parts
@@ -697,10 +704,6 @@ private struct TodayCard: View {
             .foregroundStyle(streak.studiedToday ? .orange : .secondary)
     }
 
-    private var studiedLine: some View {
-        Text(studiedText).font(.footnote)
-    }
-
     /// Tomorrow's reviews, or when the next one is due.
     @ViewBuilder
     private var nextLine: some View {
@@ -717,68 +720,48 @@ private struct TodayCard: View {
     /// What can still be done today: new moves and gaps, or else practice and adding lines.
     @ViewBuilder
     private var moreActions: some View {
-        HStack(spacing: 8) {
-            if unlearned.isEmpty && withGaps.isEmpty {
-                action("Practice", withMoves.filter { $0.stats.progress.studied > 0 },
-                       detail: { "\($0.progress.studied) moves" }) { .practice($0) }
-                action("Add Lines", withMoves.sorted { $0.stats.completion < $1.stats.completion },
-                       detail: { "\(Format.percent($0.completion)) built" }) { .builder($0) }
-            } else {
-                if !unlearned.isEmpty {
-                    action("Learn \(TrainingDefaults.learnMoreCount) New", unlearned,
-                           detail: { "\($0.progress.notStudied) not studied" }) { .learnMore($0) }
-                }
-                if !withGaps.isEmpty { gapsAction }
-            }
+        if unlearned.isEmpty && withGaps.isEmpty {
+            action("Practice", withMoves.filter { $0.stats.progress.studied > 0 },
+                   detail: { "\($0.progress.studied) moves" }) { .practice($0) }
+            action("Add Lines", withMoves.sorted { $0.stats.completion < $1.stats.completion },
+                   detail: { "\(Format.percent($0.completion)) built" }) { .builder($0) }
+        } else {
+            if !unlearned.isEmpty { learnAction(main: false) }
+            if !withGaps.isEmpty { gapsAction }
         }
     }
 
+    private func learnAction(main: Bool) -> some View {
+        action("Learn \(TrainingDefaults.learnMoreCount) New Moves", unlearned, main: main,
+               detail: { "\($0.progress.notStudied) not studied" }) { .learnMore($0) }
+    }
+
     private var gapsAction: some View {
-        action(gapCount == 1 ? "Fill 1 Gap" : "Fill \(gapCount) Gaps", withGaps, tint: .orange,
+        action(gapCount == 1 ? "Fill 1 Gap" : "Fill \(gapCount) Gaps", withGaps,
                detail: { $0.gaps == 1 ? "1 gap" : "\($0.gaps) gaps" }) { .gaps($0) }
     }
 
     /// A button for one repertoire, or a menu to pick one of several.
-    @ViewBuilder
-    private func action(_ title: String, _ items: [Item], prominent: Bool = false, tint: Color? = nil,
+    private func action(_ title: String, _ items: [Item], main: Bool = false,
                         detail: @escaping (EntryStats) -> String?, route: @escaping (String) -> LibraryRoute) -> some View {
-        // Text only: two buttons share the card's width, and an icon would cut the title.
-        let label = Text(title)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
         Group {
             if items.count == 1, let item = items.first {
-                Button { open(route(item.entry.id)) } label: { label }
+                Button(title) { open(route(item.entry.id)) }
             } else {
-                Menu {
-                    ForEach(items, id: \.entry.id) { item in
-                        Button { open(route(item.entry.id)) } label: {
-                            Text(item.entry.name)
-                            if let text = detail(item.stats) { Text(text) }
-                        }
-                    }
-                } label: { label }
+                Menu(title) { menuItems(items, detail: detail, route: route) }
             }
         }
-        // Standard styles in content; Liquid Glass is for toolbars and bars above the content.
-        .modifier(CardButtonStyle(prominent: prominent))
-        .tint(tint)
-        .controlSize(.large)
-        .buttonSizing(.flexible)
+        .actionButton(prominent: main)
     }
 
-    private struct CardButtonStyle: ViewModifier {
-        let prominent: Bool
-        func body(content: Content) -> some View {
-            if prominent { content.buttonStyle(.borderedProminent) } else { content.buttonStyle(.bordered) }
+    private func menuItems(_ items: [Item], detail: @escaping (EntryStats) -> String?,
+                           route: @escaping (String) -> LibraryRoute) -> some View {
+        ForEach(items, id: \.entry.id) { item in
+            Button { open(route(item.entry.id)) } label: {
+                Text(item.entry.name)
+                if let text = detail(item.stats) { Text(text) }
+            }
         }
-    }
-
-    private var studiedText: String {
-        guard let today, today.answerCount > 0 else { return "No moves studied today." }
-        let minutes = Int((Double(today.answerMillis) / 60_000).rounded())
-        let correct = Format.percent(Double(today.correctCount) / Double(today.answerCount))
-        return "Studied \(today.answerCount) \(today.answerCount == 1 ? "move" : "moves") in \(minutes) \(minutes == 1 ? "minute" : "minutes") · \(correct) correct"
     }
 
     private var streakText: String {
@@ -864,7 +847,7 @@ struct LibraryRow: View {
         VStack(alignment: .leading, spacing: 4) {
             // A grid, so the label column is as wide as its longest label at any text size.
             Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 4) {
-                bar("Built") { CompletionBar(value: stats.completion, tint: .green) }
+                bar("Built") { ProgressView(value: stats.completion).tint(.green) }
                 if stats.progress.studied > 0 {
                     bar("Studied") { StudiedBar(progress: stats.progress) }
                 }
@@ -963,28 +946,32 @@ struct EntryStats {
     }
 }
 
+/// Signing in to Lichess as a list section, as Settings offers signing in: the action as a row,
+/// why in the footer.
 struct SignInBanner: View {
+    var body: some View {
+        Section {
+            SignInButton()
+        } footer: {
+            Text("Coverage needs opponent statistics from the Lichess opening explorer, which needs a free Lichess account. Training works without it.")
+        }
+    }
+}
+
+/// Signs in to Lichess (a list row), with the last sign-in error under it.
+struct SignInButton: View {
     @Environment(AppModel.self) private var model
     @Environment(\.webAuthenticationSession) private var webAuth
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("Sign in with Lichess to see coverage", systemImage: "chart.bar.xaxis")
-                .font(.subheadline.weight(.semibold))
-            Text("Opponent statistics come from the Lichess opening explorer, which needs a free Lichess account. Training works without it.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            Button("Sign in with Lichess") {
-                Task {
-                    if await model.auth.signIn(using: webAuth) { model.queue.resume() }
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            if let error = model.auth.lastError {
-                Text(error).font(.footnote).foregroundStyle(.red)
+        Button("Sign in with Lichess", systemImage: "person.crop.circle.badge.plus") {
+            Task {
+                if await model.auth.signIn(using: webAuth) { model.queue.resume() }
             }
         }
-        .padding(.vertical, 6)
+        if let error = model.auth.lastError {
+            Text(error).font(.footnote).foregroundStyle(.red)
+        }
     }
 }
 

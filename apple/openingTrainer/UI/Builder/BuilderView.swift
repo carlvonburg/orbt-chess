@@ -492,7 +492,7 @@ struct NodeHeader: View {
     private func progress(_ title: String, value: Double, tint: Color) -> some View {
         HStack(spacing: 6) {
             Text(title).font(.caption2).foregroundStyle(.secondary)
-            CompletionBar(value: value, tint: tint)
+            ProgressView(value: value).tint(tint)
             Text(Format.percent(value)).font(.caption2.monospacedDigit())
         }
     }
@@ -640,13 +640,13 @@ struct ReplyRow: View {
                     .foregroundStyle(.secondary).frame(width: 74, alignment: .trailing)
                 Group {
                     if inRepertoire && reply.required {
-                        CompletionBar(value: reply.completion, tint: reply.completion >= 0.999 ? .green : .yellow)
+                        ProgressView(value: reply.completion).tint(reply.completion >= 0.999 ? .green : .yellow)
                     } else if reply.excluded {
                         Text("Excluded").font(.caption2).foregroundStyle(.secondary)
                     } else if !reply.required {
                         Text("Not needed").font(.caption2).foregroundStyle(.secondary)
                     } else {
-                        CompletionBar(value: 0, tint: .orange)
+                        ProgressView(value: 0).tint(.orange)
                     }
                 }
                 .frame(width: 64)
@@ -1036,25 +1036,26 @@ struct StatsUnavailableNote: View {
     @Environment(AppModel.self) private var app
 
     var body: some View {
-        Group {
-            switch app.queue.state {
-            case .needsLogin:
-                SignInBanner()
-            case .offline:
-                Label("Offline. Statistics will load when you're back online.", systemImage: "wifi.slash")
-            case .rateLimited:
-                Label("Lichess asked us to slow down. Resuming in a minute.", systemImage: "hourglass")
-            default:
-                if app.auth.isSignedIn {
-                    HStack { ProgressView(); Text("Loading statistics…") }
-                } else {
-                    SignInBanner()
-                }
+        switch app.queue.state {
+        case .needsLogin:
+            SignInButton()
+        case .offline:
+            note("Offline. Statistics will load when you're back online.", systemImage: "wifi.slash")
+        case .rateLimited:
+            note("Lichess asked us to slow down. Resuming in a minute.", systemImage: "hourglass")
+        default:
+            if app.auth.isSignedIn {
+                HStack { ProgressView(); Text("Loading statistics…") }
+                    .font(.footnote).foregroundStyle(.secondary).padding(.vertical, 8)
+            } else {
+                SignInButton()
             }
         }
-        .font(.footnote)
-        .foregroundStyle(.secondary)
-        .padding(.vertical, 8)
+    }
+
+    private func note(_ text: String, systemImage: String) -> some View {
+        Label(text, systemImage: systemImage)
+            .font(.footnote).foregroundStyle(.secondary).padding(.vertical, 8)
     }
 }
 
