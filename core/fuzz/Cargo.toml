@@ -47,3 +47,10 @@ path = "fuzz_targets/explorer.rs"
 test = false
 doc = false
 bench = false
+
+[[bin]]
+name = "uci"
+path = "fuzz_targets/uci.rs"
+test = false
+doc = false
+bench = false

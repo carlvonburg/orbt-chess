@@ -14,7 +14,9 @@ let package = Package(
         .target(
             name: "OpeningCoreRust",
             dependencies: ["OpeningCoreFFI"],
-            swiftSettings: [.swiftLanguageMode(.v6)]
+            swiftSettings: [.swiftLanguageMode(.v6)],
+            // Stockfish (core/ot-engine) is C++.
+            linkerSettings: [.linkedLibrary("c++")]
         ),
         .testTarget(name: "OpeningCoreRustTests", dependencies: ["OpeningCoreRust"]),
     ]

@@ -42,7 +42,7 @@ if [[ "$old" == 0000000000000000000000000000000000000000 ]]; then
 fi
 [[ "$old" == "$new" ]] && exit 0
 if git diff --quiet "$old" "$new" -- \
-  core/ot-core/src core/ot-ffi core/Cargo.toml core/Cargo.lock core/rust-toolchain.toml; then
+  core/ot-core/src core/ot-engine core/ot-ffi core/Cargo.toml core/Cargo.lock core/rust-toolchain.toml; then
   exit 0
 fi
 

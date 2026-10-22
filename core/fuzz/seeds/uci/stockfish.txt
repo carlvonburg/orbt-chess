@@ -1,0 +1,5 @@
+id name Stockfish 19
+uciok
+info depth 20 seldepth 28 multipv 1 score cp 31 nodes 1000 nps 100000 time 10 pv e7e5 g1f3 b8c6
+info depth 20 multipv 2 score mate -3 lowerbound wdl 0 1 999 pv c7c5
+bestmove e7e5 ponder g1f3

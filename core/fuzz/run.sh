@@ -7,14 +7,15 @@ export PATH="/opt/homebrew/opt/rustup/bin:$HOME/.cargo/bin:$PATH"
 cd "${0:A:h}"
 secs=${1:-180}
 data=../ot-core/tests/data
-mkdir -p corpus/{pgn,sidecar,revlog,explorer} logs
+mkdir -p corpus/{pgn,sidecar,revlog,explorer,uci} logs
 cp -n $data/pgn/* corpus/pgn/ 2>/dev/null
 cp -n $data/sidecars/* corpus/sidecar/ 2>/dev/null
 cp -n $data/revlog/* corpus/revlog/ 2>/dev/null
 cp -n seeds/explorer/* corpus/explorer/ 2>/dev/null
+cp -n seeds/uci/* corpus/uci/ 2>/dev/null
 cargo +nightly fuzz build -O || exit 1
-for t in pgn sidecar revlog explorer; do
+for t in pgn sidecar revlog explorer uci; do
   cargo +nightly fuzz run -O $t -- -max_total_time=$secs -max_len=8192 > logs/$t.log 2>&1 &
 done
 wait
-for t in pgn sidecar revlog explorer; do echo "== $t"; tail -3 logs/$t.log; done
+for t in pgn sidecar revlog explorer uci; do echo "== $t"; tail -3 logs/$t.log; done

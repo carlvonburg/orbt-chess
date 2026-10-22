@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["ot-core", "ot-ffi", "uniffi-bindgen-swift"]
+members = ["ot-core", "ot-engine", "ot-ffi", "uniffi-bindgen-swift"]
 
 [workspace.package]
 version = "0.1.0"
@@ -11,6 +11,7 @@ publish = false
 
 [workspace.dependencies]
 ot-core = { path = "ot-core" }
+ot-engine = { path = "ot-engine" }
 shakmaty = "0.30.2"
 fsrs = "6.6.2"
 rand = { version = "0.10.3", default-features = false, features = ["std_rng"] }
@@ -22,6 +23,8 @@ insta = "1.49.0"
 proptest = { version = "1.12.0", default-features = false, features = ["std"] }
 sha2 = "0.11.1"
 ruzstd = "0.9.1"
+cc = "1.2"
+libc = "0.2"
 
 [profile.release]
 lto = true

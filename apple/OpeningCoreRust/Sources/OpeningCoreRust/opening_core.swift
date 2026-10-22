@@ -671,6 +671,385 @@ fileprivate struct FfiConverterData: FfiConverterRustBuffer {
 
 
 
+public protocol AnalysisSessionProtocol: AnyObject, Sendable {
+    
+    func back()  -> Bool
+    
+    func current()  -> UInt32
+    
+    func deleteFrom(id: UInt32)  -> Bool
+    
+    func forward()  -> Bool
+    
+    func go(id: UInt32)  -> Bool
+    
+    func isMainLine(id: UInt32)  -> Bool
+    
+    func lastMove()  -> PlayedMove?
+    
+    func lineAhead()  -> [PlayedMove]
+    
+    /**
+     * `id`'s line as PGN, without variations.
+     */
+    func linePgn(id: UInt32)  -> String
+    
+    func lines()  -> [AnalysisLine]
+    
+    func makeMainLine(id: UInt32)  -> Bool
+    
+    func movesToBoard()  -> [PlayedMove]
+    
+    func orientation()  -> Side
+    
+    /**
+     * The whole analysis as PGN.
+     */
+    func pgn()  -> String
+    
+    func play(from: BoardSquare, to: BoardSquare, promotion: PieceKind?)  -> Bool
+    
+    func playUci(uci: String)  -> Bool
+    
+    func position()  -> Position
+    
+    func promote(id: UInt32)  -> Bool
+    
+    /**
+     * Records the evaluation of the selected position (kept if deeper than the known one).
+     */
+    func setEval(eval: NodeEval) 
+    
+    func setOrientation(side: Side) 
+    
+    func startFen()  -> String
+    
+}
+open class AnalysisSession: AnalysisSessionProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_analysissession(self.handle, $0) }
+    }
+    /**
+     * An analysis of `moves` (UCI) from `start_fen` (None: the standard start), at its end.
+     */
+public convenience init(startFen: String?, moves: [String], orientation: Side) {
+    let handle =
+        try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_analysissession_new(
+        FfiConverterOptionString.lower(startFen),
+        FfiConverterSequenceString.lower(moves),
+        FfiConverterTypeSide_lower(orientation),uniffiCallStatus
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_analysissession(handle, $0) }
+    }
+
+    
+
+    
+open func back() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_back(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func current() -> UInt32  {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_current(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func deleteFrom(id: UInt32) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_delete_from(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func forward() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_forward(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func go(id: UInt32) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_go(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func isMainLine(id: UInt32) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_is_main_line(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func lastMove() -> PlayedMove?  {
+    return try!  FfiConverterOptionTypePlayedMove.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_last_move(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func lineAhead() -> [PlayedMove]  {
+    return try!  FfiConverterSequenceTypePlayedMove.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_line_ahead(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * `id`'s line as PGN, without variations.
+     */
+open func linePgn(id: UInt32) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_line_pgn(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func lines() -> [AnalysisLine]  {
+    return try!  FfiConverterSequenceTypeAnalysisLine.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_lines(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func makeMainLine(id: UInt32) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_make_main_line(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func movesToBoard() -> [PlayedMove]  {
+    return try!  FfiConverterSequenceTypePlayedMove.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_moves_to_board(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func orientation() -> Side  {
+    return try!  FfiConverterTypeSide_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_orientation(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The whole analysis as PGN.
+     */
+open func pgn() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_pgn(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func play(from: BoardSquare, to: BoardSquare, promotion: PieceKind?) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_play(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeBoardSquare_lower(from),
+        FfiConverterTypeBoardSquare_lower(to),
+        FfiConverterOptionTypePieceKind.lower(promotion),uniffiCallStatus
+    )
+})
+}
+    
+open func playUci(uci: String) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_play_uci(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(uci),uniffiCallStatus
+    )
+})
+}
+    
+open func position() -> Position  {
+    return try!  FfiConverterTypePosition_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_position(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func promote(id: UInt32) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_promote(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Records the evaluation of the selected position (kept if deeper than the known one).
+     */
+open func setEval(eval: NodeEval)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_set_eval(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeNodeEval_lower(eval),uniffiCallStatus
+    )
+}
+}
+    
+open func setOrientation(side: Side)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_set_orientation(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSide_lower(side),uniffiCallStatus
+    )
+}
+}
+    
+open func startFen() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_start_fen(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAnalysisSession: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = AnalysisSession
+
+    public static func lift(_ handle: UInt64) throws -> AnalysisSession {
+        return AnalysisSession(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: AnalysisSession) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AnalysisSession {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: AnalysisSession, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAnalysisSession_lift(_ handle: UInt64) throws -> AnalysisSession {
+    return try FfiConverterTypeAnalysisSession.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAnalysisSession_lower(_ value: AnalysisSession) -> UInt64 {
+    return FfiConverterTypeAnalysisSession.lower(value)
+}
+
+
+
+
+
+
 /**
  * The builder's navigation over a repertoire.
  */
@@ -730,6 +1109,11 @@ public protocol BuilderSessionProtocol: AnyObject, Sendable {
     func reachOnBoard()  -> Double?
     
     func saveDraft()  -> Changes
+    
+    /**
+     * A line from the analysis board: saved moves are followed, the rest is the draft.
+     */
+    func setLine(moves: [String])  -> Changes
     
     func setOrientation(side: Side) 
     
@@ -1058,6 +1442,19 @@ open func saveDraft() -> Changes  {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_buildersession_save_draft(
             self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * A line from the analysis board: saved moves are followed, the rest is the draft.
+     */
+open func setLine(moves: [String]) -> Changes  {
+    return try!  FfiConverterTypeChanges_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_set_line(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceString.lower(moves),uniffiCallStatus
     )
 })
 }
@@ -2104,6 +2501,467 @@ public func FfiConverterTypeDrillSession_lift(_ handle: UInt64) throws -> DrillS
 #endif
 public func FfiConverterTypeDrillSession_lower(_ value: DrillSession) -> UInt64 {
     return FfiConverterTypeDrillSession.lower(value)
+}
+
+
+
+
+
+
+public protocol EngineProtocol: AnyObject, Sendable {
+    
+    /**
+     * Analyses the position after `moves` (UCI) from `start_fen`. Returns when to call
+     * `poll` if nothing else happens before.
+     */
+    func analyse(startFen: String, moves: [String], settings: EngineSettings, nowMs: UInt64)  -> UInt64?
+    
+    func lines()  -> EngineLines
+    
+    /**
+     * The engine's name, None while it is not running.
+     */
+    func name()  -> String?
+    
+    /**
+     * The cloud eval for `epd` (None: none, or not reachable).
+     */
+    func onCloud(epd: Epd, eval: CloudEval?, nowMs: UInt64)  -> UInt64?
+    
+    func poll(nowMs: UInt64)  -> UInt64?
+    
+    /**
+     * Quits the engine (it starts again with `start`).
+     */
+    func quit() 
+    
+    func setListener(listener: EngineListener) 
+    
+    /**
+     * Starts the engine, with the full net at `net_path` or the built-in light one; nothing
+     * happens if it already runs with that net.
+     */
+    func start(netPath: String?) throws 
+    
+    /**
+     * Stops analysing; the engine keeps running, idle.
+     */
+    func stop() 
+    
+}
+open class Engine: EngineProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_engine(self.handle, $0) }
+    }
+public convenience init(kind: EngineKind) {
+    let handle =
+        try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_engine_new(
+        FfiConverterTypeEngineKind_lower(kind),uniffiCallStatus
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_engine(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * Analyses the position after `moves` (UCI) from `start_fen`. Returns when to call
+     * `poll` if nothing else happens before.
+     */
+open func analyse(startFen: String, moves: [String], settings: EngineSettings, nowMs: UInt64) -> UInt64?  {
+    return try!  FfiConverterOptionUInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_engine_analyse(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(startFen),
+        FfiConverterSequenceString.lower(moves),
+        FfiConverterTypeEngineSettings_lower(settings),
+        FfiConverterUInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+    
+open func lines() -> EngineLines  {
+    return try!  FfiConverterTypeEngineLines_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_engine_lines(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The engine's name, None while it is not running.
+     */
+open func name() -> String?  {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_engine_name(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The cloud eval for `epd` (None: none, or not reachable).
+     */
+open func onCloud(epd: Epd, eval: CloudEval?, nowMs: UInt64) -> UInt64?  {
+    return try!  FfiConverterOptionUInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_engine_on_cloud(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEpd_lower(epd),
+        FfiConverterOptionTypeCloudEval.lower(eval),
+        FfiConverterUInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+    
+open func poll(nowMs: UInt64) -> UInt64?  {
+    return try!  FfiConverterOptionUInt64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_engine_poll(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Quits the engine (it starts again with `start`).
+     */
+open func quit()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_engine_quit(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+open func setListener(listener: EngineListener)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_engine_set_listener(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeEngineListener_lower(listener),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * Starts the engine, with the full net at `net_path` or the built-in light one; nothing
+     * happens if it already runs with that net.
+     */
+open func start(netPath: String?)throws   {try rustCallWithError(FfiConverterTypeEngineFailure_lift) {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_engine_start(
+            self.uniffiCloneHandle(),
+        FfiConverterOptionString.lower(netPath),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * Stops analysing; the engine keeps running, idle.
+     */
+open func stop()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_engine_stop(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEngine: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = Engine
+
+    public static func lift(_ handle: UInt64) throws -> Engine {
+        return Engine(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: Engine) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Engine {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: Engine, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngine_lift(_ handle: UInt64) throws -> Engine {
+    return try FfiConverterTypeEngine.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngine_lower(_ value: Engine) -> UInt64 {
+    return FfiConverterTypeEngine.lower(value)
+}
+
+
+
+
+
+
+public protocol EngineListener: AnyObject, Sendable {
+    
+    /**
+     * The lines to show changed (called from the engine's thread).
+     */
+    func changed() 
+    
+}
+open class EngineListenerImpl: EngineListener, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_enginelistener(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_enginelistener(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * The lines to show changed (called from the engine's thread).
+     */
+open func changed()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_enginelistener_changed(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfaceEngineListener {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // Store the vtable directly.
+    static let vtable: UniffiVTableCallbackInterfaceEngineListener = UniffiVTableCallbackInterfaceEngineListener(
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            do {
+                try FfiConverterTypeEngineListener.handleMap.remove(handle: uniffiHandle)
+            } catch {
+                print("Uniffi callback interface EngineListener: handle missing in uniffiFree")
+            }
+        },
+        uniffiClone: { (uniffiHandle: UInt64) -> UInt64 in
+            do {
+                return try FfiConverterTypeEngineListener.handleMap.clone(handle: uniffiHandle)
+            } catch {
+                fatalError("Uniffi callback interface EngineListener: handle missing in uniffiClone")
+            }
+        },
+        changed: { (
+            uniffiHandle: UInt64,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeEngineListener.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.changed(
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        }
+    )
+
+    // Rust stores this pointer for future callback invocations, so it must live
+    // for the process lifetime (not just for the init function call).
+    //
+    // `nonisolated(unsafe)` is needed under Swift 6 strict concurrency.
+    // This is safe because the pointee is initialized once during static init
+    // and never mutated by either side of the FFI.  Its fields are C function pointers.
+    nonisolated(unsafe) static let vtablePtr: UnsafePointer<UniffiVTableCallbackInterfaceEngineListener> = {
+        let ptr = UnsafeMutablePointer<UniffiVTableCallbackInterfaceEngineListener>.allocate(capacity: 1)
+        ptr.initialize(to: vtable)
+        return UnsafePointer(ptr)
+    }()
+}
+
+private func uniffiCallbackInitEngineListener() {
+    uniffi_opening_core_fn_init_callback_vtable_enginelistener(UniffiCallbackInterfaceEngineListener.vtablePtr)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEngineListener: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<EngineListener>()
+
+    typealias FfiType = UInt64
+    typealias SwiftType = EngineListener
+
+    public static func lift(_ handle: UInt64) throws -> EngineListener {
+        if ((handle & 1) == 0) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return EngineListenerImpl(unsafeFromHandle: handle)
+        } else {
+            // Swift-generated handle, get the object from the handle map
+            return try handleMap.remove(handle: handle)
+        }
+    }
+
+    public static func lower(_ value: EngineListener) -> UInt64 {
+         if let rustImpl = value as? EngineListenerImpl {
+             // Rust-implemented object.  Clone the handle and return it
+            return rustImpl.uniffiCloneHandle()
+         } else {
+            // Swift object, generate a new vtable handle and return that.
+            return handleMap.insert(obj: value)
+         }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EngineListener {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: EngineListener, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineListener_lift(_ handle: UInt64) throws -> EngineListener {
+    return try FfiConverterTypeEngineListener.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineListener_lower(_ value: EngineListener) -> UInt64 {
+    return FfiConverterTypeEngineListener.lower(value)
 }
 
 
@@ -5065,6 +5923,126 @@ public func FfiConverterTypeAddResult_lower(_ value: AddResult) -> RustBuffer {
 }
 
 
+public struct AnalysisLine: Equatable, Hashable {
+    public var depth: UInt32
+    public var moves: [AnalysisMove]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(depth: UInt32, moves: [AnalysisMove]) {
+        self.depth = depth
+        self.moves = moves
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AnalysisLine: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAnalysisLine: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AnalysisLine {
+        return
+            try AnalysisLine(
+                depth: FfiConverterUInt32.read(from: &buf), 
+                moves: FfiConverterSequenceTypeAnalysisMove.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AnalysisLine, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.depth, into: &buf)
+        FfiConverterSequenceTypeAnalysisMove.write(value.moves, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAnalysisLine_lift(_ buf: RustBuffer) throws -> AnalysisLine {
+    return try FfiConverterTypeAnalysisLine.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAnalysisLine_lower(_ value: AnalysisLine) -> RustBuffer {
+    return FfiConverterTypeAnalysisLine.lower(value)
+}
+
+
+public struct AnalysisMove: Equatable, Hashable {
+    public var id: UInt32
+    public var san: String
+    public var number: String?
+    public var eval: String?
+    public var isCurrent: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: UInt32, san: String, number: String?, eval: String?, isCurrent: Bool) {
+        self.id = id
+        self.san = san
+        self.number = number
+        self.eval = eval
+        self.isCurrent = isCurrent
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension AnalysisMove: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAnalysisMove: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AnalysisMove {
+        return
+            try AnalysisMove(
+                id: FfiConverterUInt32.read(from: &buf), 
+                san: FfiConverterString.read(from: &buf), 
+                number: FfiConverterOptionString.read(from: &buf), 
+                eval: FfiConverterOptionString.read(from: &buf), 
+                isCurrent: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: AnalysisMove, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.id, into: &buf)
+        FfiConverterString.write(value.san, into: &buf)
+        FfiConverterOptionString.write(value.number, into: &buf)
+        FfiConverterOptionString.write(value.eval, into: &buf)
+        FfiConverterBool.write(value.isCurrent, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAnalysisMove_lift(_ buf: RustBuffer) throws -> AnalysisMove {
+    return try FfiConverterTypeAnalysisMove.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAnalysisMove_lower(_ value: AnalysisMove) -> RustBuffer {
+    return FfiConverterTypeAnalysisMove.lower(value)
+}
+
+
 public struct Arrow: Equatable, Hashable {
     public var from: BoardSquare
     public var to: BoardSquare
@@ -6130,6 +7108,138 @@ public func FfiConverterTypeDeckStudyStats_lower(_ value: DeckStudyStats) -> Rus
 }
 
 
+public struct EngineLines: Equatable, Hashable {
+    public var lines: [PvLine]
+    public var depth: UInt32
+    public var source: EvalSource?
+    public var searching: Bool
+    public var knps: UInt64?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(lines: [PvLine], depth: UInt32, source: EvalSource?, searching: Bool, knps: UInt64?) {
+        self.lines = lines
+        self.depth = depth
+        self.source = source
+        self.searching = searching
+        self.knps = knps
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension EngineLines: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEngineLines: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EngineLines {
+        return
+            try EngineLines(
+                lines: FfiConverterSequenceTypePvLine.read(from: &buf), 
+                depth: FfiConverterUInt32.read(from: &buf), 
+                source: FfiConverterOptionTypeEvalSource.read(from: &buf), 
+                searching: FfiConverterBool.read(from: &buf), 
+                knps: FfiConverterOptionUInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: EngineLines, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypePvLine.write(value.lines, into: &buf)
+        FfiConverterUInt32.write(value.depth, into: &buf)
+        FfiConverterOptionTypeEvalSource.write(value.source, into: &buf)
+        FfiConverterBool.write(value.searching, into: &buf)
+        FfiConverterOptionUInt64.write(value.knps, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineLines_lift(_ buf: RustBuffer) throws -> EngineLines {
+    return try FfiConverterTypeEngineLines.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineLines_lower(_ value: EngineLines) -> RustBuffer {
+    return FfiConverterTypeEngineLines.lower(value)
+}
+
+
+public struct EngineSettings: Equatable, Hashable {
+    public var lines: UInt32
+    public var movetimeMs: UInt32
+    public var threads: UInt32
+    public var hashMb: UInt32
+    public var cloud: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(lines: UInt32, movetimeMs: UInt32, threads: UInt32, hashMb: UInt32, cloud: Bool) {
+        self.lines = lines
+        self.movetimeMs = movetimeMs
+        self.threads = threads
+        self.hashMb = hashMb
+        self.cloud = cloud
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension EngineSettings: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEngineSettings: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EngineSettings {
+        return
+            try EngineSettings(
+                lines: FfiConverterUInt32.read(from: &buf), 
+                movetimeMs: FfiConverterUInt32.read(from: &buf), 
+                threads: FfiConverterUInt32.read(from: &buf), 
+                hashMb: FfiConverterUInt32.read(from: &buf), 
+                cloud: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: EngineSettings, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.lines, into: &buf)
+        FfiConverterUInt32.write(value.movetimeMs, into: &buf)
+        FfiConverterUInt32.write(value.threads, into: &buf)
+        FfiConverterUInt32.write(value.hashMb, into: &buf)
+        FfiConverterBool.write(value.cloud, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineSettings_lift(_ buf: RustBuffer) throws -> EngineSettings {
+    return try FfiConverterTypeEngineSettings.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineSettings_lower(_ value: EngineSettings) -> RustBuffer {
+    return FfiConverterTypeEngineSettings.lower(value)
+}
+
+
 public struct ExplorerMove: Equatable, Hashable {
     public var uci: String
     public var san: String
@@ -7138,6 +8248,60 @@ public func FfiConverterTypeNodeCoverage_lower(_ value: NodeCoverage) -> RustBuf
 }
 
 
+public struct NodeEval: Equatable, Hashable {
+    public var text: String
+    public var depth: UInt32
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(text: String, depth: UInt32) {
+        self.text = text
+        self.depth = depth
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension NodeEval: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeNodeEval: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> NodeEval {
+        return
+            try NodeEval(
+                text: FfiConverterString.read(from: &buf), 
+                depth: FfiConverterUInt32.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: NodeEval, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.text, into: &buf)
+        FfiConverterUInt32.write(value.depth, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeNodeEval_lift(_ buf: RustBuffer) throws -> NodeEval {
+    return try FfiConverterTypeNodeEval.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeNodeEval_lower(_ value: NodeEval) -> RustBuffer {
+    return FfiConverterTypeNodeEval.lower(value)
+}
+
+
 public struct Opened {
     public var document: RepertoireDoc
     /**
@@ -7686,6 +8850,68 @@ public func FfiConverterTypePv_lift(_ buf: RustBuffer) throws -> Pv {
 #endif
 public func FfiConverterTypePv_lower(_ value: Pv) -> RustBuffer {
     return FfiConverterTypePv.lower(value)
+}
+
+
+public struct PvLine: Equatable, Hashable {
+    public var score: Score
+    public var eval: String
+    public var moves: [PlayedMove]
+    public var text: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(score: Score, eval: String, moves: [PlayedMove], text: String) {
+        self.score = score
+        self.eval = eval
+        self.moves = moves
+        self.text = text
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension PvLine: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypePvLine: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> PvLine {
+        return
+            try PvLine(
+                score: FfiConverterTypeScore.read(from: &buf), 
+                eval: FfiConverterString.read(from: &buf), 
+                moves: FfiConverterSequenceTypePlayedMove.read(from: &buf), 
+                text: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: PvLine, into buf: inout [UInt8]) {
+        FfiConverterTypeScore.write(value.score, into: &buf)
+        FfiConverterString.write(value.eval, into: &buf)
+        FfiConverterSequenceTypePlayedMove.write(value.moves, into: &buf)
+        FfiConverterString.write(value.text, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePvLine_lift(_ buf: RustBuffer) throws -> PvLine {
+    return try FfiConverterTypePvLine.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypePvLine_lower(_ value: PvLine) -> RustBuffer {
+    return FfiConverterTypePvLine.lower(value)
 }
 
 
@@ -9394,6 +10620,213 @@ public func FfiConverterTypeDrillMode_lower(_ value: DrillMode) -> RustBuffer {
 
 
 
+public 
+enum EngineFailure: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
+
+    
+    
+    case Failed(String
+    )
+
+    
+
+    
+
+    
+    public var errorDescription: String? {
+        String(reflecting: self)
+    }
+    
+}
+
+#if compiler(>=6)
+extension EngineFailure: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEngineFailure: FfiConverterRustBuffer {
+    typealias SwiftType = EngineFailure
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EngineFailure {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+
+        
+
+        
+        case 1: return .Failed(
+            try FfiConverterString.read(from: &buf)
+            )
+
+         default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: EngineFailure, into buf: inout [UInt8]) {
+        switch value {
+
+        
+
+        
+        
+        case let .Failed(v1):
+            writeInt(&buf, Int32(1))
+            FfiConverterString.write(v1, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineFailure_lift(_ buf: RustBuffer) throws -> EngineFailure {
+    return try FfiConverterTypeEngineFailure.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineFailure_lower(_ value: EngineFailure) -> RustBuffer {
+    return FfiConverterTypeEngineFailure.lower(value)
+}
+
+
+
+public enum EngineKind: Equatable, Hashable {
+    
+    case stockfish
+    case leela
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension EngineKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEngineKind: FfiConverterRustBuffer {
+    typealias SwiftType = EngineKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EngineKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .stockfish
+        
+        case 2: return .leela
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: EngineKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .stockfish:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .leela:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineKind_lift(_ buf: RustBuffer) throws -> EngineKind {
+    return try FfiConverterTypeEngineKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEngineKind_lower(_ value: EngineKind) -> RustBuffer {
+    return FfiConverterTypeEngineKind.lower(value)
+}
+
+
+
+
+public enum EvalSource: Equatable, Hashable {
+    
+    case cloud
+    case local
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension EvalSource: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeEvalSource: FfiConverterRustBuffer {
+    typealias SwiftType = EvalSource
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> EvalSource {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .cloud
+        
+        case 2: return .local
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: EvalSource, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .cloud:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .local:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEvalSource_lift(_ buf: RustBuffer) throws -> EvalSource {
+    return try FfiConverterTypeEvalSource.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeEvalSource_lower(_ value: EvalSource) -> RustBuffer {
+    return FfiConverterTypeEvalSource.lower(value)
+}
+
+
+
 
 public enum ExplorerDatabase: Equatable, Hashable {
     
@@ -10798,6 +12231,78 @@ public func FfiConverterTypeRevlogReviewKind_lower(_ value: RevlogReviewKind) ->
 
 
 
+public enum Score: Equatable, Hashable {
+    
+    case cp(Int32
+    )
+    case mate(Int32
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension Score: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeScore: FfiConverterRustBuffer {
+    typealias SwiftType = Score
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Score {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .cp(try FfiConverterInt32.read(from: &buf)
+        )
+        
+        case 2: return .mate(try FfiConverterInt32.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: Score, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .cp(v1):
+            writeInt(&buf, Int32(1))
+            FfiConverterInt32.write(v1, into: &buf)
+            
+        
+        case let .mate(v1):
+            writeInt(&buf, Int32(2))
+            FfiConverterInt32.write(v1, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeScore_lift(_ buf: RustBuffer) throws -> Score {
+    return try FfiConverterTypeScore.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeScore_lower(_ value: Score) -> RustBuffer {
+    return FfiConverterTypeScore.lower(value)
+}
+
+
+
+
 public enum Side: Equatable, Hashable {
     
     case white
@@ -11084,6 +12589,30 @@ fileprivate struct FfiConverterOptionInt32: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterInt32.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionUInt64: FfiConverterRustBuffer {
+    typealias SwiftType = UInt64?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterUInt64.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterUInt64.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -11692,6 +13221,30 @@ fileprivate struct FfiConverterOptionTypeSummary: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeEvalSource: FfiConverterRustBuffer {
+    typealias SwiftType = EvalSource?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeEvalSource.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeEvalSource.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypePieceKind: FfiConverterRustBuffer {
     typealias SwiftType = PieceKind?
 
@@ -11977,6 +13530,56 @@ fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterString.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeAnalysisLine: FfiConverterRustBuffer {
+    typealias SwiftType = [AnalysisLine]
+
+    public static func write(_ value: [AnalysisLine], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeAnalysisLine.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AnalysisLine] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [AnalysisLine]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeAnalysisLine.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeAnalysisMove: FfiConverterRustBuffer {
+    typealias SwiftType = [AnalysisMove]
+
+    public static func write(_ value: [AnalysisMove], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeAnalysisMove.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AnalysisMove] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [AnalysisMove]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeAnalysisMove.read(from: &buf))
         }
         return seq
     }
@@ -12352,6 +13955,31 @@ fileprivate struct FfiConverterSequenceTypePv: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypePv.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypePvLine: FfiConverterRustBuffer {
+    typealias SwiftType = [PvLine]
+
+    public static func write(_ value: [PvLine], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypePvLine.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [PvLine] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [PvLine]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypePvLine.read(from: &buf))
         }
         return seq
     }
@@ -12789,6 +14417,17 @@ public func openRepertoire(pgnText: String, sidecar: Data, defaults: StudyDefaul
 })
 }
 /**
+ * Whether a downloaded Stockfish net is complete and matches its name.
+ */
+public func engineNetworkIsValid(path: String) -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_engine_network_is_valid(
+        FfiConverterString.lower(path),uniffiCallStatus
+    )
+})
+}
+/**
  * A position from a FEN; None when the FEN is not valid.
  */
 public func positionFromFen(fen: String) -> Position?  {
@@ -13154,6 +14793,13 @@ public func deckLimitsIsEmpty(limits: DeckLimits) -> Bool  {
     )
 })
 }
+public func defaultEngineSettings() -> EngineSettings  {
+    return try!  FfiConverterTypeEngineSettings_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_default_engine_settings(uniffiCallStatus
+    )
+})
+}
 public func defaultStudyDefaults() -> StudyDefaults  {
     return try!  FfiConverterTypeStudyDefaults_lift(try! rustCall() {
         uniffiCallStatus in
@@ -13220,6 +14866,13 @@ public func lichessAnalysisUrl(moves: [PlayedMove], orientation: Side) -> String
     uniffi_opening_core_fn_func_lichess_analysis_url(
         FfiConverterSequenceTypePlayedMove.lower(moves),
         FfiConverterTypeSide_lower(orientation),uniffiCallStatus
+    )
+})
+}
+public func maxEngineLines() -> UInt32  {
+    return try!  FfiConverterUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_max_engine_lines(uniffiCallStatus
     )
 })
 }
@@ -13340,6 +14993,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_open_repertoire() != 42024) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_func_engine_network_is_valid() != 12567) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_func_position_from_fen() != 25452) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -13451,6 +15107,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_deck_limits_is_empty() != 63688) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_func_default_engine_settings() != 63669) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_func_default_study_defaults() != 59748) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -13473,6 +15132,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_lichess_analysis_url() != 19038) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_max_engine_lines() != 44064) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_move_list() != 58467) {
@@ -13506,6 +15168,69 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_square_notation() != 6812) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_back() != 50502) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_current() != 40838) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_delete_from() != 51329) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_forward() != 9212) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_go() != 58638) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_is_main_line() != 58123) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_last_move() != 53019) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_line_ahead() != 8171) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_line_pgn() != 40164) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_lines() != 60461) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_make_main_line() != 53119) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_moves_to_board() != 9569) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_orientation() != 28938) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_pgn() != 44510) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_play() != 10903) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_play_uci() != 28451) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_position() != 55489) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_promote() != 21538) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_set_eval() != 62486) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_set_orientation() != 51168) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_analysissession_start_fen() != 22173) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_documentlistener_changed() != 29813) {
@@ -13757,6 +15482,36 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_update_study_settings() != 40186) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_engine_analyse() != 38538) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_engine_lines() != 30062) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_engine_name() != 51341) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_engine_on_cloud() != 39718) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_engine_poll() != 24586) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_engine_quit() != 52930) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_engine_set_listener() != 9234) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_engine_start() != 33007) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_engine_stop() != 63198) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_enginelistener_changed() != 43024) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_cloudevals_lookup() != 60633) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -13937,6 +15692,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_buildersession_save_draft() != 5631) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_buildersession_set_line() != 7829) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_buildersession_set_orientation() != 57006) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -14114,6 +15872,12 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_librarysidecar_target_games() != 30514) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_constructor_analysissession_new() != 18417) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_engine_new() != 29061) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_constructor_cloudevals_new() != 216) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -14140,6 +15904,7 @@ private let initializationResult: InitializationResult = {
     }
 
     uniffiCallbackInitDocumentListener()
+    uniffiCallbackInitEngineListener()
     uniffiCallbackInitExplorerListener()
     uniffiCallbackInitStatsStore()
     return InitializationResult.ok

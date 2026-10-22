@@ -4,14 +4,18 @@
 
 uniffi::setup_scaffolding!("opening_core");
 
+mod analysis;
 mod document;
+mod engine;
 mod explorer;
 mod position;
 mod sessions;
 mod stats;
 mod types;
 
+pub use analysis::*;
 pub use document::*;
+pub use engine::*;
 pub use explorer::*;
 pub use position::*;
 pub use sessions::*;

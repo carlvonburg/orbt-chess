@@ -350,7 +350,9 @@ impl Drill {
         changes
     }
 
-    /// The moves to the board, for Lichess analysis. Looking counts as Again, like browsing.
+    /// The moves to the board, in the order they were played (a line continues through
+    /// transpositions, so its nodes' own paths may differ), for the analysis board. Looking
+    /// counts as Again, like browsing.
     pub fn analysis_moves(
         &mut self,
         doc: &mut Repertoire,
@@ -358,11 +360,12 @@ impl Drill {
         now_ms: i64,
     ) -> (Vec<PlayedMove>, Changes) {
         let changes = self.fail_current_card(doc, timing, now_ms);
+        let tree = doc.tree();
         let moves = self
-            .run
-            .as_ref()
-            .map(|r| doc.tree().moves(r.current_node()))
-            .unwrap_or_default();
+            .played_nodes()
+            .into_iter()
+            .filter_map(|id| tree.get(id)?.mv.clone())
+            .collect();
         (moves, changes)
     }
 

@@ -27,3 +27,36 @@ final class NoStats: StatsStore {
     #expect(doc.childBySan(id: nf3, san: "Nc6") != nil)
     #expect(doc.childBySan(id: nf3, san: "Nf6") != nil)
 }
+
+/// Counts the engine's change notices.
+final class EngineNotices: EngineListener, @unchecked Sendable {
+    func changed() {}
+}
+
+@Test func stockfishAnalysesThroughTheBindings() async throws {
+    let engine = Engine(kind: .stockfish)
+    engine.setListener(listener: EngineNotices())
+    try engine.start(netPath: nil)
+    var settings = defaultEngineSettings()
+    settings.cloud = false
+    settings.movetimeMs = 500
+    settings.threads = 1
+    _ = engine.analyse(startFen: Position.start().fen(), moves: ["e2e4"], settings: settings,
+                       nowMs: UInt64(Date.now.timeIntervalSince1970 * 1000))
+    for _ in 0..<40 where engine.lines().lines.count < 3 || engine.lines().searching {
+        try await Task.sleep(for: .milliseconds(100))
+    }
+    let shown = engine.lines()
+    #expect(shown.lines.count == 3)
+    #expect(shown.source == .local)
+    #expect(engine.name() == "Stockfish 19 · 1 MB net")
+    engine.quit()
+}
+
+@Test func analysisBoardVariations() {
+    let analysis = AnalysisSession(startFen: nil, moves: ["e2e4", "e7e5"], orientation: .white)
+    #expect(analysis.back())
+    #expect(analysis.playUci(uci: "c7c5"))
+    #expect(analysis.lines().count == 2)
+    #expect(analysis.pgn() == "1. e4 e5 (1... c5) *")
+}

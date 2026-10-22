@@ -176,6 +176,11 @@ impl BuilderSession {
         self.state.lock().expect("builder lock").discard_draft();
     }
 
+    /// A line from the analysis board: saved moves are followed, the rest is the draft.
+    pub fn set_line(&self, moves: Vec<String>) -> Changes {
+        self.act(|b, doc, _| b.set_line(doc, &moves))
+    }
+
     pub fn delete(&self, id: NodeId) -> Changes {
         self.act(|b, doc, stats| b.delete(doc, id, stats))
     }

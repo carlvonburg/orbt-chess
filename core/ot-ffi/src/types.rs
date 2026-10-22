@@ -3,11 +3,13 @@
 
 use std::collections::HashMap;
 
+use ot_core::analysis::{AnalysisLine, AnalysisMove, NodeEval};
 use ot_core::builder::{Arrow, ArrowStyle};
 use ot_core::chess::{BoardPiece, BoardSquare, Epd, PieceKind, PlayedMove, Side};
 use ot_core::coverage::{CoverageGap, GapKind, NodeCoverage, ReplyInfo, Status};
 use ot_core::document::{Changes, OutlineItem, StudyDefaults};
 use ot_core::drill::{DrillMode, Feedback, Phase};
+use ot_core::engine::{EngineKind, EngineLines, EngineSettings, EvalSource, PvLine, Score};
 use ot_core::explorer::manifest::{CoverageFile, CoverageManifest};
 use ot_core::explorer::queue::{Lane, QueueState};
 use ot_core::explorer::{
@@ -914,4 +916,81 @@ pub fn anki_preset() -> PresetInfo {
         learn_ahead_secs: c.learn_ahead_secs,
         rollover_hour: SchedTiming::ROLLOVER_HOUR,
     }
+}
+
+// Engine and analysis board
+
+#[uniffi::remote(Enum)]
+pub enum EngineKind {
+    Stockfish,
+    Leela,
+}
+
+#[uniffi::remote(Record)]
+pub struct EngineSettings {
+    pub lines: u32,
+    pub movetime_ms: u32,
+    pub threads: u32,
+    pub hash_mb: u32,
+    pub cloud: bool,
+}
+
+#[uniffi::remote(Enum)]
+pub enum Score {
+    Cp(i32),
+    Mate(i32),
+}
+
+#[uniffi::remote(Enum)]
+pub enum EvalSource {
+    Cloud,
+    Local,
+}
+
+#[uniffi::remote(Record)]
+pub struct PvLine {
+    pub score: Score,
+    pub eval: String,
+    pub moves: Vec<PlayedMove>,
+    pub text: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct EngineLines {
+    pub lines: Vec<PvLine>,
+    pub depth: u32,
+    pub source: Option<EvalSource>,
+    pub searching: bool,
+    pub knps: Option<u64>,
+}
+
+#[uniffi::remote(Record)]
+pub struct NodeEval {
+    pub text: String,
+    pub depth: u32,
+}
+
+#[uniffi::remote(Record)]
+pub struct AnalysisMove {
+    pub id: u32,
+    pub san: String,
+    pub number: Option<String>,
+    pub eval: Option<String>,
+    pub is_current: bool,
+}
+
+#[uniffi::remote(Record)]
+pub struct AnalysisLine {
+    pub depth: u32,
+    pub moves: Vec<AnalysisMove>,
+}
+
+#[uniffi::export]
+pub fn default_engine_settings() -> EngineSettings {
+    EngineSettings::default()
+}
+
+#[uniffi::export]
+pub fn max_engine_lines() -> u32 {
+    ot_core::engine::MAX_LINES
 }

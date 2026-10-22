@@ -424,6 +424,42 @@ impl Builder {
         self.draft.clear();
     }
 
+    /// Puts a line from the analysis board (UCI moves from the start) on the board: follows the
+    /// saved moves as far as they go, through transpositions as playing them would, and the
+    /// rest becomes the draft. Saves nothing, even when the draft transposes; an illegal move
+    /// ends the line.
+    pub fn set_line(&mut self, doc: &mut Repertoire, moves: &[String]) -> Changes {
+        let tree = doc.tree();
+        let mut node = RepertoireTree::ROOT;
+        let mut rest = moves.iter();
+        let mut unsaved = None;
+        for uci in rest.by_ref() {
+            let from = tree.transposition_target(node).unwrap_or(node);
+            match tree.child_by_uci(from, uci) {
+                Some(child) => node = child,
+                None => {
+                    unsaved = Some(uci);
+                    break;
+                }
+            }
+        }
+        let mut position = tree
+            .get(node)
+            .map(|n| n.position.clone())
+            .unwrap_or_default();
+        let mut draft = Vec::new();
+        for uci in unsaved.into_iter().chain(rest) {
+            let Some((mv, next)) = position.play_uci(uci) else {
+                break;
+            };
+            draft.push(mv);
+            position = next;
+        }
+        self.current = node;
+        self.draft = draft;
+        self.remember(doc)
+    }
+
     /// Deletes a move and everything below it; leaves it first if the board is there.
     pub fn delete(&mut self, doc: &mut Repertoire, id: NodeId, stats: &dyn StatsSource) -> Changes {
         let mut changes = Changes::default();
@@ -616,6 +652,28 @@ mod tests {
         assert_eq!(d.line_text(b.current), "1. e4 c5");
         let reopened = Builder::new(&d, None);
         assert_eq!(d.line_text(reopened.current), "1. e4 c5");
+    }
+
+    #[test]
+    fn a_line_from_analysis_becomes_the_draft_unsaved() {
+        let mut d = doc("1. e4 e5 2. Nf3 (2. Nh3) *", Side::White);
+        let saved = d.tree().pgn_text();
+        let mut b = Builder::new(&d, None);
+        let line: Vec<String> = ["e2e4", "e7e5", "g1h3", "d7d5", "d2d3", "xx"]
+            .iter()
+            .map(|m| (*m).to_owned())
+            .collect();
+        let changes = b.set_line(&mut d, &line);
+        assert!(!changes.tree_changed);
+        assert_eq!(d.line_text(b.current), "1. e4 e5 2. Nh3");
+        let draft: Vec<&str> = b.draft().iter().map(|m| m.san.as_str()).collect();
+        assert_eq!(draft, ["d5", "d3"]);
+        assert_eq!(d.tree().pgn_text(), saved);
+
+        // All saved: no draft.
+        b.set_line(&mut d, &line[..2]);
+        assert!(!b.has_draft());
+        assert_eq!(d.line_text(b.current), "1. e4 e5");
     }
 
     #[test]
