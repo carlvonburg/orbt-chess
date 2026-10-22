@@ -938,7 +938,7 @@ struct CandidateRow: View {
 /// The score bar and game counts of a candidate, greyed out while its stats load.
 private struct StatsPlaceholder: View {
     var body: some View {
-        RoundedRectangle(cornerRadius: 3).fill(.quaternary).frame(height: 8)
+        RoundedRectangle(cornerRadius: 3).fill(.quaternary).frame(height: 18)
         Text("1.2M · 45%")
             .font(.caption2.monospacedDigit())
             .frame(width: 76, alignment: .trailing)

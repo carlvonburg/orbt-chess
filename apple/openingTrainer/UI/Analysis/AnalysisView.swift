@@ -23,7 +23,7 @@ struct AnalysisScreen: View {
     @State private var page: WebPage?
     @State private var showsSettings = false
     /// On a phone the panel shows the moves or the explorer, not both.
-    @State private var tab = PanelTab.moves
+    @State private var tab = PanelTab.explorer
     /// The evaluation last written to the move list, so it is written once per depth.
     @State private var recorded: (key: EngineService.Key, depth: UInt32)?
 
@@ -49,6 +49,7 @@ struct AnalysisScreen: View {
                 }
             }
             .navigationTitle("Analysis")
+            .navigationSubtitle(engineStatus)
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
             #endif
@@ -82,6 +83,18 @@ struct AnalysisScreen: View {
         let on: Bool
     }
 
+    /// Where the lines come from, under the title: a Lichess cloud eval, or Stockfish at some
+    /// depth. Empty while the engine is off.
+    private var engineStatus: String {
+        guard model.engineOn else { return "" }
+        let shown = engine.lines
+        if let source = shown.source, !shownLines.isEmpty {
+            return "\(source == .cloud ? "Cloud" : engine.name ?? "Stockfish") · depth \(shown.depth)"
+        }
+        // Until lines come in (the placeholders show that), which engine will run.
+        return engine.error ?? engine.name ?? ""
+    }
+
     /// The engine's lines for the position on the board, if they are for it.
     private var shownLines: [PvLine] {
         guard model.engineOn, engine.analysed == model.engineKey else { return [] }
@@ -100,7 +113,7 @@ struct AnalysisScreen: View {
     private var boardColumn: some View {
         VStack(spacing: 0) {
             if model.engineOn {
-                EngineLinesView(engine: engine, lines: shownLines) { model.play(uci: $0) }
+                EngineLinesView(lines: shownLines) { model.play(uci: $0) }
             }
             BoardView(position: model.position, orientation: model.orientation, lastMove: model.lastMove,
                       arrows: arrows, movableSide: model.position.sideToMove()) { from, to, promotion in
@@ -217,53 +230,43 @@ func copy(_ text: String) {
 }
 
 /// The engine's lines above the board: the evaluation and the moves, tap to play the first.
-/// The status says where they come from: a Lichess cloud eval, or Stockfish at some depth.
+/// Where they come from is the screen's subtitle (`AnalysisScreen.engineStatus`).
 struct EngineLinesView: View {
-    let engine: EngineService
     let lines: [PvLine]
     let play: (String) -> Void
 
     var body: some View {
-        let shown = engine.lines
         VStack(alignment: .leading, spacing: 4) {
             ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
                 Button {
                     if let first = line.moves.first { play(first.uci) }
                 } label: {
-                    HStack(spacing: 8) {
-                        EvalChip(text: line.eval, score: line.score)
-                        Text(line.text)
-                            .font(.callout)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                        Spacer(minLength: 0)
-                    }
-                    .contentShape(.rect)
+                    row(eval: line.eval, score: line.score, text: line.text)
                 }
                 .buttonStyle(.plain)
             }
-            HStack(spacing: 6) {
-                if let source = shown.source, !lines.isEmpty {
-                    Text(source == .cloud ? "Cloud" : (engine.name ?? "Stockfish"))
-                    Text("depth \(shown.depth)")
-                    if source == .local, let knps = shown.knps {
-                        Text("\(knps.formatted()) kn/s")
-                    }
-                } else if let error = engine.error {
-                    Text(error)
-                } else {
-                    Text(shown.searching ? "Thinking…" : "Waiting for an evaluation…")
-                }
-                if shown.searching { ProgressView().controlSize(.mini) }
+            // Rows not in yet are placeholders, as in Browse, so the board stays put.
+            ForEach(lines.count..<max(lines.count, EngineDefaults.lines), id: \.self) { _ in
+                row(eval: "+0.0", score: .cp(0), text: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6")
+                    .redacted(reason: .placeholder)
+                    .accessibilityHidden(true)
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
         }
         .padding(.horizontal)
         .padding(.vertical, 6)
-        // The lines keep their space while a new position is analysed, so the board stays put.
-        .frame(minHeight: CGFloat(EngineDefaults.lines) * 24 + 22, alignment: .top)
         .animation(nil, value: lines)
+    }
+
+    private func row(eval: String, score: Score, text: String) -> some View {
+        HStack(spacing: 8) {
+            EvalChip(text: eval, score: score)
+            Text(text)
+                .font(.callout)
+                .lineLimit(1)
+                .truncationMode(.tail)
+            Spacer(minLength: 0)
+        }
+        .contentShape(.rect)
     }
 }
 
@@ -370,13 +373,8 @@ struct AnalysisExplorerSection: View {
                 ForEach(stats.moves.prefix(12), id: \.uci) { move in
                     let games = move.white + move.draws + move.black
                     Button { model.play(uci: move.uci) } label: {
-                        HStack(spacing: 10) {
-                            Text(move.san).frame(width: 56, alignment: .leading)
-                            Text(Format.games(games)).monospacedDigit()
-                                .frame(width: 56, alignment: .trailing)
-                            Text(Format.percent(Double(games) / Double(total))).monospacedDigit()
-                                .foregroundStyle(.secondary)
-                                .frame(width: 40, alignment: .trailing)
+                        row(san: move.san, games: Format.games(games),
+                            share: Format.percent(Double(games) / Double(total))) {
                             ScoreBar(white: move.white, draws: move.draws, black: move.black)
                         }
                         .contentShape(.rect)
@@ -384,7 +382,14 @@ struct AnalysisExplorerSection: View {
                     .buttonStyle(.plain)
                 }
             } else if app.isLoadingStats {
-                ProgressView()
+                // Placeholders while the stats load, as in Browse.
+                ForEach(0..<5, id: \.self) { _ in
+                    row(san: "Nf3", games: "1.2M", share: "45%") {
+                        RoundedRectangle(cornerRadius: 3).fill(.quaternary).frame(height: 18)
+                    }
+                    .redacted(reason: .placeholder)
+                    .accessibilityHidden(true)
+                }
             } else {
                 StatsUnavailableNote()
             }
@@ -394,5 +399,18 @@ struct AnalysisExplorerSection: View {
             }
         }
         .task(id: epd) { model.document.requestStats(for: epd) }
+    }
+
+    private func row(san: String, games: String, share: String,
+                     @ViewBuilder bar: () -> some View) -> some View {
+        HStack(spacing: 10) {
+            Text(san).frame(width: 56, alignment: .leading)
+            Text(games).monospacedDigit()
+                .frame(width: 56, alignment: .trailing)
+            Text(share).monospacedDigit()
+                .foregroundStyle(.secondary)
+                .frame(width: 40, alignment: .trailing)
+            bar()
+        }
     }
 }

@@ -53,7 +53,8 @@ extension View {
     }
 }
 
-/// White / draw / black result bar.
+/// White / draw / black result bar. Each part shows its share when the number fits in it, as
+/// in the Lichess explorer.
 struct ScoreBar: View {
     let white: Int64
     let draws: Int64
@@ -63,17 +64,29 @@ struct ScoreBar: View {
         let total = max(white + draws + black, 1)
         GeometryReader { geo in
             HStack(spacing: 0) {
-                Rectangle().fill(Color(white: 0.96))
+                part(white, of: total, fill: Color(white: 0.96), text: .black)
                     .frame(width: geo.size.width * CGFloat(white) / CGFloat(total))
-                Rectangle().fill(Color(white: 0.6))
+                part(draws, of: total, fill: Color(white: 0.6), text: .white)
                     .frame(width: geo.size.width * CGFloat(draws) / CGFloat(total))
-                Rectangle().fill(Color(white: 0.15))
+                part(black, of: total, fill: Color(white: 0.15), text: .white)
             }
             .clipShape(.rect(cornerRadius: 3))
             .overlay(RoundedRectangle(cornerRadius: 3).stroke(.quaternary, lineWidth: 0.5))
         }
-        .frame(height: 8)
+        .frame(height: 18)
         .accessibilityLabel("White \(white * 100 / total)%, draws \(draws * 100 / total)%, black \(black * 100 / total)%")
+    }
+
+    private func part(_ games: Int64, of total: Int64, fill: Color, text: Color) -> some View {
+        fill.overlay {
+            ViewThatFits(in: .horizontal) {
+                Text(Format.percent(Double(games) / Double(total)))
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(text)
+                    .padding(.horizontal, 2)
+                Color.clear
+            }
+        }
     }
 }
 

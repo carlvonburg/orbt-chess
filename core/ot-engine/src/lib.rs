@@ -45,7 +45,7 @@ pub trait EngineBackend: Send {
     fn write(&mut self, line: &str) -> Result<(), EngineError>;
     /// Commands to send after `uci`, e.g. the network file.
     fn setup(&self) -> Vec<String>;
-    /// "Stockfish 19", "Stockfish 19 · 1 MB net".
+    /// Short, as lichess shows it, with the net's size: "SF 19 · 94 MB", "SF 19 · 1 MB".
     fn name(&self) -> String;
 }
 
@@ -207,8 +207,8 @@ impl EngineBackend for Stockfish {
 
     fn name(&self) -> String {
         match self.flavour {
-            Flavour::Light => "Stockfish 19 · 1 MB net".into(),
-            Flavour::Full(_) => "Stockfish 19".into(),
+            Flavour::Light => "SF 19 · 1 MB".into(),
+            Flavour::Full(_) => "SF 19 · 94 MB".into(),
         }
     }
 }
