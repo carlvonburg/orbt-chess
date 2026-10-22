@@ -21,6 +21,16 @@ extension View {
         self
         #endif
     }
+
+    /// The outline a long-press lifts above the context menu (iPhone and iPad; a macOS context
+    /// menu has no preview).
+    func contextMenuPreviewShape(_ shape: some Shape) -> some View {
+        #if os(iOS)
+        contentShape(.contextMenuPreview, shape)
+        #else
+        self
+        #endif
+    }
 }
 
 /// A regular-width window: iPad (not Slide Over or a narrow window) and every Mac window.

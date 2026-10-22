@@ -430,7 +430,7 @@ struct AnalysisMoveList: View {
         .buttonStyle(.borderless)
         .tint(.primary)
         // Long-press lifts this move only, not the row it shares with the other side's move.
-        .contentShape(.contextMenuPreview, .rect(cornerRadius: 6))
+        .contextMenuPreviewShape(.rect(cornerRadius: 6))
         .contextMenu { menu(move) }
     }
 
