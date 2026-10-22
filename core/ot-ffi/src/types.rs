@@ -530,6 +530,7 @@ pub enum RetentionPeriod {
 #[uniffi::remote(Record)]
 pub struct Today {
     pub answer_count: i64,
+    pub card_count: i64,
     pub answer_millis: i64,
     pub correct_count: i64,
     pub mature_count: i64,

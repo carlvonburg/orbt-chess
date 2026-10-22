@@ -14,3 +14,6 @@ crates). Each entry says why.
 - **Day numbers from a fixed epoch (1 Jan 2020 local time)**, not the collection's creation,
   so every device and repertoire agrees. The platform computes them, as Anki takes the UTC
   offset from its caller.
+- **Today's stats also count distinct moves (`Today::card_count`)**, which Anki's today
+  graph doesn't: the library's progress ring sets the moves answered today against those
+  still due, and answers alone count a relearned move twice.

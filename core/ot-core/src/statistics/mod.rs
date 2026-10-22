@@ -56,6 +56,9 @@ impl GraphRange {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Today {
     pub answer_count: i64,
+    /// Moves answered today, each once however often it was answered (an addition to
+    /// Anki's today stats: today's progress against the moves still due).
+    pub card_count: i64,
     pub answer_millis: i64,
     pub correct_count: i64,
     pub mature_count: i64,
@@ -307,12 +310,14 @@ impl GraphsContext {
     pub fn today(&self) -> Today {
         let mut today = Today::default();
         let start = (self.next_day_start() - 86_400) * 1000;
+        let mut cards = BTreeSet::new();
         for review in self
             .revlog
             .iter()
             .filter(|r| r.id >= start && is_scheduling(r))
         {
             today.answer_count += 1;
+            cards.insert(&review.cid);
             today.answer_millis += review.time;
             if review.ease > 1 {
                 today.correct_count += 1;
@@ -331,6 +336,7 @@ impl GraphsContext {
                 RevlogReviewKind::Manual | RevlogReviewKind::Rescheduled => {}
             }
         }
+        today.card_count = cards.len() as i64;
         today
     }
 

@@ -40,6 +40,8 @@ fn today_and_retention() {
     let graphs = GraphsContext::new(vec![], 0, 0, revlog, timing(), 0);
     let today = graphs.today();
     assert_eq!(today.answer_count, 3);
+    // three answers, all to the same move
+    assert_eq!(today.card_count, 1);
     assert_eq!(today.correct_count, 2);
     assert!(today.mature_count == 1 && today.mature_correct == 0);
     assert!(today.learn_count == 1 && today.review_count == 2);

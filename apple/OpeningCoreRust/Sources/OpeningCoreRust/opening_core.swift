@@ -8515,6 +8515,7 @@ public func FfiConverterTypeSummary_lower(_ value: Summary) -> RustBuffer {
 
 public struct Today: Equatable, Hashable {
     public var answerCount: Int64
+    public var cardCount: Int64
     public var answerMillis: Int64
     public var correctCount: Int64
     public var matureCount: Int64
@@ -8526,8 +8527,9 @@ public struct Today: Equatable, Hashable {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(answerCount: Int64, answerMillis: Int64, correctCount: Int64, matureCount: Int64, matureCorrect: Int64, learnCount: Int64, reviewCount: Int64, relearnCount: Int64, earlyReviewCount: Int64) {
+    public init(answerCount: Int64, cardCount: Int64, answerMillis: Int64, correctCount: Int64, matureCount: Int64, matureCorrect: Int64, learnCount: Int64, reviewCount: Int64, relearnCount: Int64, earlyReviewCount: Int64) {
         self.answerCount = answerCount
+        self.cardCount = cardCount
         self.answerMillis = answerMillis
         self.correctCount = correctCount
         self.matureCount = matureCount
@@ -8555,6 +8557,7 @@ public struct FfiConverterTypeToday: FfiConverterRustBuffer {
         return
             try Today(
                 answerCount: FfiConverterInt64.read(from: &buf), 
+                cardCount: FfiConverterInt64.read(from: &buf), 
                 answerMillis: FfiConverterInt64.read(from: &buf), 
                 correctCount: FfiConverterInt64.read(from: &buf), 
                 matureCount: FfiConverterInt64.read(from: &buf), 
@@ -8568,6 +8571,7 @@ public struct FfiConverterTypeToday: FfiConverterRustBuffer {
 
     public static func write(_ value: Today, into buf: inout [UInt8]) {
         FfiConverterInt64.write(value.answerCount, into: &buf)
+        FfiConverterInt64.write(value.cardCount, into: &buf)
         FfiConverterInt64.write(value.answerMillis, into: &buf)
         FfiConverterInt64.write(value.correctCount, into: &buf)
         FfiConverterInt64.write(value.matureCount, into: &buf)
