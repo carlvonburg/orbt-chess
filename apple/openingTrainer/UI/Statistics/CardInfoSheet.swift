@@ -53,7 +53,6 @@ struct CardInfoSheet: View {
             }
             .task { revlog = await document.reviewLog() }
             .navigationTitle("Move Info")
-            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", systemImage: "checkmark") { dismiss() }

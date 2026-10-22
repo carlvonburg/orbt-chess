@@ -81,12 +81,14 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
-            .inlineNavigationTitle()
+            #if os(iOS)
+            // A sheet on iPhone and iPad; the Mac's Settings window closes like any window.
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", systemImage: "checkmark") { dismiss() }
                 }
             }
+            #endif
             .onAppear { cacheCount = model.stats.entryCount }
         }
     }

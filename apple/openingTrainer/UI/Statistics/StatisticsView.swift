@@ -19,8 +19,7 @@ struct StatisticsView: View {
         NavigationStack {
             ScrollView {
                 StatisticsCards(model: model)
-                    .padding(.horizontal)
-                    .padding(.bottom, 24)
+                    .scenePadding()
             }
             .navigationTitle("Statistics")
             .navigationSubtitle(scopeTitle)

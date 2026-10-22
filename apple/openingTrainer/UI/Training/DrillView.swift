@@ -246,7 +246,6 @@ struct DrillView: View {
         // In the split view the repertoire, as in Browse; the board column names the mode.
         .navigationTitle(inSplitView ? model.document.name : model.mode.title)
         .modifier(Subtitle(text: inSplitView ? nil : model.document.name))
-        .inlineNavigationTitle()
         .toolbar {
             // In the split view the counts are in the panel, with what each means.
             if !model.finished && !inSplitView {
@@ -254,7 +253,6 @@ struct DrillView: View {
                     StudyCountsView(counts: model.counts, highlight: model.askedKind)
                         .font(.subheadline.monospacedDigit().weight(.semibold))
                 }
-                .sharedBackgroundVisibility(.hidden)
             }
             if !model.finished {
                 // In the split view the actions are in the panel's bar, as in the builder.

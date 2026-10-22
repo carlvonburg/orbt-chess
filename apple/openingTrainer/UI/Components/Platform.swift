@@ -4,38 +4,10 @@ import SwiftUI
 // placements, with what macOS uses instead.
 
 extension View {
-    /// An inline navigation title on iPhone and iPad; macOS shows titles in the window.
-    func inlineNavigationTitle() -> some View {
-        #if os(iOS)
-        navigationBarTitleDisplayMode(.inline)
-        #else
-        self
-        #endif
-    }
-
-    /// A large title on the leading side of the bar (iPadOS 26, like Mail and Notes);
-    /// macOS shows titles in the window.
-    func leadingNavigationTitle() -> some View {
-        #if os(iOS)
-        toolbarTitleDisplayMode(.inlineLarge)
-        #else
-        self
-        #endif
-    }
-
     /// Hides the tab bar on a pushed screen with its own actions (iPhone and iPad).
     func hidesTabBar() -> some View {
         #if os(iOS)
         toolbarVisibility(.hidden, for: .tabBar)
-        #else
-        self
-        #endif
-    }
-
-    /// A sheet's size on macOS, where sheets otherwise shrink to their content.
-    func sheetFrame() -> some View {
-        #if os(macOS)
-        frame(minWidth: 480, idealWidth: 560, minHeight: 480, idealHeight: 640)
         #else
         self
         #endif

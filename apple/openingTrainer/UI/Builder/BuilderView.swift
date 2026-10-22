@@ -13,7 +13,7 @@ struct BuilderView: View {
     let presentation: BuilderPresentation
 
     enum Sheet: String, Identifiable {
-        case outline, gaps, note, settings, cardInfo
+        case outline, gaps, note, cardInfo
         var id: String { rawValue }
     }
 
@@ -56,10 +56,9 @@ struct BuilderView: View {
         // The menu bar's Move commands act on this builder, unless a sheet has the keys.
         .focusedSceneValue(\.builder, presentation.sheet == nil ? model : nil)
         .navigationTitle(document.name)
-        .inlineNavigationTitle()
         .toolbar { toolbar }
         .hidesTabBar()
-        .sheet(item: $presentation.sheet) { sheet in sheetContent(sheet).sheetFrame() }
+        .sheet(item: $presentation.sheet) { sheet in sheetContent(sheet).presentationSizing(.form) }
         .webPage($presentation.analysis)
         .navigationDestination(item: $presentation.drill) { request in
             DrillScreen(document: document, mode: request.mode)
@@ -139,7 +138,6 @@ struct BuilderView: View {
             ToolbarItem(placement: actions) {
                 Button { model.saveDraft() } label: {
                     Label(model.draft.count == 1 ? "Save" : "Save \(model.draft.count)", systemImage: "checkmark")
-                        .labelStyle(.titleAndIcon)
                 }
                 .buttonStyle(.glassProminent)
             }
@@ -170,8 +168,6 @@ struct BuilderView: View {
         case .note:
             NoteSheet(document: document, node: model.current)
                 .presentationDetents([.medium, .large])
-        case .settings:
-            RepertoireSettingsSheet(document: document)
         case .cardInfo:
             CardInfoSheet(document: document, node: model.current)
                 .presentationDetents([.medium, .large])
@@ -230,8 +226,6 @@ struct BuilderMoreMenu: View {
                 .disabled(document.tree[model.current].flatMap { document.sidecar.studyCards[$0.epd] } == nil
                           || document.tree[model.current]?.sideToMove != document.color)
             Button("Flip Board", systemImage: "arrow.up.arrow.down") { model.orientation = model.orientation.opposite }
-            Divider()
-            Button("Repertoire Settings", systemImage: "gearshape") { presentation.sheet = .settings }
         }
     }
 }
@@ -303,7 +297,7 @@ struct BuilderBoardColumn: View {
     let model: BuilderModel
 
     var body: some View {
-        BoardColumnLayout(belowHeight: 0) {
+        BoardColumnLayout {
             BuilderBoard(model: model)
         } below: {
             EmptyView()
@@ -638,6 +632,8 @@ struct ReplyRow: View {
                     Text("Gap").font(.caption2.weight(.bold)).foregroundStyle(.white)
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(.orange, in: .capsule)
+                        // A tag: in a narrow column the row's other parts give way, not its letters.
+                        .fixedSize()
                 }
                 Spacer()
                 Text(Format.seenEvery(reply.reach)).font(.caption.monospacedDigit())

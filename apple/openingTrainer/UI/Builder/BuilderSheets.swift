@@ -32,7 +32,6 @@ struct OutlineSheet: View {
             }
             .searchable(text: $search, prompt: "Find a move, e.g. Nf3")
             .navigationTitle("Outline")
-            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", systemImage: "checkmark") { dismiss() }
@@ -123,7 +122,6 @@ struct GapsSheet: View {
                 }
             }
             .navigationTitle("\(gaps.count) Gaps")
-            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", systemImage: "checkmark") { dismiss() }
@@ -148,7 +146,6 @@ struct NoteSheet: View {
             TextEditor(text: $text)
                 .padding(.horizontal)
                 .navigationTitle(document.tree.lineText(to: node).split(separator: " ").suffix(2).joined(separator: " "))
-                .inlineNavigationTitle()
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel", systemImage: "xmark") { dismiss() }

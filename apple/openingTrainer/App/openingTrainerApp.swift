@@ -33,6 +33,14 @@ struct OpeningTrainerApp: App {
                 }
             }
         }
+        #if os(macOS)
+        // Opening Trainer > Settings… (⌘,), as on every Mac app.
+        Settings {
+            SettingsView()
+                .environment(model)
+                .frame(width: 480, height: 600)
+        }
+        #endif
     }
 
     /// Saves pending changes when the app leaves the foreground. On iOS a background task

@@ -24,6 +24,17 @@ enum LibraryRoute: Hashable {
     case branch(String, NodeID)
 }
 
+extension LibraryRoute {
+    /// The repertoire the screen shows; nil for Study All.
+    var entryID: String? {
+        switch self {
+        case .overview(let id), .builder(let id), .study(let id), .learnMore(let id), .gaps(let id),
+             .practice(let id), .browse(let id, _), .branch(let id, _): id
+        case .studyAll: nil
+        }
+    }
+}
+
 extension EnvironmentValues {
     /// Opens Browse or Study from another screen (set by the library). Only the screen it is
     /// opened from stays under it, so switching back and forth doesn't pile up screens.
@@ -34,6 +45,10 @@ extension EnvironmentValues {
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.horizontalSizeClass) private var sizeClass
+    /// The split view's sidebar selection; the phone has none (its path starts at the overview).
+    @State private var selection: SidebarItem? = .today
+    /// The screens pushed: on a phone onto the library, in the split view onto the selection
+    /// (the middle column).
     @State private var path: [LibraryRoute] = []
     /// The models of the Browse and Study screens on the path.
     @State private var screens = LibraryScreens()
@@ -44,19 +59,30 @@ struct LibraryView: View {
     @State private var deleteEntry: RepertoireEntry?
     @State private var sheet: EntrySheet?
     @State private var errorMessage: String?
+    /// iPhone and iPad: Settings is a sheet from the library's bar. The Mac has it in the
+    /// app menu (the `Settings` scene).
     @State private var showSettings = false
     @State private var today = LibraryTodayModel()
-    @AppStorage("library.sort") private var sort = LibrarySort.name
-    @AppStorage("library.side") private var sideFilter = LibrarySideFilter.all
-    @AppStorage("library.onlyGaps") private var onlyGaps = false
-    @AppStorage("library.onlyDue") private var onlyDue = false
 
     var body: some View {
         Group {
-            if isRegularWidth(sizeClass) && !model.library.entries.isEmpty { split } else { stack }
+            if usesSplit { split } else { stack }
+        }
+        // An iPad window resized across the size classes keeps what it shows.
+        .onChange(of: usesSplit) { _, split in
+            if split {
+                if case .overview(let id) = path.first {
+                    selection = .repertoire(id)
+                    path.removeFirst()
+                } else {
+                    selection = .today
+                }
+            } else if case .repertoire(let id) = selection {
+                path.insert(.overview(id), at: 0)
+            }
         }
         .sheet(isPresented: $showSettings) {
-            SettingsView().sheetFrame()
+            SettingsView().presentationSizing(.form)
         }
         .sheet(item: $sheet) { sheet in
             OpenDocument(entry: sheet.entry) { doc in
@@ -67,18 +93,18 @@ struct LibraryView: View {
             } placeholder: {
                 ProgressView("Opening \(sheet.entry.name)…")
             }
-            .sheetFrame()
+            .presentationSizing(.form)
         }
         .sheet(isPresented: $showNew) {
             NewRepertoireSheet { entry in show(entry.id, then: [.builder(entry.id)]) }
-                .sheetFrame()
+                .presentationSizing(.form)
         }
         .sheet(item: $setupEntry) { entry in
             SetupSheet(title: "Set up \(entry.name)") { sidecar in
                 try model.library.saveSidecar(sidecar, for: entry)
                 show(entry.id, then: [])
             }
-            .sheetFrame()
+            .presentationSizing(.form)
         }
         .fileImporter(isPresented: $showImport, allowedContentTypes: [.pgn, .plainText]) { result in
             do {
@@ -107,8 +133,7 @@ struct LibraryView: View {
         }
     }
 
-    /// The library, then each screen pushed on top: the whole app on a phone, the left column
-    /// of the split view on iPad and Mac.
+    /// The library, then each screen pushed on top: the whole app on a phone.
     private var stack: some View {
         NavigationStack(path: $path) {
             content
@@ -133,21 +158,100 @@ struct LibraryView: View {
         }
     }
 
-    /// iPad and Mac, like Mail: the library's stack on the left (the library, a repertoire's
-    /// overview, Browse's and Study's panels); on the right the board of the screen on top, or
-    /// the statistics of the overview (or of every repertoire). Each column has its own bar.
+    /// A regular-width window (iPad, Mac) with repertoires to show.
+    private var usesSplit: Bool {
+        isRegularWidth(sizeClass) && !model.library.entries.isEmpty
+    }
+
+    /// iPad and Mac, like Mail: the repertoires in the sidebar, selected rather than pushed
+    /// (macOS 26 lays a scroll view pushed onto a stack in a sidebar out under an inset as tall
+    /// as the column, so it shows nothing). In the middle the selection: Today, or the
+    /// repertoire's overview with Browse's and Study's panels pushed on it; on the right the
+    /// board of the screen on top, else the statistics (of every repertoire for Today).
     private var split: some View {
         NavigationSplitView(columnVisibility: $columns) {
-            stack
-                .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 480)
+            content
+                .navigationTitle("Repertoires")
+                .toolbar { libraryToolbar }
+        } content: {
+            NavigationStack(path: $path) {
+                middleRoot
+                    .navigationDestination(for: LibraryRoute.self, destination: route)
+            }
         } detail: {
             NavigationStack {
                 BoardColumnView(board: board, statisticsScope: statisticsScope)
             }
         }
-        // Side by side in portrait too: the left column holds Browse's and Study's panels.
-        .navigationSplitViewStyle(.balanced)
         .environment(\.inSplitView, true)
+        .environment(\.openScreen, openScreen)
+    }
+
+    /// The sidebar's selection as the list sets it: choosing another item starts its column
+    /// afresh. (The list sets it again when it redraws, so only a change does.)
+    private var sidebarSelection: Binding<SidebarItem?> {
+        Binding(get: {
+            if case .repertoire(let id) = selection { .repertoire(model.currentID(id)) } else { selection }
+        }, set: { item in
+            guard let item, item != selection else { return }
+            select(item, then: [])
+        })
+    }
+
+    /// The middle column's root: Today, or the selected repertoire's overview.
+    @ViewBuilder
+    private var middleRoot: some View {
+        if case .repertoire(let id) = selection {
+            route(.overview(id))
+                .id(model.currentID(id))
+        } else {
+            todayColumn
+        }
+    }
+
+    /// Today in the middle column: the card with Study All, then each repertoire's due moves.
+    private var todayColumn: some View {
+        let stats = entryStats
+        return List {
+            Section {
+                TodayProgress(studied: Int(today.today?.cardCount ?? 0),
+                              due: Int(stats.values.reduce(0) { $0 + $1.counts.total }))
+            }
+            Section { todayCard(stats) }
+        }
+        .navigationTitle("Today")
+    }
+
+    /// What the sidebar selects: today across every repertoire, or one repertoire.
+    private enum SidebarItem: Hashable {
+        case today
+        case repertoire(String)
+    }
+
+    /// Today across every repertoire, with Study All: atop the library on a phone, in the
+    /// middle column when Today is selected in the split view.
+    private func todayCard(_ stats: [String: EntryStats]) -> some View {
+        TodayCard(entries: model.library.entries.filter { !$0.needsSetup }.map { ($0, stats[$0.id]!) },
+                  today: today.today, streak: today.streak,
+                  studyAll: { open(.studyAll(studyAllEntries)) }, open: open)
+    }
+
+    /// Opens a screen from Today: pushed on a phone; in the split view the repertoire is
+    /// selected and the screen pushed on its overview (Study All on Today).
+    private func open(_ route: LibraryRoute) {
+        guard usesSplit else { return go(to: path + [route]) }
+        if let id = route.entryID { return show(id, then: [route]) }
+        select(.today, then: [route])
+    }
+
+    /// Selects `item` in the split view, then pushes `routes` on it. Another item's screens go
+    /// at once, so they never show over the new selection.
+    private func select(_ item: SidebarItem, then routes: [LibraryRoute]) {
+        if item != selection {
+            selection = item
+            path = []
+        }
+        go(to: routes)
     }
 
     /// The board of the screen on top: Browse's or Study's, none over an overview.
@@ -155,29 +259,26 @@ struct LibraryView: View {
         path.last.flatMap { screens.screen(for: $0)?.board }
     }
 
-    /// Opens a screen from Browse or Study: the overview stays, then only the screen it is
-    /// opened from.
+    /// Opens a screen from Browse or Study: the overview stays (on a phone the path's first
+    /// screen, in the split view the middle column's root), then only the screen it is opened
+    /// from.
     private func openScreen(_ route: LibraryRoute) {
         let overview = path.prefix { if case .overview = $0 { true } else { false } }
         go(to: Array(overview) + Array(path.dropFirst(overview.count).suffix(1)) + [route])
     }
 
-    /// The statistics beside the library (every repertoire) or a repertoire's screens.
+    /// The statistics beside Today (every repertoire) or the selected repertoire.
     private var statisticsScope: StatisticsModel.Scope {
-        for route in path.reversed() {
-            if case .overview(let id) = route { return .repertoire(model.currentID(id)) }
-        }
-        return .all
+        if case .repertoire(let id) = selection { .repertoire(model.currentID(id)) } else { .all }
     }
 
     @ToolbarContentBuilder
     private var libraryToolbar: some ToolbarContent {
+        #if os(iOS)
         ToolbarItem(placement: .leadingBar) {
             Button("Settings", systemImage: "gearshape") { showSettings = true }
         }
-        if !model.library.entries.isEmpty {
-            ToolbarItem(placement: .trailingBar) { filterMenu }
-        }
+        #endif
         ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button("New Repertoire", systemImage: "plus") { showNew = true }
@@ -221,14 +322,19 @@ struct LibraryView: View {
         }
     }
 
-    /// A repertoire's overview, then the given screens on top of it.
+    /// A repertoire's overview, then the given screens on top of it: in the split view the
+    /// repertoire selected.
     private func show(_ id: String, then routes: [LibraryRoute]) {
-        go(to: [.overview(id)] + routes)
+        if usesSplit {
+            select(.repertoire(id), then: routes)
+        } else {
+            go(to: [.overview(id)] + routes)
+        }
     }
 
     /// The repertoires, by side, checked on the one shown; choosing one shows its overview.
     private func repertoireSwitcher(_ id: String) -> some View {
-        Picker("Repertoire", selection: Binding(get: { model.currentID(id) }, set: { path = [.overview($0)] })) {
+        Picker("Repertoire", selection: Binding(get: { model.currentID(id) }, set: { show($0, then: []) })) {
             ForEach(LibraryGroup.allCases) { group in
                 let entries = model.library.entries.filter { group.contains($0) && !$0.needsSetup }
                 if !entries.isEmpty {
@@ -267,43 +373,46 @@ struct LibraryView: View {
             WelcomeView(usesICloud: library.usesICloud, newRepertoire: { showNew = true }, importPGN: { showImport = true })
         } else {
             let stats = entryStats
-            List {
-                if !model.auth.isSignedIn {
-                    SignInBanner()
-                }
-                Section {
-                    TodayCard(entries: library.entries.filter { !$0.needsSetup }.map { ($0, stats[$0.id]!) },
-                              today: today.today, streak: today.streak,
-                              studyAll: { go(to: path + [.studyAll(studyAllEntries)]) }, open: { go(to: path + [$0]) })
-                }
-                let shown = visibleEntries(stats)
-                if shown.isEmpty {
-                    ContentUnavailableView {
-                        Label("No matching repertoires", systemImage: "line.3.horizontal.decrease.circle")
-                    } actions: {
-                        Button("Clear Filters") { clearFilters() }
-                            .buttonStyle(.bordered)
-                    }
-                }
-                // Grouped by side, as Chessbook does; the sort applies within each group.
-                ForEach(LibraryGroup.allCases) { group in
-                    let entries = shown.filter { group.contains($0) }
-                    if !entries.isEmpty {
-                        Section(group.title) {
-                            ForEach(entries) { entry in
-                                row(entry, stats[entry.id]!)
-                                    .swipeActions {
-                                        Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
-                                    }
-                                    .contextMenu { if !entry.needsSetup { menu(entry) } }
-                            }
-                        }
-                    }
+            Group {
+                if usesSplit {
+                    List(selection: sidebarSelection) { rows(stats) }
+                } else {
+                    List { rows(stats) }
                 }
             }
             .refreshable { await library.refresh() }
             .task(id: TodayKey(entries: library.entries.count, answered: stats.values.reduce(0) { $0 + $1.counts.total })) {
                 await today.load(model)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func rows(_ stats: [String: EntryStats]) -> some View {
+        if !model.auth.isSignedIn {
+            SignInBanner()
+        }
+        if usesSplit {
+            // Today's card is in the middle column when this row is selected.
+            Label("Today", systemImage: "calendar")
+                .badge(Int(stats.values.reduce(0) { $0 + $1.counts.total }))
+                .tag(SidebarItem.today)
+        } else {
+            Section("Today") { todayCard(stats) }
+        }
+        // Grouped by side, as Chessbook does; by name within each group.
+        ForEach(LibraryGroup.allCases) { group in
+            let entries = model.library.entries.filter { group.contains($0) }
+            if !entries.isEmpty {
+                Section(group.title) {
+                    ForEach(entries) { entry in
+                        row(entry, stats[entry.id]!)
+                            .swipeActions {
+                                Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
+                            }
+                            .contextMenu { if !entry.needsSetup { menu(entry) } }
+                    }
+                }
             }
         }
     }
@@ -329,59 +438,6 @@ struct LibraryView: View {
         Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
     }
 
-    // MARK: Filter and sort
-
-    private var filtersActive: Bool { sideFilter != .all || onlyGaps || onlyDue }
-
-    private func clearFilters() {
-        sideFilter = .all
-        onlyGaps = false
-        onlyDue = false
-    }
-
-    private var filterMenu: some View {
-        Menu {
-            Picker("Sort By", selection: $sort) {
-                ForEach(LibrarySort.allCases) { Label($0.title, systemImage: $0.icon).tag($0) }
-            }
-            Section("Show") {
-                Picker("Side", selection: $sideFilter) {
-                    ForEach(LibrarySideFilter.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                Toggle("Has Gaps", systemImage: "exclamationmark.circle", isOn: $onlyGaps)
-                Toggle("Due for Review", systemImage: "clock", isOn: $onlyDue)
-            }
-            if filtersActive {
-                Button("Clear Filters", systemImage: "xmark.circle") { clearFilters() }
-            }
-        } label: {
-            Label("Filter and Sort", systemImage: filtersActive
-                  ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-        }
-    }
-
-    private func visibleEntries(_ stats: [String: EntryStats]) -> [RepertoireEntry] {
-        let all = model.library.entries
-        let filtered = all.filter { entry in
-            if !filtersActive { return true }
-            guard let s = stats[entry.id] else { return false }
-            // A PGN that is not set up yet has no side or progress to filter by.
-            guard let side = entry.sidecar?.color() else { return false }
-            if let wanted = sideFilter.side, side != wanted { return false }
-            if onlyGaps && s.gaps == 0 { return false }
-            if onlyDue && s.due == 0 { return false }
-            return true
-        }
-        // library.entries is already sorted by name, and Swift's sort is stable.
-        switch sort {
-        case .name: return filtered
-        case .gaps: return filtered.sorted { stats[$0.id]!.gaps > stats[$1.id]!.gaps }
-        case .due: return filtered.sorted { stats[$0.id]!.due > stats[$1.id]!.due }
-        case .built: return filtered.sorted { stats[$0.id]!.completion < stats[$1.id]!.completion }
-        }
-    }
-
     @ViewBuilder
     private func row(_ entry: RepertoireEntry, _ stats: EntryStats) -> some View {
         if entry.needsSetup {
@@ -389,6 +445,8 @@ struct LibraryView: View {
                 LibraryRow(entry: entry, stats: stats, status: entry.isDownloading ? "Downloading from iCloud…" : "New PGN. Tap to set it up.")
             }
             .tint(.primary)
+        } else if usesSplit {
+            LibraryRow(entry: entry, stats: stats).tag(SidebarItem.repertoire(entry.id))
         } else {
             NavigationLink(value: LibraryRoute.overview(entry.id)) {
                 LibraryRow(entry: entry, stats: stats)
@@ -431,15 +489,13 @@ private struct BoardColumnView: View {
                 ScrollView {
                     InlineStatistics(scope: statisticsScope)
                         .id(statisticsScope)
-                        .padding(.horizontal)
-                        .padding(.bottom, 24)
+                        .scenePadding()
                 }
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { columnWidth = $0 }
         // The left column names the repertoire; this column what it shows.
         .navigationTitle(title)
-        .leadingNavigationTitle()
         .toolbar {
             if case .builder(let model, let presentation) = board {
                 // Move navigation under the board (the top bar's leading side is the title's), as
@@ -475,6 +531,31 @@ private struct EntrySheet: Identifiable {
     let entry: RepertoireEntry
     let kind: Kind
     var id: String { "\(entry.id)-\(kind)" }
+}
+
+/// Today's progress in the split view's Today column: the moves studied today against those
+/// still due, as a ring.
+private struct TodayProgress: View {
+    let studied: Int
+    let due: Int
+
+    var body: some View {
+        HStack(spacing: 16) {
+            Gauge(value: Double(studied), in: 0...Double(max(studied + due, 1))) {
+                Text("Today")
+            } currentValueLabel: {
+                Text(studied.formatted())
+            }
+            .gaugeStyle(.accessoryCircularCapacity)
+            .tint(due == 0 ? .green : .blue)
+            VStack(alignment: .leading) {
+                Text("\(studied.formatted()) of \((studied + due).formatted()) moves").font(.headline)
+                Text(due == 0 ? "Done for today" : "\(due.formatted()) still due")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
 }
 
 /// Today across all repertoires: Anki's due totals and "Studied N cards in M minutes today".
@@ -529,8 +610,12 @@ private struct TodayCard: View {
         VStack(alignment: .leading, spacing: 8) {
             switch phase {
             case .due:
-                header { Text("Today") } trailing: { dueCounts }
-                Text(studiedText).font(.footnote).foregroundStyle(.secondary)
+                // Titled by what holds it: the library's Today section, or the Today column.
+                HStack(alignment: .firstTextBaseline) {
+                    Text(studiedText).font(.footnote).foregroundStyle(.secondary)
+                    Spacer()
+                    dueCounts
+                }
                 if streak.current > 0 { streakLabel }
                 Button("Study All", action: studyAll)
                     .buttonStyle(.borderedProminent)
@@ -825,34 +910,6 @@ private enum LibraryGroup: String, CaseIterable, Identifiable {
     }
 }
 
-enum LibrarySort: String, CaseIterable, Identifiable {
-    case name, gaps, due, built
-    var id: Self { self }
-    var title: String {
-        switch self {
-        case .name: "Name"
-        case .gaps: "Most Gaps"
-        case .due: "Most Due"
-        case .built: "Least Built"
-        }
-    }
-    var icon: String {
-        switch self {
-        case .name: "textformat"
-        case .gaps: "exclamationmark.circle"
-        case .due: "clock"
-        case .built: "chart.bar"
-        }
-    }
-}
-
-enum LibrarySideFilter: String, CaseIterable, Identifiable {
-    case all, white, black
-    var id: Self { self }
-    var title: String { self == .all ? "All" : rawValue.capitalized }
-    var side: Side? { self == .all ? nil : Side(rawValue: rawValue) }
-}
-
 /// Progress of one repertoire: live from the open document, else from the sidecar.
 struct EntryStats {
     var completion = 0.0
@@ -953,7 +1010,6 @@ struct NewRepertoireSheet: View {
                 }
             }
             .navigationTitle("New Repertoire")
-            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }
@@ -991,7 +1047,6 @@ struct SetupSheet: View {
                 if let error { Text(error).foregroundStyle(.red) }
             }
             .navigationTitle(title)
-            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }
@@ -1047,7 +1102,6 @@ struct RepertoireSettingsSheet: View {
                 }
             }
             .navigationTitle("Repertoire Settings")
-            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }
@@ -1094,7 +1148,6 @@ struct StudyOptionsSheet: View {
                 DailyPracticeSection(draft: $practice)
             }
             .navigationTitle("\(document.name) Options")
-            .inlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", systemImage: "xmark") { dismiss() }

@@ -33,7 +33,6 @@ struct RepertoireOverviewView: View {
         // A detail screen with its own actions at the bottom, like the study screen.
         .hidesTabBar()
         .navigationTitle(document.name)
-        .inlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("Repertoire Settings", systemImage: "gearshape") { sheet = .settings }
@@ -46,7 +45,7 @@ struct RepertoireOverviewView: View {
                 case .options: StudyOptionsSheet(document: document)
                 }
             }
-            .sheetFrame()
+            .presentationSizing(.form)
         }
         .task(id: document.revision) {
             let revlog = await document.reviewLog()
@@ -150,9 +149,6 @@ struct RepertoireOverviewView: View {
                 Text("Study")
                 Spacer()
                 Button("Options", systemImage: "slider.horizontal.3") { sheet = .options }
-                    .labelStyle(.titleAndIcon)
-                    .font(.subheadline)
-                    .textCase(nil)
             }
         }
     }
