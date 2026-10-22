@@ -468,8 +468,8 @@ struct LibraryView: View {
 private struct BoardColumnView: View {
     let board: LibraryScreens.Board?
     let statisticsScope: StatisticsModel.Scope
-    /// Study's Lichess analysis (Browse's is presented by its panel).
-    @State private var analysis: WebPage?
+    /// Study's analysis board (Browse's is presented by its panel).
+    @State private var analysis: AnalysisModel?
     @State private var columnWidth: CGFloat = 0
 
     /// The move history's width in the bottom bar: the column less the bar's margins, and
@@ -507,7 +507,7 @@ private struct BoardColumnView: View {
         .toolbar {
             if case .builder(let model, let presentation) = board {
                 // Move navigation under the board (the top bar's leading side is the title's), as
-                // on a phone; Lichess and the menu, which act on the board, end the top bar.
+                // on a phone; Analysis and the menu, which act on the board, end the top bar.
                 ToolbarItemGroup(placement: .bottomActions) { BuilderNavigationButtons(model: model) }
                 // A fixed width from the column: moving never resizes the bar; the moves
                 // scroll inside it.
@@ -516,7 +516,7 @@ private struct BoardColumnView: View {
                         .frame(width: historyWidth(buttons: true))
                 }
                 ToolbarItem(placement: .trailingBar) {
-                    Button("Analyze on Lichess", systemImage: "cpu") { presentation.analyze(model) }
+                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model) }
                 }
                 ToolbarSpacer(.fixed, placement: .trailingBar)
                 ToolbarItem(placement: .trailingBar) { BuilderMoreMenu(model: model, presentation: presentation) }
@@ -529,13 +529,14 @@ private struct BoardColumnView: View {
                 }
                 // Looking the move up counts as Again, as Browse in the panel does.
                 ToolbarItem(placement: .trailingBar) {
-                    Button("Analyze on Lichess", systemImage: "cpu") {
-                        analysis = WebPage(url: LichessLinks.analysis(moves: model.analysisMoves(), orientation: model.color))
+                    Button("Analysis", systemImage: "cpu") {
+                        analysis = AnalysisModel(document: model.document, moves: model.analysisMoves(),
+                                                 orientation: model.color, origin: .study)
                     }
                 }
             }
         }
-        .webPage($analysis)
+        .analysisBoard($analysis)
     }
 }
 

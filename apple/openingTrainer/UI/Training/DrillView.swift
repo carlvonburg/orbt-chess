@@ -118,7 +118,7 @@ final class DrillModel {
         changed()
     }
 
-    /// The moves to the board, for Lichess analysis. Looking counts as Again, like browsing.
+    /// The moves to the board, for the analysis board. Looking counts as Again, like browsing.
     func analysisMoves() -> [PlayedMove] {
         let result = session.analysisMoves(timing: SchedTiming(), nowMs: Self.nowMs)
         document.apply(result.changes)
@@ -183,7 +183,7 @@ struct DrillView: View {
         let node: NodeID
     }
 
-    @State private var analysis: WebPage?
+    @State private var analysis: AnalysisModel?
 
     /// The next repertoire when studying all of them: its name and how to go on.
     private let next: (name: String, start: () -> Void)?
@@ -203,7 +203,7 @@ struct DrillView: View {
         // Browsing pushes the builder on top; training goes on when it's popped.
         .onDisappear { if browsing == nil { model.stop() } }
         .checksCoverage(model.document)
-        .webPage($analysis)
+        .analysisBoard($analysis)
     }
 
     private var content: some View {
@@ -266,14 +266,15 @@ struct DrillView: View {
                     ToolbarSpacer(.flexible, placement: .bottomActions)
                 }
                 // Both leave the board to look the move up, so both count as Again. In the split
-                // view Lichess is in the board column's bar.
+                // view Analysis is in the board column's bar.
                 ToolbarItemGroup(placement: actions) {
                     Button("Browse Repertoire", systemImage: "list.bullet.indent") {
                         if let node = model.browseNode() { browse(node) }
                     }
                     if !split {
-                        Button("Analyze on Lichess", systemImage: "cpu") {
-                            analysis = WebPage(url: LichessLinks.analysis(moves: model.analysisMoves(), orientation: model.color))
+                        Button("Analysis", systemImage: "cpu") {
+                            analysis = AnalysisModel(document: model.document, moves: model.analysisMoves(),
+                                                     orientation: model.color, origin: .study)
                         }
                     }
                 }

@@ -8,15 +8,15 @@ the Lichess opening explorer. Later platforms and sync are in `FUTURE.md`.
 ## How the owner uses the app (product guidance — every feature serves this)
 1. Read a book or watch a video on an opening.
 2. Enter its moves, including the opponent responses and the branches it explains.
-3. When unsure why a move fails for the opponent, open the position in Lichess analysis
-   (one tap, keeps the move history).
+3. When unsure why a move fails for the opponent, open the position on the analysis board
+   (one tap, keeps the move history; Stockfish on the device, Lichess one more tap away).
 4. Come back and add the crucial lines they personally want to cover.
 5. Train with spaced repetition, or drill everything under one branch.
 
 Priorities, in order:
 1. See which opponent moves are not covered yet (gaps), with "seen every N games".
 2. Navigate the repertoire easily and add new lines quickly.
-3. Hand off a position to Lichess analysis in one tap.
+3. Analyse a position in one tap, from Build or Study, and bring a line back to Build.
 4. Spaced-repetition training, including training a single branch. Works offline.
 5. Separate progress for building (coverage) and for learning (cards).
 
@@ -33,7 +33,7 @@ Requirements:
 - Chessbook screenshots only show how that app works; its layout is not a template.
 
 Non-goals for now: auto gap filling, online game review, daily tasks, plans in a
-position, model games, bundled engine.
+position, model games.
 
 ## Layout
 One folder per platform around a shared core (Android and web would be `android/`, `web/`).
@@ -45,10 +45,15 @@ One folder per platform around a shared core (Android and web would be `android/
     `training` (`anki/` is Anki's scheduler; trainer, study session, line run), `statistics`
     (Anki's graphs, scoping, chess stats), `formats` (sidecar and revlog), `document` (the open repertoire: edits, undo, save hints, remote merges,
     outline/search), `builder`, `drill` (state machines behind the two main screens), `lichess`
-    (PKCE, analysis URL).
+    (PKCE, analysis URL, cloud evals), `engine` (UCI, which evaluation to show), `analysis`
+    (the analysis board's tree).
+  - `ot-engine/` — native only (never wasm): Stockfish 19 vendored from lichess's
+    dart-multistockfish (`vendor/PATCHES.md`), built with `cc`, run on a thread over pipes
+    behind `EngineBackend` (Leela would be another backend).
   - `ot-ffi/` — the UniFFI 0.32 bindings: objects (`RepertoireDoc`, `BuilderSession`,
-    `DrillSession`, `Explorer`, `Position`, `Graphs`, `LibrarySidecar`) and the core's records
-    and enums as remote types. Thin: conversions and locking only.
+    `DrillSession`, `Explorer`, `Engine`, `AnalysisSession`, `Position`, `Graphs`,
+    `LibrarySidecar`) and the core's records and enums as remote types. Thin: conversions and
+    locking only.
   - Tests: `ot-core/tests/*.rs` state the rules; `ot-core/tests/snapshot_*.rs` are insta
     snapshot tests over the inputs in `ot-core/tests/data/` and `testData/` (snapshots in
     `tests/snapshots/`; after an intended change, `cargo insta review` or
@@ -63,12 +68,12 @@ One folder per platform around a shared core (Android and web would be `android/
     a new worktree copies another worktree's xcframework when `scripts/core-fingerprint.sh`
     matches the one `build-apple.sh` recorded, instead of building).
   - `fuzz/` — cargo-fuzz targets for what the app reads (PGN, sidecar, review log, explorer
-    answers), outside the workspace; `fuzz/run.sh [seconds]` runs them all (nightly).
+    answers, engine output), outside the workspace; `fuzz/run.sh [seconds]` runs them all (nightly).
     The core must not panic or recurse per ply on any input: the app calls it on small
     stacks, and a panic or overflow in a non-throwing call crashes it on every launch.
 - `apple/` — the iPhone, iPad and Mac app (one multiplatform target, not Catalyst):
   - `openingTrainer.xcodeproj`; `openingTrainer/` is the app target (folder-synced group, new
-    files are picked up automatically): `Lichess/`, `Storage/`, `UI/`. `Config/` holds the
+    files are picked up automatically): `Engine/` (the engine service, the full net download), `Lichess/`, `Storage/`, `UI/`. `Config/` holds the
     Info.plist and the iOS and macOS entitlements (same iCloud container; macOS sandboxed).
   - The Swift side does IO and platform work only: files (NSFileCoordinator, iCloud conflict
     versions, handed to the core to merge), URLSession for the core's requests, Keychain and
@@ -126,6 +131,17 @@ copyright header naming the source files, in Rust as before in Swift (see `train
 The UI follows Anki's deck list → deck overview → deck options, and says "moves", never
 "cards". Progress uses Anki's card-count groups (learning, young, mature), not a percentage.
 Study All runs repertoires one after another (Anki would mix a parent deck's reviews).
+
+## Analysis board and engine (see `core/ot-core/src/engine`, `analysis`; `core/ot-engine`)
+Analysis opens from Build and Study on the position on the board, with its move history. Its
+tree is never saved: leaving it for Build puts the path to the selected move on the builder as
+its draft (saved moves followed, nothing written, `Builder::set_line`); leaving it for Study
+drops it (opening it counted as Again, like browsing). Evaluations: Lichess's cloud eval first;
+the local engine waits 600 ms for it, never runs where it is depth ≥ 30 with every line asked
+for, and replaces it once deeper (lichess mobile's order). Stockfish 19 runs in-process (iOS
+allows no child processes): the light flavour with its 1.1 MB net built in, or the full one
+with the 94 MB net downloaded in Settings (checked against its name first: Stockfish exits
+the process when a net does not load). Settings: search time, lines (1–5), cloud evals.
 
 ## Conventions
 - Rules belong in `ot-core`, with Rust tests; Swift never re-implements them. When the app

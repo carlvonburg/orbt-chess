@@ -109,6 +109,9 @@ final class BuilderModel {
         stamp += 1
     }
 
+    /// A line from the analysis board: its saved moves are followed, the rest is the draft.
+    func setLine(_ moves: [PlayedMove]) { act(session.setLine(moves: moves.map(\.uci))) }
+
     func delete(_ id: NodeID) { act(session.delete(id: id)) }
 
     /// Undoes the last edit; the board stays on a saved position.

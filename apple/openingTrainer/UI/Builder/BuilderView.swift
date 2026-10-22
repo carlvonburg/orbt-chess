@@ -59,7 +59,7 @@ struct BuilderView: View {
         .toolbar { toolbar }
         .hidesTabBar()
         .sheet(item: $presentation.sheet) { sheet in sheetContent(sheet).presentationSizing(.form) }
-        .webPage($presentation.analysis)
+        .analysisBoard($presentation.analysis)
         .navigationDestination(item: $presentation.drill) { request in
             DrillScreen(document: document, mode: request.mode)
         }
@@ -116,7 +116,7 @@ struct BuilderView: View {
     // MARK: Toolbar
 
     /// On a phone move navigation and the actions are in the bottom bar, the menu top
-    /// trailing. In the split view the actions are in the panel's bar; move navigation, Lichess
+    /// trailing. In the split view the actions are in the panel's bar; move navigation, Analysis
     /// and the menu, which act on the board, in the board column's.
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
@@ -130,7 +130,7 @@ struct BuilderView: View {
             // While a new line is on the board: keep it or drop it.
             ToolbarItemGroup(placement: actions) {
                 if !split {
-                    Button("Analyze on Lichess", systemImage: "cpu") { presentation.analyze(model) }
+                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model) }
                 }
                 Button("Discard", systemImage: "xmark", role: .destructive) { model.discardDraft() }
             }
@@ -148,7 +148,7 @@ struct BuilderView: View {
                 Button("Study Branch", systemImage: "graduationcap") { studyBranch(model.current) }
                 .disabled(document.learningProgress(under: model.current).cards == 0)
                 if !split {
-                    Button("Analyze on Lichess", systemImage: "cpu") { presentation.analyze(model) }
+                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model) }
                 }
             }
         }
@@ -190,20 +190,23 @@ struct BuilderScreen: View {
     }
 }
 
-/// What the builder presents: a sheet, the Lichess analysis, a branch drill. In the split view
+/// What the builder presents: a sheet, the analysis board, a branch drill. In the split view
 /// the board column's buttons set it and the panel presents it.
 @Observable
 final class BuilderPresentation {
     var sheet: BuilderView.Sheet?
-    var analysis: WebPage?
+    var analysis: AnalysisModel?
     var drill: DrillRequest?
 
     init(sheet: BuilderView.Sheet? = nil) {
         self.sheet = sheet
     }
 
+    /// The analysis board from the position on the board; leaving it puts its line on the
+    /// builder as a draft.
     func analyze(_ model: BuilderModel) {
-        analysis = WebPage(url: LichessLinks.analysis(moves: model.movesToBoard, orientation: model.orientation))
+        analysis = AnalysisModel(document: model.document, moves: model.movesToBoard,
+                                 orientation: model.orientation, origin: .build(model))
     }
 }
 
@@ -292,7 +295,7 @@ struct BuilderCommands: Commands {
 }
 
 /// The builder's board in the split view's board column. Its moves are in the column's bottom
-/// bar with move navigation; Lichess and the menu in its top bar.
+/// bar with move navigation; Analysis and the menu in its top bar.
 struct BuilderBoardColumn: View {
     let model: BuilderModel
 

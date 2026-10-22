@@ -9,6 +9,10 @@ struct SettingsView: View {
     @AppStorage(TrainingDefaults.newPerDayKey) private var newPerDay = Int(TrainingDefaults.preset.newPerDay)
     @AppStorage(TrainingDefaults.reviewsPerDayKey) private var reviewsPerDay = Int(TrainingDefaults.preset.reviewsPerDay)
     @AppStorage(TrainingDefaults.practiceModeKey) private var practiceMode = PracticeMode.default
+    @AppStorage(EngineDefaults.searchTimeKey) private var searchTime = EngineDefaults.searchTime
+    @AppStorage(EngineDefaults.linesKey) private var engineLines = EngineDefaults.lines
+    @AppStorage(EngineDefaults.cloudKey) private var cloudEvals = EngineDefaults.cloud
+    @AppStorage(EngineDefaults.fullNetworkKey) private var fullNetwork = EngineDefaults.fullNetwork
 
     var body: some View {
         NavigationStack {
@@ -58,6 +62,24 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    LabeledContent("Search time") {
+                        Text("\(searchTime) s").monospacedDigit()
+                    }
+                    Slider(value: Binding(get: { Double(searchTime) }, set: { searchTime = Int($0) }),
+                           in: Double(EngineDefaults.searchTimes.lowerBound)...Double(EngineDefaults.searchTimes.upperBound),
+                           step: 1) {
+                        Text("Search time")
+                    }
+                    Stepper("Lines: \(engineLines)", value: $engineLines, in: EngineDefaults.lineCounts)
+                    Toggle("Lichess cloud evaluations", isOn: $cloudEvals)
+                    EngineNetworkRow(network: model.engineNetwork, use: $fullNetwork)
+                } header: {
+                    Text("Analysis engine")
+                } footer: {
+                    Text("Stockfish 19 runs on this device, with its 1 MB network built in; the full network is stronger. Where Lichess has a deep cloud evaluation of a position, it is shown and the engine does not run.")
+                }
+
+                Section {
                     LabeledContent("Storage", value: model.library.usesICloud ? "iCloud Drive › Opening Trainer" : "On this device")
                     LabeledContent("Cached positions", value: cacheCount.formatted())
                     Button("Clear Statistics Cache", role: .destructive) {
@@ -75,7 +97,8 @@ struct SettingsView: View {
                     LabeledContent("License", value: "AGPL-3.0")
                     LabeledContent("Core", value: "Rust \(coreVersion())")
                     Link("Lichess opening explorer", destination: URL(string: "https://lichess.org/analysis#explorer")!)
-                    Text("Pieces: cburnett (GPLv2+), via Lichess. Rules: chesskit-swift (MIT). Scheduling: ported from Anki (AGPL-3.0) and fsrs-rs (BSD-3-Clause).")
+                    Link("Stockfish source code", destination: URL(string: "https://github.com/official-stockfish/Stockfish")!)
+                    Text("Pieces: cburnett (GPLv2+), via Lichess. Rules: chesskit-swift (MIT). Scheduling: ported from Anki (AGPL-3.0) and fsrs-rs (BSD-3-Clause). Engine: Stockfish 19 by the Stockfish developers (GPL-3.0), built as in Lichess's multistockfish.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -95,5 +118,33 @@ struct SettingsView: View {
 
     private func steps(_ minutes: [Double]) -> String {
         minutes.map { $0 < 60 ? "\(Int($0))m" : "\(Int($0 / 60))h" }.joined(separator: " ")
+    }
+}
+
+/// Stockfish's full network: download it, follow the download, use or remove it.
+private struct EngineNetworkRow: View {
+    let network: EngineNetwork
+    @Binding var use: Bool
+
+    var body: some View {
+        switch network.state {
+        case .absent:
+            Button("Download Full Network (94 MB)", systemImage: "arrow.down.circle") { network.start() }
+        case .downloading(let fraction):
+            HStack {
+                ProgressView("Downloading full network", value: fraction)
+                Button("Cancel", systemImage: "xmark.circle.fill") { network.cancel() }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.borderless)
+            }
+        case .ready:
+            Toggle("Use full network", isOn: $use)
+            Button("Remove Full Network", systemImage: "trash", role: .destructive) { network.remove() }
+        case .failed(let message):
+            VStack(alignment: .leading, spacing: 4) {
+                Button("Download Full Network (94 MB)", systemImage: "arrow.down.circle") { network.start() }
+                Text(message).font(.footnote).foregroundStyle(.red)
+            }
+        }
     }
 }

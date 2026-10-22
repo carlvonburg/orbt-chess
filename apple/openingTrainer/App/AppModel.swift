@@ -18,6 +18,8 @@ final class AppModel {
     let library = RepertoireLibrary()
     @ObservationIgnored lazy var queue = ExplorerService(store: stats, auth: auth)
     @ObservationIgnored lazy var coverage = CoverageTables(explorer: queue)
+    let engineNetwork = EngineNetwork()
+    @ObservationIgnored lazy var engine = EngineService(network: engineNetwork)
 
     private(set) var documents: [String: RepertoireDocument] = [:]
     /// Why an entry could not be opened, by entry id.

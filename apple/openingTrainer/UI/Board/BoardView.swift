@@ -2,7 +2,7 @@ import OpeningCoreRust
 import SwiftUI
 
 struct BoardArrow: Hashable, Identifiable {
-    enum Style: Hashable { case mine, opponent, gap, hint, wrong }
+    enum Style: Hashable { case mine, opponent, gap, hint, wrong, engine }
 
     let from: BoardSquare
     let to: BoardSquare
@@ -41,6 +41,7 @@ struct BoardArrow: Hashable, Identifiable {
         case .gap: BoardTheme.gap
         case .hint: BoardTheme.hint
         case .wrong: BoardTheme.wrong
+        case .engine: BoardTheme.engine
         }
     }
 }
@@ -56,6 +57,8 @@ enum BoardTheme {
     static let gap = Color.orange
     static let hint = Color(red: 0.13, green: 0.6, blue: 0.3)
     static let wrong = Color.red
+    /// The engine's best moves, as Lichess draws them.
+    static let engine = Color(red: 0.0, green: 0.3, blue: 0.55)
 }
 
 /// Interactive chess board: tap-tap or drag to move, legal-move dots, last-move highlight,
