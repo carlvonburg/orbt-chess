@@ -185,6 +185,30 @@ impl Builder {
                 .is_some_and(|n| !n.children.is_empty())
     }
 
+    /// The main line ahead, as forward plays it: the first saved move from the shown node,
+    /// then from where each reaches (through transpositions), up to `limit` moves. Empty while
+    /// a draft is on the board. Iterative, and stops at a position it already passed.
+    pub fn line_ahead(&self, doc: &Repertoire, limit: usize) -> Vec<NodeId> {
+        let mut line = Vec::new();
+        if !self.draft.is_empty() {
+            return line;
+        }
+        let tree = doc.tree();
+        let mut node = self.shown_node(doc);
+        let mut passed = std::collections::HashSet::from([node]);
+        while line.len() < limit {
+            let Some(&next) = tree.get(node).and_then(|n| n.children.first()) else {
+                break;
+            };
+            line.push(next);
+            node = tree.transposition_target(next).unwrap_or(next);
+            if !passed.insert(node) {
+                break;
+            }
+        }
+        line
+    }
+
     pub fn last_move(&self, doc: &Repertoire) -> Option<PlayedMove> {
         self.draft
             .last()
@@ -592,6 +616,21 @@ mod tests {
         assert_eq!(d.line_text(b.current), "1. e4 c5");
         let reopened = Builder::new(&d, None);
         assert_eq!(d.line_text(reopened.current), "1. e4 c5");
+    }
+
+    #[test]
+    fn line_ahead_is_what_forward_plays() {
+        let mut d = doc("1. e4 e5 (1... c5 2. Nf3) 2. Nf3 Nc6 *", Side::White);
+        let mut b = Builder::new(&d, None);
+        let ahead = b.line_ahead(&d, 10);
+        assert_eq!(d.line_text(*ahead.last().unwrap()), "1. e4 e5 2. Nf3 Nc6");
+        assert_eq!(ahead.len(), 4);
+        b.forward(&mut d, &none());
+        assert_eq!(b.line_ahead(&d, 10)[0], ahead[1]);
+        assert_eq!(b.line_ahead(&d, 2).len(), 2);
+        // A draft has no saved line ahead.
+        b.play_uci(&mut d, "d7d5", &none());
+        assert!(b.line_ahead(&d, 10).is_empty());
     }
 
     #[test]

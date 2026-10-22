@@ -404,6 +404,13 @@ private struct BoardColumnView: View {
     let statisticsScope: StatisticsModel.Scope
     /// Study's Lichess analysis (Browse's is presented by its panel).
     @State private var analysis: WebPage?
+    @State private var columnWidth: CGFloat = 0
+
+    /// The move history's width in the bottom bar: the column less back and forward and the
+    /// bar's margins.
+    private var historyWidth: CGFloat {
+        max(120, columnWidth - 180)
+    }
 
     private var title: String {
         switch board {
@@ -429,6 +436,7 @@ private struct BoardColumnView: View {
                 }
             }
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { columnWidth = $0 }
         // The left column names the repertoire; this column what it shows.
         .navigationTitle(title)
         .leadingNavigationTitle()
@@ -437,7 +445,12 @@ private struct BoardColumnView: View {
                 // Move navigation under the board (the top bar's leading side is the title's), as
                 // on a phone; Lichess and the menu, which act on the board, end the top bar.
                 ToolbarItemGroup(placement: .bottomActions) { BuilderNavigationButtons(model: model) }
-                ToolbarSpacer(.flexible, placement: .bottomActions)
+                // A fixed width from the column: moving never resizes the bar; the moves
+                // scroll inside it.
+                ToolbarItem(placement: .bottomActions) {
+                    MovePathStrip(model: model)
+                        .frame(width: historyWidth)
+                }
                 ToolbarItem(placement: .trailingBar) {
                     Button("Analyze on Lichess", systemImage: "cpu") { presentation.analyze(model) }
                 }

@@ -710,6 +710,8 @@ public protocol BuilderSessionProtocol: AnyObject, Sendable {
     
     func lastMove()  -> PlayedMove?
     
+    func lineAhead(limit: UInt32)  -> [UInt32]
+    
     func movesToBoard()  -> [PlayedMove]
     
     func orientation()  -> Side
@@ -966,6 +968,16 @@ open func lastMove() -> PlayedMove?  {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_buildersession_last_move(
             self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func lineAhead(limit: UInt32) -> [UInt32]  {
+    return try!  FfiConverterSequenceUInt32.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_line_ahead(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(limit),uniffiCallStatus
     )
 })
 }
@@ -13892,6 +13904,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_buildersession_last_move() != 5236) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_line_ahead() != 5990) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_buildersession_moves_to_board() != 53736) {

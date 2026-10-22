@@ -297,16 +297,16 @@ struct BuilderCommands: Commands {
     }
 }
 
-/// The builder's board in the split view's board column (whose bar has move navigation,
-/// Lichess and the menu), with the moves under it.
+/// The builder's board in the split view's board column. Its moves are in the column's bottom
+/// bar with move navigation; Lichess and the menu in its top bar.
 struct BuilderBoardColumn: View {
     let model: BuilderModel
 
     var body: some View {
-        BoardColumnLayout {
+        BoardColumnLayout(belowHeight: 0) {
             BuilderBoard(model: model)
         } below: {
-            MovePathStrip(model: model)
+            EmptyView()
         }
     }
 }
@@ -359,12 +359,18 @@ struct DrillRequest: Hashable {
     let mode: DrillMode
 }
 
-/// Horizontally scrolling move list; tap a move to go there. Draft moves are dashed.
+/// The moves to here, then the main line ahead (what → plays), dimmed; tap a move to go there.
+/// Draft moves are dashed. Scrolls sideways: it starts at the left and grows, and once full it
+/// keeps the current move in view. In a bar it gets a fixed width, so the bar never resizes.
 struct MovePathStrip: View {
     let model: BuilderModel
 
     var body: some View {
         let path = Array(model.tree.path(to: model.current).dropFirst())
+        // One list for the moves to here and the line ahead, so going back or forward only
+        // moves the highlight: no chip comes or goes.
+        let line = path + model.lineAhead
+        let target = model.hasDraft ? "draft\(model.draft.count - 1)" : "move\(model.current)"
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
@@ -377,11 +383,12 @@ struct MovePathStrip: View {
                         .padding(.horizontal, 6)
                         .accessibilityLabel("Start position")
                     }
-                    ForEach(path, id: \.self) { id in
+                    ForEach(Array(line.enumerated()), id: \.element) { index, id in
                         if let node = model.tree[id], let move = node.move {
                             MoveChip(ply: Int(node.ply), san: move.san, isCurrent: id == model.current && !model.hasDraft)
+                                .opacity(index < path.count ? 1 : 0.45)
                                 .onTapGesture { model.go(to: id) }
-                                .id(id)
+                                .id("move\(id)")
                         }
                     }
                     let basePly = Int(model.node?.ply ?? 0)
@@ -392,13 +399,12 @@ struct MovePathStrip: View {
                 }
                 .padding(.vertical, 4)
             }
-            .onChange(of: model.current) { proxy.scrollTo(model.current, anchor: .trailing) }
-            .onChange(of: model.draft.count) {
-                if model.hasDraft { proxy.scrollTo("draft\(model.draft.count - 1)", anchor: .trailing) }
+            .onAppear { proxy.scrollTo(target, anchor: .center) }
+            .onChange(of: target) {
+                withAnimation { proxy.scrollTo(target, anchor: .center) }
             }
         }
     }
-
 }
 
 /// One move of a move list: "1. d4", with the current move highlighted.

@@ -62,6 +62,8 @@ final class BuilderModel {
     /// Not at the start position with nothing played on the board.
     var canBack: Bool { current != RepertoireTree.rootID || hasDraft }
     var canForward: Bool { observe(); return session.canForward() }
+    /// The main line ahead, as forward plays it (the move strip shows it after the current move).
+    var lineAhead: [NodeID] { observe(); return session.lineAhead(limit: 40) }
     var lastMove: PlayedMove? { observe(); return session.lastMove() }
     var isUserTurnOnBoard: Bool { observe(); return session.isUserTurnOnBoard() }
 

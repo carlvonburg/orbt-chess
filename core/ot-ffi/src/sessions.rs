@@ -99,6 +99,10 @@ impl BuilderSession {
         self.view(|b, doc| b.can_forward(doc))
     }
 
+    pub fn line_ahead(&self, limit: u32) -> Vec<NodeId> {
+        self.view(|b, doc| b.line_ahead(doc, limit as usize))
+    }
+
     pub fn last_move(&self) -> Option<PlayedMove> {
         self.view(|b, doc| b.last_move(doc))
     }

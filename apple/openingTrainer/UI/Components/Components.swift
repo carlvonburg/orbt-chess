@@ -9,13 +9,15 @@ typealias Progress = OpeningCoreRust.Progress
 
 /// The board as large as the column allows, with what belongs to it (the moves) under it.
 struct BoardColumnLayout<Board: View, Below: View>: View {
+    /// The room `below` takes (a line of moves); none when it is empty.
+    var belowHeight: CGFloat = 44
     @ViewBuilder var board: Board
     @ViewBuilder var below: Below
 
     var body: some View {
         GeometryReader { geo in
-            // Under the board the moves, about 44 pt, and the padding.
-            let side = max(200, min(geo.size.width - 32, geo.size.height - 76))
+            // Under the board what belongs to it, and the padding.
+            let side = max(200, min(geo.size.width - 32, geo.size.height - 32 - belowHeight))
             VStack(spacing: 12) {
                 board
                     .frame(width: side, height: side)
