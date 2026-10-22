@@ -6,7 +6,7 @@ import SwiftUI
 struct RepertoireOverviewView: View {
     @Environment(AppModel.self) private var app
     /// Set in the split view (iPad, Mac), whose board column shows this repertoire's statistics.
-    @Environment(\.boardColumn) private var boardColumn
+    @Environment(\.inSplitView) private var inSplitView
     let document: RepertoireDocument
     let editLines: () -> Void
     let study: () -> Void
@@ -27,7 +27,7 @@ struct RepertoireOverviewView: View {
         }
         .safeAreaBar(edge: .bottom) {
             // A phone's actions are at the bottom; in the split view in their sections.
-            if boardColumn == nil { studyBar(stats) }
+            if !inSplitView { studyBar(stats) }
         }
         .checksCoverage(document)
         // A detail screen with its own actions at the bottom, like the study screen.
@@ -74,7 +74,7 @@ struct RepertoireOverviewView: View {
                 CoverageCheckStatus(document: document)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
-            if boardColumn != nil {
+            if inSplitView {
                 Button("Browse / Edit", action: editLines)
                     .modifier(ActionButtonStyle(prominent: buildFirst(stats)))
             }
@@ -127,11 +127,11 @@ struct RepertoireOverviewView: View {
                     LabeledContent("True retention (month)", value: Format.percent(retention))
                 }
             }
-            if boardColumn != nil && stats.progress.cards > 0 {
+            if inSplitView && stats.progress.cards > 0 {
                 studyButton(stats, prominent: !buildFirst(stats))
             }
             // The split view shows the statistics beside the overview.
-            if boardColumn == nil {
+            if !inSplitView {
                 Button {
                     app.statisticsScope = .repertoire(document.entryID)
                     app.selectedTab = .statistics
@@ -216,10 +216,10 @@ struct RepertoireOverviewView: View {
 
     /// Glass in the phone's bottom bar; the standard styles in the content (split view).
     private struct ActionButtonStyle: ViewModifier {
-        @Environment(\.boardColumn) private var boardColumn
+        @Environment(\.inSplitView) private var inSplitView
         let prominent: Bool
         func body(content: Content) -> some View {
-            if boardColumn != nil {
+            if inSplitView {
                 if prominent { content.buttonStyle(.borderedProminent) } else { content.buttonStyle(.bordered) }
             } else {
                 if prominent { content.buttonStyle(.glassProminent) } else { content.buttonStyle(.glass) }

@@ -5,22 +5,23 @@ import SwiftUI
 /// (with gaps) or your moves and candidates.
 struct BuilderView: View {
     @Environment(AppModel.self) private var app
-    /// Set in the split view (iPad, Mac): the board is in the board column, this is the panel.
-    @Environment(\.boardColumn) private var boardColumn
-    @Environment(\.screenRoute) private var screenRoute
+    /// In the split view (iPad, Mac) the board is in the board column and this is the panel.
+    @Environment(\.inSplitView) private var inSplitView
     @Environment(\.undoManager) private var undoManager
     @Environment(\.openScreen) private var openScreen
-    @State private var model: BuilderModel
-    @State private var presentation: BuilderPresentation
+    let model: BuilderModel
+    let presentation: BuilderPresentation
 
     enum Sheet: String, Identifiable {
         case outline, gaps, note, settings, cardInfo
         var id: String { rawValue }
     }
 
-    init(document: RepertoireDocument, start: NodeID? = nil, showGaps: Bool = false) {
-        _model = State(initialValue: BuilderModel(document: document, start: start))
-        _presentation = State(initialValue: BuilderPresentation(sheet: showGaps ? .gaps : nil))
+    /// The library makes the models before pushing the screen (`LibraryScreens`); elsewhere
+    /// `BuilderScreen` owns them.
+    init(model: BuilderModel, presentation: BuilderPresentation) {
+        self.model = model
+        self.presentation = presentation
     }
 
     private var document: RepertoireDocument { model.document }
@@ -30,7 +31,7 @@ struct BuilderView: View {
         @Bindable var presentation = presentation
         // A List so saved moves can be swiped to delete.
         List {
-            if boardColumn == nil {
+            if !inSplitView {
                 // Edge to edge on a phone.
                 BuilderBoard(model: model)
                     .frame(maxWidth: .infinity)
@@ -47,7 +48,6 @@ struct BuilderView: View {
         .environment(\.defaultMinListRowHeight, 0)
         .scrollDismissesKeyboard(.immediately)
         .onAppear {
-            if let screenRoute { boardColumn?.show(.builder(model, presentation), for: screenRoute) }
             // Edit > Undo and ⌘Z undo through the builder, which also leaves a removed position.
             document.attachUndo(undoManager) { [weak model, weak document] in
                 if let model { model.undo() } else { document?.undo() }
@@ -62,7 +62,7 @@ struct BuilderView: View {
         .sheet(item: $presentation.sheet) { sheet in sheetContent(sheet).sheetFrame() }
         .webPage($presentation.analysis)
         .navigationDestination(item: $presentation.drill) { request in
-            DrillView(document: document, mode: request.mode)
+            DrillScreen(document: document, mode: request.mode)
         }
         .checksCoverage(document)
         .onChange(of: model.current, initial: true) { requestStats() }
@@ -121,7 +121,7 @@ struct BuilderView: View {
     /// and the menu, which act on the board, in the board column's.
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        let split = boardColumn != nil
+        let split = inSplitView
         let actions: ToolbarItemPlacement = split ? .trailingBar : .bottomActions
         if !split {
             ToolbarItemGroup(placement: .bottomActions) { BuilderNavigationButtons(model: model) }
@@ -179,6 +179,21 @@ struct BuilderView: View {
     }
 }
 
+/// A builder that owns its models: opened outside the library (a weakest move in the
+/// Statistics tab).
+struct BuilderScreen: View {
+    @State private var model: BuilderModel
+    @State private var presentation = BuilderPresentation()
+
+    init(document: RepertoireDocument, start: NodeID? = nil) {
+        _model = State(initialValue: BuilderModel(document: document, start: start))
+    }
+
+    var body: some View {
+        BuilderView(model: model, presentation: presentation)
+    }
+}
+
 /// What the builder presents: a sheet, the Lichess analysis, a branch drill. In the split view
 /// the board column's buttons set it and the panel presents it.
 @Observable
@@ -233,7 +248,7 @@ struct BuilderBoard: View {
     }
 }
 
-/// Back and forward: in the bottom bar on a phone, over the board in the split view. Their
+/// Back and forward, in the bottom bar (on a phone, and under the board in the split view). Their
 /// keys (←/→) are in the menu bar's Move menu.
 struct BuilderNavigationButtons: View {
     let model: BuilderModel

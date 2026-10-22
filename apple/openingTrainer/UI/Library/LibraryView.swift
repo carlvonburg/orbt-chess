@@ -35,10 +35,8 @@ struct LibraryView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var path: [LibraryRoute] = []
-    /// The sidebar's selection (iPad, Mac); the detail starts with its overview.
-    @State private var selection: SidebarItem? = .all
-    /// The split view's board column: Browse's and Study's board, else statistics.
-    @State private var boardColumn = BoardColumn()
+    /// The models of the Browse and Study screens on the path.
+    @State private var screens = LibraryScreens()
     @State private var columns = NavigationSplitViewVisibility.all
     @State private var showNew = false
     @State private var showImport = false
@@ -109,64 +107,75 @@ struct LibraryView: View {
         }
     }
 
-    enum SidebarItem: Hashable {
-        case all
-        case entry(String)
-    }
-
-    /// iPhone: the list, then each screen pushed on top.
+    /// The library, then each screen pushed on top: the whole app on a phone, the left column
+    /// of the split view on iPad and Mac.
     private var stack: some View {
         NavigationStack(path: $path) {
             content
                 .navigationTitle("Repertoires")
-                .toolbar { libraryToolbar(filter: true) }
+                .toolbar { libraryToolbar }
                 .navigationDestination(for: LibraryRoute.self, destination: route)
         }
         .environment(\.openScreen, openScreen)
     }
 
-    /// iPad and Mac, like Notes: the repertoires in a sidebar; in the middle the selected
-    /// overview, with Browse and Study pushed on top (their panels); on the right the board of
-    /// the screen in the middle, or the overview's statistics. Each column has its own bar.
-    private var split: some View {
-        NavigationSplitView(columnVisibility: $columns) {
-            // No title or filter: the sidebar shows every repertoire by name.
-            sidebar
-                .toolbar { libraryToolbar(filter: false) }
-        } content: {
-            NavigationStack(path: $path) {
-                detailRoot
-                    .navigationDestination(for: LibraryRoute.self, destination: route)
-            }
-            .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 480)
-        } detail: {
-            NavigationStack {
-                BoardColumnView(column: boardColumn, statisticsScope: statisticsScope)
+    /// Shows `newPath` once the models of its Browse and Study screens are made, so the screen
+    /// and the split view's board column show the same model from the start. Screens no
+    /// longer on the path (popped) are forgotten first: opening one again starts afresh.
+    private func go(to newPath: [LibraryRoute]) {
+        screens.keep(path)
+        Task {
+            if await screens.prepare(newPath, app: model) {
+                path = newPath
+            } else {
+                errorMessage = "The repertoire could not be opened."
             }
         }
-        .environment(\.boardColumn, boardColumn)
-        .environment(\.openScreen, openScreen)
-        .onChange(of: path, initial: true) { boardColumn.path = path }
     }
 
-    /// Opens a screen from Browse or Study: the overview stays (in the path on a phone), then
-    /// only the screen it is opened from.
+    /// iPad and Mac, like Mail: the library's stack on the left (the library, a repertoire's
+    /// overview, Browse's and Study's panels); on the right the board of the screen on top, or
+    /// the statistics of the overview (or of every repertoire). Each column has its own bar.
+    private var split: some View {
+        NavigationSplitView(columnVisibility: $columns) {
+            stack
+                .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 480)
+        } detail: {
+            NavigationStack {
+                BoardColumnView(board: board, statisticsScope: statisticsScope)
+            }
+        }
+        // Side by side in portrait too: the left column holds Browse's and Study's panels.
+        .navigationSplitViewStyle(.balanced)
+        .environment(\.inSplitView, true)
+    }
+
+    /// The board of the screen on top: Browse's or Study's, none over an overview.
+    private var board: LibraryScreens.Board? {
+        path.last.flatMap { screens.screen(for: $0)?.board }
+    }
+
+    /// Opens a screen from Browse or Study: the overview stays, then only the screen it is
+    /// opened from.
     private func openScreen(_ route: LibraryRoute) {
         let overview = path.prefix { if case .overview = $0 { true } else { false } }
-        path = Array(overview) + Array(path.dropFirst(overview.count).suffix(1)) + [route]
+        go(to: Array(overview) + Array(path.dropFirst(overview.count).suffix(1)) + [route])
     }
 
-    /// The statistics beside the selected overview.
+    /// The statistics beside the library (every repertoire) or a repertoire's screens.
     private var statisticsScope: StatisticsModel.Scope {
-        if case .entry(let id) = selection { .repertoire(model.currentID(id)) } else { .all }
+        for route in path.reversed() {
+            if case .overview(let id) = route { return .repertoire(model.currentID(id)) }
+        }
+        return .all
     }
 
     @ToolbarContentBuilder
-    private func libraryToolbar(filter: Bool) -> some ToolbarContent {
+    private var libraryToolbar: some ToolbarContent {
         ToolbarItem(placement: .leadingBar) {
             Button("Settings", systemImage: "gearshape") { showSettings = true }
         }
-        if filter && !model.library.entries.isEmpty {
+        if !model.library.entries.isEmpty {
             ToolbarItem(placement: .trailingBar) { filterMenu }
         }
         ToolbarItem(placement: .primaryAction) {
@@ -179,8 +188,10 @@ struct LibraryView: View {
         }
     }
 
+    /// A pushed screen. The navigation action is set on it: set on the stack, it does not
+    /// reach the screens the stack pushes (in the split view's column).
     private func route(_ route: LibraryRoute) -> some View {
-        screen(route).environment(\.screenRoute, route)
+        screen(route).environment(\.openScreen, openScreen)
     }
 
     @ViewBuilder
@@ -189,113 +200,43 @@ struct LibraryView: View {
         case .overview(let id):
             destination(id) { doc in
                 RepertoireOverviewView(document: doc,
-                                       editLines: { path.append(.builder(doc.entryID)) },
-                                       study: { path.append(.study(doc.entryID)) },
-                                       practice: { path.append(.practice(doc.entryID)) })
+                                       editLines: { go(to: path + [.builder(doc.entryID)]) },
+                                       study: { go(to: path + [.study(doc.entryID)]) },
+                                       practice: { go(to: path + [.practice(doc.entryID)]) })
             }
-        case .builder(let id):
-            destination(id) { BuilderView(document: $0) }
-        case .study(let id):
-            destination(id) { DrillView(document: $0, mode: .study) }
-        case .learnMore(let id):
-            destination(id) { DrillView(document: $0, mode: .study, learnMore: TrainingDefaults.learnMoreCount) }
-        case .gaps(let id):
-            destination(id) { BuilderView(document: $0, showGaps: true) }
-        case .studyAll(let ids):
-            StudyAllView(entries: ids.compactMap { model.library.entry(id: $0) })
-        case .practice(let id):
-            destination(id) { DrillView(document: $0, mode: .branch(RepertoireTree.rootID)) }
-        case .browse(let id, let node):
-            destination(id) { BuilderView(document: $0, start: node) }
-        case .branch(let id, let node):
-            destination(id) { DrillView(document: $0, mode: .branch(node)) }
+            // The title switches to another repertoire without going back to the library.
+            .toolbarTitleMenu { repertoireSwitcher(id) }
+        default:
+            // Made before the route was pushed (`go(to:)`).
+            switch screens.screen(for: route) {
+            case .builder(let model, let presentation):
+                BuilderView(model: model, presentation: presentation)
+            case .drill(let model):
+                DrillView(model: model)
+            case .studyAll(let all):
+                StudyAllView(model: all)
+            case nil:
+                ContentUnavailableView("Repertoire unavailable", systemImage: "exclamationmark.triangle")
+            }
         }
     }
 
     /// A repertoire's overview, then the given screens on top of it.
     private func show(_ id: String, then routes: [LibraryRoute]) {
-        if isRegularWidth(sizeClass) {
-            selection = .entry(id)
-            path = routes
-        } else {
-            path = [.overview(id)] + routes
-        }
+        go(to: [.overview(id)] + routes)
     }
 
-    // MARK: Sidebar (iPad, Mac)
-
-    /// Choosing another repertoire starts its detail at the overview.
-    private var sidebarSelection: Binding<SidebarItem?> {
-        Binding(get: { selection }, set: { selection = $0; path = [] })
-    }
-
-    private var sidebar: some View {
-        let stats = entryStats
-        return List(selection: sidebarSelection) {
-            Label("All Repertoires", systemImage: "square.stack")
-                .badge(Int(stats.values.reduce(0) { $0 + $1.counts.total }))
-                .tag(SidebarItem.all)
+    /// The repertoires, by side, checked on the one shown; choosing one shows its overview.
+    private func repertoireSwitcher(_ id: String) -> some View {
+        Picker("Repertoire", selection: Binding(get: { model.currentID(id) }, set: { path = [.overview($0)] })) {
             ForEach(LibraryGroup.allCases) { group in
-                let entries = model.library.entries.filter { group.contains($0) }
+                let entries = model.library.entries.filter { group.contains($0) && !$0.needsSetup }
                 if !entries.isEmpty {
                     Section(group.title) {
-                        ForEach(entries) { entry in
-                            Label(entry.name, systemImage: "book.closed")
-                                .badge(entry.needsSetup ? 0 : Int(stats[entry.id]!.counts.total))
-                                .tag(SidebarItem.entry(entry.id))
-                                .swipeActions {
-                                    Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
-                                }
-                                .contextMenu { if !entry.needsSetup { menu(entry) } }
-                        }
+                        ForEach(entries) { Text($0.name).tag($0.id) }
                     }
                 }
             }
-        }
-        .refreshable { await model.library.refresh() }
-    }
-
-    @ViewBuilder
-    private var detailRoot: some View {
-        switch selection {
-        case .entry(let id):
-            if let entry = model.library.entry(id: model.currentID(id)), entry.needsSetup {
-                ContentUnavailableView {
-                    Label(entry.name, systemImage: "doc")
-                } description: {
-                    Text(entry.isDownloading ? "Downloading from iCloud…" : "New PGN, not set up yet.")
-                } actions: {
-                    Button("Set Up") { setupEntry = entry }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(entry.isDownloading)
-                }
-            } else {
-                route(.overview(id))
-            }
-        case .all, nil:
-            allRepertoires
-        }
-    }
-
-    /// The overview of every repertoire: Anki's deck list totals (its statistics are in the
-    /// board column).
-    private var allRepertoires: some View {
-        let library = model.library
-        let stats = entryStats
-        return List {
-            if !model.auth.isSignedIn {
-                SignInBanner()
-            }
-            Section {
-                TodayCard(entries: library.entries.filter { !$0.needsSetup }.map { ($0, stats[$0.id]!) },
-                          today: today.today, streak: today.streak,
-                          studyAll: { path.append(.studyAll(studyAllEntries)) }, open: { path.append($0) })
-            }
-        }
-        .navigationTitle("All Repertoires")
-        .inlineNavigationTitle()
-        .task(id: TodayKey(entries: library.entries.count, answered: stats.values.reduce(0) { $0 + $1.counts.total })) {
-            await today.load(model)
         }
     }
 
@@ -333,7 +274,7 @@ struct LibraryView: View {
                 Section {
                     TodayCard(entries: library.entries.filter { !$0.needsSetup }.map { ($0, stats[$0.id]!) },
                               today: today.today, streak: today.streak,
-                              studyAll: { path.append(.studyAll(studyAllEntries)) }, open: { path.append($0) })
+                              studyAll: { go(to: path + [.studyAll(studyAllEntries)]) }, open: { go(to: path + [$0]) })
                 }
                 let shown = visibleEntries(stats)
                 if shown.isEmpty {
@@ -459,41 +400,51 @@ struct LibraryView: View {
 /// The split view's right column: Browse's or Study's board, else the overview's statistics.
 /// One bar whose buttons follow the board, so they never go stale or flicker.
 private struct BoardColumnView: View {
-    let column: BoardColumn
+    let board: LibraryScreens.Board?
     let statisticsScope: StatisticsModel.Scope
     /// Study's Lichess analysis (Browse's is presented by its panel).
     @State private var analysis: WebPage?
 
+    private var title: String {
+        switch board {
+        case .builder: "Browse"
+        case .drill(let model): model.mode.title
+        case nil: "Statistics"
+        }
+    }
+
     var body: some View {
         Group {
-            switch column.board {
+            switch board {
             case .builder(let model, _):
                 BuilderBoardColumn(model: model)
             case .drill(let model):
                 DrillBoardColumn(model: model)
             case nil:
-                // Only the statistics have a title; a board's bar has its buttons.
                 ScrollView {
                     InlineStatistics(scope: statisticsScope)
                         .id(statisticsScope)
                         .padding(.horizontal)
                         .padding(.bottom, 24)
                 }
-                .navigationTitle("Statistics")
-                .inlineNavigationTitle()
             }
         }
+        // The left column names the repertoire; this column what it shows.
+        .navigationTitle(title)
+        .leadingNavigationTitle()
         .toolbar {
-            if case .builder(let model, let presentation) = column.board {
-                // Move navigation leads the bar; Lichess and the menu, which act on the board, end it.
-                ToolbarItemGroup(placement: .leadingBar) { BuilderNavigationButtons(model: model) }
+            if case .builder(let model, let presentation) = board {
+                // Move navigation under the board (the top bar's leading side is the title's), as
+                // on a phone; Lichess and the menu, which act on the board, end the top bar.
+                ToolbarItemGroup(placement: .bottomActions) { BuilderNavigationButtons(model: model) }
+                ToolbarSpacer(.flexible, placement: .bottomActions)
                 ToolbarItem(placement: .trailingBar) {
                     Button("Analyze on Lichess", systemImage: "cpu") { presentation.analyze(model) }
                 }
                 ToolbarSpacer(.fixed, placement: .trailingBar)
                 ToolbarItem(placement: .trailingBar) { BuilderMoreMenu(model: model, presentation: presentation) }
             }
-            if case .drill(let model) = column.board, !model.finished {
+            if case .drill(let model) = board, !model.finished {
                 // Looking the move up counts as Again, as Browse in the panel does.
                 ToolbarItem(placement: .trailingBar) {
                     Button("Analyze on Lichess", systemImage: "cpu") {

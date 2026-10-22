@@ -173,11 +173,10 @@ final class DrillModel {
 }
 
 struct DrillView: View {
-    /// Set in the split view (iPad, Mac): the board is in the board column, this is the panel.
-    @Environment(\.boardColumn) private var boardColumn
-    @Environment(\.screenRoute) private var screenRoute
+    /// In the split view (iPad, Mac) the board is in the board column and this is the panel.
+    @Environment(\.inSplitView) private var inSplitView
     @Environment(\.openScreen) private var openScreen
-    @State private var model: DrillModel
+    let model: DrillModel
     @State private var browsing: BrowseRequest?
 
     private struct BrowseRequest: Hashable {
@@ -189,10 +188,11 @@ struct DrillView: View {
     /// The next repertoire when studying all of them: its name and how to go on.
     private let next: (name: String, start: () -> Void)?
 
-    /// Pushed onto the caller's navigation stack (Study Now, Study Branch, Study All).
-    init(document: RepertoireDocument, mode: DrillMode, learnMore: Int = 0,
-         next: (name: String, start: () -> Void)? = nil) {
-        _model = State(initialValue: DrillModel(document: document, mode: mode, learnMore: learnMore))
+    /// Pushed onto the caller's navigation stack (Study Now, Study Branch, Study All). The
+    /// library makes the model before pushing the screen (`LibraryScreens`); elsewhere
+    /// `DrillScreen` owns it.
+    init(model: DrillModel, next: (name: String, start: () -> Void)? = nil) {
+        self.model = model
         self.next = next
     }
 
@@ -200,9 +200,6 @@ struct DrillView: View {
         content
             .hidesTabBar()
             .task { model.start() }
-        .onAppear {
-            if let screenRoute { boardColumn?.show(.drill(model), for: screenRoute) }
-        }
         // Browsing pushes the builder on top; training goes on when it's popped.
         .onDisappear { if browsing == nil { model.stop() } }
         .checksCoverage(model.document)
@@ -214,7 +211,7 @@ struct DrillView: View {
             if model.finished {
                 StudyFinishedView(model: model, next: next)
                     .padding(.vertical)
-            } else if boardColumn != nil {
+            } else if inSplitView {
                 // The board is in the board column: the counts, with what each means, and
                 // what to do.
                 ScrollView {
@@ -246,12 +243,13 @@ struct DrillView: View {
                 .padding(.vertical)
             }
         }
-        .navigationTitle(model.mode.title)
-        .navigationSubtitle(model.document.name)
+        // In the split view the repertoire, as in Browse; the board column names the mode.
+        .navigationTitle(inSplitView ? model.document.name : model.mode.title)
+        .modifier(Subtitle(text: inSplitView ? nil : model.document.name))
         .inlineNavigationTitle()
         .toolbar {
             // In the split view the counts are in the panel, with what each means.
-            if !model.finished && boardColumn == nil {
+            if !model.finished && !inSplitView {
                 ToolbarItem(placement: .trailingBar) {
                     StudyCountsView(counts: model.counts, highlight: model.askedKind)
                         .font(.subheadline.monospacedDigit().weight(.semibold))
@@ -260,7 +258,7 @@ struct DrillView: View {
             }
             if !model.finished {
                 // In the split view the actions are in the panel's bar, as in the builder.
-                let split = boardColumn != nil
+                let split = inSplitView
                 let actions: ToolbarItemPlacement = split ? .trailingBar : .bottomActions
                 ToolbarItem(placement: actions) {
                     Button("Hint", systemImage: "lightbulb") { model.hint() }
@@ -284,7 +282,7 @@ struct DrillView: View {
             }
         }
         .navigationDestination(item: $browsing) { request in
-            BuilderView(document: model.document, start: request.node)
+            BuilderScreen(document: model.document, start: request.node)
         }
         .sensoryFeedback(trigger: model.feedback) { _, new in
             switch new {
@@ -335,6 +333,29 @@ struct DrillView: View {
         }
         .font(.headline)
         .animation(.default, value: model.feedback)
+    }
+}
+
+/// A study session that owns its model: opened outside the library (Study Branch from a
+/// builder in the Statistics tab).
+struct DrillScreen: View {
+    @State private var model: DrillModel
+
+    init(document: RepertoireDocument, mode: DrillMode) {
+        _model = State(initialValue: DrillModel(document: document, mode: mode))
+    }
+
+    var body: some View {
+        DrillView(model: model)
+    }
+}
+
+/// A navigation subtitle when there is one (Study's repertoire on a phone).
+private struct Subtitle: ViewModifier {
+    let text: String?
+
+    func body(content: Content) -> some View {
+        if let text { content.navigationSubtitle(text) } else { content }
     }
 }
 

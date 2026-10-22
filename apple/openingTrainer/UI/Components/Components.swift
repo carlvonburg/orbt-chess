@@ -7,41 +7,6 @@ import SwiftUI
 /// The core's learning progress, not Foundation's `Progress`.
 typealias Progress = OpeningCoreRust.Progress
 
-/// The board column of the iPad and Mac split view: the board of the screen on top of the
-/// middle column (Browse or Study), or nothing while it shows an overview. It follows the
-/// middle column's path; each screen files its board under its route.
-@Observable
-final class BoardColumn {
-    enum Board {
-        case builder(BuilderModel, BuilderPresentation)
-        case drill(DrillModel)
-    }
-
-    /// The middle column's screens above the overview (set by the library).
-    var path: [LibraryRoute] = [] {
-        didSet { boards = boards.filter { path.contains($0.key) } }
-    }
-
-    private var boards: [LibraryRoute: Board] = [:]
-
-    /// The top screen's board; while a screen just pushed has not filed its own, the one
-    /// under it, so the column never flashes the statistics in between.
-    var board: Board? {
-        path.reversed().lazy.compactMap { self.boards[$0] }.first
-    }
-
-    func show(_ board: Board, for route: LibraryRoute) {
-        boards[route] = board
-    }
-}
-
-extension EnvironmentValues {
-    /// Set in the split view (iPad, Mac): Browse and Study show their board there.
-    @Entry var boardColumn: BoardColumn?
-    /// The library route a screen was opened with, which its board is filed under.
-    @Entry var screenRoute: LibraryRoute?
-}
-
 /// The board as large as the column allows, with what belongs to it (the moves) under it.
 struct BoardColumnLayout<Board: View, Below: View>: View {
     @ViewBuilder var board: Board

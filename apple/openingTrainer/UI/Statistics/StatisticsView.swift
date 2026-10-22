@@ -641,7 +641,7 @@ private struct WeakestMovesCard: View {
         if let openScreen {
             Button { openScreen(.browse(document.entryID, node)) } label: { label() }
         } else {
-            NavigationLink { BuilderView(document: document, start: node) } label: { label() }
+            NavigationLink { BuilderScreen(document: document, start: node) } label: { label() }
         }
     }
 }

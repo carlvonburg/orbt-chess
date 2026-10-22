@@ -13,6 +13,16 @@ extension View {
         #endif
     }
 
+    /// A large title on the leading side of the bar (iPadOS 26, like Mail and Notes);
+    /// macOS shows titles in the window.
+    func leadingNavigationTitle() -> some View {
+        #if os(iOS)
+        toolbarTitleDisplayMode(.inlineLarge)
+        #else
+        self
+        #endif
+    }
+
     /// Hides the tab bar on a pushed screen with its own actions (iPhone and iPad).
     func hidesTabBar() -> some View {
         #if os(iOS)
