@@ -369,8 +369,8 @@ struct DrillBoard: View {
     }
 }
 
-/// The study board in the split view's board column (whose bar has Lichess), with the moves
-/// played under it.
+/// The study board in the split view's board column, whose bars have Lichess and, at the
+/// bottom, the moves played (as Browse's).
 struct DrillBoardColumn: View {
     let model: DrillModel
 
@@ -378,13 +378,13 @@ struct DrillBoardColumn: View {
         BoardColumnLayout {
             DrillBoard(model: model)
         } below: {
-            LineHistory(tree: model.document.tree, nodes: model.playedNodes)
+            EmptyView()
         }
     }
 }
 
 /// The moves played so far on a study line. Read-only: going to a move would show its answer.
-private struct LineHistory: View {
+struct LineHistory: View {
     let tree: RepertoireDocument.Tree
     let nodes: [NodeID]
 

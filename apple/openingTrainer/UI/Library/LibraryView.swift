@@ -472,10 +472,10 @@ private struct BoardColumnView: View {
     @State private var analysis: WebPage?
     @State private var columnWidth: CGFloat = 0
 
-    /// The move history's width in the bottom bar: the column less back and forward and the
-    /// bar's margins.
-    private var historyWidth: CGFloat {
-        max(120, columnWidth - 180)
+    /// The move history's width in the bottom bar: the column less the bar's margins, and
+    /// Browse's back and forward.
+    private func historyWidth(buttons: Bool) -> CGFloat {
+        max(120, columnWidth - (buttons ? 180 : 60))
     }
 
     private var title: String {
@@ -513,7 +513,7 @@ private struct BoardColumnView: View {
                 // scroll inside it.
                 ToolbarItem(placement: .bottomActions) {
                     MovePathStrip(model: model)
-                        .frame(width: historyWidth)
+                        .frame(width: historyWidth(buttons: true))
                 }
                 ToolbarItem(placement: .trailingBar) {
                     Button("Analyze on Lichess", systemImage: "cpu") { presentation.analyze(model) }
@@ -522,6 +522,11 @@ private struct BoardColumnView: View {
                 ToolbarItem(placement: .trailingBar) { BuilderMoreMenu(model: model, presentation: presentation) }
             }
             if case .drill(let model) = board, !model.finished {
+                // The moves played, in the bottom bar as Browse's are.
+                ToolbarItem(placement: .bottomActions) {
+                    LineHistory(tree: model.document.tree, nodes: model.playedNodes)
+                        .frame(width: historyWidth(buttons: false))
+                }
                 // Looking the move up counts as Again, as Browse in the panel does.
                 ToolbarItem(placement: .trailingBar) {
                     Button("Analyze on Lichess", systemImage: "cpu") {
