@@ -22,6 +22,8 @@ struct AnalysisScreen: View {
     let model: AnalysisModel
     @State private var page: WebPage?
     @State private var showsSettings = false
+    /// On a phone the panel shows the moves or the explorer, not both.
+    @State private var tab = PanelTab.moves
     /// The evaluation last written to the move list, so it is written once per depth.
     @State private var recorded: (key: EngineService.Key, depth: UInt32)?
 
@@ -36,13 +38,13 @@ struct AnalysisScreen: View {
                             .scenePadding()
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                         Divider()
-                        panel.frame(width: 380)
+                        panel(compact: false).frame(width: 380)
                     }
                 } else {
                     VStack(spacing: 0) {
                         // Edge to edge on a phone; the moves scroll below.
                         boardColumn.layoutPriority(1)
-                        panel
+                        panel(compact: true)
                     }
                 }
             }
@@ -118,16 +120,38 @@ struct AnalysisScreen: View {
         }
     }
 
-    private var panel: some View {
+    private enum PanelTab: Hashable {
+        case moves, explorer
+    }
+
+    private func panel(compact: Bool) -> some View {
         List {
-            Section("Moves") {
-                AnalysisMoveList(model: model)
+            if !compact || tab == .moves {
+                Section {
+                    AnalysisMoveList(model: model)
+                } header: {
+                    if !compact { Text("Moves") }
+                }
             }
-            AnalysisExplorerSection(model: model)
+            if !compact || tab == .explorer {
+                AnalysisExplorerSection(model: model, showsHeader: !compact)
+            }
         }
         #if os(iOS)
         .listStyle(.plain)
         #endif
+        .safeAreaBar(edge: .top) {
+            if compact {
+                Picker("Panel", selection: $tab) {
+                    Text("Explorer").tag(PanelTab.explorer)
+                    Text("Moves").tag(PanelTab.moves)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(.horizontal)
+                .padding(.vertical, 6)
+            }
+        }
     }
 
     @ToolbarContentBuilder
@@ -144,8 +168,7 @@ struct AnalysisScreen: View {
                 .keyboardShortcut(.rightArrow, modifiers: [])
                 .disabled(!model.canForward)
         }
-        ToolbarSpacer(.flexible, placement: .bottomActions)
-        ToolbarItemGroup(placement: .bottomActions) {
+        ToolbarItemGroup(placement: .primaryAction) {
             Toggle(isOn: Binding(get: { model.engineOn }, set: { model.engineOn = $0 })) {
                 Label("Engine", systemImage: "cpu")
             }
@@ -162,14 +185,14 @@ struct AnalysisScreen: View {
     }
 }
 
-/// The engine's settings over the analysis board, the same as in Settings.
+/// The engine's settings over the analysis board, the same as in Settings: a full sheet, like
+/// Settings itself (a partial one would be glass).
 private struct EngineSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             Form { EngineSettingsSection() }
-                .formStyle(.grouped)
                 .navigationTitle("Engine Settings")
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
@@ -180,7 +203,6 @@ private struct EngineSettingsSheet: View {
                     }
                 }
         }
-        .presentationDetents([.medium, .large])
     }
 }
 
@@ -333,6 +355,8 @@ struct AnalysisMoveChip: View {
 struct AnalysisExplorerSection: View {
     @Environment(AppModel.self) private var app
     let model: AnalysisModel
+    /// Off under the phone's Moves/Explorer control, which already names the section.
+    var showsHeader = true
 
     var body: some View {
         let epd = model.position.epd()
@@ -365,7 +389,9 @@ struct AnalysisExplorerSection: View {
                 StatsUnavailableNote()
             }
         } header: {
-            Text(stats?.opening.map { "\($0.eco) \($0.name)" } ?? "Explorer")
+            if showsHeader {
+                Text(stats?.opening.map { "\($0.eco) \($0.name)" } ?? "Explorer")
+            }
         }
         .task(id: epd) { model.document.requestStats(for: epd) }
     }
