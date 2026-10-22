@@ -2,7 +2,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use ot_core::analysis::{AnalysisLine, AnalysisTree, NodeEval};
+use ot_core::analysis::{AnalysisTree, MoveListRow, NodeEval};
 use ot_core::chess::{BoardSquare, ChessPosition, PieceKind, PlayedMove, Side};
 
 use crate::position::Position;
@@ -64,8 +64,8 @@ impl AnalysisSession {
         self.with(|t| t.line_ahead())
     }
 
-    pub fn lines(&self) -> Vec<AnalysisLine> {
-        self.with(|t| t.lines())
+    pub fn move_list(&self) -> Vec<MoveListRow> {
+        self.with(|t| t.move_list())
     }
 
     pub fn is_main_line(&self, id: u32) -> bool {

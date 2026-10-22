@@ -42,7 +42,7 @@ final class AnalysisModel: Identifiable {
     var lastMove: PlayedMove? { observe(); return session.lastMove() }
     var movesToBoard: [PlayedMove] { observe(); return session.movesToBoard() }
     /// The move list: the main line cut where variations branch off, variations indented.
-    var lines: [AnalysisLine] { observe(); return session.lines() }
+    var moveList: [MoveListRow] { observe(); return session.moveList() }
     var canBack: Bool { current != 0 }
     var canForward: Bool { observe(); return !session.lineAhead().isEmpty }
 

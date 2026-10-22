@@ -1,6 +1,6 @@
 //! The analysis board's tree: variations, promoting, deleting, the move list and PGN.
 
-use ot_core::analysis::{AnalysisLine, AnalysisTree, NodeEval, ROOT};
+use ot_core::analysis::{AnalysisTree, MoveListRow, MoveToken, NodeEval, ROOT};
 use ot_core::chess::{ChessPosition, Side};
 
 fn tree(moves: &[&str]) -> AnalysisTree {
@@ -8,19 +8,39 @@ fn tree(moves: &[&str]) -> AnalysisTree {
     AnalysisTree::new(ChessPosition::START_FEN, &line, Side::White).unwrap()
 }
 
-fn text(lines: &[AnalysisLine]) -> Vec<String> {
-    lines
+/// The move list as text: "2 Nh3 …" for a main-line row; a variation row's guides ("│ ",
+/// then "├ " or "└ ") and tokens.
+fn text(t: &AnalysisTree) -> Vec<String> {
+    t.move_list()
         .iter()
-        .map(|line| {
-            let moves: Vec<String> = line
-                .moves
-                .iter()
-                .map(|m| match &m.number {
-                    Some(n) => format!("{n} {}", m.san),
-                    None => m.san.clone(),
-                })
-                .collect();
-            format!("{}{}", "  ".repeat(line.depth as usize), moves.join(" "))
+        .map(|row| match row {
+            MoveListRow::Main(row) => {
+                let side = |m: &Option<ot_core::analysis::AnalysisMove>| {
+                    m.as_ref().map_or("…".to_owned(), |m| m.san.clone())
+                };
+                format!("{} {} {}", row.number, side(&row.white), side(&row.black))
+            }
+            MoveListRow::Variation(row) => {
+                let (own, outer) = row.guides.split_last().unwrap();
+                let mut text: String = outer
+                    .iter()
+                    .map(|&on| if on { "│ " } else { "  " })
+                    .collect();
+                text += if *own { "├ " } else { "└ " };
+                let tokens: Vec<String> = row
+                    .tokens
+                    .iter()
+                    .map(|token| match token {
+                        MoveToken::Move(m) => match &m.number {
+                            Some(n) => format!("{n} {}", m.san),
+                            None => m.san.clone(),
+                        },
+                        MoveToken::Open => "(".to_owned(),
+                        MoveToken::Close => ")".to_owned(),
+                    })
+                    .collect();
+                text + &tokens.join(" ")
+            }
         })
         .collect()
 }
@@ -45,18 +65,18 @@ fn variations_in_the_move_list() {
     t.go(e5);
     t.play_uci("g1f3").unwrap();
     let d5 = t.play_uci("d7d5").unwrap();
-    assert_eq!(
-        text(&t.lines()),
-        ["1. e4 e5 2. Nh3", "  2. Nf3 d5", "2… d5"]
-    );
-    assert!(t.lines()[1].moves[1].is_current);
+    assert_eq!(text(&t), ["1 e4 e5", "2 Nh3 …", "└ 2. Nf3 d5", "2 … d5"]);
+    let MoveListRow::Variation(row) = &t.move_list()[2] else {
+        panic!()
+    };
+    assert!(matches!(&row.tokens[1], MoveToken::Move(m) if m.is_current));
     assert!(!t.is_main_line(d5));
 
     // Playing a move that is there follows it.
     t.go(e5);
     let nh3 = t.play_uci("g1h3").unwrap();
     assert!(t.is_main_line(nh3));
-    assert_eq!(t.lines().len(), 3);
+    assert_eq!(t.move_list().len(), 4);
 }
 
 #[test]
@@ -73,8 +93,15 @@ fn promote_and_make_main_line() {
     let d4 = t.current();
     assert!(t.promote(d4));
     assert_eq!(
-        text(&t.lines()),
-        ["1. e4 e5 2. Nf3", "  2. Bc4", "2… Nf6", "  2… Nc6", "3. d4"]
+        text(&t),
+        [
+            "1 e4 e5",
+            "2 Nf3 …",
+            "└ 2. Bc4",
+            "2 … Nf6",
+            "└ 2… Nc6",
+            "3 d4 …"
+        ]
     );
 
     // Bc4 to the main line.
@@ -92,7 +119,7 @@ fn delete_from_here() {
     let nf3 = t.path(t.current())[2];
     assert!(t.delete_from(nf3));
     assert_eq!(t.moves_to_board().len(), 2);
-    assert_eq!(text(&t.lines()), ["1. e4 e5"]);
+    assert_eq!(text(&t), ["1 e4 e5"]);
     assert!(!t.delete_from(ROOT));
     // Ids of deleted moves are gone.
     assert!(!t.go(nf3));
@@ -120,7 +147,10 @@ fn pgn_with_variations_and_evals() {
         },
     );
     assert_eq!(t.eval(d5).unwrap().text, "+0.3");
-    assert_eq!(t.lines()[0].moves[1].eval.as_deref(), Some("+0.3"));
+    let MoveListRow::Main(row) = &t.move_list()[0] else {
+        panic!()
+    };
+    assert_eq!(row.black.as_ref().unwrap().eval.as_deref(), Some("+0.3"));
 }
 
 #[test]
@@ -129,7 +159,7 @@ fn starts_from_a_fen_and_stops_at_an_illegal_move() {
     let line = vec!["f1b5".to_owned(), "e2e4".to_owned(), "a7a6".to_owned()];
     let t = AnalysisTree::new(fen, &line, Side::Black).unwrap();
     assert_eq!(t.moves_to_board().len(), 1);
-    assert_eq!(text(&t.lines()), ["3. Bb5"]);
+    assert_eq!(text(&t), ["3 Bb5 …"]);
     assert!(t.pgn().starts_with("[SetUp \"1\"]\n[FEN \""));
     assert!(t.pgn().ends_with("3. Bb5 *"));
 }
@@ -142,8 +172,59 @@ fn a_long_line_does_not_recurse() {
             t.play_uci(uci).unwrap();
         }
     }
-    assert_eq!(t.lines()[0].moves.len(), 8000);
+    assert_eq!(t.move_list().len(), 4000);
     assert!(t.pgn().len() > 8000);
     t.delete_from(t.path(t.current())[0]);
-    assert!(t.lines().is_empty());
+    assert!(t.move_list().is_empty());
+}
+
+#[test]
+fn move_list_as_lichess_lays_it_out() {
+    // 1. e4 e5 (1... c5 2. Nf3 (2. Nh3) d6 3. d4) (1... d6) 2. Nh3
+    let mut t = tree(&["e2e4", "e7e5", "g1h3"]);
+    let e4 = t.path(t.current())[0];
+    t.go(e4);
+    let c5 = t.play_uci("c7c5").unwrap();
+    for uci in ["g1f3", "d7d6", "d2d4"] {
+        t.play_uci(uci).unwrap();
+    }
+    t.go(c5);
+    t.play_uci("g1h3").unwrap();
+    t.go(e4);
+    t.play_uci("d7d6").unwrap();
+    // A short sub-variation without branches goes inline.
+    assert_eq!(
+        text(&t),
+        [
+            "1 e4 e5",
+            "├ 1… c5 2. Nf3 ( 2. Nh3 ) d6 3. d4",
+            "└ 1… d6",
+            "2 Nh3 …"
+        ]
+    );
+
+    // A sub-variation with a branch makes every continuation a row one level deeper (the
+    // same tree, built again: ids are given in order).
+    let mut t = tree(&["e2e4", "e7e5", "g1h3"]);
+    t.go(e4);
+    t.play_uci("c7c5").unwrap();
+    for uci in ["g1f3", "d7d6", "d2d4"] {
+        t.play_uci(uci).unwrap();
+    }
+    t.go(c5);
+    t.play_uci("g1h3").unwrap();
+    let d5 = t.play_uci("d7d5").unwrap();
+    t.play_uci("e4d5").unwrap();
+    t.go(d5);
+    t.play_uci("e4e5").unwrap();
+    assert_eq!(
+        text(&t),
+        [
+            "1 e4 e5",
+            "└ 1… c5",
+            "  ├ 2. Nf3 d6 3. d4",
+            "  └ 2. Nh3 d5 3. exd5 ( 3. e5 )",
+            "2 Nh3 …"
+        ]
+    );
 }

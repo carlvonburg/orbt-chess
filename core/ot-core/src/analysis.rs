@@ -38,20 +38,49 @@ struct Node {
 pub struct AnalysisMove {
     pub id: AnalysisNodeId,
     pub san: String,
-    /// "3." before White's moves, "3…" before Black's at the start of a line.
+    /// "3." before White's moves in a variation, "3…" before Black's where a variation or
+    /// parenthesis starts; none in the main line's rows, which show the number once.
     pub number: Option<String>,
     pub eval: Option<String>,
     pub is_current: bool,
 }
 
-/// A run of moves of one line, as the move list shows it: the main line is cut where
-/// variations branch off, each variation one level deeper.
+/// A row of the move list, laid out as lichess's mobile app does: the main line one full
+/// move per row, and under a move with variations one row per variation.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AnalysisLine {
-    /// 0 for the main line.
-    pub depth: u32,
-    pub moves: Vec<AnalysisMove>,
+pub enum MoveListRow {
+    Main(MainRow),
+    Variation(VariationRow),
 }
+
+/// One full move of the main line; a side is None where the line is cut ("…").
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MainRow {
+    pub number: u32,
+    pub white: Option<AnalysisMove>,
+    pub black: Option<AnalysisMove>,
+}
+
+/// A variation: its moves, with a short one-line sub-variation inline in parentheses. Where
+/// it branches otherwise, every continuation is a row of its own one level deeper.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct VariationRow {
+    /// One per level, outermost first: whether that level's guide goes on below this row
+    /// (a later variation at that level follows). The last is this row's own: ├ or └.
+    pub guides: Vec<bool>,
+    pub tokens: Vec<MoveToken>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MoveToken {
+    Move(AnalysisMove),
+    Open,
+    Close,
+}
+
+/// A sub-variation goes inline when it is the only one, has no branches of its own and is
+/// this many plies or fewer (lichess mobile's rule).
+const INLINE_PLIES: usize = 6;
 
 pub struct AnalysisTree {
     nodes: Vec<Option<Node>>,
@@ -341,67 +370,129 @@ impl AnalysisTree {
         self.node(id)?.eval.as_ref()
     }
 
-    /// The move list: the main line cut at each branch, variations one level deeper, in PGN
-    /// order.
-    pub fn lines(&self) -> Vec<AnalysisLine> {
-        enum Task {
-            /// Writes the first of these alternatives and its line, the others as variations.
-            Line(AnalysisNodeId, u32, bool),
-            /// Writes this variation's first move on a new line, then its line.
-            Variation(AnalysisNodeId, u32),
-        }
-        let mut lines: Vec<AnalysisLine> = Vec::new();
-        let mut stack = vec![Task::Line(ROOT, 0, true)];
-        while let Some(task) = stack.pop() {
-            let (first, depth, new_line) = match task {
-                Task::Line(parent, depth, new_line) => {
-                    let Some(&first) = self.node(parent).and_then(|n| n.children.first()) else {
-                        continue;
-                    };
-                    (first, depth, new_line)
+    /// The move list (see `MoveListRow`), in PGN order.
+    pub fn move_list(&self) -> Vec<MoveListRow> {
+        let mut rows = Vec::new();
+        let mut row: Option<MainRow> = None;
+        let mut parent = ROOT;
+        while let Some(&id) = self.node(parent).and_then(|n| n.children.first()) {
+            let Some(node) = self.node(id) else { break };
+            let number = full_move(node.ply);
+            let mv = AnalysisMove {
+                number: None,
+                ..self.list_move(id, false)
+            };
+            match &mut row {
+                Some(r)
+                    if !node.ply.is_multiple_of(2) && r.number == number && r.black.is_none() =>
+                {
+                    r.black = Some(mv);
                 }
-                Task::Variation(id, depth) => (id, depth, true),
-            };
-            if new_line || lines.is_empty() {
-                lines.push(AnalysisLine {
-                    depth,
-                    moves: Vec::new(),
-                });
+                _ => {
+                    rows.extend(row.take().map(MoveListRow::Main));
+                    let white = node.ply.is_multiple_of(2);
+                    row = Some(MainRow {
+                        number,
+                        black: (!white).then(|| mv.clone()),
+                        white: white.then_some(mv),
+                    });
+                }
             }
-            let Some(node) = self.node(first) else {
-                continue;
-            };
-            let Some(line) = lines.last_mut() else {
-                continue;
-            };
-            let Some(mv) = &node.mv else { continue };
-            let white = node.ply.is_multiple_of(2);
-            let number = if white {
-                Some(format!("{}.", node.ply / 2 + 1))
-            } else if line.moves.is_empty() {
-                Some(format!("{}…", node.ply / 2 + 1))
-            } else {
-                None
-            };
-            line.moves.push(AnalysisMove {
-                id: first,
-                san: mv.san.clone(),
-                number,
-                eval: node.eval.as_ref().map(|e| e.text.clone()),
-                is_current: first == self.current,
-            });
-            // The variations replacing this move come right after it.
-            let siblings: &[AnalysisNodeId] = match node.parent.and_then(|p| self.node(p)) {
-                Some(parent) if parent.children.first() == Some(&first) => &parent.children[1..],
-                _ => &[],
-            };
-            stack.push(Task::Line(first, depth, !siblings.is_empty()));
-            for &variation in siblings.iter().rev() {
-                stack.push(Task::Variation(variation, depth + 1));
+            let siblings = self.node(parent).map_or(&[][..], |p| &p.children[1..]);
+            if !siblings.is_empty() {
+                rows.extend(row.take().map(MoveListRow::Main));
+                self.variation_rows(siblings, &[], &mut rows);
+            }
+            parent = id;
+        }
+        rows.extend(row.map(MoveListRow::Main));
+        rows
+    }
+
+    /// The rows of the variations starting at `starts`, one level below `guides`.
+    fn variation_rows(
+        &self,
+        starts: &[AnalysisNodeId],
+        guides: &[bool],
+        rows: &mut Vec<MoveListRow>,
+    ) {
+        fn push(
+            stack: &mut Vec<(AnalysisNodeId, Vec<bool>)>,
+            ids: &[AnalysisNodeId],
+            guides: &[bool],
+        ) {
+            for (i, &id) in ids.iter().enumerate().rev() {
+                let mut level = guides.to_vec();
+                level.push(i + 1 < ids.len());
+                stack.push((id, level));
             }
         }
-        lines.retain(|line| !line.moves.is_empty());
-        lines
+        let mut stack = Vec::new();
+        push(&mut stack, starts, guides);
+        while let Some((start, guides)) = stack.pop() {
+            let mut tokens = vec![MoveToken::Move(self.list_move(start, true))];
+            let mut cur = start;
+            loop {
+                let children = self.node(cur).map_or(&[][..], |n| &n.children[..]);
+                match children {
+                    [] => break,
+                    [next] => {
+                        cur = *next;
+                        tokens.push(MoveToken::Move(self.list_move(cur, false)));
+                    }
+                    [next, side] if self.is_inline(*side) => {
+                        tokens.push(MoveToken::Move(self.list_move(*next, false)));
+                        tokens.push(MoveToken::Open);
+                        let mut id = *side;
+                        tokens.push(MoveToken::Move(self.list_move(id, true)));
+                        while let Some(&child) = self.node(id).and_then(|n| n.children.first()) {
+                            id = child;
+                            tokens.push(MoveToken::Move(self.list_move(id, false)));
+                        }
+                        tokens.push(MoveToken::Close);
+                        cur = *next;
+                    }
+                    _ => {
+                        push(&mut stack, children, &guides);
+                        break;
+                    }
+                }
+            }
+            rows.push(MoveListRow::Variation(VariationRow { guides, tokens }));
+        }
+    }
+
+    fn is_inline(&self, mut id: AnalysisNodeId) -> bool {
+        for _ in 0..INLINE_PLIES {
+            match self.node(id).map_or(&[][..], |n| &n.children[..]) {
+                [] => return true,
+                [next] => id = *next,
+                _ => return false,
+            }
+        }
+        false
+    }
+
+    /// A move as the list shows it; `numbered` where a variation or parenthesis starts.
+    fn list_move(&self, id: AnalysisNodeId, numbered: bool) -> AnalysisMove {
+        let node = self.node(id);
+        let ply = node.map_or(0, |n| n.ply);
+        let number = if numbered || ply.is_multiple_of(2) {
+            let dots = if ply.is_multiple_of(2) { "." } else { "…" };
+            Some(format!("{}{dots}", full_move(ply)))
+        } else {
+            None
+        };
+        AnalysisMove {
+            id,
+            san: node
+                .and_then(|n| n.mv.as_ref())
+                .map(|m| m.san.clone())
+                .unwrap_or_default(),
+            number,
+            eval: node.and_then(|n| n.eval.as_ref()).map(|e| e.text.clone()),
+            is_current: id == self.current,
+        }
     }
 
     /// The PGN of `id`'s line: the moves to it and the line on after it, without variations
@@ -465,4 +556,8 @@ impl AnalysisTree {
         }
         write_game(&game)
     }
+}
+
+fn full_move(ply: usize) -> u32 {
+    u32::try_from(ply / 2 + 1).unwrap_or(u32::MAX)
 }

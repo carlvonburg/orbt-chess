@@ -694,9 +694,9 @@ public protocol AnalysisSessionProtocol: AnyObject, Sendable {
      */
     func linePgn(id: UInt32)  -> String
     
-    func lines()  -> [AnalysisLine]
-    
     func makeMainLine(id: UInt32)  -> Bool
+    
+    func moveList()  -> [MoveListRow]
     
     func movesToBoard()  -> [PlayedMove]
     
@@ -880,21 +880,21 @@ open func linePgn(id: UInt32) -> String  {
 })
 }
     
-open func lines() -> [AnalysisLine]  {
-    return try!  FfiConverterSequenceTypeAnalysisLine.lift(try! rustCall() {
-        uniffiCallStatus in
-    uniffi_opening_core_fn_method_analysissession_lines(
-            self.uniffiCloneHandle(),uniffiCallStatus
-    )
-})
-}
-    
 open func makeMainLine(id: UInt32) -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_analysissession_make_main_line(
             self.uniffiCloneHandle(),
         FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+open func moveList() -> [MoveListRow]  {
+    return try!  FfiConverterSequenceTypeMoveListRow.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_analysissession_move_list(
+            self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
 }
@@ -5923,60 +5923,6 @@ public func FfiConverterTypeAddResult_lower(_ value: AddResult) -> RustBuffer {
 }
 
 
-public struct AnalysisLine: Equatable, Hashable {
-    public var depth: UInt32
-    public var moves: [AnalysisMove]
-
-    // Default memberwise initializers are never public by default, so we
-    // declare one manually.
-    public init(depth: UInt32, moves: [AnalysisMove]) {
-        self.depth = depth
-        self.moves = moves
-    }
-
-    
-
-    
-}
-
-#if compiler(>=6)
-extension AnalysisLine: Sendable {}
-#endif
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public struct FfiConverterTypeAnalysisLine: FfiConverterRustBuffer {
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AnalysisLine {
-        return
-            try AnalysisLine(
-                depth: FfiConverterUInt32.read(from: &buf), 
-                moves: FfiConverterSequenceTypeAnalysisMove.read(from: &buf)
-        )
-    }
-
-    public static func write(_ value: AnalysisLine, into buf: inout [UInt8]) {
-        FfiConverterUInt32.write(value.depth, into: &buf)
-        FfiConverterSequenceTypeAnalysisMove.write(value.moves, into: &buf)
-    }
-}
-
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeAnalysisLine_lift(_ buf: RustBuffer) throws -> AnalysisLine {
-    return try FfiConverterTypeAnalysisLine.lift(buf)
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-public func FfiConverterTypeAnalysisLine_lower(_ value: AnalysisLine) -> RustBuffer {
-    return FfiConverterTypeAnalysisLine.lower(value)
-}
-
-
 public struct AnalysisMove: Equatable, Hashable {
     public var id: UInt32
     public var san: String
@@ -7872,6 +7818,64 @@ public func FfiConverterTypeHttpResponse_lift(_ buf: RustBuffer) throws -> HttpR
 #endif
 public func FfiConverterTypeHttpResponse_lower(_ value: HttpResponse) -> RustBuffer {
     return FfiConverterTypeHttpResponse.lower(value)
+}
+
+
+public struct MainRow: Equatable, Hashable {
+    public var number: UInt32
+    public var white: AnalysisMove?
+    public var black: AnalysisMove?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(number: UInt32, white: AnalysisMove?, black: AnalysisMove?) {
+        self.number = number
+        self.white = white
+        self.black = black
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension MainRow: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeMainRow: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MainRow {
+        return
+            try MainRow(
+                number: FfiConverterUInt32.read(from: &buf), 
+                white: FfiConverterOptionTypeAnalysisMove.read(from: &buf), 
+                black: FfiConverterOptionTypeAnalysisMove.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: MainRow, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.number, into: &buf)
+        FfiConverterOptionTypeAnalysisMove.write(value.white, into: &buf)
+        FfiConverterOptionTypeAnalysisMove.write(value.black, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMainRow_lift(_ buf: RustBuffer) throws -> MainRow {
+    return try FfiConverterTypeMainRow.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMainRow_lower(_ value: MainRow) -> RustBuffer {
+    return FfiConverterTypeMainRow.lower(value)
 }
 
 
@@ -9947,6 +9951,60 @@ public func FfiConverterTypeTrueRetention_lower(_ value: TrueRetention) -> RustB
 }
 
 
+public struct VariationRow: Equatable, Hashable {
+    public var guides: [Bool]
+    public var tokens: [MoveToken]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(guides: [Bool], tokens: [MoveToken]) {
+        self.guides = guides
+        self.tokens = tokens
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension VariationRow: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeVariationRow: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> VariationRow {
+        return
+            try VariationRow(
+                guides: FfiConverterSequenceBool.read(from: &buf), 
+                tokens: FfiConverterSequenceTypeMoveToken.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: VariationRow, into buf: inout [UInt8]) {
+        FfiConverterSequenceBool.write(value.guides, into: &buf)
+        FfiConverterSequenceTypeMoveToken.write(value.tokens, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeVariationRow_lift(_ buf: RustBuffer) throws -> VariationRow {
+    return try FfiConverterTypeVariationRow.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeVariationRow_lower(_ value: VariationRow) -> RustBuffer {
+    return FfiConverterTypeVariationRow.lower(value)
+}
+
+
 public struct WeakMove: Equatable, Hashable {
     public var epd: Epd
     public var lapses: Int64
@@ -11460,6 +11518,78 @@ public func FfiConverterTypeLineOutcome_lower(_ value: LineOutcome) -> RustBuffe
 
 
 
+public enum MoveListRow: Equatable, Hashable {
+    
+    case main(MainRow
+    )
+    case variation(VariationRow
+    )
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension MoveListRow: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeMoveListRow: FfiConverterRustBuffer {
+    typealias SwiftType = MoveListRow
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MoveListRow {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .main(try FfiConverterTypeMainRow.read(from: &buf)
+        )
+        
+        case 2: return .variation(try FfiConverterTypeVariationRow.read(from: &buf)
+        )
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: MoveListRow, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .main(v1):
+            writeInt(&buf, Int32(1))
+            FfiConverterTypeMainRow.write(v1, into: &buf)
+            
+        
+        case let .variation(v1):
+            writeInt(&buf, Int32(2))
+            FfiConverterTypeVariationRow.write(v1, into: &buf)
+            
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMoveListRow_lift(_ buf: RustBuffer) throws -> MoveListRow {
+    return try FfiConverterTypeMoveListRow.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMoveListRow_lower(_ value: MoveListRow) -> RustBuffer {
+    return FfiConverterTypeMoveListRow.lower(value)
+}
+
+
+
+
 public enum MoveRole: Equatable, Hashable {
     
     case auto
@@ -11531,6 +11661,82 @@ public func FfiConverterTypeMoveRole_lift(_ buf: RustBuffer) throws -> MoveRole 
 #endif
 public func FfiConverterTypeMoveRole_lower(_ value: MoveRole) -> RustBuffer {
     return FfiConverterTypeMoveRole.lower(value)
+}
+
+
+
+
+public enum MoveToken: Equatable, Hashable {
+    
+    case move(AnalysisMove
+    )
+    case `open`
+    case close
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension MoveToken: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeMoveToken: FfiConverterRustBuffer {
+    typealias SwiftType = MoveToken
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> MoveToken {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .move(try FfiConverterTypeAnalysisMove.read(from: &buf)
+        )
+        
+        case 2: return .`open`
+        
+        case 3: return .close
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: MoveToken, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case let .move(v1):
+            writeInt(&buf, Int32(1))
+            FfiConverterTypeAnalysisMove.write(v1, into: &buf)
+            
+        
+        case .`open`:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .close:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMoveToken_lift(_ buf: RustBuffer) throws -> MoveToken {
+    return try FfiConverterTypeMoveToken.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeMoveToken_lower(_ value: MoveToken) -> RustBuffer {
+    return FfiConverterTypeMoveToken.lower(value)
 }
 
 
@@ -12789,6 +12995,30 @@ fileprivate struct FfiConverterOptionTypePosition: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeAnalysisMove: FfiConverterRustBuffer {
+    typealias SwiftType = AnalysisMove?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeAnalysisMove.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeAnalysisMove.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeBoardPiece: FfiConverterRustBuffer {
     typealias SwiftType = BoardPiece?
 
@@ -13513,6 +13743,31 @@ fileprivate struct FfiConverterSequenceDouble: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceBool: FfiConverterRustBuffer {
+    typealias SwiftType = [Bool]
+
+    public static func write(_ value: [Bool], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterBool.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Bool] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Bool]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterBool.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
     typealias SwiftType = [String]
 
@@ -13530,56 +13785,6 @@ fileprivate struct FfiConverterSequenceString: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterString.read(from: &buf))
-        }
-        return seq
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-fileprivate struct FfiConverterSequenceTypeAnalysisLine: FfiConverterRustBuffer {
-    typealias SwiftType = [AnalysisLine]
-
-    public static func write(_ value: [AnalysisLine], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for item in value {
-            FfiConverterTypeAnalysisLine.write(item, into: &buf)
-        }
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AnalysisLine] {
-        let len: Int32 = try readInt(&buf)
-        var seq = [AnalysisLine]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAnalysisLine.read(from: &buf))
-        }
-        return seq
-    }
-}
-
-#if swift(>=5.8)
-@_documentation(visibility: private)
-#endif
-fileprivate struct FfiConverterSequenceTypeAnalysisMove: FfiConverterRustBuffer {
-    typealias SwiftType = [AnalysisMove]
-
-    public static func write(_ value: [AnalysisMove], into buf: inout [UInt8]) {
-        let len = Int32(value.count)
-        writeInt(&buf, len)
-        for item in value {
-            FfiConverterTypeAnalysisMove.write(item, into: &buf)
-        }
-    }
-
-    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [AnalysisMove] {
-        let len: Int32 = try readInt(&buf)
-        var seq = [AnalysisMove]()
-        seq.reserveCapacity(Int(len))
-        for _ in 0 ..< len {
-            seq.append(try FfiConverterTypeAnalysisMove.read(from: &buf))
         }
         return seq
     }
@@ -14130,6 +14335,56 @@ fileprivate struct FfiConverterSequenceTypeExplorerSpeed: FfiConverterRustBuffer
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeExplorerSpeed.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeMoveListRow: FfiConverterRustBuffer {
+    typealias SwiftType = [MoveListRow]
+
+    public static func write(_ value: [MoveListRow], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeMoveListRow.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [MoveListRow] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [MoveListRow]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeMoveListRow.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeMoveToken: FfiConverterRustBuffer {
+    typealias SwiftType = [MoveToken]
+
+    public static func write(_ value: [MoveToken], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeMoveToken.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [MoveToken] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [MoveToken]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeMoveToken.read(from: &buf))
         }
         return seq
     }
@@ -15197,10 +15452,10 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_analysissession_line_pgn() != 40164) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_analysissession_lines() != 60461) {
+    if (uniffi_opening_core_checksum_method_analysissession_make_main_line() != 53119) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_analysissession_make_main_line() != 53119) {
+    if (uniffi_opening_core_checksum_method_analysissession_move_list() != 59621) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_analysissession_moves_to_board() != 9569) {

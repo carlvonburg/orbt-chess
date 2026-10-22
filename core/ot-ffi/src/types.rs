@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use ot_core::analysis::{AnalysisLine, AnalysisMove, NodeEval};
+use ot_core::analysis::{AnalysisMove, MainRow, MoveListRow, MoveToken, NodeEval, VariationRow};
 use ot_core::builder::{Arrow, ArrowStyle};
 use ot_core::chess::{BoardPiece, BoardSquare, Epd, PieceKind, PlayedMove, Side};
 use ot_core::coverage::{CoverageGap, GapKind, NodeCoverage, ReplyInfo, Status};
@@ -979,10 +979,30 @@ pub struct AnalysisMove {
     pub is_current: bool,
 }
 
+#[uniffi::remote(Enum)]
+pub enum MoveListRow {
+    Main(MainRow),
+    Variation(VariationRow),
+}
+
 #[uniffi::remote(Record)]
-pub struct AnalysisLine {
-    pub depth: u32,
-    pub moves: Vec<AnalysisMove>,
+pub struct MainRow {
+    pub number: u32,
+    pub white: Option<AnalysisMove>,
+    pub black: Option<AnalysisMove>,
+}
+
+#[uniffi::remote(Record)]
+pub struct VariationRow {
+    pub guides: Vec<bool>,
+    pub tokens: Vec<MoveToken>,
+}
+
+#[uniffi::remote(Enum)]
+pub enum MoveToken {
+    Move(AnalysisMove),
+    Open,
+    Close,
 }
 
 #[uniffi::export]

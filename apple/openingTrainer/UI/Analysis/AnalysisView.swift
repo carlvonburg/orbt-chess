@@ -138,21 +138,20 @@ struct AnalysisScreen: View {
     }
 
     private func panel(compact: Bool) -> some View {
-        List {
-            if !compact || tab == .moves {
-                Section {
-                    AnalysisMoveList(model: model)
-                } header: {
-                    if !compact { Text("Moves") }
+        Group {
+            if compact {
+                switch tab {
+                case .explorer: explorer(showsHeader: false)
+                case .moves: moves
+                }
+            } else {
+                VStack(spacing: 0) {
+                    moves
+                    Divider()
+                    explorer(showsHeader: true)
                 }
             }
-            if !compact || tab == .explorer {
-                AnalysisExplorerSection(model: model, showsHeader: !compact)
-            }
         }
-        #if os(iOS)
-        .listStyle(.plain)
-        #endif
         .safeAreaBar(edge: .top) {
             if compact {
                 Picker("Panel", selection: $tab) {
@@ -165,6 +164,26 @@ struct AnalysisScreen: View {
                 .padding(.vertical, 6)
             }
         }
+    }
+
+    /// Not a List: a list row has one context menu, and each move needs its own.
+    private var moves: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                AnalysisMoveList(model: model)
+            }
+            .padding(.vertical, 8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private func explorer(showsHeader: Bool) -> some View {
+        List {
+            AnalysisExplorerSection(model: model, showsHeader: showsHeader)
+        }
+        #if os(iOS)
+        .listStyle(.plain)
+        #endif
     }
 
     @ToolbarContentBuilder
@@ -292,29 +311,127 @@ struct EvalChip: View {
     }
 }
 
-/// The moves of the analysis: the main line, cut where variations branch off, and each
-/// variation indented. A move's menu promotes it, makes it the main line, copies its line or
-/// deletes it.
+/// The moves of the analysis, laid out by the core as lichess's app does (`MoveListRow`):
+/// the main line one full move per row, each variation a row under the move it replaces, with
+/// a guide per level. Tap a move to go to it; long-press it to promote, copy or delete its line.
 struct AnalysisMoveList: View {
     let model: AnalysisModel
 
     var body: some View {
-        let lines = model.lines
-        if lines.isEmpty {
+        let rows = model.moveList
+        if rows.isEmpty {
             Text("Play a move on the board.")
                 .foregroundStyle(.secondary)
+                .padding(.horizontal)
         }
-        ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-            FlowLayout(spacing: 2, lineSpacing: 2) {
-                ForEach(line.moves, id: \.id) { move in
-                    AnalysisMoveChip(move: move)
-                        .onTapGesture { model.go(to: move.id) }
-                        .contextMenu { menu(move) }
+        ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
+            switch row {
+            case .main(let row):
+                HStack(spacing: 4) {
+                    Text("\(row.number)")
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(minWidth: 28, alignment: .leading)
+                    cell(row.white)
+                    // "…" where the line goes on below the variations, nothing at its end.
+                    // keeps its half either way, so White's move stays its width.
+                    if row.black != nil || index < rows.count - 1 {
+                        cell(row.black)
+                    } else {
+                        Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 2)
+            case .variation(let row):
+                HStack(alignment: .top, spacing: 4) {
+                    HStack(spacing: 4) {
+                        ForEach(Array(row.guides.enumerated()), id: \.offset) { level, goesOn in
+                            Guide(own: level == row.guides.count - 1, goesOn: goesOn)
+                                .stroke(.tertiary, lineWidth: 1)
+                                .frame(width: 12)
+                        }
+                    }
+                    FlowLayout(spacing: 2, lineSpacing: 2) {
+                        ForEach(Array(row.tokens.enumerated()), id: \.offset) { _, token in
+                            switch token {
+                            case .move(let move): button(move) { AnalysisMoveChip(move: move) }
+                            case .open: Text("(").foregroundStyle(.secondary)
+                            case .close: Text(")").foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.secondary.opacity(0.06))
+            }
+        }
+    }
+
+    /// One level of a variation's guides: an outer level's line passing by (if it goes on),
+    /// or this row's own ├ or └.
+    private struct Guide: Shape {
+        let own: Bool
+        let goesOn: Bool
+
+        func path(in rect: CGRect) -> Path {
+            let x = rect.minX + 0.5
+            let tick = rect.minY + 16
+            var path = Path()
+            if own {
+                path.move(to: CGPoint(x: x, y: rect.minY))
+                path.addLine(to: CGPoint(x: x, y: goesOn ? rect.maxY : tick))
+                path.move(to: CGPoint(x: x, y: tick))
+                path.addLine(to: CGPoint(x: rect.maxX, y: tick))
+            } else if goesOn {
+                path.move(to: CGPoint(x: x, y: rect.minY))
+                path.addLine(to: CGPoint(x: x, y: rect.maxY))
+            }
+            return path
+        }
+    }
+
+    @ViewBuilder
+    private func cell(_ move: AnalysisMove?) -> some View {
+        if let move {
+            button(move) {
+                HStack(spacing: 4) {
+                    Text(move.san).fontWeight(move.isCurrent ? .semibold : .regular)
+                    Spacer(minLength: 0)
+                    if let eval = move.eval {
+                        Text(eval).font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background {
+                    if move.isCurrent {
+                        RoundedRectangle(cornerRadius: 6).fill(Color.accentColor.opacity(0.25))
+                    }
                 }
             }
-            .padding(.leading, CGFloat(min(line.depth, 6)) * 14)
-            .listRowBackground(line.depth > 0 ? Color.secondary.opacity(0.06) : nil)
+            .frame(maxWidth: .infinity)
+        } else {
+            Text("…")
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+
+    private func button(_ move: AnalysisMove, @ViewBuilder label: () -> some View) -> some View {
+        Button { model.go(to: move.id) } label: {
+            label().contentShape(.rect)
+        }
+        // Several buttons in one list row: borderless, so a tap presses this move, not the row;
+        // moves read as text, not in the accent colour.
+        .buttonStyle(.borderless)
+        .tint(.primary)
+        // Long-press lifts this move only, not the row it shares with the other side's move.
+        .contentShape(.contextMenuPreview, .rect(cornerRadius: 6))
+        .contextMenu { menu(move) }
     }
 
     @ViewBuilder
@@ -328,7 +445,7 @@ struct AnalysisMoveList: View {
     }
 }
 
-/// One move of the analysis: number, move and the evaluation after it.
+/// One move of a variation: number, move and the evaluation after it.
 struct AnalysisMoveChip: View {
     let move: AnalysisMove
 
@@ -337,7 +454,7 @@ struct AnalysisMoveChip: View {
             if let number = move.number {
                 Text(number).foregroundStyle(.secondary)
             }
-            Text(move.san).fontWeight(move.isCurrent ? .bold : .regular)
+            Text(move.san).fontWeight(move.isCurrent ? .semibold : .regular)
             if let eval = move.eval {
                 Text(eval).font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
             }
@@ -350,7 +467,6 @@ struct AnalysisMoveChip: View {
                 RoundedRectangle(cornerRadius: 6).fill(Color.accentColor.opacity(0.25))
             }
         }
-        .contentShape(.rect)
     }
 }
 
