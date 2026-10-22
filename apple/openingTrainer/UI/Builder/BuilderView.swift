@@ -55,7 +55,7 @@ struct BuilderView: View {
         }
         // The menu bar's Move commands act on this builder, unless a sheet has the keys.
         .focusedSceneValue(\.builder, presentation.sheet == nil ? model : nil)
-        .navigationTitle(document.name)
+        .boardScreenTitle("Browse", repertoire: document.name, inSplitView: inSplitView)
         .toolbar { toolbar }
         .hidesTabBar()
         .sheet(item: $presentation.sheet) { sheet in sheetContent(sheet).presentationSizing(.form) }
