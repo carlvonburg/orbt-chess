@@ -174,8 +174,12 @@ final class DrillModel {
 
 struct DrillView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var model: DrillModel
     @State private var browsing: BrowseRequest?
+    /// Board and panel side by side (iPad landscape, Mac): the actions move from the bottom
+    /// bar to the top.
+    @State private var wide = false
 
     private struct BrowseRequest: Hashable {
         let node: NodeID
@@ -211,35 +215,56 @@ struct DrillView: View {
     }
 
     private var content: some View {
-        VStack(spacing: 12) {
-            if model.finished {
-                StudyFinishedView(model: model, next: next)
-            } else {
-                // Edge to edge on a phone, as in the builder.
-                BoardView(position: model.position, orientation: model.color, lastMove: model.lastMove,
-                          arrows: model.arrows, movableSide: model.isUserTurn ? model.color : nil) { from, to, promotion in
-                    model.userMoved(from: from, to: to, promotion: promotion)
-                }
-                .frame(maxWidth: 680)
-                // Laid out like the builder: move list, then opening name; then what to do.
-                VStack(alignment: .leading, spacing: 8) {
-                    LineHistory(tree: model.document.tree, nodes: model.playedNodes)
-                    if let name = model.openingName {
-                        Text(name).font(.subheadline.weight(.semibold)).lineLimit(2)
+        GeometryReader { geo in
+            if !model.finished && isBoardSplit(geo.size, sizeClass) {
+                // Laid out like the builder: what to do on the leading side, the board and
+                // the moves played under it on the trailing side.
+                BoardSplit(size: geo.size) {
+                    VStack(alignment: .leading, spacing: 20) {
+                        if !model.finished {
+                            StudyCountsList(counts: model.counts, highlight: model.askedKind)
+                        }
+                        VStack(alignment: .leading, spacing: 8) {
+                            openingName
+                            status
+                        }
                     }
-                    status
+                    .padding()
+                } board: {
+                    board
+                } below: {
+                    LineHistory(tree: model.document.tree, nodes: model.playedNodes)
                 }
-                .frame(maxWidth: 680, alignment: .leading)
-                .padding(.horizontal)
-                Spacer(minLength: 0)
+            } else {
+                VStack(spacing: 12) {
+                    if model.finished {
+                        StudyFinishedView(model: model, next: next)
+                    } else {
+                        // Edge to edge on a phone, as in the builder.
+                        board
+                            .frame(maxWidth: 680)
+                        // Laid out like the builder: move list, then opening name; then what to do.
+                        VStack(alignment: .leading, spacing: 8) {
+                            LineHistory(tree: model.document.tree, nodes: model.playedNodes)
+                            openingName
+                            status
+                        }
+                        .frame(maxWidth: 680, alignment: .leading)
+                        .padding(.horizontal)
+                        Spacer(minLength: 0)
+                    }
+                }
+                .padding(.vertical)
+                .frame(maxWidth: .infinity)
             }
         }
-        .padding(.vertical)
+        .onGeometryChange(for: Bool.self) { isBoardSplit($0.size, sizeClass) } action: { wide = $0 }
         .navigationTitle(model.mode.title)
         .navigationSubtitle(model.document.name)
         .inlineNavigationTitle()
         .toolbar {
-            if !model.finished {
+            // Side by side the counts are in the panel, with what each means.
+            if !model.finished && !wide {
                 ToolbarItem(placement: .trailingBar) {
                     StudyCountsView(counts: model.counts, highlight: model.askedKind)
                         .font(.subheadline.monospacedDigit().weight(.semibold))
@@ -255,13 +280,17 @@ struct DrillView: View {
                 }
             }
             if !model.finished {
-                ToolbarItem(placement: .bottomActions) {
+                // Side by side the actions are top leading, over the panel, as in the builder.
+                let actions: ToolbarItemPlacement = wide ? .leadingBar : .bottomActions
+                ToolbarItem(placement: actions) {
                     Button("Hint", systemImage: "lightbulb") { model.hint() }
                         .disabled(!model.isUserTurn)
                 }
-                ToolbarSpacer(.flexible, placement: .bottomActions)
+                if !wide {
+                    ToolbarSpacer(.flexible, placement: .bottomActions)
+                }
                 // Both leave the board to look the move up, so both count as Again.
-                ToolbarItemGroup(placement: .bottomActions) {
+                ToolbarItemGroup(placement: actions) {
                     Button("Browse Repertoire", systemImage: "list.bullet.indent") {
                         if let node = model.browseNode() { browsing = BrowseRequest(node: node) }
                     }
@@ -280,6 +309,20 @@ struct DrillView: View {
             case .wrong: .error
             default: nil
             }
+        }
+    }
+
+    private var board: some View {
+        BoardView(position: model.position, orientation: model.color, lastMove: model.lastMove,
+                  arrows: model.arrows, movableSide: model.isUserTurn ? model.color : nil) { from, to, promotion in
+            model.userMoved(from: from, to: to, promotion: promotion)
+        }
+    }
+
+    @ViewBuilder
+    private var openingName: some View {
+        if let name = model.openingName {
+            Text(name).font(.subheadline.weight(.semibold)).lineLimit(2)
         }
     }
 
@@ -354,6 +397,35 @@ struct StudyCountsView: View {
         Text(value.formatted())
             .foregroundStyle(color)
             .underline(highlight == kind)
+    }
+}
+
+/// Anki's three counts one per line with what each means, where there is room (side by side).
+struct StudyCountsList: View {
+    let counts: Counts
+    var highlight: QueueKind?
+
+    var body: some View {
+        Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 10) {
+            row(counts.new, .blue, .new, "New", "Moves you haven't studied yet")
+            row(counts.learning, .red, .learning, "Learning", "Moves you're learning, shown again within minutes")
+            row(counts.review, .green, .review, "To Review", "Learned moves due today")
+        }
+    }
+
+    private func row(_ value: Int64, _ color: Color, _ kind: QueueKind, _ title: String, _ detail: String) -> some View {
+        GridRow {
+            Text(value.formatted())
+                .font(.title2.monospacedDigit().weight(.semibold))
+                .foregroundStyle(color)
+                .underline(highlight == kind)
+                .gridColumnAlignment(.trailing)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.subheadline.weight(.semibold))
+                Text(detail).font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 

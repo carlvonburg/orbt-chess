@@ -18,38 +18,9 @@ struct StatisticsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 16) {
-                    filters
-                    if let graphs = model.graphs {
-                        if model.document != nil { ExpectedRecallCard(model: model, graphs: graphs) }
-                        TodayCard(graphs: graphs)
-                        FutureDueCard(graphs: graphs)
-                        CalendarCard(graphs: graphs)
-                        ReviewsCard(graphs: graphs, range: model.range)
-                        CardCountsCard(graphs: graphs)
-                        HistogramCard(title: "Review Intervals", unit: "days", values: graphs.intervals().ints,
-                                      footer: "The delay until each move is shown again.")
-                        HistogramCard(title: "Difficulty", unit: "%", values: graphs.difficulty().ints, maxBin: 100,
-                                      footer: "How hard each move is to remember (FSRS).")
-                        HistogramCard(title: "Stability", unit: "days", values: graphs.stability().ints,
-                                      footer: "How long until recall drops to 90% (FSRS).")
-                        RetrievabilityCard(graphs: graphs)
-                        HourlyCard(graphs: graphs, range: model.range)
-                        AnswerButtonsCard(graphs: graphs, range: model.range)
-                        TrueRetentionCard(graphs: graphs)
-                        if model.document != nil {
-                            WeakestMovesCard(model: model)
-                            BranchRetentionCard(model: model)
-                        }
-                    } else if model.isLoading {
-                        ProgressView().padding(.top, 60)
-                    } else {
-                        ContentUnavailableView("No statistics yet", systemImage: "chart.bar",
-                                               description: Text("Study a repertoire to see statistics."))
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 24)
+                StatisticsCards(model: model)
+                    .padding(.horizontal)
+                    .padding(.bottom, 24)
             }
             .navigationTitle("Statistics")
             .navigationSubtitle(scopeTitle)
@@ -68,14 +39,6 @@ struct StatisticsView: View {
     private struct TaskKey: Hashable {
         let scope: StatisticsModel.Scope
         let entries: Int
-    }
-
-    /// The period stays in the content; which repertoire is in the toolbar.
-    private var filters: some View {
-        Picker("Period", selection: $model.range) {
-            ForEach(GraphRange.allCases) { Text($0.title).tag($0) }
-        }
-        .pickerStyle(.segmented)
     }
 
     /// The repertoire, in the toolbar as iOS 26 apps do; the icon is filled while filtering.
@@ -100,7 +63,68 @@ struct StatisticsView: View {
         case .repertoire(let id): app.library.entry(id: id)?.name ?? "Repertoire"
         }
     }
+}
 
+/// The Statistics screen's content for one scope, inline under an overview (iPad, Mac): the
+/// same cards with the repertoire filter set to what the overview shows.
+struct InlineStatistics: View {
+    @Environment(AppModel.self) private var app
+    @State private var model = StatisticsModel()
+    let scope: StatisticsModel.Scope
+
+    var body: some View {
+        StatisticsCards(model: model)
+            .task(id: scope) {
+                model.scope = scope
+                await model.load(app)
+            }
+    }
+}
+
+/// The period, then every card for the model's scope.
+struct StatisticsCards: View {
+    @Bindable var model: StatisticsModel
+
+    var body: some View {
+        VStack(spacing: 16) {
+            filters
+            if let graphs = model.graphs {
+                if model.document != nil { ExpectedRecallCard(model: model, graphs: graphs) }
+                TodayCard(graphs: graphs)
+                FutureDueCard(graphs: graphs)
+                CalendarCard(graphs: graphs)
+                ReviewsCard(graphs: graphs, range: model.range)
+                CardCountsCard(graphs: graphs)
+                HistogramCard(title: "Review Intervals", unit: "days", values: graphs.intervals().ints,
+                              footer: "The delay until each move is shown again.")
+                HistogramCard(title: "Difficulty", unit: "%", values: graphs.difficulty().ints, maxBin: 100,
+                              footer: "How hard each move is to remember (FSRS).")
+                HistogramCard(title: "Stability", unit: "days", values: graphs.stability().ints,
+                              footer: "How long until recall drops to 90% (FSRS).")
+                RetrievabilityCard(graphs: graphs)
+                HourlyCard(graphs: graphs, range: model.range)
+                AnswerButtonsCard(graphs: graphs, range: model.range)
+                TrueRetentionCard(graphs: graphs)
+                if model.document != nil {
+                    WeakestMovesCard(model: model)
+                    BranchRetentionCard(model: model)
+                }
+            } else if model.isLoading {
+                ProgressView().padding(.top, 60)
+            } else {
+                ContentUnavailableView("No statistics yet", systemImage: "chart.bar",
+                                       description: Text("Study a repertoire to see statistics."))
+            }
+        }
+    }
+
+    /// The period stays in the content; which repertoire is in the toolbar (or the overview).
+    private var filters: some View {
+        Picker("Period", selection: $model.range) {
+            ForEach(GraphRange.allCases) { Text($0.title).tag($0) }
+        }
+        .pickerStyle(.segmented)
+    }
 }
 
 // MARK: Palette

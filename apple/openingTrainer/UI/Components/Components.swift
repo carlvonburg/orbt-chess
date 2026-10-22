@@ -7,6 +7,38 @@ import SwiftUI
 /// The core's learning progress, not Foundation's `Progress`.
 typealias Progress = OpeningCoreRust.Progress
 
+/// Whether the builder and study lay out side by side: a regular-width landscape window.
+func isBoardSplit(_ size: CGSize, _ sizeClass: UserInterfaceSizeClass?) -> Bool {
+    isRegularWidth(sizeClass) && size.width > size.height
+}
+
+/// The builder and study side by side (iPad landscape, Mac): the panel on the leading side,
+/// the board on the trailing side as large as the height allows, with its moves under it.
+struct BoardSplit<Panel: View, Board: View, Below: View>: View {
+    let size: CGSize
+    @ViewBuilder var panel: Panel
+    @ViewBuilder var board: Board
+    @ViewBuilder var below: Below
+
+    var body: some View {
+        // Under the board the moves, about 44 pt, and the padding; at least 380 pt stay
+        // for the panel, which takes the rest of the width.
+        let side = max(240, min(size.height - 76, size.width - 380 - 32))
+        HStack(alignment: .top, spacing: 0) {
+            panel
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            VStack(spacing: 12) {
+                board
+                    .frame(width: side, height: side)
+                below
+                Spacer(minLength: 0)
+            }
+            .frame(width: side)
+            .padding()
+        }
+    }
+}
+
 /// Thin horizontal progress bar.
 struct CompletionBar: View {
     let value: Double

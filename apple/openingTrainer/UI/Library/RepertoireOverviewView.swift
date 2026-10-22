@@ -5,6 +5,7 @@ import SwiftUI
 /// and a short version of its statistics. The study action is pinned at the bottom (iOS 26).
 struct RepertoireOverviewView: View {
     @Environment(AppModel.self) private var app
+    @Environment(\.horizontalSizeClass) private var sizeClass
     let document: RepertoireDocument
     let editLines: () -> Void
     let study: () -> Void
@@ -22,8 +23,19 @@ struct RepertoireOverviewView: View {
         List {
             coverageSection(stats)
             studySection(stats)
+            if isRegularWidth(sizeClass) {
+                // Room for the Statistics screen's cards, filtered to this repertoire.
+                Section("Statistics") {
+                    InlineStatistics(scope: .repertoire(document.entryID))
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
+            }
         }
-        .safeAreaBar(edge: .bottom) { studyBar(stats) }
+        .safeAreaBar(edge: .bottom) {
+            // A phone's actions are at the bottom; in a regular width in their sections.
+            if !isRegularWidth(sizeClass) { studyBar(stats) }
+        }
         .checksCoverage(document)
         // A detail screen with its own actions at the bottom, like the study screen.
         .hidesTabBar()
@@ -69,6 +81,10 @@ struct RepertoireOverviewView: View {
                 CoverageCheckStatus(document: document)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
+            if isRegularWidth(sizeClass) {
+                Button("Browse / Edit", action: editLines)
+                    .modifier(ActionButtonStyle(prominent: buildFirst(stats)))
+            }
         } header: {
             Text("Coverage")
         }
@@ -118,18 +134,23 @@ struct RepertoireOverviewView: View {
                     LabeledContent("True retention (month)", value: Format.percent(retention))
                 }
             }
-            Button {
-                app.statisticsScope = .repertoire(document.entryID)
-                app.selectedTab = .statistics
-            } label: {
-                HStack {
-                    Label("Statistics", systemImage: "chart.bar")
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
-                }
-                .contentShape(Rectangle())
+            if isRegularWidth(sizeClass) && stats.progress.cards > 0 {
+                studyButton(stats, prominent: !buildFirst(stats))
             }
-            .tint(.primary)
+            if !isRegularWidth(sizeClass) {
+                Button {
+                    app.statisticsScope = .repertoire(document.entryID)
+                    app.selectedTab = .statistics
+                } label: {
+                    HStack {
+                        Label("Statistics", systemImage: "chart.bar")
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .tint(.primary)
+            }
         } header: {
             HStack {
                 Text("Study")
@@ -165,16 +186,21 @@ struct RepertoireOverviewView: View {
             .fixedSize()
     }
 
-    /// The actions, pinned at the bottom, the main one first: Browse / Edit while there are
-    /// gaps (or nothing of yours to study), else studying (Study Now while moves are due,
-    /// Study More Today once done for today).
+    /// While there are gaps (or nothing of yours to study), building is the main action.
+    private func buildFirst(_ stats: EntryStats) -> Bool {
+        stats.gaps > 0 || stats.progress.cards == 0
+    }
+
+    /// The actions on a phone, pinned at the bottom, the main one first: Browse / Edit while
+    /// there are gaps (or nothing of yours to study), else studying (Study Now while moves are
+    /// due, Study More Today once done for today).
     private func studyBar(_ stats: EntryStats) -> some View {
-        let buildFirst = stats.gaps > 0 || stats.progress.cards == 0
+        let buildFirst = self.buildFirst(stats)
         return VStack(spacing: 12) {
             if stats.progress.cards > 0 {
                 if !buildFirst { studyButton(stats, prominent: true) }
                 Button("Browse / Edit", action: editLines)
-                    .modifier(GlassButtonStyle(prominent: buildFirst))
+                    .modifier(ActionButtonStyle(prominent: buildFirst))
                 if buildFirst { studyButton(stats, prominent: false) }
             } else {
                 Button("Browse / Edit", action: editLines).buttonStyle(.glassProminent)
@@ -188,16 +214,22 @@ struct RepertoireOverviewView: View {
     @ViewBuilder
     private func studyButton(_ stats: EntryStats, prominent: Bool) -> some View {
         if stats.counts.total > 0 {
-            Button("Study Now", action: study).modifier(GlassButtonStyle(prominent: prominent))
+            Button("Study Now", action: study).modifier(ActionButtonStyle(prominent: prominent))
         } else {
-            studyMoreMenu(stats).modifier(GlassButtonStyle(prominent: prominent))
+            studyMoreMenu(stats).modifier(ActionButtonStyle(prominent: prominent))
         }
     }
 
-    private struct GlassButtonStyle: ViewModifier {
+    /// Glass in the phone's bottom bar; the standard styles in the content (regular width).
+    private struct ActionButtonStyle: ViewModifier {
+        @Environment(\.horizontalSizeClass) private var sizeClass
         let prominent: Bool
         func body(content: Content) -> some View {
-            if prominent { content.buttonStyle(.glassProminent) } else { content.buttonStyle(.glass) }
+            if isRegularWidth(sizeClass) {
+                if prominent { content.buttonStyle(.borderedProminent) } else { content.buttonStyle(.bordered) }
+            } else {
+                if prominent { content.buttonStyle(.glassProminent) } else { content.buttonStyle(.glass) }
+            }
         }
     }
 

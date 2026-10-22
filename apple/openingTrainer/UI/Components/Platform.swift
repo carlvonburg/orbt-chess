@@ -41,6 +41,15 @@ extension View {
     }
 }
 
+/// A regular-width window: iPad (not Slide Over or a narrow window) and every Mac window.
+func isRegularWidth(_ sizeClass: UserInterfaceSizeClass?) -> Bool {
+    #if os(macOS)
+    true
+    #else
+    sizeClass == .regular
+    #endif
+}
+
 extension ToolbarItemPlacement {
     /// Top trailing on iPhone and iPad; the window toolbar's primary place on macOS.
     static var trailingBar: ToolbarItemPlacement {

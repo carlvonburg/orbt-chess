@@ -23,7 +23,10 @@ enum LibraryRoute: Hashable {
 /// Anki's deck list: today's totals, then one row per repertoire. A row opens the overview.
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var path: [LibraryRoute] = []
+    /// The sidebar's selection (iPad, Mac); the detail starts with its overview.
+    @State private var selection: SidebarItem? = .all
     @State private var showNew = false
     @State private var showImport = false
     @State private var setupEntry: RepertoireEntry?
@@ -38,48 +41,8 @@ struct LibraryView: View {
     @AppStorage("library.onlyDue") private var onlyDue = false
 
     var body: some View {
-        NavigationStack(path: $path) {
-            content
-                .navigationTitle("Repertoires")
-                .toolbar {
-                    ToolbarItem(placement: .leadingBar) {
-                        Button("Settings", systemImage: "gearshape") { showSettings = true }
-                    }
-                    if !model.library.entries.isEmpty {
-                        ToolbarItem(placement: .trailingBar) { filterMenu }
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            Button("New Repertoire", systemImage: "plus") { showNew = true }
-                            Button("Import PGN…", systemImage: "square.and.arrow.down") { showImport = true }
-                        } label: {
-                            Label("Add", systemImage: "plus")
-                        }
-                    }
-                }
-                .navigationDestination(for: LibraryRoute.self) { route in
-                    switch route {
-                    case .overview(let id):
-                        destination(id) { doc in
-                            RepertoireOverviewView(document: doc,
-                                                   editLines: { path.append(.builder(doc.entryID)) },
-                                                   study: { path.append(.study(doc.entryID)) },
-                                                   practice: { path.append(.practice(doc.entryID)) })
-                        }
-                    case .builder(let id):
-                        destination(id) { BuilderView(document: $0) }
-                    case .study(let id):
-                        destination(id) { DrillView(document: $0, mode: .study, pushed: true) }
-                    case .learnMore(let id):
-                        destination(id) { DrillView(document: $0, mode: .study, pushed: true, learnMore: TrainingDefaults.learnMoreCount) }
-                    case .gaps(let id):
-                        destination(id) { BuilderView(document: $0, showGaps: true) }
-                    case .studyAll(let ids):
-                        StudyAllView(entries: ids.compactMap { model.library.entry(id: $0) })
-                    case .practice(let id):
-                        destination(id) { DrillView(document: $0, mode: .branch(RepertoireTree.rootID), pushed: true) }
-                    }
-                }
+        Group {
+            if isRegularWidth(sizeClass) && !model.library.entries.isEmpty { split } else { stack }
         }
         .sheet(isPresented: $showSettings) {
             SettingsView().sheetFrame()
@@ -96,13 +59,13 @@ struct LibraryView: View {
             .sheetFrame()
         }
         .sheet(isPresented: $showNew) {
-            NewRepertoireSheet { entry in path = [.overview(entry.id), .builder(entry.id)] }
+            NewRepertoireSheet { entry in show(entry.id, then: [.builder(entry.id)]) }
                 .sheetFrame()
         }
         .sheet(item: $setupEntry) { entry in
             SetupSheet(title: "Set up \(entry.name)") { sidecar in
                 try model.library.saveSidecar(sidecar, for: entry)
-                path = [.overview(entry.id)]
+                show(entry.id, then: [])
             }
             .sheetFrame()
         }
@@ -133,6 +96,177 @@ struct LibraryView: View {
         }
     }
 
+    enum SidebarItem: Hashable {
+        case all
+        case entry(String)
+    }
+
+    /// iPhone: the list, then each screen pushed on top.
+    private var stack: some View {
+        NavigationStack(path: $path) {
+            content
+                .navigationTitle("Repertoires")
+                .toolbar { libraryToolbar(filter: true) }
+                .navigationDestination(for: LibraryRoute.self, destination: route)
+        }
+    }
+
+    /// iPad and Mac: the repertoires in a sidebar, the selected one's overview beside it, and
+    /// its screens pushed on top of the overview. The sidebar stays until it is hidden.
+    private var split: some View {
+        NavigationSplitView {
+            // No title or filter: the sidebar shows every repertoire by name.
+            sidebar
+                .toolbar { libraryToolbar(filter: false) }
+        } detail: {
+            NavigationStack(path: $path) {
+                detailRoot
+                    .navigationDestination(for: LibraryRoute.self, destination: route)
+            }
+        }
+    }
+
+    @ToolbarContentBuilder
+    private func libraryToolbar(filter: Bool) -> some ToolbarContent {
+        ToolbarItem(placement: .leadingBar) {
+            Button("Settings", systemImage: "gearshape") { showSettings = true }
+        }
+        if filter && !model.library.entries.isEmpty {
+            ToolbarItem(placement: .trailingBar) { filterMenu }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Menu {
+                Button("New Repertoire", systemImage: "plus") { showNew = true }
+                Button("Import PGN…", systemImage: "square.and.arrow.down") { showImport = true }
+            } label: {
+                Label("Add", systemImage: "plus")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func route(_ route: LibraryRoute) -> some View {
+        switch route {
+        case .overview(let id):
+            destination(id) { doc in
+                RepertoireOverviewView(document: doc,
+                                       editLines: { path.append(.builder(doc.entryID)) },
+                                       study: { path.append(.study(doc.entryID)) },
+                                       practice: { path.append(.practice(doc.entryID)) })
+            }
+        case .builder(let id):
+            destination(id) { BuilderView(document: $0) }
+        case .study(let id):
+            destination(id) { DrillView(document: $0, mode: .study, pushed: true) }
+        case .learnMore(let id):
+            destination(id) { DrillView(document: $0, mode: .study, pushed: true, learnMore: TrainingDefaults.learnMoreCount) }
+        case .gaps(let id):
+            destination(id) { BuilderView(document: $0, showGaps: true) }
+        case .studyAll(let ids):
+            StudyAllView(entries: ids.compactMap { model.library.entry(id: $0) })
+        case .practice(let id):
+            destination(id) { DrillView(document: $0, mode: .branch(RepertoireTree.rootID), pushed: true) }
+        }
+    }
+
+    /// A repertoire's overview, then the given screens on top of it.
+    private func show(_ id: String, then routes: [LibraryRoute]) {
+        if isRegularWidth(sizeClass) {
+            selection = .entry(id)
+            path = routes
+        } else {
+            path = [.overview(id)] + routes
+        }
+    }
+
+    // MARK: Sidebar (iPad, Mac)
+
+    /// Choosing another repertoire starts its detail at the overview.
+    private var sidebarSelection: Binding<SidebarItem?> {
+        Binding(get: { selection }, set: { selection = $0; path = [] })
+    }
+
+    private var sidebar: some View {
+        let stats = entryStats
+        return List(selection: sidebarSelection) {
+            Label("All Repertoires", systemImage: "square.stack")
+                .badge(Int(stats.values.reduce(0) { $0 + $1.counts.total }))
+                .tag(SidebarItem.all)
+            ForEach(LibraryGroup.allCases) { group in
+                let entries = model.library.entries.filter { group.contains($0) }
+                if !entries.isEmpty {
+                    Section(group.title) {
+                        ForEach(entries) { entry in
+                            Label(entry.name, systemImage: "book.closed")
+                                .badge(entry.needsSetup ? 0 : Int(stats[entry.id]!.counts.total))
+                                .tag(SidebarItem.entry(entry.id))
+                                .swipeActions {
+                                    Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
+                                }
+                                .contextMenu { if !entry.needsSetup { menu(entry) } }
+                        }
+                    }
+                }
+            }
+        }
+        .refreshable { await model.library.refresh() }
+    }
+
+    @ViewBuilder
+    private var detailRoot: some View {
+        switch selection {
+        case .entry(let id):
+            if let entry = model.library.entry(id: model.currentID(id)), entry.needsSetup {
+                ContentUnavailableView {
+                    Label(entry.name, systemImage: "doc")
+                } description: {
+                    Text(entry.isDownloading ? "Downloading from iCloud…" : "New PGN, not set up yet.")
+                } actions: {
+                    Button("Set Up") { setupEntry = entry }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(entry.isDownloading)
+                }
+            } else {
+                route(.overview(id))
+            }
+        case .all, nil:
+            allRepertoires
+        }
+    }
+
+    /// The overview of every repertoire: Anki's deck list totals, then the Statistics
+    /// screen's cards for all repertoires.
+    private var allRepertoires: some View {
+        let library = model.library
+        let stats = entryStats
+        return List {
+            if !model.auth.isSignedIn {
+                SignInBanner()
+            }
+            Section {
+                TodayCard(entries: library.entries.filter { !$0.needsSetup }.map { ($0, stats[$0.id]!) },
+                          today: today.today, streak: today.streak,
+                          studyAll: { path.append(.studyAll(studyAllEntries)) }, open: { path.append($0) })
+            }
+            Section("Statistics") {
+                InlineStatistics(scope: .all)
+                    .listRowInsets(EdgeInsets())
+                    .listRowBackground(Color.clear)
+            }
+        }
+        .navigationTitle("All Repertoires")
+        .inlineNavigationTitle()
+        .task(id: TodayKey(entries: library.entries.count, answered: stats.values.reduce(0) { $0 + $1.counts.total })) {
+            await today.load(model)
+        }
+    }
+
+    private var entryStats: [String: EntryStats] {
+        Dictionary(uniqueKeysWithValues: model.library.entries.map {
+            ($0.id, EntryStats(entry: $0, document: model.documents[$0.id]))
+        })
+    }
+
     @ViewBuilder
     private func destination<V: View>(_ id: String, @ViewBuilder _ view: @escaping (RepertoireDocument) -> V) -> some View {
         if let entry = model.library.entry(id: model.currentID(id)) {
@@ -153,9 +287,7 @@ struct LibraryView: View {
         } else if library.entries.isEmpty {
             WelcomeView(usesICloud: library.usesICloud, newRepertoire: { showNew = true }, importPGN: { showImport = true })
         } else {
-            let stats = Dictionary(uniqueKeysWithValues: library.entries.map {
-                ($0.id, EntryStats(entry: $0, document: model.documents[$0.id]))
-            })
+            let stats = entryStats
             List {
                 if !model.auth.isSignedIn {
                     SignInBanner()
