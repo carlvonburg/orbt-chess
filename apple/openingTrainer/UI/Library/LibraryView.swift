@@ -221,12 +221,9 @@ struct LibraryView: View {
         .navigationTitle("Today")
     }
 
-    /// Today's progress ring, then what is left to do: in the library's Today section on a
+    /// What is left to do today and what was studied: in the library's Today section on a
     /// phone, in the Today column in the split view.
-    @ViewBuilder
     private func todayRows(_ stats: [String: EntryStats]) -> some View {
-        TodayProgress(studied: Int(today.today?.cardCount ?? 0),
-                      due: Int(stats.values.reduce(0) { $0 + $1.counts.total }))
         todayCard(stats)
     }
 
@@ -547,31 +544,6 @@ private struct EntrySheet: Identifiable {
     var id: String { "\(entry.id)-\(kind)" }
 }
 
-/// Today's progress in the split view's Today column: the moves studied today against those
-/// still due, as a ring.
-private struct TodayProgress: View {
-    let studied: Int
-    let due: Int
-
-    var body: some View {
-        HStack(spacing: 16) {
-            Gauge(value: Double(studied), in: 0...Double(max(studied + due, 1))) {
-                Text("Today")
-            } currentValueLabel: {
-                Text(studied.formatted())
-            }
-            .gaugeStyle(.accessoryCircularCapacity)
-            .tint(due == 0 ? .green : .blue)
-            VStack(alignment: .leading) {
-                Text("\(studied.formatted()) of \((studied + due).formatted()) moves").font(.headline)
-                Text(due == 0 ? "Done for today" : "\(due.formatted()) still due")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-}
-
 /// Today across all repertoires: Anki's due totals and "Studied N cards in M minutes today".
 /// With nothing due it says why (done for now, caught up, nothing studied yet) and offers
 /// what can still be done: Anki's custom study (more new moves, practice) or filling gaps.
@@ -626,18 +598,19 @@ private struct TodayCard: View {
         VStack(alignment: .leading, spacing: 8) {
             switch phase {
             case .due:
-                // What was studied is the ring above (and Statistics): here what is left.
-                HStack(alignment: .firstTextBaseline) {
-                    if streak.current > 0 { streakLabel }
-                    Spacer()
-                    dueCounts
-                }
+                // What is left first, then what was studied (Anki's line under its deck list).
+                header {
+                    Text("\(Text(counts.total.formatted()).font(.title.bold()).monospacedDigit()) \(counts.total == 1 ? "move" : "moves") to study")
+                } trailing: { streakBadge }
+                dueCounts
+                studiedLine
             case .empty:
                 Text("Nothing to study yet").font(.headline)
                 Text("Enter the moves from a book or video, then study them here.")
                     .font(.footnote).foregroundStyle(.secondary)
             case .doneForNow(let count, let at):
                 doneHeader("Done for Now", "checkmark.circle.fill")
+                studiedLine
                 Label("\(count) learning \(count == 1 ? "move" : "moves") due at \(at.formatted(date: .omitted, time: .shortened))",
                       systemImage: "clock")
                     .font(.footnote).foregroundStyle(.secondary)
@@ -650,6 +623,7 @@ private struct TodayCard: View {
                 nextLine
             case .caughtUp:
                 doneHeader("All Caught Up", "checkmark.seal.fill")
+                studiedLine
                 if unlearned.isEmpty && withGaps.isEmpty {
                     Text("Every move you've saved is learned.").font(.footnote).foregroundStyle(.secondary)
                 }
@@ -683,13 +657,14 @@ private struct TodayCard: View {
         header { Label(title, systemImage: icon).foregroundStyle(.green) } trailing: { streakBadge }
     }
 
+    /// The due counts in Anki's colours, each with its name.
     private var dueCounts: some View {
-        HStack(spacing: 10) {
-            count(counts.new, StudyColors.new)
-            count(counts.learning, StudyColors.learning)
-            count(counts.review, StudyColors.review)
+        HStack(spacing: 14) {
+            count(counts.new, "new", StudyColors.new)
+            count(counts.learning, "learning", StudyColors.learning)
+            count(counts.review, "review", StudyColors.review)
         }
-        .font(.headline.monospacedDigit())
+        .font(.subheadline)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(counts.new) new, \(counts.learning) learning, \(counts.review) to review")
     }
@@ -704,10 +679,15 @@ private struct TodayCard: View {
         }
     }
 
-    private var streakLabel: some View {
-        Label(streakText, systemImage: "flame.fill")
-            .font(.footnote)
-            .foregroundStyle(streak.studiedToday ? .orange : .secondary)
+    /// Anki's "Studied N cards in M minutes today", when something was.
+    @ViewBuilder
+    private var studiedLine: some View {
+        if let today, today.answerCount > 0 {
+            let moves = today.cardCount == 1 ? "1 move" : "\(today.cardCount.formatted()) moves"
+            let minutes = Int((Double(today.answerMillis) / 60_000).rounded())
+            Text("Studied \(moves) in \(minutes < 1 ? "under a minute" : "\(minutes) min") today")
+                .font(.footnote).foregroundStyle(.secondary)
+        }
     }
 
     /// Tomorrow's reviews, or when the next one is due.
@@ -776,8 +756,13 @@ private struct TodayCard: View {
         return streak.studiedToday ? days + longest : "Study today to keep your \(days)"
     }
 
-    private func count(_ value: Int64, _ color: Color) -> some View {
-        Text(value.formatted()).foregroundStyle(value > 0 ? color : Color.secondary.opacity(0.6))
+    private func count(_ value: Int64, _ name: String, _ color: Color) -> some View {
+        HStack(spacing: 4) {
+            Text(value.formatted())
+                .fontWeight(.semibold).monospacedDigit()
+                .foregroundStyle(value > 0 ? color : Color.secondary.opacity(0.6))
+            Text(name).foregroundStyle(.secondary)
+        }
     }
 }
 
