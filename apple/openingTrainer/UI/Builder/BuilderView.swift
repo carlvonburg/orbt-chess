@@ -5,14 +5,12 @@ import SwiftUI
 /// (with gaps) or your moves and candidates.
 struct BuilderView: View {
     @Environment(AppModel.self) private var app
-    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// Set in the split view (iPad, Mac): the board is in the board column, this is the panel.
+    @Environment(\.boardColumn) private var boardColumn
+    @Environment(\.screenRoute) private var screenRoute
+    @Environment(\.openScreen) private var openScreen
     @State private var model: BuilderModel
-    @State private var sheet: Sheet?
-    @State private var drill: DrillRequest?
-    @State private var analysis: WebPage?
-    /// Board and panel side by side (iPad landscape, Mac): the actions move from the bottom
-    /// bar to the top, over the panel, and the title into the panel.
-    @State private var wide = false
+    @State private var presentation: BuilderPresentation
 
     enum Sheet: String, Identifiable {
         case outline, gaps, note, settings, cardInfo
@@ -21,58 +19,43 @@ struct BuilderView: View {
 
     init(document: RepertoireDocument, start: NodeID? = nil, showGaps: Bool = false) {
         _model = State(initialValue: BuilderModel(document: document, start: start))
-        _sheet = State(initialValue: showGaps ? .gaps : nil)
+        _presentation = State(initialValue: BuilderPresentation(sheet: showGaps ? .gaps : nil))
     }
 
     private var document: RepertoireDocument { model.document }
 
     var body: some View {
         let _ = document.revision
-        GeometryReader { geo in
-            if isWide(geo.size) {
-                BoardSplit(size: geo.size) {
-                    List {
-                        // The title heads the panel instead of the bar over the board.
-                        Text(document.name)
-                            .font(.largeTitle.bold())
-                            .builderRow(separator: false)
-                        panelRows
-                    }
-                    .listStyle(.plain)
-                } board: {
-                    board
-                } below: {
+        @Bindable var presentation = presentation
+        // A List so saved moves can be swiped to delete.
+        List {
+            if boardColumn == nil {
+                // Edge to edge on a phone.
+                BuilderBoard(model: model)
+                    .frame(maxWidth: .infinity)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                if model.current != RepertoireTree.rootID || model.hasDraft {
                     MovePathStrip(model: model)
+                        .builderRow(separator: false)
                 }
-            } else {
-                // A List so saved moves can be swiped to delete.
-                List {
-                    // Edge to edge on a phone.
-                    board
-                        .frame(maxWidth: .infinity)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                    if model.current != RepertoireTree.rootID || model.hasDraft {
-                        MovePathStrip(model: model)
-                            .builderRow(separator: false)
-                    }
-                    panelRows
-                }
-                .listStyle(.plain)
-                .environment(\.defaultMinListRowHeight, 0)
-                .scrollDismissesKeyboard(.immediately)
             }
+            panelRows
         }
-        .onGeometryChange(for: Bool.self) { isWide($0.size) } action: { wide = $0 }
+        .listStyle(.plain)
+        .environment(\.defaultMinListRowHeight, 0)
+        .scrollDismissesKeyboard(.immediately)
+        .onAppear {
+            if let screenRoute { boardColumn?.show(.builder(model, presentation), for: screenRoute) }
+        }
         .navigationTitle(document.name)
         .inlineNavigationTitle()
-        .modifier(HidesBarTitle(hidden: wide))
         .toolbar { toolbar }
         .hidesTabBar()
-        .sheet(item: $sheet) { sheet in sheetContent(sheet).sheetFrame() }
-        .webPage($analysis)
+        .sheet(item: $presentation.sheet) { sheet in sheetContent(sheet).sheetFrame() }
+        .webPage($presentation.analysis)
         .background { keyboardShortcuts.opacity(0).accessibilityHidden(true) }
-        .navigationDestination(item: $drill) { request in
+        .navigationDestination(item: $presentation.drill) { request in
             DrillView(document: document, mode: request.mode, pushed: true)
         }
         .checksCoverage(document)
@@ -86,19 +69,14 @@ struct BuilderView: View {
         }
     }
 
-    private func isWide(_ size: CGSize) -> Bool {
-        isBoardSplit(size, sizeClass)
-    }
-
-    private var board: some View {
-        BoardView(position: model.position, orientation: model.orientation, lastMove: model.lastMove,
-                  arrows: model.arrows, movableSide: model.position.sideToMove()) { from, to, promotion in
-            model.play(from: from, to: to, promotion: promotion)
+    /// Studies the branch from `node`: through the library, which keeps only this screen
+    /// under it, else pushed here.
+    private func studyBranch(_ node: NodeID) {
+        if let openScreen {
+            openScreen(.branch(document.entryID, node))
+        } else {
+            presentation.drill = DrillRequest(mode: .branch(node))
         }
-    }
-
-    private func analyze() {
-        analysis = WebPage(url: LichessLinks.analysis(moves: model.movesToBoard, orientation: model.orientation))
     }
 
     private func requestStats() {
@@ -114,7 +92,7 @@ struct BuilderView: View {
         if model.hasDraft {
             DraftPanel(model: model)
         } else if let node = model.node {
-            NodeHeader(model: model, node: node, onNote: { sheet = .note })
+            NodeHeader(model: model, node: node, onNote: { presentation.sheet = .note })
                 .builderRow(separator: false)
             // At a transposition the panels show the moves stored for this position elsewhere.
             let shown = model.shownNode ?? node
@@ -132,18 +110,23 @@ struct BuilderView: View {
 
     // MARK: Toolbar
 
-    /// Move navigation is in the bottom bar and the menu top trailing. On a phone (and iPad
-    /// portrait) the actions are in the bottom bar too; side by side they are top leading,
-    /// over the panel.
+    /// On a phone move navigation and the actions are in the bottom bar, the menu top
+    /// trailing. In the split view the actions are in the panel's bar; move navigation, Lichess
+    /// and the menu, which act on the board, in the board column's.
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        let actions: ToolbarItemPlacement = wide ? .leadingBar : .bottomActions
-        ToolbarItemGroup(placement: .bottomActions) { navigationButtons }
-        ToolbarSpacer(.flexible, placement: .bottomActions)
+        let split = boardColumn != nil
+        let actions: ToolbarItemPlacement = split ? .trailingBar : .bottomActions
+        if !split {
+            ToolbarItemGroup(placement: .bottomActions) { BuilderNavigationButtons(model: model) }
+            ToolbarSpacer(.flexible, placement: .bottomActions)
+        }
         if model.hasDraft {
             // While a new line is on the board: keep it or drop it.
             ToolbarItemGroup(placement: actions) {
-                Button("Analyze on Lichess", systemImage: "cpu") { analyze() }
+                if !split {
+                    Button("Analyze on Lichess", systemImage: "cpu") { presentation.analyze(model) }
+                }
                 Button("Discard", systemImage: "xmark", role: .destructive) { model.discardDraft() }
             }
             ToolbarSpacer(.fixed, placement: actions)
@@ -158,43 +141,19 @@ struct BuilderView: View {
             ToolbarItemGroup(placement: actions) {
                 Button("Biggest Gap", systemImage: "scope") { model.goToBiggestGap() }
                     .disabled(document.coverage.root?.biggestGap == nil)
-                Button("Study Branch", systemImage: "graduationcap") {
-                    drill = DrillRequest(mode: .branch(model.current))
-                }
+                Button("Study Branch", systemImage: "graduationcap") { studyBranch(model.current) }
                 .disabled(document.learningProgress(under: model.current).cards == 0)
-                Button("Analyze on Lichess", systemImage: "cpu") { analyze() }
+                if !split {
+                    Button("Analyze on Lichess", systemImage: "cpu") { presentation.analyze(model) }
+                }
             }
         }
-        ToolbarItem(placement: .trailingBar) {
-            Menu("More", systemImage: "ellipsis") {
-                Button("Undo", systemImage: "arrow.uturn.backward") { model.undo() }
-                    .disabled(!document.canUndo)
-                Divider()
-                Button("Outline", systemImage: "list.bullet.indent") { sheet = .outline }
-                Button("Gaps", systemImage: "exclamationmark.circle") { sheet = .gaps }
-                Button("Edit Note", systemImage: "note.text") { sheet = .note }
-                Button("Move Info", systemImage: "info.circle") { sheet = .cardInfo }
-                    .disabled(document.tree[model.current].flatMap { document.sidecar.studyCards[$0.epd] } == nil
-                              || document.tree[model.current]?.sideToMove != document.color)
-                Button("Flip Board", systemImage: "arrow.up.arrow.down") { model.orientation = model.orientation.opposite }
-                Divider()
-                Button("Repertoire Settings", systemImage: "gearshape") { sheet = .settings }
-            }
+        if !split {
+            ToolbarItem(placement: .trailingBar) { BuilderMoreMenu(model: model, presentation: presentation) }
         }
         #if os(iOS)
         ToolbarItem(placement: .keyboard) { siblingButtons }
         #endif
-    }
-
-    /// Back and forward, with ←/→, in the bottom bar.
-    @ViewBuilder
-    private var navigationButtons: some View {
-        Button("Back", systemImage: "chevron.backward") { model.back() }
-            .keyboardShortcut(.leftArrow, modifiers: [])
-            .disabled(model.current == RepertoireTree.rootID && !model.hasDraft)
-        Button("Forward", systemImage: "chevron.forward") { model.forward() }
-            .keyboardShortcut(.rightArrow, modifiers: [])
-            .disabled(!model.canForward)
     }
 
     /// ↑/↓ switch to the previous/next sibling line.
@@ -222,7 +181,7 @@ struct BuilderView: View {
     private func sheetContent(_ sheet: Sheet) -> some View {
         switch sheet {
         case .outline:
-            OutlineSheet(model: model) { drill = DrillRequest(mode: .branch($0)) }
+            OutlineSheet(model: model) { studyBranch($0) }
         case .gaps:
             GapsSheet(model: model)
                 .presentationDetents([.medium, .large])
@@ -238,12 +197,85 @@ struct BuilderView: View {
     }
 }
 
-/// Removes the title from the bar when the panel shows it (side by side).
-private struct HidesBarTitle: ViewModifier {
-    let hidden: Bool
+/// What the builder presents: a sheet, the Lichess analysis, a branch drill. In the split view
+/// the board column's buttons set it and the panel presents it.
+@Observable
+final class BuilderPresentation {
+    var sheet: BuilderView.Sheet?
+    var analysis: WebPage?
+    var drill: DrillRequest?
 
-    func body(content: Content) -> some View {
-        if hidden { content.toolbar(removing: .title) } else { content }
+    init(sheet: BuilderView.Sheet? = nil) {
+        self.sheet = sheet
+    }
+
+    func analyze(_ model: BuilderModel) {
+        analysis = WebPage(url: LichessLinks.analysis(moves: model.movesToBoard, orientation: model.orientation))
+    }
+}
+
+/// The builder's menu: top trailing on a phone, at the end of the board column's bar in the
+/// split view.
+struct BuilderMoreMenu: View {
+    let model: BuilderModel
+    let presentation: BuilderPresentation
+
+    var body: some View {
+        let document = model.document
+        Menu("More", systemImage: "ellipsis") {
+            Button("Undo", systemImage: "arrow.uturn.backward") { model.undo() }
+                .disabled(!document.canUndo)
+            Divider()
+            Button("Outline", systemImage: "list.bullet.indent") { presentation.sheet = .outline }
+            Button("Gaps", systemImage: "exclamationmark.circle") { presentation.sheet = .gaps }
+            Button("Edit Note", systemImage: "note.text") { presentation.sheet = .note }
+            Button("Move Info", systemImage: "info.circle") { presentation.sheet = .cardInfo }
+                .disabled(document.tree[model.current].flatMap { document.sidecar.studyCards[$0.epd] } == nil
+                          || document.tree[model.current]?.sideToMove != document.color)
+            Button("Flip Board", systemImage: "arrow.up.arrow.down") { model.orientation = model.orientation.opposite }
+            Divider()
+            Button("Repertoire Settings", systemImage: "gearshape") { presentation.sheet = .settings }
+        }
+    }
+}
+
+/// The builder's board: moves played on it go to the model.
+struct BuilderBoard: View {
+    let model: BuilderModel
+
+    var body: some View {
+        BoardView(position: model.position, orientation: model.orientation, lastMove: model.lastMove,
+                  arrows: model.arrows, movableSide: model.position.sideToMove()) { from, to, promotion in
+            model.play(from: from, to: to, promotion: promotion)
+        }
+    }
+}
+
+/// Back and forward, with ←/→: in the bottom bar on a phone, over the board in the split view.
+struct BuilderNavigationButtons: View {
+    let model: BuilderModel
+
+    var body: some View {
+        Button("Back", systemImage: "chevron.backward") { model.back() }
+            .keyboardShortcut(.leftArrow, modifiers: [])
+            .disabled(model.current == RepertoireTree.rootID && !model.hasDraft)
+        Button("Forward", systemImage: "chevron.forward") { model.forward() }
+            .keyboardShortcut(.rightArrow, modifiers: [])
+            .disabled(!model.canForward)
+    }
+}
+
+/// The builder's board in the split view's board column (whose bar has move navigation,
+/// Lichess and the menu), with the moves under it.
+struct BuilderBoardColumn: View {
+    let model: BuilderModel
+
+    var body: some View {
+        BoardColumnLayout {
+            BuilderBoard(model: model)
+        } below: {
+            MovePathStrip(model: model)
+        }
     }
 }
 

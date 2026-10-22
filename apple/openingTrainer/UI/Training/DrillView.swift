@@ -174,12 +174,12 @@ final class DrillModel {
 
 struct DrillView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// Set in the split view (iPad, Mac): the board is in the board column, this is the panel.
+    @Environment(\.boardColumn) private var boardColumn
+    @Environment(\.screenRoute) private var screenRoute
+    @Environment(\.openScreen) private var openScreen
     @State private var model: DrillModel
     @State private var browsing: BrowseRequest?
-    /// Board and panel side by side (iPad landscape, Mac): the actions move from the bottom
-    /// bar to the top.
-    @State private var wide = false
 
     private struct BrowseRequest: Hashable {
         let node: NodeID
@@ -208,6 +208,9 @@ struct DrillView: View {
             }
         }
         .task { model.start() }
+        .onAppear {
+            if let screenRoute { boardColumn?.show(.drill(model), for: screenRoute) }
+        }
         // Browsing pushes the builder on top; training goes on when it's popped.
         .onDisappear { if browsing == nil { model.stop() } }
         .checksCoverage(model.document)
@@ -215,56 +218,48 @@ struct DrillView: View {
     }
 
     private var content: some View {
-        GeometryReader { geo in
-            if !model.finished && isBoardSplit(geo.size, sizeClass) {
-                // Laid out like the builder: what to do on the leading side, the board and
-                // the moves played under it on the trailing side.
-                BoardSplit(size: geo.size) {
+        Group {
+            if model.finished {
+                StudyFinishedView(model: model, next: next)
+                    .padding(.vertical)
+            } else if boardColumn != nil {
+                // The board is in the board column: the counts, with what each means, and
+                // what to do.
+                ScrollView {
                     VStack(alignment: .leading, spacing: 20) {
-                        if !model.finished {
-                            StudyCountsList(counts: model.counts, highlight: model.askedKind)
-                        }
+                        StudyCountsList(counts: model.counts, highlight: model.askedKind)
                         VStack(alignment: .leading, spacing: 8) {
                             openingName
                             status
                         }
                     }
                     .padding()
-                } board: {
-                    board
-                } below: {
-                    LineHistory(tree: model.document.tree, nodes: model.playedNodes)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             } else {
                 VStack(spacing: 12) {
-                    if model.finished {
-                        StudyFinishedView(model: model, next: next)
-                    } else {
-                        // Edge to edge on a phone, as in the builder.
-                        board
-                            .frame(maxWidth: 680)
-                        // Laid out like the builder: move list, then opening name; then what to do.
-                        VStack(alignment: .leading, spacing: 8) {
-                            LineHistory(tree: model.document.tree, nodes: model.playedNodes)
-                            openingName
-                            status
-                        }
-                        .frame(maxWidth: 680, alignment: .leading)
-                        .padding(.horizontal)
-                        Spacer(minLength: 0)
+                    // Edge to edge on a phone, as in the builder.
+                    DrillBoard(model: model)
+                        .frame(maxWidth: 680)
+                    // Laid out like the builder: move list, then opening name; then what to do.
+                    VStack(alignment: .leading, spacing: 8) {
+                        LineHistory(tree: model.document.tree, nodes: model.playedNodes)
+                        openingName
+                        status
                     }
+                    .frame(maxWidth: 680, alignment: .leading)
+                    .padding(.horizontal)
+                    Spacer(minLength: 0)
                 }
                 .padding(.vertical)
-                .frame(maxWidth: .infinity)
             }
         }
-        .onGeometryChange(for: Bool.self) { isBoardSplit($0.size, sizeClass) } action: { wide = $0 }
         .navigationTitle(model.mode.title)
         .navigationSubtitle(model.document.name)
         .inlineNavigationTitle()
         .toolbar {
-            // Side by side the counts are in the panel, with what each means.
-            if !model.finished && !wide {
+            // In the split view the counts are in the panel, with what each means.
+            if !model.finished && boardColumn == nil {
                 ToolbarItem(placement: .trailingBar) {
                     StudyCountsView(counts: model.counts, highlight: model.askedKind)
                         .font(.subheadline.monospacedDigit().weight(.semibold))
@@ -280,22 +275,26 @@ struct DrillView: View {
                 }
             }
             if !model.finished {
-                // Side by side the actions are top leading, over the panel, as in the builder.
-                let actions: ToolbarItemPlacement = wide ? .leadingBar : .bottomActions
+                // In the split view the actions are in the panel's bar, as in the builder.
+                let split = boardColumn != nil
+                let actions: ToolbarItemPlacement = split ? .trailingBar : .bottomActions
                 ToolbarItem(placement: actions) {
                     Button("Hint", systemImage: "lightbulb") { model.hint() }
                         .disabled(!model.isUserTurn)
                 }
-                if !wide {
+                if !split {
                     ToolbarSpacer(.flexible, placement: .bottomActions)
                 }
-                // Both leave the board to look the move up, so both count as Again.
+                // Both leave the board to look the move up, so both count as Again. In the split
+                // view Lichess is in the board column's bar.
                 ToolbarItemGroup(placement: actions) {
                     Button("Browse Repertoire", systemImage: "list.bullet.indent") {
-                        if let node = model.browseNode() { browsing = BrowseRequest(node: node) }
+                        if let node = model.browseNode() { browse(node) }
                     }
-                    Button("Analyze on Lichess", systemImage: "cpu") {
-                        analysis = WebPage(url: LichessLinks.analysis(moves: model.analysisMoves(), orientation: model.color))
+                    if !split {
+                        Button("Analyze on Lichess", systemImage: "cpu") {
+                            analysis = WebPage(url: LichessLinks.analysis(moves: model.analysisMoves(), orientation: model.color))
+                        }
                     }
                 }
             }
@@ -312,10 +311,13 @@ struct DrillView: View {
         }
     }
 
-    private var board: some View {
-        BoardView(position: model.position, orientation: model.color, lastMove: model.lastMove,
-                  arrows: model.arrows, movableSide: model.isUserTurn ? model.color : nil) { from, to, promotion in
-            model.userMoved(from: from, to: to, promotion: promotion)
+    /// Browses from `node`: through the library, which keeps only this screen under it, else
+    /// pushed here.
+    private func browse(_ node: NodeID) {
+        if let openScreen {
+            openScreen(.browse(model.document.entryID, node))
+        } else {
+            browsing = BrowseRequest(node: node)
         }
     }
 
@@ -349,6 +351,32 @@ struct DrillView: View {
         }
         .font(.headline)
         .animation(.default, value: model.feedback)
+    }
+}
+
+/// The study board: moves played on it answer the card.
+struct DrillBoard: View {
+    let model: DrillModel
+
+    var body: some View {
+        BoardView(position: model.position, orientation: model.color, lastMove: model.lastMove,
+                  arrows: model.arrows, movableSide: model.isUserTurn ? model.color : nil) { from, to, promotion in
+            model.userMoved(from: from, to: to, promotion: promotion)
+        }
+    }
+}
+
+/// The study board in the split view's board column (whose bar has Lichess), with the moves
+/// played under it.
+struct DrillBoardColumn: View {
+    let model: DrillModel
+
+    var body: some View {
+        BoardColumnLayout {
+            DrillBoard(model: model)
+        } below: {
+            LineHistory(tree: model.document.tree, nodes: model.playedNodes)
+        }
     }
 }
 
@@ -400,7 +428,7 @@ struct StudyCountsView: View {
     }
 }
 
-/// Anki's three counts one per line with what each means, where there is room (side by side).
+/// Anki's three counts one per line with what each means, where there is room (split view).
 struct StudyCountsList: View {
     let counts: Counts
     var highlight: QueueKind?

@@ -18,6 +18,16 @@ enum LibraryRoute: Hashable {
     case practice(String)
     /// Today's moves of every repertoire that has some, one after another.
     case studyAll([String])
+    /// Browse from a position: from Study, or a weakest move in the statistics.
+    case browse(String, NodeID)
+    /// Study one branch: Study Branch in Browse.
+    case branch(String, NodeID)
+}
+
+extension EnvironmentValues {
+    /// Opens Browse or Study from another screen (set by the library). Only the screen it is
+    /// opened from stays under it, so switching back and forth doesn't pile up screens.
+    @Entry var openScreen: ((LibraryRoute) -> Void)?
 }
 
 /// Anki's deck list: today's totals, then one row per repertoire. A row opens the overview.
@@ -27,6 +37,9 @@ struct LibraryView: View {
     @State private var path: [LibraryRoute] = []
     /// The sidebar's selection (iPad, Mac); the detail starts with its overview.
     @State private var selection: SidebarItem? = .all
+    /// The split view's board column: Browse's and Study's board, else statistics.
+    @State private var boardColumn = BoardColumn()
+    @State private var columns = NavigationSplitViewVisibility.all
     @State private var showNew = false
     @State private var showImport = false
     @State private var setupEntry: RepertoireEntry?
@@ -109,21 +122,43 @@ struct LibraryView: View {
                 .toolbar { libraryToolbar(filter: true) }
                 .navigationDestination(for: LibraryRoute.self, destination: route)
         }
+        .environment(\.openScreen, openScreen)
     }
 
-    /// iPad and Mac: the repertoires in a sidebar, the selected one's overview beside it, and
-    /// its screens pushed on top of the overview. The sidebar stays until it is hidden.
+    /// iPad and Mac, like Notes: the repertoires in a sidebar; in the middle the selected
+    /// overview, with Browse and Study pushed on top (their panels); on the right the board of
+    /// the screen in the middle, or the overview's statistics. Each column has its own bar.
     private var split: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columns) {
             // No title or filter: the sidebar shows every repertoire by name.
             sidebar
                 .toolbar { libraryToolbar(filter: false) }
-        } detail: {
+        } content: {
             NavigationStack(path: $path) {
                 detailRoot
                     .navigationDestination(for: LibraryRoute.self, destination: route)
             }
+            .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 480)
+        } detail: {
+            NavigationStack {
+                BoardColumnView(column: boardColumn, statisticsScope: statisticsScope)
+            }
         }
+        .environment(\.boardColumn, boardColumn)
+        .environment(\.openScreen, openScreen)
+        .onChange(of: path, initial: true) { boardColumn.path = path }
+    }
+
+    /// Opens a screen from Browse or Study: the overview stays (in the path on a phone), then
+    /// only the screen it is opened from.
+    private func openScreen(_ route: LibraryRoute) {
+        let overview = path.prefix { if case .overview = $0 { true } else { false } }
+        path = Array(overview) + Array(path.dropFirst(overview.count).suffix(1)) + [route]
+    }
+
+    /// The statistics beside the selected overview.
+    private var statisticsScope: StatisticsModel.Scope {
+        if case .entry(let id) = selection { .repertoire(model.currentID(id)) } else { .all }
     }
 
     @ToolbarContentBuilder
@@ -144,8 +179,12 @@ struct LibraryView: View {
         }
     }
 
-    @ViewBuilder
     private func route(_ route: LibraryRoute) -> some View {
+        screen(route).environment(\.screenRoute, route)
+    }
+
+    @ViewBuilder
+    private func screen(_ route: LibraryRoute) -> some View {
         switch route {
         case .overview(let id):
             destination(id) { doc in
@@ -166,6 +205,10 @@ struct LibraryView: View {
             StudyAllView(entries: ids.compactMap { model.library.entry(id: $0) })
         case .practice(let id):
             destination(id) { DrillView(document: $0, mode: .branch(RepertoireTree.rootID), pushed: true) }
+        case .browse(let id, let node):
+            destination(id) { BuilderView(document: $0, start: node) }
+        case .branch(let id, let node):
+            destination(id) { DrillView(document: $0, mode: .branch(node), pushed: true) }
         }
     }
 
@@ -234,8 +277,8 @@ struct LibraryView: View {
         }
     }
 
-    /// The overview of every repertoire: Anki's deck list totals, then the Statistics
-    /// screen's cards for all repertoires.
+    /// The overview of every repertoire: Anki's deck list totals (its statistics are in the
+    /// board column).
     private var allRepertoires: some View {
         let library = model.library
         let stats = entryStats
@@ -247,11 +290,6 @@ struct LibraryView: View {
                 TodayCard(entries: library.entries.filter { !$0.needsSetup }.map { ($0, stats[$0.id]!) },
                           today: today.today, streak: today.streak,
                           studyAll: { path.append(.studyAll(studyAllEntries)) }, open: { path.append($0) })
-            }
-            Section("Statistics") {
-                InlineStatistics(scope: .all)
-                    .listRowInsets(EdgeInsets())
-                    .listRowBackground(Color.clear)
             }
         }
         .navigationTitle("All Repertoires")
@@ -415,6 +453,55 @@ struct LibraryView: View {
                 LibraryRow(entry: entry, stats: stats)
             }
         }
+    }
+}
+
+/// The split view's right column: Browse's or Study's board, else the overview's statistics.
+/// One bar whose buttons follow the board, so they never go stale or flicker.
+private struct BoardColumnView: View {
+    let column: BoardColumn
+    let statisticsScope: StatisticsModel.Scope
+    /// Study's Lichess analysis (Browse's is presented by its panel).
+    @State private var analysis: WebPage?
+
+    var body: some View {
+        Group {
+            switch column.board {
+            case .builder(let model, _):
+                BuilderBoardColumn(model: model)
+            case .drill(let model):
+                DrillBoardColumn(model: model)
+            case nil:
+                ScrollView {
+                    InlineStatistics(scope: statisticsScope)
+                        .id(statisticsScope)
+                        .padding(.horizontal)
+                        .padding(.bottom, 24)
+                }
+            }
+        }
+        .navigationTitle(column.board == nil ? "Statistics" : "")
+        .inlineNavigationTitle()
+        .toolbar {
+            if case .builder(let model, let presentation) = column.board {
+                // Move navigation leads the bar; Lichess and the menu, which act on the board, end it.
+                ToolbarItemGroup(placement: .leadingBar) { BuilderNavigationButtons(model: model) }
+                ToolbarItem(placement: .trailingBar) {
+                    Button("Analyze on Lichess", systemImage: "cpu") { presentation.analyze(model) }
+                }
+                ToolbarSpacer(.fixed, placement: .trailingBar)
+                ToolbarItem(placement: .trailingBar) { BuilderMoreMenu(model: model, presentation: presentation) }
+            }
+            if case .drill(let model) = column.board, !model.finished {
+                // Looking the move up counts as Again, as Browse in the panel does.
+                ToolbarItem(placement: .trailingBar) {
+                    Button("Analyze on Lichess", systemImage: "cpu") {
+                        analysis = WebPage(url: LichessLinks.analysis(moves: model.analysisMoves(), orientation: model.color))
+                    }
+                }
+            }
+        }
+        .webPage($analysis)
     }
 }
 

@@ -5,7 +5,8 @@ import SwiftUI
 /// and a short version of its statistics. The study action is pinned at the bottom (iOS 26).
 struct RepertoireOverviewView: View {
     @Environment(AppModel.self) private var app
-    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// Set in the split view (iPad, Mac), whose board column shows this repertoire's statistics.
+    @Environment(\.boardColumn) private var boardColumn
     let document: RepertoireDocument
     let editLines: () -> Void
     let study: () -> Void
@@ -23,18 +24,10 @@ struct RepertoireOverviewView: View {
         List {
             coverageSection(stats)
             studySection(stats)
-            if isRegularWidth(sizeClass) {
-                // Room for the Statistics screen's cards, filtered to this repertoire.
-                Section("Statistics") {
-                    InlineStatistics(scope: .repertoire(document.entryID))
-                        .listRowInsets(EdgeInsets())
-                        .listRowBackground(Color.clear)
-                }
-            }
         }
         .safeAreaBar(edge: .bottom) {
-            // A phone's actions are at the bottom; in a regular width in their sections.
-            if !isRegularWidth(sizeClass) { studyBar(stats) }
+            // A phone's actions are at the bottom; in the split view in their sections.
+            if boardColumn == nil { studyBar(stats) }
         }
         .checksCoverage(document)
         // A detail screen with its own actions at the bottom, like the study screen.
@@ -81,7 +74,7 @@ struct RepertoireOverviewView: View {
                 CoverageCheckStatus(document: document)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
-            if isRegularWidth(sizeClass) {
+            if boardColumn != nil {
                 Button("Browse / Edit", action: editLines)
                     .modifier(ActionButtonStyle(prominent: buildFirst(stats)))
             }
@@ -134,10 +127,11 @@ struct RepertoireOverviewView: View {
                     LabeledContent("True retention (month)", value: Format.percent(retention))
                 }
             }
-            if isRegularWidth(sizeClass) && stats.progress.cards > 0 {
+            if boardColumn != nil && stats.progress.cards > 0 {
                 studyButton(stats, prominent: !buildFirst(stats))
             }
-            if !isRegularWidth(sizeClass) {
+            // The split view shows the statistics beside the overview.
+            if boardColumn == nil {
                 Button {
                     app.statisticsScope = .repertoire(document.entryID)
                     app.selectedTab = .statistics
@@ -220,12 +214,12 @@ struct RepertoireOverviewView: View {
         }
     }
 
-    /// Glass in the phone's bottom bar; the standard styles in the content (regular width).
+    /// Glass in the phone's bottom bar; the standard styles in the content (split view).
     private struct ActionButtonStyle: ViewModifier {
-        @Environment(\.horizontalSizeClass) private var sizeClass
+        @Environment(\.boardColumn) private var boardColumn
         let prominent: Bool
         func body(content: Content) -> some View {
-            if isRegularWidth(sizeClass) {
+            if boardColumn != nil {
                 if prominent { content.buttonStyle(.borderedProminent) } else { content.buttonStyle(.bordered) }
             } else {
                 if prominent { content.buttonStyle(.glassProminent) } else { content.buttonStyle(.glass) }

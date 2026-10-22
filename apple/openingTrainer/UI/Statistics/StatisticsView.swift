@@ -603,6 +603,7 @@ private struct RetentionGrid: View {
 }
 
 private struct WeakestMovesCard: View {
+    @Environment(\.openScreen) private var openScreen
     let model: StatisticsModel
 
     var body: some View {
@@ -613,9 +614,7 @@ private struct WeakestMovesCard: View {
             } else if let document = model.document {
                 ForEach(moves) { move in
                     if let node = model.node(for: move.epd) {
-                        NavigationLink {
-                            BuilderView(document: document, start: node)
-                        } label: {
+                        link(document: document, node: node) {
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text(model.lineText(move.epd)).lineLimit(2).multilineTextAlignment(.leading)
@@ -632,6 +631,17 @@ private struct WeakestMovesCard: View {
                     }
                 }
             }
+        }
+    }
+
+    /// Opens Browse at the move: in the library's middle column (split view), else pushed here.
+    @ViewBuilder
+    private func link<Label: View>(document: RepertoireDocument, node: NodeID,
+                                   @ViewBuilder label: () -> Label) -> some View {
+        if let openScreen {
+            Button { openScreen(.browse(document.entryID, node)) } label: { label() }
+        } else {
+            NavigationLink { BuilderView(document: document, start: node) } label: { label() }
         }
     }
 }
