@@ -12,8 +12,7 @@ nonisolated struct ThemeColor: ShapeStyle, Hashable {
     enum Role: Hashable {
         /// Done: covered, your move, a correct answer, learned (Anki's review, young, mature).
         case done
-        /// Something to do: missing coverage (gaps, the empty part of a coverage bar), a streak
-        /// at risk, a leech.
+        /// Something to do: missing coverage (gaps), a streak at risk, a leech.
         case attention
         /// New, not studied yet (Anki).
         case new
@@ -43,7 +42,7 @@ extension ShapeStyle where Self == ThemeColor {
     /// Done: covered, your move, a correct answer, learned (Anki's review count, mature; young at
     /// half strength).
     static var done: ThemeColor { ThemeColor(role: .done) }
-    /// Something to do: gaps, the empty part of a coverage bar, a streak at risk, a leech.
+    /// Something to do: gaps, a streak at risk, a leech.
     static var attention: ThemeColor { ThemeColor(role: .attention) }
     /// New, not studied yet (Anki).
     static var new: ThemeColor { ThemeColor(role: .new) }

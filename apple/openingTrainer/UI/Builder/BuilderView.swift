@@ -461,7 +461,7 @@ struct NodeHeader: View {
                 if node.sideToMove == document.color, document.sidecar.studyCards[node.epd]?.leech == true {
                     // Anki's "leech" tag: a move you keep forgetting
                     Label("Leech", systemImage: "ant.fill")
-                        .font(.caption.weight(.semibold))
+                        .font(.caption)
                         .statusBadge(tint: .attention)
                         .accessibilityHint("You keep forgetting this move.")
                 }
@@ -506,7 +506,7 @@ struct NodeHeader: View {
     private func statusChip(_ info: NodeCoverage?) -> some View {
         switch info?.status {
         case .gap:
-            Text("Your move is missing").font(.caption.weight(.semibold)).statusBadge(tint: .attention)
+            Text("Your move is missing").font(.caption).statusBadge(tint: .attention)
         case .pending:
             Text("Stats not loaded yet").font(.caption).statusBadge()
         case .belowTarget:
@@ -613,7 +613,6 @@ struct ReplyRow: View {
     var body: some View {
         let transposes = reply.child == nil && (reply.transposesTo != nil || model.transposition(after: reply.uci) != nil)
         let inRepertoire = reply.child != nil || transposes
-        let isGap = reply.required && !inRepertoire
         // Tapping opens the reply; one not in the repertoire is played on the board so you can
         // add your answer, and is saved with it.
         Button {
@@ -628,37 +627,30 @@ struct ReplyRow: View {
             HStack(spacing: 8) {
                 HStack(spacing: 4) {
                     Text(reply.san).font(.body.weight(.semibold))
+                        .foregroundStyle(reply.required || inRepertoire ? .primary : .secondary)
                     if transposes {
                         TranspositionIcon()
                     }
                 }
                 .frame(minWidth: 48, alignment: .leading)
-                if isGap {
-                    Text("Gap").font(.caption2.weight(.bold)).foregroundStyle(.white)
-                        .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(.attention, in: .capsule)
-                        // A tag: in a narrow column the row's other parts give way, not its letters.
-                        .fixedSize()
-                }
                 Spacer()
                 Text(Format.seenEvery(reply.reach)).font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary).frame(width: 74, alignment: .trailing)
                 Group {
                     if inRepertoire && reply.required {
-                        CoverageBar(value: reply.completion)
+                        CoverageBar(value: reply.completion, height: 4)
                     } else if reply.excluded {
-                        Text("Excluded").font(.caption2).foregroundStyle(.secondary)
+                        Text("Excluded").font(.caption2).foregroundStyle(.tertiary)
                     } else if !reply.required {
-                        Text("Not needed").font(.caption2).foregroundStyle(.secondary)
+                        Text("Not needed").font(.caption2).foregroundStyle(.tertiary)
                     } else {
-                        CoverageBar(value: 0)
+                        CoverageBar(value: 0, height: 4)
                     }
                 }
                 .frame(width: 64)
                 Text(reply.games > 0 ? Format.games(reply.games) : "").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
                     .frame(width: 40, alignment: .trailing)
             }
-            .opacity(reply.required || inRepertoire ? 1 : 0.55)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -674,13 +666,6 @@ struct YourMovePanel: View {
     let node: Node
 
     var body: some View {
-        if node.children.isEmpty {
-            Label("Choose your move: play it on the board or pick a candidate.", systemImage: "hand.point.up.left")
-                .font(.callout)
-                .foregroundStyle(.attention)
-                .padding(.vertical, 8)
-                .builderRow(separator: false)
-        }
         CandidatesSection(model: model, epd: node.epd, title: "Candidates", savedAt: node,
                           select: model.preview(uci:))
     }
@@ -988,9 +973,9 @@ struct DraftPanel: View {
             }
             HStack(spacing: 8) {
                 if target != nil {
-                    Text("Transposed").font(.caption.weight(.semibold)).statusBadge(tint: .done)
+                    Text("Transposed").font(.caption).statusBadge(tint: .done)
                 } else if reached {
-                    Text("Coverage target reached").font(.caption.weight(.semibold)).statusBadge(tint: .done)
+                    Text("Coverage target reached").font(.caption).statusBadge(tint: .done)
                 } else {
                     Text("New line, not saved").font(.caption).statusBadge()
                 }

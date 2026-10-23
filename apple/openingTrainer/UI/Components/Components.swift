@@ -202,8 +202,8 @@ struct OpenDocument<Content: View, Placeholder: View>: View {
     }
 }
 
-/// Coverage as a bar on a neutral track: the progress orange while something is left to do,
-/// green once it is complete.
+/// Coverage as a bar: the covered part green on a neutral track, so the track is what is left
+/// (a gap, or lines not checked yet, is an empty bar).
 struct CoverageBar: View {
     let value: Double
     var height: CGFloat = 6
@@ -213,7 +213,7 @@ struct CoverageBar: View {
             let filled = min(max(value, 0), 1)
             Capsule().fill(.quaternary)
                 .overlay(alignment: .leading) {
-                    Capsule().fill(filled >= 0.999 ? ThemeColor.done : ThemeColor.attention)
+                    Capsule().fill(.done)
                         .frame(width: geo.size.width * filled)
                 }
         }
