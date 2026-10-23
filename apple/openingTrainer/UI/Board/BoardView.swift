@@ -36,8 +36,7 @@ struct BoardArrow: Hashable, Identifiable {
 
     func color(_ theme: BoardTheme) -> Color {
         switch style {
-        case .mine, .opponent, .hint: theme.done
-        case .gap: theme.gap
+        case .mine, .opponent, .hint, .gap: theme.ink
         case .engine: theme.engine
         }
     }
@@ -174,7 +173,7 @@ struct BoardView: View {
                 Image(systemName: correct ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .resizable()
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(.white, correct ? theme.done : theme.wrong)
+                    .foregroundStyle(.white, correct ? theme.ink : theme.wrong)
                     .frame(width: sq * 0.38, height: sq * 0.38)
                     .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)
                     .position(at)
@@ -388,19 +387,37 @@ struct ArrowsView: View {
                 let shaftEnd = CGPoint(x: tip.x - ux * head, y: tip.y - uy * head)
                 let begin = CGPoint(x: start.x + ux * square * 0.25, y: start.y + uy * square * 0.25)
 
-                var shaft = Path()
-                shaft.move(to: begin)
-                shaft.addLine(to: shaftEnd)
-                let style = StrokeStyle(lineWidth: width, lineCap: .round, dash: arrow.dashed ? [width * 1.2, width * 0.9] : [])
-                ctx.stroke(shaft, with: .color(arrow.color(theme).opacity(arrow.opacity)), style: style)
-
                 var headPath = Path()
                 let px = -uy, py = ux
                 headPath.move(to: tip)
                 headPath.addLine(to: CGPoint(x: shaftEnd.x + px * head * 0.6, y: shaftEnd.y + py * head * 0.6))
                 headPath.addLine(to: CGPoint(x: shaftEnd.x - px * head * 0.6, y: shaftEnd.y - py * head * 0.6))
                 headPath.closeSubpath()
-                ctx.fill(headPath, with: .color(arrow.color(theme).opacity(arrow.opacity)))
+
+                // Drawn opaque in a layer, which is faded as a whole when it is composited, so
+                // where the shaft meets the head nothing shows through twice.
+                var faded = ctx
+                faded.opacity = arrow.opacity
+                faded.drawLayer { layer in
+                    let color = GraphicsContext.Shading.color(arrow.color(theme))
+                    var shaft = Path()
+                    shaft.move(to: begin)
+                    if arrow.dashed {
+                        // Whole dashes spaced evenly from the start to the head, the last one
+                        // meeting it, square-ended like the head's base.
+                        shaft.addLine(to: shaftEnd)
+                        let run = hypot(shaftEnd.x - begin.x, shaftEnd.y - begin.y)
+                        let dash = max(width * 1.6, square * 0.14)
+                        let count = max(2, ((run + dash * 0.7) / (dash * 1.7)).rounded())
+                        let gap = max(0, (run - count * dash) / (count - 1))
+                        layer.stroke(shaft, with: color, style: StrokeStyle(lineWidth: width, lineCap: .butt, dash: [dash, gap]))
+                    } else {
+                        // Into the head, so the two read as one shape.
+                        shaft.addLine(to: CGPoint(x: shaftEnd.x + ux * head * 0.5, y: shaftEnd.y + uy * head * 0.5))
+                        layer.stroke(shaft, with: color, style: StrokeStyle(lineWidth: width, lineCap: .round))
+                    }
+                    layer.fill(headPath, with: color)
+                }
             }
         }
     }

@@ -149,18 +149,24 @@ with the 94 MB net downloaded in Settings (checked against its name first: Stock
 the process when a net does not load). Settings: search time, lines (1–5), cloud evals.
 
 ## Colors (see `Design/COLORS.md`, roles in `UI/Components/Palette.swift`)
-Two layers. The accent (the app color from Settings: indigo by default, the icon's color, or
-any of the Mac's accent colors) is for controls only and never carries meaning. Meaning colors
+Two layers. The accent (the app color from Settings: blue by default, Apple's default accent, or
+any of the Mac's accent colors) is for controls, with one exception: progress is tinted like
+Apple's accented widgets (HIG Widgets, Complications): coverage bars, gap counts, the studied
+bar and the due counts use the app color (mature, review, covered; young at half), the
+secondary label gray (learning) and the label color (new, not studied), each count colored
+like its part of the bar. Meaning colors
 are system colors that the `Theme` in the environment resolves for each role (`ThemeColor`),
-one meaning each: green done (covered, your move, right, learned), orange something to do
-(missing coverage, gaps), blue new, red wrong / study again (and Apple's red for errors,
-delete), cyan reviewed ahead; yellow is the board's highlight. When the app color has a
+one meaning each: green done (right, your saved moves), orange something to do (a
+missing move), blue new, red wrong / study again (and Apple's red for errors,
+delete), cyan reviewed ahead. When the app color has a
 meaning's hue, the theme gives that meaning a stand-in from another family, app-wide (table in
 `Design/COLORS.md`). Always with a symbol or text, never color alone. Anything that asks the
 user to act is colored; a color is removed only where nothing gets less clear. Prefer system
 colors and semantic styles (Apple themes them); custom values only as asset color sets with
 Dark and High Contrast variants. The board has its own theme (slate tinted toward the app
-color, never the Mac user's accent); the engine's lines stay graphite. A new meaning takes a
+color, never the Mac user's accent); its arrows, hint and ✓ are one ink (the app color 55%
+toward black, told apart by width, opacity and dashes), its highlights the app color, the ✕
+red and the engine's lines graphite. A new meaning takes a
 free system color, a `Palette.swift` role and a row in `Design/COLORS.md`. The commit hook
 blocks hue names in `UI/` outside `Palette.swift`.
 

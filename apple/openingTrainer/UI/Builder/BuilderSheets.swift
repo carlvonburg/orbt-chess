@@ -52,7 +52,7 @@ struct OutlineSheet: View {
                     .lineLimit(2)
                 HStack(spacing: 6) {
                     CoverageBar(value: completion).frame(width: 60)
-                    if gaps > 0 { Text("\(gaps) gaps").font(.caption2).foregroundStyle(.attention) }
+                    if gaps > 0 { Text("\(gaps) gaps").font(.caption2).foregroundStyle(.progress) }
                 }
             }
         }

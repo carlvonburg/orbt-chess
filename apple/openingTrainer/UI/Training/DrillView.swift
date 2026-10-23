@@ -428,16 +428,16 @@ struct LineHistory: View {
     }
 }
 
-/// Anki's three counts: New (blue), Learning (red), To Review (green).
+/// Anki's three counts, colored like the studied bar: New, Learning (gray), To Review (app color).
 struct StudyCountsView: View {
     let counts: Counts
     var highlight: QueueKind?
 
     var body: some View {
         HStack(spacing: 10) {
-            number(counts.new, .new, .new)
-            number(counts.learning, .wrong, .learning)
-            number(counts.review, .done, .review)
+            number(counts.new, .unstudied, .new)
+            number(counts.learning, .learning, .learning)
+            number(counts.review, .progress, .review)
         }
         // Next to the status the numbers never truncate; the status wraps instead.
         .fixedSize()
@@ -459,9 +459,9 @@ struct StudyCountsList: View {
 
     var body: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 10) {
-            row(counts.new, .new, .new, "New", "Moves you haven't studied yet")
-            row(counts.learning, .wrong, .learning, "Learning", "Moves you're learning, shown again within minutes")
-            row(counts.review, .done, .review, "To Review", "Learned moves due today")
+            row(counts.new, .unstudied, .new, "New", "Moves you haven't studied yet")
+            row(counts.learning, .learning, .learning, "Learning", "Moves you're learning, shown again within minutes")
+            row(counts.review, .progress, .review, "To Review", "Learned moves due today")
         }
     }
 

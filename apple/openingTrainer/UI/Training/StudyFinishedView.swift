@@ -87,9 +87,9 @@ struct StudyFinishedView: View {
             }
             StudiedBar(progress: progress, height: 8)
             FlowLayout {
-                legend(progress.learning, "learning", ThemeColor.wrong.opacity(0.5))
-                legend(progress.young, "young", ThemeColor.done.opacity(0.5))
-                legend(progress.mature, "mature", ThemeColor.done)
+                legend(progress.mature, "mature", .progress)
+                legend(progress.young, "young", ThemeColor.progress.opacity(0.5))
+                legend(progress.learning, "learning", .learning)
             }
             .font(.caption)
         }

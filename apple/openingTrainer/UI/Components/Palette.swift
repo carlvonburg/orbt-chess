@@ -2,8 +2,8 @@ import SwiftUI
 
 // The app's colors, by meaning (Design/COLORS.md). Each meaning has one hue in a theme, always
 // next to a symbol, text or shape; views use these roles, never a hue by name. The accent (the
-// app color, system indigo by default, or the Mac user's choice) is for controls only and never
-// carries meaning.
+// app color, system blue by default, or the Mac user's choice) is for controls and, tinted, for
+// progress; it never carries another meaning.
 
 /// A color by its meaning, resolved by the app's `Theme` where it is drawn: views say what a
 /// color means (`.done`, `.attention`), the theme decides the hue, so a change of app color
@@ -12,8 +12,7 @@ nonisolated struct ThemeColor: ShapeStyle, Hashable {
     enum Role: Hashable {
         /// Done: covered, your move, a correct answer, learned (Anki's review, young, mature).
         case done
-        /// Something to do: missing coverage (gaps, the empty part of a coverage bar), a streak
-        /// at risk, a leech.
+        /// Something to do: missing coverage (gaps), a streak at risk, a leech.
         case attention
         /// New, not studied yet (Anki).
         case new
@@ -25,8 +24,13 @@ nonisolated struct ThemeColor: ShapeStyle, Hashable {
         case inactive
         /// Apple's red: something failed (error messages), buttons that delete.
         case failure
-        /// The board's last move and selected square.
-        case highlight
+        /// Progress, tinted like an accented widget: the app color (indigo for graphite). The
+        /// covered part of a coverage bar, gap counts, reviews due, mature moves (young at half).
+        case progress
+        /// Moves you're learning (Anki's learning and relearning): the secondary label color.
+        case learning
+        /// New, not studied yet, in counts and bars: the label color (its fill in a bar).
+        case unstudied
     }
 
     let role: Role
@@ -43,7 +47,7 @@ extension ShapeStyle where Self == ThemeColor {
     /// Done: covered, your move, a correct answer, learned (Anki's review count, mature; young at
     /// half strength).
     static var done: ThemeColor { ThemeColor(role: .done) }
-    /// Something to do: gaps, the empty part of a coverage bar, a streak at risk, a leech.
+    /// Something to do: gaps, a streak at risk, a leech.
     static var attention: ThemeColor { ThemeColor(role: .attention) }
     /// New, not studied yet (Anki).
     static var new: ThemeColor { ThemeColor(role: .new) }
@@ -56,6 +60,12 @@ extension ShapeStyle where Self == ThemeColor {
     static var inactive: ThemeColor { ThemeColor(role: .inactive) }
     /// Apple's red: error messages, buttons that delete where the destructive role can't be used.
     static var failure: ThemeColor { ThemeColor(role: .failure) }
+    /// Progress: the app color. Covered, gap counts, reviews due, mature (young at half).
+    static var progress: ThemeColor { ThemeColor(role: .progress) }
+    /// Moves you're learning: the secondary label color.
+    static var learning: ThemeColor { ThemeColor(role: .learning) }
+    /// New, not studied yet: the label color.
+    static var unstudied: ThemeColor { ThemeColor(role: .unstudied) }
 }
 
 /// The colors of one app color: every meaning's hue, and the board. Each meaning has a system
@@ -74,7 +84,9 @@ nonisolated struct Theme {
         case .ahead: .cyan
         case .inactive: .gray
         case .failure: .red
-        case .highlight: appColor == .yellow ? .indigo : .yellow
+        case .progress: appColor == .graphite ? .indigo : appColor.tint ?? .accentColor
+        case .learning: .secondary
+        case .unstudied: .primary
         }
     }
 
@@ -85,25 +97,25 @@ nonisolated extension EnvironmentValues {
     @Entry var theme = Theme(appColor: .default)
 }
 
-/// The app's color, chosen in Settings (the Mac's accent colors, indigo first): buttons,
+/// The app's color, chosen in Settings (the Mac's accent colors, blue first, then indigo): buttons,
 /// selection and the board's tint. It never carries meaning, so it may share a hue with a
 /// meaning color.
 nonisolated enum AppColor: String, CaseIterable, Identifiable {
-    case indigo, blue, purple, pink, red, orange, yellow, green, graphite
+    case blue, indigo, purple, pink, red, orange, yellow, green, graphite
 
     static let key = "appColor"
-    /// Indigo, the app icon's color.
-    static let `default` = AppColor.indigo
+    /// Blue, Apple's default accent.
+    static let `default` = AppColor.blue
 
     var id: Self { self }
     var title: String { rawValue.capitalized }
 
-    /// The tint to set; nil for indigo, the asset catalog's accent, which a Mac user's accent
+    /// The tint to set; nil for blue, the asset catalog's accent, which a Mac user's accent
     /// color replaces.
     var tint: Color? {
         switch self {
-        case .indigo: nil
-        case .blue: .blue
+        case .blue: nil
+        case .indigo: .indigo
         case .purple: .purple
         case .pink: .pink
         case .red: .red
@@ -154,12 +166,15 @@ nonisolated struct BoardTheme {
 
     var light: Color { Color("BoardLight").mix(with: theme.appColor.board, by: 0.14) }
     var dark: Color { Color("BoardDark").mix(with: theme.appColor.board, by: 0.28) }
-    /// Your moves, the hint and the replies you cover.
-    var done: Color { theme.color(.done) }
-    var gap: Color { theme.color(.attention) }
+    /// The board's ink, tinted like the progress colors: the app color mixed halfway to black,
+    /// which every board shows clearly (a board swallows its own hue). Your moves, the hint,
+    /// the replies you cover and, dashed, the gaps; the ✓ badge.
+    var ink: Color { theme.appColor.board.mix(with: .black, by: 0.55) }
     var wrong: Color { theme.color(.wrong) }
-    var lastMove: Color { theme.color(.highlight).opacity(0.42) }
-    var selected: Color { theme.color(.highlight).opacity(0.68) }
+    /// The last move and the selected square: the app color over the square (the ink for
+    /// graphite, whose gray the board doesn't show).
+    var lastMove: Color { theme.appColor == .graphite ? ink.opacity(0.25) : theme.appColor.board.opacity(0.5) }
+    var selected: Color { theme.appColor == .graphite ? ink.opacity(0.4) : theme.appColor.board.opacity(0.75) }
     /// The engine's lines: quiet, there are often three of them.
     let engine = Color(.sRGB, red: 0x2C / 255, green: 0x2C / 255, blue: 0x2E / 255)
 }
