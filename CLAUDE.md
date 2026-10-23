@@ -150,10 +150,14 @@ the process when a net does not load). Settings: search time, lines (1–5), clo
 
 ## Colors (see `Design/COLORS.md`, roles in `UI/Components/Palette.swift`)
 Two layers. The accent (the app color from Settings: indigo by default, the icon's color, or
-any of the Mac's accent colors) is for controls only and never carries meaning. Meaning colors
+any of the Mac's accent colors) is for controls, with one exception: progress is tinted like
+Apple's accented widgets (HIG Widgets, Complications): coverage bars, gap counts, the studied
+bar and the due counts use the app color (mature, review, covered; young at half), the
+secondary label gray (learning) and the label color (new, not studied), each count colored
+like its part of the bar. Meaning colors
 are system colors that the `Theme` in the environment resolves for each role (`ThemeColor`),
-one meaning each: green done (covered, your move, right, learned), orange something to do
-(missing coverage, gaps), blue new, red wrong / study again (and Apple's red for errors,
+one meaning each: green done (your move, right), orange something to do (gap arrows, a
+missing move), blue new, red wrong / study again (and Apple's red for errors,
 delete), cyan reviewed ahead; yellow is the board's highlight. When the app color has a
 meaning's hue, the theme gives that meaning a stand-in from another family, app-wide (table in
 `Design/COLORS.md`). Always with a symbol or text, never color alone. Anything that asks the

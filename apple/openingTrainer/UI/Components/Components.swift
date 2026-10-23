@@ -202,7 +202,7 @@ struct OpenDocument<Content: View, Placeholder: View>: View {
     }
 }
 
-/// Coverage as a bar: the covered part green on a neutral track, so the track is what is left
+/// Coverage as a bar: the covered part in the app color on a neutral track, so the track is what is left
 /// (a gap, or lines not checked yet, is an empty bar).
 struct CoverageBar: View {
     let value: Double
@@ -213,7 +213,7 @@ struct CoverageBar: View {
             let filled = min(max(value, 0), 1)
             Capsule().fill(.quaternary)
                 .overlay(alignment: .leading) {
-                    Capsule().fill(.done)
+                    Capsule().fill(.progress)
                         .frame(width: geo.size.width * filled)
                 }
         }
@@ -224,8 +224,9 @@ struct CoverageBar: View {
     }
 }
 
-/// Studied moves by Anki's groups (learning, young, mature) over all your moves; moves not
-/// studied yet are the empty track.
+/// Studied moves by Anki's groups (mature, young, learning) over all your moves, tinted like an
+/// accented widget: the app color, at half for young, then the learning gray; moves not
+/// studied yet are the label color's fill.
 struct StudiedBar: View {
     let progress: Progress
     var height: CGFloat = 6
@@ -234,9 +235,9 @@ struct StudiedBar: View {
         GeometryReader { geo in
             let total = CGFloat(max(progress.cards, 1))
             HStack(spacing: 0) {
-                Rectangle().fill(ThemeColor.wrong.opacity(0.5)).frame(width: geo.size.width * CGFloat(progress.learning) / total)
-                Rectangle().fill(ThemeColor.done.opacity(0.5)).frame(width: geo.size.width * CGFloat(progress.young) / total)
-                Rectangle().fill(ThemeColor.done).frame(width: geo.size.width * CGFloat(progress.mature) / total)
+                Rectangle().fill(.progress).frame(width: geo.size.width * CGFloat(progress.mature) / total)
+                Rectangle().fill(ThemeColor.progress.opacity(0.5)).frame(width: geo.size.width * CGFloat(progress.young) / total)
+                Rectangle().fill(.learning).frame(width: geo.size.width * CGFloat(progress.learning) / total)
                 Spacer(minLength: 0)
             }
             .background(.quaternary)
@@ -245,12 +246,13 @@ struct StudiedBar: View {
         .frame(height: height)
         .accessibilityElement()
         .accessibilityLabel("Studied")
-        .accessibilityValue("\(progress.learning) learning, \(progress.young) young, \(progress.mature) mature, \(progress.notStudied) not studied")
+        .accessibilityValue("\(progress.mature) mature, \(progress.young) young, \(progress.learning) learning, \(progress.notStudied) not studied")
     }
 }
 
 /// New / Learning / To Review, as on Anki's deck list. Nothing when the repertoire has no
-/// moves of yours yet, only the new count before anything was studied, zeros greyed.
+/// moves of yours yet, only the new count before anything was studied, zeros faint. Colored
+/// like the studied bar: new the label color, learning gray, review the app color.
 struct DueCounts: View {
     let counts: Counts
     let progress: Progress
@@ -260,13 +262,13 @@ struct DueCounts: View {
         if progress.cards == 0 {
             EmptyView()
         } else if progress.studied == 0 {
-            Text("\(counts.new) new").foregroundStyle(counts.new > 0 ? AnyShapeStyle(.new) : AnyShapeStyle(.secondary))
+            Text("\(counts.new) new").foregroundStyle(counts.new > 0 ? AnyShapeStyle(.unstudied) : AnyShapeStyle(.tertiary))
                 .font(font.weight(.semibold).monospacedDigit())
         } else {
             HStack(spacing: 8) {
-                number(counts.new, ThemeColor.new)
-                number(counts.learning, ThemeColor.wrong)
-                number(counts.review, ThemeColor.done)
+                number(counts.new, .unstudied)
+                number(counts.learning, .learning)
+                number(counts.review, .progress)
             }
             .font(font.weight(.semibold).monospacedDigit())
             .accessibilityElement(children: .ignore)
@@ -275,7 +277,7 @@ struct DueCounts: View {
     }
 
     private func number(_ value: Int64, _ color: ThemeColor) -> some View {
-        Text(value.formatted()).foregroundStyle(value > 0 ? AnyShapeStyle(color) : AnyShapeStyle(Color.secondary.opacity(0.6)))
+        Text(value.formatted()).foregroundStyle(value > 0 ? AnyShapeStyle(color) : AnyShapeStyle(.tertiary))
     }
 }
 

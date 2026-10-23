@@ -675,12 +675,12 @@ private struct TodayCard: View {
         header { Label(title, systemImage: icon).foregroundStyle(.done) } trailing: { streakBadge }
     }
 
-    /// The due counts in Anki's colours, each with its name.
+    /// The due counts, each with its name, colored like the studied bar.
     private var dueCounts: some View {
         HStack(spacing: 14) {
-            count(counts.new, "new", ThemeColor.new)
-            count(counts.learning, "learning", ThemeColor.wrong)
-            count(counts.review, "review", ThemeColor.done)
+            count(counts.new, "new", .unstudied)
+            count(counts.learning, "learning", .learning)
+            count(counts.review, "review", .progress)
         }
         .font(.subheadline)
         .accessibilityElement(children: .ignore)
@@ -779,7 +779,7 @@ private struct TodayCard: View {
         HStack(spacing: 4) {
             Text(value.formatted())
                 .fontWeight(.semibold).monospacedDigit()
-                .foregroundStyle(value > 0 ? AnyShapeStyle(color) : AnyShapeStyle(Color.secondary.opacity(0.6)))
+                .foregroundStyle(value > 0 ? AnyShapeStyle(color) : AnyShapeStyle(.tertiary))
             Text(name).foregroundStyle(.secondary)
         }
     }
@@ -867,7 +867,7 @@ struct LibraryRow: View {
                 HStack(spacing: 0) {
                     if notStudied { Text("Not studied yet").foregroundStyle(.secondary) }
                     if notStudied && stats.gaps > 0 { Text(" · ").foregroundStyle(.secondary) }
-                    if stats.gaps > 0 { Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps) gaps").foregroundStyle(.attention) }
+                    if stats.gaps > 0 { Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps) gaps").foregroundStyle(.progress) }
                 }
                 .font(.caption)
             }

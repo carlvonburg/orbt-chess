@@ -26,6 +26,13 @@ nonisolated struct ThemeColor: ShapeStyle, Hashable {
         case failure
         /// The board's last move and selected square.
         case highlight
+        /// Progress, tinted like an accented widget: the app color (indigo for graphite). The
+        /// covered part of a coverage bar, gap counts, reviews due, mature moves (young at half).
+        case progress
+        /// Moves you're learning (Anki's learning and relearning): the secondary label color.
+        case learning
+        /// New, not studied yet, in counts and bars: the label color (its fill in a bar).
+        case unstudied
     }
 
     let role: Role
@@ -55,6 +62,12 @@ extension ShapeStyle where Self == ThemeColor {
     static var inactive: ThemeColor { ThemeColor(role: .inactive) }
     /// Apple's red: error messages, buttons that delete where the destructive role can't be used.
     static var failure: ThemeColor { ThemeColor(role: .failure) }
+    /// Progress: the app color. Covered, gap counts, reviews due, mature (young at half).
+    static var progress: ThemeColor { ThemeColor(role: .progress) }
+    /// Moves you're learning: the secondary label color.
+    static var learning: ThemeColor { ThemeColor(role: .learning) }
+    /// New, not studied yet: the label color.
+    static var unstudied: ThemeColor { ThemeColor(role: .unstudied) }
 }
 
 /// The colors of one app color: every meaning's hue, and the board. Each meaning has a system
@@ -74,6 +87,9 @@ nonisolated struct Theme {
         case .inactive: .gray
         case .failure: .red
         case .highlight: appColor == .yellow ? .indigo : .yellow
+        case .progress: appColor == .graphite ? .indigo : appColor.tint ?? .accentColor
+        case .learning: .secondary
+        case .unstudied: .primary
         }
     }
 

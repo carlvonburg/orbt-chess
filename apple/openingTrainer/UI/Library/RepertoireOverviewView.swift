@@ -57,7 +57,7 @@ struct RepertoireOverviewView: View {
                     if stats.gaps > 0 {
                         Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps.formatted()) gaps")
                             .font(.subheadline.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.attention)
+                            .foregroundStyle(.progress)
                     }
                 }
                 CoverageBar(value: stats.completion)
@@ -80,9 +80,9 @@ struct RepertoireOverviewView: View {
                     .font(.headline.monospacedDigit())
                 StudiedBar(progress: stats.progress)
                 FlowLayout {
-                    legend(stats.progress.learning, "learning", ThemeColor.wrong.opacity(0.5))
-                    legend(stats.progress.young, "young", ThemeColor.done.opacity(0.5))
-                    legend(stats.progress.mature, "mature", ThemeColor.done)
+                    legend(stats.progress.mature, "mature", .progress)
+                    legend(stats.progress.young, "young", ThemeColor.progress.opacity(0.5))
+                    legend(stats.progress.learning, "learning", .learning)
                     if stats.progress.suspended > 0 {
                         legend(stats.progress.suspended, "suspended", ThemeColor.inactive)
                     }
@@ -136,12 +136,12 @@ struct RepertoireOverviewView: View {
         }
     }
 
-    /// Only the counts above zero, in Anki's colors.
+    /// Only the counts above zero, colored like the studied bar.
     @ViewBuilder
     private func dueCounts(_ counts: Counts) -> some View {
-        if counts.new > 0 { due(counts.new, "new", ThemeColor.new) }
-        if counts.learning > 0 { due(counts.learning, "learning", ThemeColor.wrong) }
-        if counts.review > 0 { due(counts.review, "review", ThemeColor.done) }
+        if counts.new > 0 { due(counts.new, "new", .unstudied) }
+        if counts.learning > 0 { due(counts.learning, "learning", .learning) }
+        if counts.review > 0 { due(counts.review, "review", .progress) }
     }
 
     private func due(_ value: Int64, _ label: String, _ color: ThemeColor) -> some View {

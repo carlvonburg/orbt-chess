@@ -14,7 +14,12 @@ in `UI/` outside `Palette.swift`).
      the app icon's color), Blue, Purple, Pink, Red, Orange, Yellow, Green or Graphite, each
      shown as a strip of the board it gives. Indigo uses the asset catalog's accent, so on the
      Mac a user-chosen accent replaces it for controls. So the accent **never carries
-     meaning**; a red button next to a red ✕ is fine, the ✕ is not a button.
+     meaning**; a red button next to a red ✕ is fine, the ✕ is not a button. The one
+     exception is progress (below).
+   - **Progress** is tinted, the way Apple tints accented widgets and watch complications
+     (HIG Widgets › Accented, Complications › tinted mode): one color, the app color, plus
+     the label colors, with levels by opacity like SF Symbols' hierarchical rendering. It
+     follows the app color so the bars and counts sit with the board.
    - **Meaning colors** are system colors, one meaning each. The theme gives each meaning its
      default hue, and when the app color has that hue (or tints the board too close to it) a
      stand-in from another family, everywhere in the app (table below). Within a theme every
@@ -38,10 +43,13 @@ Views name the meaning; the theme picks the color. Defaults (Indigo, the default
 
 | Name | Default color | Meaning | Where |
 |---|---|---|---|
-| `.done` | green | done: covered, your move, correct, learned | the covered part of a `CoverageBar` (on a neutral track: what is left, gaps and lines not checked yet alike), "Coverage target reached", transposition icon and badges, reply arrows you cover, your-move and hint arrows, your saved moves' row tint, "Main" swipe, ✓ badge and "Correct", review due count, mature moves (young: `.done.opacity(0.5)`), studied today, correct %, Welcome "build" and "study" |
-| `.attention` | orange | something to do | gaps (counts, dashed arrows, gap list), "Your move is missing", "That's your alternative", streak at risk, leech, Welcome "gaps" |
-| `.new` | blue | new, not studied yet (Anki) | new due count, new group, "New move" in the drill |
-| `.wrong` | red | wrong, study again now | ✕ badge and "Not quite", Again, learning due count, relearning moves (learning: `.wrong.opacity(0.5)`), overdue moves |
+| `.done` | green | done: covered, your move, correct, learned | "Coverage target reached", transposition icon and badges, reply arrows you cover, your-move and hint arrows, your saved moves' row tint, "Main" swipe, ✓ badge and "Correct", studied today, correct %, Statistics' young and mature, Welcome "build" and "study" |
+| `.progress` | the app color (indigo for Graphite) | progress, tinted | the covered part of a `CoverageBar` (on a neutral track: what is left, gaps and lines not checked yet alike), gap counts, the review due count, mature moves in the studied bar and its legends (young: `.progress.opacity(0.5)`) |
+| `.learning` | secondary label gray | moves you're learning | the learning due count, the learning part of the studied bar and its legends |
+| `.unstudied` | label color | new, not studied yet | the new due count; the not-studied rest of the studied bar is its fill (`.quaternary`) |
+| `.attention` | orange | something to do | gaps (dashed arrows, gap list), "Your move is missing", "That's your alternative", streak at risk, leech, Welcome "gaps" |
+| `.new` | blue | new, not studied yet (Anki) | Statistics' new group, "New move" in the drill |
+| `.wrong` | red | wrong, study again now | ✕ badge and "Not quite", Again, Statistics' learning and relearning (learning: `.wrong.opacity(0.5)`), overdue moves |
 | `.ahead` | cyan | reviewed ahead (Anki's filtered decks) | Reviews chart |
 | `.inactive` | gray | suspended | Move Counts chart |
 | `.failure` | red (Apple's) | something failed, delete | error messages, the Delete swipe |
@@ -51,7 +59,7 @@ Views name the meaning; the theme picks the color. Defaults (Indigo, the default
 The accent is not a meaning: it is the app color itself, on buttons, selection, sliders,
 switches and single-series charts.
 
-Neutral: text, fills, cards, the comment background, the track of a `CoverageBar`, "Excluded", "Not needed" (only the move name dimmed), the
+Neutral: text, fills, cards, zero due counts (tertiary), the comment background, the track of a `CoverageBar`, "Excluded", "Not needed" (only the move name dimmed), the
 transposition callout's card, a streak that is safe today (primary).
 
 Free for a new meaning: teal, mint, brown, indigo, purple, pink (indigo, purple and blue also stand in on some boards, see below). Any of them may also be the app
