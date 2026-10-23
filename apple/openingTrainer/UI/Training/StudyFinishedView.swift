@@ -51,7 +51,7 @@ struct StudyFinishedView: View {
                 Label("\(today.streak.current)-day streak", systemImage: "flame.fill")
                     .font(.subheadline)
                     // At risk until something is studied today.
-                    .foregroundStyle(today.streak.studiedToday ? AnyShapeStyle(.primary) : AnyShapeStyle(.attention))
+                    .foregroundStyle(today.streak.studiedToday ? AnyShapeStyle(.streak) : AnyShapeStyle(.attention))
             }
         }
         .multilineTextAlignment(.center)

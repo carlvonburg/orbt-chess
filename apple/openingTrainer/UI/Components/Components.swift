@@ -213,7 +213,7 @@ struct CoverageBar: View {
             let filled = min(max(value, 0), 1)
             Capsule().fill(.quaternary)
                 .overlay(alignment: .leading) {
-                    Capsule().fill(.progress)
+                    Capsule().fill(.built)
                         .frame(width: geo.size.width * filled)
                 }
         }
@@ -226,7 +226,7 @@ struct CoverageBar: View {
 
 /// Studied moves by Anki's groups (mature, young, learning) over all your moves, tinted like an
 /// accented widget: the app color, at half for young, then the learning gray; moves not
-/// studied yet are the label color's fill.
+/// studied yet are the empty track.
 struct StudiedBar: View {
     let progress: Progress
     var height: CGFloat = 6

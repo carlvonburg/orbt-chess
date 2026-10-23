@@ -150,8 +150,9 @@ the process when a net does not load). Settings: search time, lines (1–5), clo
 
 ## Colors (see `Design/COLORS.md`, roles in `UI/Components/Palette.swift`)
 Two layers. The accent (the app color from Settings: on the Mac Automatic by default, the system
-accent mapped to its nearest app color and followed live; elsewhere blue, Apple's default accent;
-or any of the Mac's accent colors and indigo) is for controls, with one exception: progress is tinted like
+accent mapped to its nearest app color and followed live; elsewhere Multicolor: blue controls,
+board and Built bars, Anki's colors for studying (new blue, learning red, review and mature
+green), gaps and streak orange; or any of the Mac's accent colors and indigo) is for controls, with one exception: progress is tinted like
 Apple's accented widgets (HIG Widgets, Complications): coverage bars, gap counts, the studied
 bar and the due counts use the app color (mature, review, covered; young at half), the
 secondary label gray (learning) and the label color (new, not studied), each count colored

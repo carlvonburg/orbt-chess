@@ -693,7 +693,7 @@ private struct TodayCard: View {
             Label("\(streak.current) \(streak.current == 1 ? "day" : "days")", systemImage: "flame.fill")
                 .font(.subheadline.monospacedDigit())
                 // At risk until something is studied today.
-                .foregroundStyle(streak.studiedToday ? AnyShapeStyle(.primary) : AnyShapeStyle(.attention))
+                .foregroundStyle(streak.studiedToday ? AnyShapeStyle(.streak) : AnyShapeStyle(.attention))
                 .accessibilityLabel(streakText)
         }
     }
@@ -867,7 +867,7 @@ struct LibraryRow: View {
                 HStack(spacing: 0) {
                     if notStudied { Text("Not studied yet").foregroundStyle(.secondary) }
                     if notStudied && stats.gaps > 0 { Text(" · ").foregroundStyle(.secondary) }
-                    if stats.gaps > 0 { Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps) gaps").foregroundStyle(.progress) }
+                    if stats.gaps > 0 { Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps) gaps").foregroundStyle(.gaps) }
                 }
                 .font(.caption)
             }

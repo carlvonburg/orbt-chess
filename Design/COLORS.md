@@ -12,8 +12,10 @@ in `UI/` outside `Palette.swift`).
      links, the prominent Study button, segmented pickers). It is the **app color** chosen in
      Settings › Appearance: on the Mac first **Automatic** (the default there), the system
      accent from System Settings, mapped to the nearest app color by hue (graphite when it is
-     nearly gray; Multicolor gives blue) and followed live; then the Mac's accent colors: Blue
-     (the default elsewhere, Apple's default accent), Indigo (the app icon's color), Purple,
+     nearly gray; Multicolor gives blue) and followed live; then **Multicolor** (the default on
+     iPhone and iPad): blue controls, board and Built bars, with Anki's colors for studying
+     (below); then
+     the Mac's accent colors: Blue (Apple's default accent), Indigo (the app icon's color), Purple,
      Pink, Red, Orange, Yellow, Green or Graphite, each shown as a strip of the board it gives.
      Blue and Automatic use the asset catalog's accent, so on the Mac controls take the
      user's exact accent; the theme (board, ink, progress, stand-ins) takes its nearest app
@@ -48,9 +50,12 @@ Views name the meaning; the theme picks the color. Defaults (Blue, the default a
 | Name | Default color | Meaning | Where |
 |---|---|---|---|
 | `.done` | green | done: covered, your move, correct, learned | "Coverage target reached", transposition icon and badges, your saved moves' row tint, "Main" swipe, "Correct", studied today, correct %, Statistics' young and mature, Welcome "build" and "study" |
-| `.progress` | the app color (indigo for Graphite) | progress, tinted | the covered part of a `CoverageBar` (on a neutral track: what is left, gaps and lines not checked yet alike), gap counts, the review due count, mature moves in the studied bar and its legends (young: `.progress.opacity(0.5)`) |
-| `.learning` | secondary label gray | moves you're learning | the learning due count, the learning part of the studied bar and its legends |
-| `.unstudied` | label color | new, not studied yet | the new due count; the not-studied rest of the studied bar is its fill (`.quaternary`) |
+| `.built` | the app color (Multicolor: blue) | building | the covered part of a `CoverageBar` (on a neutral track: what is left, gaps and lines not checked yet alike): Built bars, the overview, the Build header, replies, the gap list |
+| `.progress` | the app color (indigo for Graphite; Multicolor: green) | study progress, tinted | the review due count, mature moves in the studied bar and its legends (young: `.progress.opacity(0.5)`) |
+| `.learning` | secondary label gray (Multicolor: red) | moves you're learning | the learning due count, the learning part of the studied bar and its legends |
+| `.unstudied` | label color (Multicolor: blue) | new, not studied yet | the new due count; the not-studied rest of the studied bar is the neutral track |
+| `.gaps` | the app color (Multicolor: orange) | gaps to fill | gap counts |
+| `.streak` | label color (Multicolor: orange) | a streak safe today | the streak badge (at risk: `.attention`) |
 | `.attention` | orange | something to do | gaps (gap list), "Your move is missing", "That's your alternative", streak at risk, leech, Welcome "gaps" |
 | `.new` | blue | new, not studied yet (Anki) | Statistics' new group, "New move" in the drill |
 | `.wrong` | red | wrong, study again now | ✕ badge and "Not quite", Again, Statistics' learning and relearning (learning: `.wrong.opacity(0.5)`), overdue moves |
