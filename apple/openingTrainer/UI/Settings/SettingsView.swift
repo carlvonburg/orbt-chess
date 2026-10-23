@@ -173,7 +173,7 @@ struct AppColorPicker: View {
     var body: some View {
         NavigationLink {
             List {
-                ForEach(AppColor.allCases) { option in
+                ForEach(AppColor.choices) { option in
                     Button { appColor = option } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 6) {
@@ -209,7 +209,7 @@ private struct BoardStrip: View {
         HStack(spacing: 0) {
             ForEach(0..<squares, id: \.self) { i in
                 Rectangle()
-                    .fill(i.isMultiple(of: 2) ? Theme(appColor: color).board.light : Theme(appColor: color).board.dark)
+                    .fill(i.isMultiple(of: 2) ? Theme(appColor: color.resolved).board.light : Theme(appColor: color.resolved).board.dark)
                     .aspectRatio(1, contentMode: .fit)
             }
         }

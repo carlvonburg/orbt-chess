@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 // The app's colors, by meaning (Design/COLORS.md). Each meaning has one hue in a theme, always
 // next to a symbol, text or shape; views use these roles, never a hue by name. The accent (the
@@ -94,27 +97,63 @@ nonisolated struct Theme {
 }
 
 nonisolated extension EnvironmentValues {
-    @Entry var theme = Theme(appColor: .default)
+    @Entry var theme = Theme(appColor: AppColor.default.resolved)
 }
 
-/// The app's color, chosen in Settings (the Mac's accent colors, blue first, then indigo): buttons,
-/// selection and the board's tint. It never carries meaning, so it may share a hue with a
-/// meaning color.
+/// The app's color, chosen in Settings (the Mac's accent colors, blue first, then indigo; on the
+/// Mac first Automatic, the system accent): buttons, selection, progress and the board's tint.
 nonisolated enum AppColor: String, CaseIterable, Identifiable {
-    case blue, indigo, purple, pink, red, orange, yellow, green, graphite
+    case automatic, blue, indigo, purple, pink, red, orange, yellow, green, graphite
 
     static let key = "appColor"
-    /// Blue, Apple's default accent.
+    /// The Mac's accent on the Mac; elsewhere blue, Apple's default accent.
+    #if os(macOS)
+    static let `default` = AppColor.automatic
+    #else
     static let `default` = AppColor.blue
+    #endif
+
+    /// The colors Settings offers: Automatic only on the Mac, which has a system accent.
+    static var choices: [AppColor] {
+        #if os(macOS)
+        allCases
+        #else
+        allCases.filter { $0 != .automatic }
+        #endif
+    }
 
     var id: Self { self }
     var title: String { rawValue.capitalized }
 
-    /// The tint to set; nil for blue, the asset catalog's accent, which a Mac user's accent
-    /// color replaces.
+    /// The color itself: Automatic is the system accent's nearest app color.
+    var resolved: AppColor { self == .automatic ? .systemAccent : self }
+
+    /// The app color nearest the Mac's accent color (System Settings › Appearance): graphite
+    /// when it has almost no color, else the accent with the closest hue. Multicolor gives the
+    /// app's own accent, blue. Elsewhere blue.
+    static var systemAccent: AppColor {
+        #if os(macOS)
+        guard let accent = NSColor.controlAccentColor.usingColorSpace(.sRGB) else { return .blue }
+        if accent.saturationComponent < 0.25 { return .graphite }
+        let accents: [(AppColor, NSColor)] = [
+            (.blue, .systemBlue), (.purple, .systemPurple), (.pink, .systemPink), (.red, .systemRed),
+            (.orange, .systemOrange), (.yellow, .systemYellow), (.green, .systemGreen),
+        ]
+        func distance(_ color: NSColor) -> CGFloat {
+            let d = abs((color.usingColorSpace(.sRGB)?.hueComponent ?? 0) - accent.hueComponent)
+            return min(d, 1 - d)
+        }
+        return accents.min { distance($0.1) < distance($1.1) }?.0 ?? .blue
+        #else
+        .blue
+        #endif
+    }
+
+    /// The tint to set; nil for blue and Automatic, the asset catalog's accent, which a Mac
+    /// user's accent color replaces.
     var tint: Color? {
         switch self {
-        case .blue: nil
+        case .automatic, .blue: nil
         case .indigo: .indigo
         case .purple: .purple
         case .pink: .pink
@@ -126,10 +165,10 @@ nonisolated enum AppColor: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The board's tint: the app color itself, not a Mac user's accent (a green or orange
-    /// accent would tint the board like the arrows).
+    /// The board's tint: the app color itself (for Automatic, the system accent's nearest).
     var board: Color {
         switch self {
+        case .automatic: Self.systemAccent.board
         case .indigo: .indigo
         case .blue: .blue
         case .purple: .purple
@@ -151,11 +190,18 @@ extension View {
 
 private struct AppTint: ViewModifier {
     @AppStorage(AppColor.key) private var appColor = AppColor.default
+    /// The system accent's app color, read again when the Mac's accent changes.
+    @State private var systemAccent = AppColor.systemAccent
 
     func body(content: Content) -> some View {
         content
             .tint(appColor.tint)
-            .environment(\.theme, Theme(appColor: appColor))
+            .environment(\.theme, Theme(appColor: appColor == .automatic ? systemAccent : appColor))
+            #if os(macOS)
+            .onReceive(NotificationCenter.default.publisher(for: NSColor.systemColorsDidChangeNotification)) { _ in
+                systemAccent = .systemAccent
+            }
+            #endif
     }
 }
 
