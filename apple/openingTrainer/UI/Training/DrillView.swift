@@ -24,6 +24,7 @@ final class DrillModel {
     @ObservationIgnored private var started = false
     @ObservationIgnored private var timer: Task<Void, Never>?
     @ObservationIgnored private var wrongTimer: Task<Void, Never>?
+    @ObservationIgnored private var badgeTimer: Task<Void, Never>?
     /// Bumped after every change, so views re-read the session.
     private var stamp = 0
 
@@ -59,8 +60,8 @@ final class DrillModel {
         return session.nextLearningDue().map { Date(timeIntervalSince1970: TimeInterval($0)) }
     }
 
-    var position: ChessPosition { observe(); return session.position() }
-    var lastMove: PlayedMove? { observe(); return session.lastMove() }
+    var position: ChessPosition { observe(); return wrongMove?.position ?? session.position() }
+    var lastMove: PlayedMove? { observe(); return wrongMove?.mv ?? session.lastMove() }
     /// The moves on the board, from the start of the line.
     var playedNodes: [NodeID] { observe(); return session.playedNodes() }
     var openingName: String? {
@@ -68,11 +69,17 @@ final class DrillModel {
         return session.currentNode().flatMap { document.openingName(at: $0) }
     }
     var isUserTurn: Bool { observe(); return session.isUserTurn() }
+    /// Whether the board takes a move: your turn, and no wrong move still on it.
+    var canMove: Bool { isUserTurn && wrongMove == nil }
 
     /// The kind of card being asked, for highlighting its count.
     var askedKind: QueueKind? { observe(); return session.askedKind() }
 
-    var arrows: [BoardArrow] { observe(); return session.arrows().map(BoardArrow.init) }
+    var arrows: [BoardArrow] { observe(); return wrongMove == nil ? session.arrows().map(BoardArrow.init) : [] }
+    /// A tick or cross on the square the last answer moved to, shown for a moment.
+    private(set) var badge: BoardBadge?
+    /// A wrong move, left on the board for a moment before it is taken back.
+    private var wrongMove: PlayResult?
 
     func start() {
         // Runs again when the view reappears (after browsing, or as it's pushed): resume the
@@ -91,6 +98,13 @@ final class DrillModel {
 
     func userMoved(from: BoardSquare, to: BoardSquare, promotion: PieceKind?) {
         document.apply(session.userMoved(from: from, to: to, promotion: promotion, timing: SchedTiming(), nowMs: Self.nowMs))
+        switch session.feedback() {
+        case .correct: showBadge(.correct, on: to)
+        case .wrong:
+            showBadge(.wrong, on: to)
+            wrongMove = session.position().play(from: from, to: to, promotion: promotion)
+        default: break
+        }
         if case .wrong = session.feedback() {
             wrongTimer?.cancel()
             wrongTimer = Task { [weak self] in
@@ -102,6 +116,18 @@ final class DrillModel {
             }
         }
         changed()
+    }
+
+    /// Shows the badge, and takes back a wrong move with it.
+    private func showBadge(_ kind: BoardBadge.Kind, on square: BoardSquare) {
+        badge = BoardBadge(square: square, kind: kind)
+        badgeTimer?.cancel()
+        badgeTimer = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(700))
+            guard !Task.isCancelled, let self else { return }
+            self.badge = nil
+            self.wrongMove = nil
+        }
     }
 
     /// The node to open when the user browses the repertoire mid-line. Browsing on your
@@ -154,7 +180,7 @@ final class DrillModel {
         let delay: Int
         switch session.phase() {
         case .rewinding: delay = 250
-        case .autoplay: delay = 450
+        case .autoplay: delay = 600
         case .lineDone: delay = 400
         case .idle, .userTurn, .finished: return
         }
@@ -162,6 +188,8 @@ final class DrillModel {
             try? await Task.sleep(for: .milliseconds(delay))
             guard !Task.isCancelled, let self else { return }
             self.timer = nil
+            // The badge outlasts the opponent's reply, not the line.
+            if self.session.phase() != .autoplay { self.badge = nil }
             if self.session.phase() == .lineDone {
                 self.session.nextLine(timing: SchedTiming())
             } else {
@@ -258,7 +286,7 @@ struct DrillView: View {
                 let actions: ToolbarItemPlacement = split ? .trailingBar : .bottomActions
                 ToolbarItem(placement: actions) {
                     Button("Hint", systemImage: "lightbulb") { model.hint() }
-                        .disabled(!model.isUserTurn)
+                        .disabled(!model.canMove)
                 }
                 if !split {
                     ToolbarSpacer(.flexible, placement: .bottomActions)
@@ -353,7 +381,7 @@ struct DrillBoard: View {
 
     var body: some View {
         BoardView(position: model.position, orientation: model.color, lastMove: model.lastMove,
-                  arrows: model.arrows, movableSide: model.isUserTurn ? model.color : nil) { from, to, promotion in
+                  arrows: model.arrows, badge: model.badge, movableSide: model.canMove ? model.color : nil) { from, to, promotion in
             model.userMoved(from: from, to: to, promotion: promotion)
         }
     }

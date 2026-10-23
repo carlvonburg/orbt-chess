@@ -46,6 +46,14 @@ struct BoardArrow: Hashable, Identifiable {
     }
 }
 
+/// A mark in the top-right corner of a square: how the move to it was judged.
+struct BoardBadge: Equatable {
+    enum Kind { case correct, wrong }
+
+    let square: BoardSquare
+    let kind: Kind
+}
+
 enum BoardTheme {
     // Blue-gray squares that match the app's blue accent.
     static let light = Color(red: 0.87, green: 0.89, blue: 0.92)
@@ -69,6 +77,7 @@ struct BoardView: View {
     var lastMove: PlayedMove?
     var arrows: [BoardArrow] = []
     var marks: [BoardSquare: Color] = [:]
+    var badge: BoardBadge?
     /// Which side may be moved; nil disables interaction.
     var movableSide: Side?
     var onMove: (BoardSquare, BoardSquare, PieceKind?) -> Void = { _, _, _ in }
@@ -116,6 +125,8 @@ struct BoardView: View {
                 ArrowsView(arrows: arrows, center: { center($0, sq: sq) }, square: sq)
                     .allowsHitTesting(false)
                     .zIndex(5)
+                badgeLayer(sq: sq)
+                    .zIndex(6)
                 if let promotion {
                     promotionPicker(promotion, sq: sq)
                         .zIndex(20)
@@ -172,6 +183,29 @@ struct BoardView: View {
             }
         }
         .frame(width: sq * 8, height: sq * 8)
+    }
+
+    private func badgeLayer(sq: CGFloat) -> some View {
+        ZStack(alignment: .topLeading) {
+            if let badge {
+                let r = rect(for: badge.square, sq: sq)
+                let at = CGPoint(x: r.maxX - sq * 0.2, y: r.minY + sq * 0.2)
+                let correct = badge.kind == .correct
+                Image(systemName: correct ? "checkmark.circle.fill" : "xmark.circle.fill")
+                    .resizable()
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, correct ? BoardTheme.mine : BoardTheme.wrong)
+                    .frame(width: sq * 0.38, height: sq * 0.38)
+                    .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)
+                    .position(at)
+                    // .position fills the board, so scale around the badge, not the board's centre.
+                    .transition(.scale(scale: 0.3, anchor: UnitPoint(x: at.x / (sq * 8), y: at.y / (sq * 8)))
+                        .combined(with: .opacity))
+            }
+        }
+        .frame(width: sq * 8, height: sq * 8, alignment: .topLeading)
+        .animation(.snappy(duration: 0.2), value: badge)
+        .allowsHitTesting(false)
     }
 
     private func coordinates(sq: CGFloat) -> some View {
