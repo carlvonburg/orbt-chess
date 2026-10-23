@@ -27,7 +27,7 @@ struct SettingsView: View {
                             Task { if await model.auth.signIn(using: webAuth) { model.queue.resume() } }
                         }
                         if let error = model.auth.lastError {
-                            Text(error).foregroundStyle(.red).font(.footnote)
+                            Text(error).foregroundStyle(.failure).font(.footnote)
                         }
                     }
                 } header: {
@@ -55,6 +55,14 @@ struct SettingsView: View {
                     Text("Scheduling")
                 } footer: {
                     Text("Anki's defaults with FSRS.")
+                }
+
+                Section {
+                    AppColorPicker()
+                } header: {
+                    Text("Appearance")
+                } footer: {
+                    Text("Buttons, selection and the board.")
                 }
 
                 EngineSettingsSection()
@@ -152,8 +160,60 @@ private struct EngineNetworkRow: View {
         case .failed(let message):
             VStack(alignment: .leading, spacing: 4) {
                 Button("Download Full Network (94 MB)", systemImage: "arrow.down.circle") { network.start() }
-                Text(message).font(.footnote).foregroundStyle(.red)
+                Text(message).font(.footnote).foregroundStyle(.failure)
             }
         }
+    }
+}
+
+/// The app color, each shown as a strip of the board it gives (as lichess shows its boards).
+struct AppColorPicker: View {
+    @AppStorage(AppColor.key) private var appColor = AppColor.default
+
+    var body: some View {
+        NavigationLink {
+            List {
+                ForEach(AppColor.allCases) { option in
+                    Button { appColor = option } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(option.title)
+                                BoardStrip(color: option, squares: 6).frame(height: 36)
+                            }
+                            Spacer()
+                            if option == appColor { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                        }
+                    }
+                    .tint(.primary)
+                    .accessibilityAddTraits(option == appColor ? .isSelected : [])
+                }
+            }
+            .navigationTitle("Color")
+        } label: {
+            LabeledContent("Color") {
+                HStack(spacing: 8) {
+                    Text(appColor.title)
+                    BoardStrip(color: appColor, squares: 2).frame(width: 36, height: 18)
+                }
+            }
+        }
+    }
+}
+
+/// A row of board squares in the board's colors for an app color.
+private struct BoardStrip: View {
+    let color: AppColor
+    let squares: Int
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(0..<squares, id: \.self) { i in
+                Rectangle()
+                    .fill(i.isMultiple(of: 2) ? Theme(appColor: color).board.light : Theme(appColor: color).board.dark)
+                    .aspectRatio(1, contentMode: .fit)
+            }
+        }
+        .clipShape(.rect(cornerRadius: 3))
+        .accessibilityHidden(true)
     }
 }

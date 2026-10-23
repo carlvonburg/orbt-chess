@@ -126,47 +126,6 @@ struct StatisticsCards: View {
     }
 }
 
-// MARK: Palette
-
-/// Categorical slots in fixed order, light and dark steps (validated for CVD and contrast).
-enum ChartPalette {
-    static let slots: [(light: UInt32, dark: UInt32)] = [
-        (0x2A78D6, 0x3987E5), (0xEB6834, 0xD95926), (0x1BAF7A, 0x199E70),
-        (0xEDA100, 0xC98500), (0xE87BA4, 0xD55181), (0x008300, 0x008300),
-    ]
-
-    static func color(_ slot: Int) -> Color {
-        let pair = slots[slot % slots.count]
-        #if canImport(UIKit)
-        return Color(UIColor { traits in
-            UIColor(rgb: traits.userInterfaceStyle == .dark ? pair.dark : pair.light)
-        })
-        #else
-        return Color(NSColor(name: nil) { appearance in
-            NSColor(rgb: appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? pair.dark : pair.light)
-        })
-        #endif
-    }
-
-    static let sequential = color(0)
-}
-
-#if canImport(UIKit)
-private extension UIColor {
-    convenience init(rgb: UInt32) {
-        self.init(red: CGFloat((rgb >> 16) & 0xFF) / 255, green: CGFloat((rgb >> 8) & 0xFF) / 255,
-                  blue: CGFloat(rgb & 0xFF) / 255, alpha: 1)
-    }
-}
-#else
-private extension NSColor {
-    convenience init(rgb: UInt32) {
-        self.init(srgbRed: CGFloat((rgb >> 16) & 0xFF) / 255, green: CGFloat((rgb >> 8) & 0xFF) / 255,
-                  blue: CGFloat(rgb & 0xFF) / 255, alpha: 1)
-    }
-}
-#endif
-
 // MARK: Cards
 
 struct StatCard<Content: View>: View {
@@ -263,7 +222,7 @@ private struct FutureDueCard: View {
         StatCard(title: "Future Due", subtitle: "Moves due in the next 30 days\(overdue > 0 ? "; the bar left of today is overdue" : "").") {
             Chart(bars, id: \.0) { day, count in
                 BarMark(x: .value("Day", day), y: .value("Moves", count))
-                    .foregroundStyle(day < 0 ? ChartPalette.color(1) : ChartPalette.sequential)
+                    .foregroundStyle(day < 0 ? AnyShapeStyle(.wrong) : AnyShapeStyle(.tint))
                     .cornerRadius(4)
                 if let selected, selected == day {
                     RuleMark(x: .value("Day", day))
@@ -324,7 +283,7 @@ private struct CalendarCard: View {
                         ForEach(0..<weeks, id: \.self) { week in
                             let cell = cells.first { $0.week == week && $0.weekday == weekday }
                             RoundedRectangle(cornerRadius: 2)
-                                .fill(cell.map { $0.count > 0 ? ChartPalette.sequential.opacity(0.25 + 0.75 * Double($0.count) / Double(maxCount)) : Color.secondary.opacity(0.12) } ?? .clear)
+                                .fill(cell.map { $0.count > 0 ? Color.accentColor.opacity(0.25 + 0.75 * Double($0.count) / Double(maxCount)) : Color.secondary.opacity(0.12) } ?? .clear)
                                 .aspectRatio(1, contentMode: .fit)
                                 .accessibilityLabel(cell.map { "\($0.count) moves" } ?? "")
                         }
@@ -337,13 +296,13 @@ private struct CalendarCard: View {
 
 private enum ReviewKind: String, CaseIterable, Plottable {
     case learn = "Learn", relearn = "Relearn", young = "Young", mature = "Mature", filtered = "Filtered"
-    var color: Color {
+    var color: ThemeColor {
         switch self {
-        case .learn: StudyColors.learningGroup
-        case .relearn: StudyColors.relearningGroup
-        case .young: StudyColors.young
-        case .mature: StudyColors.mature
-        case .filtered: StudyColors.filtered
+        case .learn: ThemeColor.wrong.opacity(0.5)
+        case .relearn: ThemeColor.wrong
+        case .young: ThemeColor.done.opacity(0.5)
+        case .mature: ThemeColor.done
+        case .filtered: ThemeColor.ahead
         }
     }
 
@@ -410,7 +369,7 @@ private struct ReviewsCard: View {
 
 /// A legend with the value of each series, so color is never the only cue.
 private struct LegendRow: View {
-    let items: [(String, Color, String)]
+    let items: [(String, ThemeColor, String)]
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), alignment: .leading)], alignment: .leading, spacing: 4) {
@@ -431,10 +390,10 @@ private struct CardCountsCard: View {
 
     var body: some View {
         let c = graphs.cardCounts()
-        let items: [(String, Int, Color)] = [
-            ("New", Int(c.new), StudyColors.newGroup), ("Learning", Int(c.learn), StudyColors.learningGroup),
-            ("Relearning", Int(c.relearn), StudyColors.relearningGroup), ("Young", Int(c.young), StudyColors.young),
-            ("Mature", Int(c.mature), StudyColors.mature), ("Suspended", Int(c.suspended), StudyColors.suspended),
+        let items: [(String, Int, ThemeColor)] = [
+            ("New", Int(c.new), ThemeColor.new), ("Learning", Int(c.learn), ThemeColor.wrong.opacity(0.5)),
+            ("Relearning", Int(c.relearn), ThemeColor.wrong), ("Young", Int(c.young), ThemeColor.done.opacity(0.5)),
+            ("Mature", Int(c.mature), ThemeColor.done), ("Suspended", Int(c.suspended), ThemeColor.inactive),
         ]
         let suspended = c.suspended > 0
             ? " Suspended: your moves below alternative moves. They keep their progress and are studied again if their line becomes the main line."
@@ -468,7 +427,7 @@ private struct HistogramCard: View {
             } else {
                 Chart(bins, id: \.start) { bin in
                     BarMark(x: .value(unit, bin.start), y: .value("Moves", bin.count))
-                        .foregroundStyle(ChartPalette.sequential)
+                        .foregroundStyle(Color.accentColor)
                         .cornerRadius(4)
                 }
                 .chartXAxisLabel(unit)
@@ -516,7 +475,7 @@ private struct HourlyCard: View {
         StatCard(title: "Hourly Breakdown", subtitle: "Answers by hour of day; tap a bar for the share answered correctly.") {
             Chart(Array(hours.enumerated()), id: \.offset) { hour, h in
                 BarMark(x: .value("Hour", hour), y: .value("Answers", h.total))
-                    .foregroundStyle(ChartPalette.sequential)
+                    .foregroundStyle(Color.accentColor)
                     .cornerRadius(4)
                 if selected == hour {
                     RuleMark(x: .value("Hour", hour))
@@ -621,7 +580,7 @@ private struct WeakestMovesCard: View {
                                         .font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                if move.leech { Label("Leech", systemImage: "ant.fill").labelStyle(.iconOnly).foregroundStyle(.orange) }
+                                if move.leech { Label("Leech", systemImage: "ant.fill").labelStyle(.iconOnly).foregroundStyle(.attention) }
                                 Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                             }
                             .font(.subheadline)

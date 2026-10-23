@@ -174,7 +174,7 @@ enum LichessLinks {
 extension View {
     /// A small status label: tinted text on a light tint of the same color, or secondary text
     /// on a neutral fill. Not glass: it's content, not a control.
-    func statusBadge(tint: Color? = nil) -> some View {
+    func statusBadge(tint: ThemeColor? = nil) -> some View {
         padding(.horizontal, 10)
             .padding(.vertical, 4)
             .foregroundStyle(tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.secondary))
@@ -202,21 +202,26 @@ struct OpenDocument<Content: View, Placeholder: View>: View {
     }
 }
 
-/// Colors of Anki's due counts, and of its card-count groups (used by the overview, the list
-/// and the Statistics tab alike).
-enum StudyColors {
-    static let new = Color.blue
-    static let learning = Color.red
-    static let review = Color.green
+/// Coverage as a bar on a neutral track: the progress orange while something is left to do,
+/// green once it is complete.
+struct CoverageBar: View {
+    let value: Double
+    var height: CGFloat = 6
 
-    static let newGroup = Color.blue
-    static let learningGroup = Color.orange
-    static let relearningGroup = Color.red
-    static let young = Color(red: 0.6, green: 0.8, blue: 0.4)
-    static let mature = Color(red: 0.2, green: 0.5, blue: 0.1)
-    static let suspended = Color.yellow
-    /// Reviews ahead (Anki's filtered decks).
-    static let filtered = Color.purple
+    var body: some View {
+        GeometryReader { geo in
+            let filled = min(max(value, 0), 1)
+            Capsule().fill(.quaternary)
+                .overlay(alignment: .leading) {
+                    Capsule().fill(filled >= 0.999 ? ThemeColor.done : ThemeColor.attention)
+                        .frame(width: geo.size.width * filled)
+                }
+        }
+        .frame(height: height)
+        .accessibilityElement()
+        .accessibilityLabel("Coverage")
+        .accessibilityValue(Format.percent(value))
+    }
 }
 
 /// Studied moves by Anki's groups (learning, young, mature) over all your moves; moves not
@@ -229,9 +234,9 @@ struct StudiedBar: View {
         GeometryReader { geo in
             let total = CGFloat(max(progress.cards, 1))
             HStack(spacing: 0) {
-                Rectangle().fill(StudyColors.learningGroup).frame(width: geo.size.width * CGFloat(progress.learning) / total)
-                Rectangle().fill(StudyColors.young).frame(width: geo.size.width * CGFloat(progress.young) / total)
-                Rectangle().fill(StudyColors.mature).frame(width: geo.size.width * CGFloat(progress.mature) / total)
+                Rectangle().fill(ThemeColor.wrong.opacity(0.5)).frame(width: geo.size.width * CGFloat(progress.learning) / total)
+                Rectangle().fill(ThemeColor.done.opacity(0.5)).frame(width: geo.size.width * CGFloat(progress.young) / total)
+                Rectangle().fill(ThemeColor.done).frame(width: geo.size.width * CGFloat(progress.mature) / total)
                 Spacer(minLength: 0)
             }
             .background(.quaternary)
@@ -255,13 +260,13 @@ struct DueCounts: View {
         if progress.cards == 0 {
             EmptyView()
         } else if progress.studied == 0 {
-            Text("\(counts.new) new").foregroundStyle(counts.new > 0 ? StudyColors.new : .secondary)
+            Text("\(counts.new) new").foregroundStyle(counts.new > 0 ? AnyShapeStyle(.new) : AnyShapeStyle(.secondary))
                 .font(font.weight(.semibold).monospacedDigit())
         } else {
             HStack(spacing: 8) {
-                number(counts.new, StudyColors.new)
-                number(counts.learning, StudyColors.learning)
-                number(counts.review, StudyColors.review)
+                number(counts.new, ThemeColor.new)
+                number(counts.learning, ThemeColor.wrong)
+                number(counts.review, ThemeColor.done)
             }
             .font(font.weight(.semibold).monospacedDigit())
             .accessibilityElement(children: .ignore)
@@ -269,8 +274,8 @@ struct DueCounts: View {
         }
     }
 
-    private func number(_ value: Int64, _ color: Color) -> some View {
-        Text(value.formatted()).foregroundStyle(value > 0 ? color : Color.secondary.opacity(0.6))
+    private func number(_ value: Int64, _ color: ThemeColor) -> some View {
+        Text(value.formatted()).foregroundStyle(value > 0 ? AnyShapeStyle(color) : AnyShapeStyle(Color.secondary.opacity(0.6)))
     }
 }
 

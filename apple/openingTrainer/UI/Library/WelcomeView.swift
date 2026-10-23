@@ -11,11 +11,11 @@ struct WelcomeView: View {
         List {
             Section {
                 step("Enter the lines", "Your moves and the replies the book or video covers.",
-                     icon: "text.book.closed.fill", color: .blue)
+                     icon: "text.book.closed.fill", color: .done)
                 step("Fill the gaps", "See which common replies you haven't answered yet.",
-                     icon: "puzzlepiece.fill", color: .orange)
+                     icon: "puzzlepiece.fill", color: .attention)
                 step("Train daily", "Spaced repetition, a few minutes a day.",
-                     icon: "graduationcap.fill", color: .green)
+                     icon: "graduationcap.fill", color: .done)
             } header: {
                 Text("How it works")
             } footer: {
@@ -37,7 +37,7 @@ struct WelcomeView: View {
     }
 
     /// A row with a Settings-style icon.
-    private func step(_ title: String, _ detail: String, icon: String, color: Color) -> some View {
+    private func step(_ title: String, _ detail: String, icon: String, color: ThemeColor) -> some View {
         Label {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.headline)
@@ -48,7 +48,7 @@ struct WelcomeView: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 30, height: 30)
-                .background(color.gradient, in: .rect(cornerRadius: 8))
+                .background(color, in: .rect(cornerRadius: 8))
         }
         .padding(.vertical, 4)
     }

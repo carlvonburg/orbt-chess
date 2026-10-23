@@ -2,7 +2,7 @@ import OpeningCoreRust
 import SwiftUI
 
 struct BoardArrow: Hashable, Identifiable {
-    enum Style: Hashable { case mine, opponent, gap, hint, wrong, engine }
+    enum Style: Hashable { case mine, opponent, gap, hint, engine }
 
     let from: BoardSquare
     let to: BoardSquare
@@ -34,14 +34,11 @@ struct BoardArrow: Hashable, Identifiable {
         self.init(from: arrow.from, to: arrow.to, style: style, width: arrow.width, opacity: arrow.opacity, dashed: arrow.dashed)
     }
 
-    var color: Color {
+    func color(_ theme: BoardTheme) -> Color {
         switch style {
-        case .mine: BoardTheme.mine
-        case .opponent: BoardTheme.opponent
-        case .gap: BoardTheme.gap
-        case .hint: BoardTheme.hint
-        case .wrong: BoardTheme.wrong
-        case .engine: BoardTheme.engine
+        case .mine, .opponent, .hint: theme.done
+        case .gap: theme.gap
+        case .engine: theme.engine
         }
     }
 }
@@ -54,21 +51,6 @@ struct BoardBadge: Equatable {
     let kind: Kind
 }
 
-enum BoardTheme {
-    // Blue-gray squares that match the app's blue accent.
-    static let light = Color(red: 0.87, green: 0.89, blue: 0.92)
-    static let dark = Color(red: 0.49, green: 0.58, blue: 0.68)
-    static let lastMove = Color(red: 0.0, green: 0.48, blue: 1.0).opacity(0.28)
-    static let selected = Color(red: 0.0, green: 0.48, blue: 1.0).opacity(0.45)
-    static let mine = Color(red: 0.13, green: 0.6, blue: 0.3)
-    static let opponent = Color(red: 0.16, green: 0.42, blue: 0.85)
-    static let gap = Color.orange
-    static let hint = Color(red: 0.13, green: 0.6, blue: 0.3)
-    static let wrong = Color.red
-    /// The engine's best moves, as Lichess draws them.
-    static let engine = Color(red: 0.0, green: 0.3, blue: 0.55)
-}
-
 /// Interactive chess board: tap-tap or drag to move, legal-move dots, last-move highlight,
 /// promotion picker, arrows and sliding piece animation.
 struct BoardView: View {
@@ -76,12 +58,13 @@ struct BoardView: View {
     var orientation: Side = .white
     var lastMove: PlayedMove?
     var arrows: [BoardArrow] = []
-    var marks: [BoardSquare: Color] = [:]
     var badge: BoardBadge?
     /// Which side may be moved; nil disables interaction.
     var movableSide: Side?
     var onMove: (BoardSquare, BoardSquare, PieceKind?) -> Void = { _, _, _ in }
 
+    @Environment(\.theme) private var appTheme
+    private var theme: BoardTheme { appTheme.board }
     @State private var selected: BoardSquare?
     @State private var dragFrom: BoardSquare?
     @State private var dragLocation: CGPoint?
@@ -122,7 +105,7 @@ struct BoardView: View {
                         .zIndex(isDragged ? 10 : 1)
                         .allowsHitTesting(false)
                 }
-                ArrowsView(arrows: arrows, center: { center($0, sq: sq) }, square: sq)
+                ArrowsView(arrows: arrows, theme: theme, center: { center($0, sq: sq) }, square: sq)
                     .allowsHitTesting(false)
                     .zIndex(5)
                 badgeLayer(sq: sq)
@@ -161,15 +144,12 @@ struct BoardView: View {
             for index in 0..<64 {
                 let square = BoardSquare(index: index)
                 let rect = rect(for: square, sq: sq)
-                ctx.fill(Path(rect), with: .color(square.isLight ? BoardTheme.light : BoardTheme.dark))
+                ctx.fill(Path(rect), with: .color(square.isLight ? theme.light : theme.dark))
                 if let lastMove, square == lastMove.from || square == lastMove.to {
-                    ctx.fill(Path(rect), with: .color(BoardTheme.lastMove))
-                }
-                if let mark = marks[square] {
-                    ctx.fill(Path(rect), with: .color(mark.opacity(0.5)))
+                    ctx.fill(Path(rect), with: .color(theme.lastMove))
                 }
                 if square == selected {
-                    ctx.fill(Path(rect), with: .color(BoardTheme.selected))
+                    ctx.fill(Path(rect), with: .color(theme.selected))
                 }
                 if legal.contains(square) {
                     if position.piece(at: square) != nil {
@@ -194,7 +174,7 @@ struct BoardView: View {
                 Image(systemName: correct ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .resizable()
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(.white, correct ? BoardTheme.mine : BoardTheme.wrong)
+                    .foregroundStyle(.white, correct ? theme.done : theme.wrong)
                     .frame(width: sq * 0.38, height: sq * 0.38)
                     .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)
                     .position(at)
@@ -215,11 +195,11 @@ struct BoardView: View {
                 let rank = orientation == .white ? 7 - i : i
                 Text(String(UnicodeScalar(UInt8(97 + file))))
                     .font(.system(size: sq * 0.2, weight: .semibold))
-                    .foregroundStyle(BoardSquare(file: file, rank: orientation == .white ? 0 : 7).isLight ? BoardTheme.dark : BoardTheme.light)
+                    .foregroundStyle(BoardSquare(file: file, rank: orientation == .white ? 0 : 7).isLight ? theme.dark : theme.light)
                     .position(x: CGFloat(i) * sq + sq * 0.86, y: sq * 7.84)
                 Text("\(rank + 1)")
                     .font(.system(size: sq * 0.2, weight: .semibold))
-                    .foregroundStyle(BoardSquare(file: orientation == .white ? 0 : 7, rank: rank).isLight ? BoardTheme.dark : BoardTheme.light)
+                    .foregroundStyle(BoardSquare(file: orientation == .white ? 0 : 7, rank: rank).isLight ? theme.dark : theme.light)
                     .position(x: sq * 0.12, y: CGFloat(i) * sq + sq * 0.16)
             }
         }
@@ -390,6 +370,7 @@ struct PieceLayout {
 
 struct ArrowsView: View {
     let arrows: [BoardArrow]
+    let theme: BoardTheme
     let center: (BoardSquare) -> CGPoint
     let square: CGFloat
 
@@ -411,7 +392,7 @@ struct ArrowsView: View {
                 shaft.move(to: begin)
                 shaft.addLine(to: shaftEnd)
                 let style = StrokeStyle(lineWidth: width, lineCap: .round, dash: arrow.dashed ? [width * 1.2, width * 0.9] : [])
-                ctx.stroke(shaft, with: .color(arrow.color.opacity(arrow.opacity)), style: style)
+                ctx.stroke(shaft, with: .color(arrow.color(theme).opacity(arrow.opacity)), style: style)
 
                 var headPath = Path()
                 let px = -uy, py = ux
@@ -419,7 +400,7 @@ struct ArrowsView: View {
                 headPath.addLine(to: CGPoint(x: shaftEnd.x + px * head * 0.6, y: shaftEnd.y + py * head * 0.6))
                 headPath.addLine(to: CGPoint(x: shaftEnd.x - px * head * 0.6, y: shaftEnd.y - py * head * 0.6))
                 headPath.closeSubpath()
-                ctx.fill(headPath, with: .color(arrow.color.opacity(arrow.opacity)))
+                ctx.fill(headPath, with: .color(arrow.color(theme).opacity(arrow.opacity)))
             }
         }
     }

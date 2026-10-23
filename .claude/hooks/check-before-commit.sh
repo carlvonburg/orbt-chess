@@ -5,6 +5,7 @@
 #   core/ot-ffi/ or Cargo.lock changed -> core/scripts/build-apple.sh; the committed Swift
 #                               bindings must already be up to date
 #   apple/ or the FFI changed -> the iOS simulator build
+#   apple/openingTrainer/UI/ changed -> no colors by name outside Palette.swift
 # Other commands pass through untouched.
 set -uo pipefail
 
@@ -50,6 +51,17 @@ if touches '^core/(ot-ffi/|Cargo\.lock)'; then
   core/scripts/build-apple.sh >>"$log" 2>&1 || fail "core/scripts/build-apple.sh"
   if [[ "$(shasum "$bindings" 2>/dev/null)" != "$before" ]]; then
     echo "Commit blocked: the Swift bindings were out of date. build-apple.sh has regenerated $bindings; review and stage it, then commit again." >&2
+    exit 2
+  fi
+fi
+
+if touches '^apple/openingTrainer/UI/'; then
+  # Colors come from the roles in Palette.swift (Design/COLORS.md), never a hue by name.
+  hues=$(grep -rnE '\.(red|green|blue|orange|yellow|purple|teal|mint|cyan|indigo|pink|brown)\b|Color\(red:|UIColor\(red:|NSColor\(red:' \
+    apple/openingTrainer/UI --include='*.swift' | grep -v '/Palette.swift:')
+  if [[ -n "$hues" ]]; then
+    echo "Commit blocked: colors by name in the UI. Use a role from apple/openingTrainer/UI/Components/Palette.swift (see Design/COLORS.md):" >&2
+    echo "$hues" >&2
     exit 2
   fi
 fi

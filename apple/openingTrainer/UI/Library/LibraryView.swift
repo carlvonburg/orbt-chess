@@ -636,7 +636,7 @@ private struct TodayCard: View {
                 header { Text("Nothing Due Today") } trailing: { streakBadge }
                 if streak.current > 0 {
                     Text("Learn a few new moves to keep your \(streak.current)-day streak.")
-                        .font(.footnote).foregroundStyle(.orange)
+                        .font(.footnote).foregroundStyle(.attention)
                 }
                 nextLine
             case .caughtUp:
@@ -672,15 +672,15 @@ private struct TodayCard: View {
     }
 
     private func doneHeader(_ title: String, _ icon: String) -> some View {
-        header { Label(title, systemImage: icon).foregroundStyle(.green) } trailing: { streakBadge }
+        header { Label(title, systemImage: icon).foregroundStyle(.done) } trailing: { streakBadge }
     }
 
     /// The due counts in Anki's colours, each with its name.
     private var dueCounts: some View {
         HStack(spacing: 14) {
-            count(counts.new, "new", StudyColors.new)
-            count(counts.learning, "learning", StudyColors.learning)
-            count(counts.review, "review", StudyColors.review)
+            count(counts.new, "new", ThemeColor.new)
+            count(counts.learning, "learning", ThemeColor.wrong)
+            count(counts.review, "review", ThemeColor.done)
         }
         .font(.subheadline)
         .accessibilityElement(children: .ignore)
@@ -692,7 +692,8 @@ private struct TodayCard: View {
         if streak.current > 0 {
             Label("\(streak.current) \(streak.current == 1 ? "day" : "days")", systemImage: "flame.fill")
                 .font(.subheadline.monospacedDigit())
-                .foregroundStyle(streak.studiedToday ? .orange : .secondary)
+                // At risk until something is studied today.
+                .foregroundStyle(streak.studiedToday ? AnyShapeStyle(.primary) : AnyShapeStyle(.attention))
                 .accessibilityLabel(streakText)
         }
     }
@@ -774,11 +775,11 @@ private struct TodayCard: View {
         return streak.studiedToday ? days + longest : "Study today to keep your \(days)"
     }
 
-    private func count(_ value: Int64, _ name: String, _ color: Color) -> some View {
+    private func count(_ value: Int64, _ name: String, _ color: ThemeColor) -> some View {
         HStack(spacing: 4) {
             Text(value.formatted())
                 .fontWeight(.semibold).monospacedDigit()
-                .foregroundStyle(value > 0 ? color : Color.secondary.opacity(0.6))
+                .foregroundStyle(value > 0 ? AnyShapeStyle(color) : AnyShapeStyle(Color.secondary.opacity(0.6)))
             Text(name).foregroundStyle(.secondary)
         }
     }
@@ -856,7 +857,7 @@ struct LibraryRow: View {
         VStack(alignment: .leading, spacing: 4) {
             // A grid, so the label column is as wide as its longest label at any text size.
             Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 4) {
-                bar("Built") { ProgressView(value: stats.completion).tint(.green) }
+                bar("Built") { CoverageBar(value: stats.completion) }
                 if stats.progress.studied > 0 {
                     bar("Studied") { StudiedBar(progress: stats.progress) }
                 }
@@ -866,7 +867,7 @@ struct LibraryRow: View {
                 HStack(spacing: 0) {
                     if notStudied { Text("Not studied yet").foregroundStyle(.secondary) }
                     if notStudied && stats.gaps > 0 { Text(" · ").foregroundStyle(.secondary) }
-                    if stats.gaps > 0 { Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps) gaps").foregroundStyle(.orange) }
+                    if stats.gaps > 0 { Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps) gaps").foregroundStyle(.attention) }
                 }
                 .font(.caption)
             }
@@ -979,7 +980,7 @@ struct SignInButton: View {
             }
         }
         if let error = model.auth.lastError {
-            Text(error).font(.footnote).foregroundStyle(.red)
+            Text(error).font(.footnote).foregroundStyle(.failure)
         }
     }
 }
@@ -1002,7 +1003,7 @@ struct NewRepertoireSheet: View {
                 }
                 RepertoireSettingsForm(draft: $draft)
                 if let error {
-                    Text(error).foregroundStyle(.red)
+                    Text(error).foregroundStyle(.failure)
                 }
             }
             .navigationTitle("New Repertoire")
@@ -1040,7 +1041,7 @@ struct SetupSheet: View {
         NavigationStack {
             Form {
                 RepertoireSettingsForm(draft: $draft)
-                if let error { Text(error).foregroundStyle(.red) }
+                if let error { Text(error).foregroundStyle(.failure) }
             }
             .navigationTitle(title)
             .toolbar {
@@ -1087,7 +1088,7 @@ struct RepertoireSettingsSheet: View {
                         .onChange(of: name) { name = name.safeRepertoireName }
                 }
                 RepertoireSettingsForm(draft: $draft)
-                if let error { Text(error).foregroundStyle(.red) }
+                if let error { Text(error).foregroundStyle(.failure) }
                 Section("File") {
                     LabeledContent("PGN", value: document.pgnURL.lastPathComponent)
                     if !document.loadWarnings.isEmpty {

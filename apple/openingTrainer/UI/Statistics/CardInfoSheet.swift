@@ -41,7 +41,7 @@ struct CardInfoSheet: View {
                                 Spacer()
                                 Text(kind(entry.kind)).foregroundStyle(.secondary)
                                 Text(entry.ease == 1 ? "Again" : entry.ease == 0 ? "Manual" : "Good")
-                                    .foregroundStyle(entry.ease == 1 ? .red : .primary)
+                                    .foregroundStyle(entry.ease == 1 ? AnyShapeStyle(.wrong) : AnyShapeStyle(.primary))
                                     .frame(width: 56, alignment: .trailing)
                             }
                             .font(.footnote)
