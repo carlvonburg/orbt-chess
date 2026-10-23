@@ -636,7 +636,7 @@ private struct TodayCard: View {
                 header { Text("Nothing Due Today") } trailing: { streakBadge }
                 if streak.current > 0 {
                     Text("Learn a few new moves to keep your \(streak.current)-day streak.")
-                        .font(.footnote).foregroundStyle(.attention)
+                        .font(.footnote).foregroundStyle(.todo)
                 }
                 nextLine
             case .caughtUp:
@@ -672,15 +672,15 @@ private struct TodayCard: View {
     }
 
     private func doneHeader(_ title: String, _ icon: String) -> some View {
-        header { Label(title, systemImage: icon).foregroundStyle(.done) } trailing: { streakBadge }
+        header { Label(title, systemImage: icon).foregroundStyle(.learned) } trailing: { streakBadge }
     }
 
     /// The due counts, each with its name, colored like the studied bar.
     private var dueCounts: some View {
         HStack(spacing: 14) {
-            count(counts.new, "new", .unstudied)
+            count(counts.new, "new", .new)
             count(counts.learning, "learning", .learning)
-            count(counts.review, "review", .progress)
+            count(counts.review, "review", .learned)
         }
         .font(.subheadline)
         .accessibilityElement(children: .ignore)
@@ -693,7 +693,7 @@ private struct TodayCard: View {
             Label("\(streak.current) \(streak.current == 1 ? "day" : "days")", systemImage: "flame.fill")
                 .font(.subheadline.monospacedDigit())
                 // At risk until something is studied today.
-                .foregroundStyle(streak.studiedToday ? AnyShapeStyle(.streak) : AnyShapeStyle(.attention))
+                .foregroundStyle(AnyShapeStyle(.todo))
                 .accessibilityLabel(streakText)
         }
     }
@@ -867,7 +867,7 @@ struct LibraryRow: View {
                 HStack(spacing: 0) {
                     if notStudied { Text("Not studied yet").foregroundStyle(.secondary) }
                     if notStudied && stats.gaps > 0 { Text(" · ").foregroundStyle(.secondary) }
-                    if stats.gaps > 0 { Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps) gaps").foregroundStyle(.gaps) }
+                    if stats.gaps > 0 { Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps) gaps").foregroundStyle(.todo) }
                 }
                 .font(.caption)
             }

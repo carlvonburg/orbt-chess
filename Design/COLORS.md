@@ -2,8 +2,8 @@
 
 How the app uses color. Everything lives in `apple/openingTrainer/UI/Components/Palette.swift`:
 the `Theme` (one per app color, in the environment) decides every hue, and views only name a
-role (`ThemeColor`: `.done`, `.attention`, `.new`, `.wrong`, `.ahead`, `.inactive`,
-`.failure`), never a hue (the commit hook blocks `.orange`, `Color(red:` …
+meaning (`ThemeColor`: `.built`, `.learned`, `.learning`, `.new`, `.todo`, `.correct`,
+`.wrong`, `.failure`, `.ahead`, `.inactive`), never a hue (the commit hook blocks `.orange`, `Color(red:` …
 in `UI/` outside `Palette.swift`).
 
 ## Rules
@@ -17,18 +17,18 @@ in `UI/` outside `Palette.swift`).
      never `Color.accentColor`, which on the Mac is the system accent). On the Mac the app
      color follows the system accent (`AppleAccentColor`; none is Multicolor): when it
      changes, the app color becomes it; a color picked in Settings stays until the next
-     change. So the accent **never carries
-     meaning**; a red button next to a red ✕ is fine, the ✕ is not a button. The one
-     exception is progress (below).
-   - **Progress** is tinted, the way Apple tints accented widgets and watch complications
-     (HIG Widgets › Accented, Complications › tinted mode): one color, the app color, plus
-     the label colors, with levels by opacity like SF Symbols' hierarchical rendering. It
-     follows the app color so the bars and counts sit with the board.
-   - **Meaning colors** are system colors, one meaning each. The theme gives each meaning its
-     default hue, and when the app color has that hue (or tints the board too close to it) a
-     stand-in from another family, everywhere in the app (table below). Within a theme every
-     hue still means one thing.
-2. **One meaning per hue.** A new meaning takes a free system color, never one in use.
+     change.
+   - **Meanings** (`ThemeColor`) are one set, resolved by the theme of the app color
+     (table below). **Multicolor** gives each meaning its own system color, Anki's for
+     studying. Every other app color is **tinted**, the way Apple tints accented widgets and
+     watch complications (HIG Widgets › Accented, Complications › tinted mode): the app color,
+     the label colors and red for wrong, lighter shades for levels (young, Anki's learning),
+     so the bars and counts sit with the board. Text and position tell the meanings apart
+     where they share a color.
+2. **One meaning per color within a theme**, except where a theme shares on purpose (tinted:
+   the app color for building, learned, correct and to do; Multicolor: blue for building and
+   new, green for learned and correct, red for learning and wrong), always with text or a
+   shape to tell them apart.
 3. **Never color alone.** A meaning color always comes with a symbol, text or shape
    (✓/✕ badges, empty coverage bars, dashed arrows, labelled counts), for color blindness and for the
    accent overlap.
@@ -39,47 +39,52 @@ in `UI/` outside `Palette.swift`).
    `.fill.*`, `.background.*`, materials) adapt to dark mode, Increase Contrast and Liquid
    Glass. Custom values only where no system color fits (the board squares), as asset color
    sets with Any, Dark and High Contrast variants.
-6. **Restraint (HIG):** one prominent control per screen; color the background of the
+6. **Selected rows.** On a row with the accent selection fill (the Mac sidebar), every
+   meaning color turns white (`backgroundProminence == .increased`), as Apple's own styles do:
+   lighter shades at 75%, learning at 55%, so bars and counts stay readable in every theme.
+7. **Restraint (HIG):** one prominent control per screen; color the background of the
    primary action, not its label; glass stays colorless otherwise.
 
 ## Theme meanings (`ThemeColor`)
-Views name the meaning; the theme picks the color. Defaults (Blue, the default app color, except `.new`, which Blue turns indigo, see below):
+One set of meanings, resolved by the theme of the app color. **Multicolor** gives each meaning
+its own system color (Anki's for studying). Every other app color is **tinted** like Apple's
+accented widgets: the app color, the label colors, and red for wrong.
 
-| Name | Default color | Meaning | Where |
+| Meaning | Multicolor | Tinted | Where |
 |---|---|---|---|
-| `.done` | green | done: covered, your move, correct, learned | "Coverage target reached", transposition icon and badges, your saved moves' row tint, "Main" swipe, "Correct", studied today, correct %, Statistics' young and mature, Welcome "build" and "study" |
-| `.built` | the app color (Multicolor: blue) | building | the covered part of a `CoverageBar` (on a neutral track: what is left, gaps and lines not checked yet alike): Built bars, the overview, the Build header, replies, the gap list |
-| `.progress` | the app color (indigo for Graphite; Multicolor: green) | study progress, tinted | the review due count, mature moves in the studied bar and its legends (young: `.progress.opacity(0.5)`) |
-| `.learning` | secondary label gray (Multicolor: red) | moves you're learning | the learning due count, the learning part of the studied bar and its legends |
-| `.unstudied` | label color (Multicolor: blue) | new, not studied yet | the new due count; the not-studied rest of the studied bar is the neutral track |
-| `.gaps` | the app color (Multicolor: orange) | gaps to fill | gap counts |
-| `.streak` | label color (Multicolor: orange) | a streak safe today | the streak badge (at risk: `.attention`) |
-| `.attention` | orange | something to do | gaps (gap list), "Your move is missing", "That's your alternative", streak at risk, leech, Welcome "gaps" |
-| `.new` | blue | new, not studied yet (Anki) | Statistics' new group, "New move" in the drill |
-| `.wrong` | red | wrong, study again now | ✕ badge and "Not quite", Again, Statistics' learning and relearning (learning: `.wrong.opacity(0.5)`), overdue moves |
-| `.ahead` | cyan | reviewed ahead (Anki's filtered decks) | Reviews chart |
-| `.inactive` | gray | suspended | Move Counts chart |
-| `.failure` | red (Apple's) | something failed, delete | error messages, the Delete swipe |
-| engine | graphite `#2C2C2E` | engine lines | the analysis board |
+| `.built` | blue | the app color | the covered part of a `CoverageBar` (on a neutral track: what is left, gaps and lines not checked yet alike): Built bars, the overview, the Build header, replies, the gap list; your saved moves' row tint (8%), the transposition icon and chips, "Coverage target reached", the "Main" swipe, Welcome "build" |
+| `.learned` | green | the app color | the review due count, mature moves (young: `.learned.lighter()`, mixed 45% toward white) in the studied bar, legends and Statistics, studied today, the "done for now" header, Welcome "study" |
+| `.learning` | red | secondary label gray | the learning due count, relearning (learning: `.learning.lighter()`) in the studied bar, legends and Statistics |
+| `.new` | blue | label color | the new due count, Statistics' new group, "New move" in the drill |
+| `.todo` | orange | the app color | gap counts, "Your move is missing", "That's your alternative", the streak, leeches, Welcome "gaps" |
+| `.correct` | green | the app color | "Correct", correct % |
+| `.wrong` | red (purple when the app color is red or pink) | same | the ✕ badge and "Not quite", Again, overdue |
+| `.failure` | Apple's red | same | error messages, the Delete swipe |
+| `.ahead` | cyan | same | the Reviews chart |
+| `.inactive` | gray | secondary gray at 40% | suspended in Move Counts and legends |
+
+Graphite tints with indigo (its gray would read as learning). Multicolor uses blue for both
+building and new; they never share a bar. The board has its own colors (below).
 
 The accent is not a meaning: it is the app color itself, on buttons, selection, sliders,
 switches and single-series charts.
 
-Neutral: text, fills, cards, zero due counts (tertiary), the comment background, the track of a `CoverageBar`, "Excluded", "Not needed" (only the move name dimmed), the
-transposition callout's card, a streak that is safe today (primary).
+Neutral: text, fills, cards, zero due counts (tertiary), the comment background, the track of a
+`CoverageBar` and of the studied bar, "Excluded", "Not needed" (only the move name dimmed), the
+transposition callout's card.
 
-Free for a new meaning: teal, mint, brown, indigo, purple, pink (indigo, purple and blue also stand in on some boards, see below). Any of them may also be the app
-color, which is fine: the accent is only ever on controls.
+A new meaning: Multicolor takes a free system color (teal, mint, brown, indigo, pink); tinted
+themes a label color or a shade of the app color.
 
 ## Statistics
 | Chart | Colors |
 |---|---|
-| Move Counts | new blue, learning red 50%, relearning red, young green 50%, mature green, suspended gray |
-| Reviews | learning red 50%, relearning red, young green 50%, mature green, ahead cyan |
-| Answer Buttons, card info | Again red, Good green |
-| Future Due | accent; overdue red |
+| Move Counts | `.new`, `.learning.lighter()` (learning), `.learning` (relearning), `.learned.lighter()` (young), `.learned` (mature), `.inactive` |
+| Reviews | learning and relearning `.learning` (lighter / full), young and mature `.learned` (lighter / full), `.ahead` |
+| Answer Buttons, card info | Again `.wrong` |
+| Future Due | the tint; overdue `.wrong` |
 | Calendar, Intervals, Difficulty, Stability, Retrievability, Hourly | accent (bars only count; the calendar by intensity) |
-| Weakest Moves | leech orange |
+| Weakest Moves | leech `.todo` |
 
 ## Board (`BoardTheme` in Palette.swift)
 The board is content with its own theme: the same in the app's light and dark appearance
@@ -104,26 +109,9 @@ stands out by lightness and keeps the hue.
 | promotion | black 35% dim, pieces on a material | promoting |
 
 ## What changes when you pick an app color in Settings (`Theme.color(_:)`)
-Every app color changes the accent and tints the board's squares toward it. Where the app
-color has a meaning's hue (or tints the board so close to it that the overlay fades), that
-meaning takes a color from another family, everywhere in the app. A close shade would fail
-the same way (mint, teal and cyan arrows measure 6–7 on a green board).
-
-| App color | Meaning colors that change |
-|---|---|
-| Blue (default) | `.new`: blue → indigo |
-| Indigo | none |
-| Purple | none |
-| Pink | `.wrong`: red → purple |
-| Red | `.wrong`: red → purple |
-| Orange | `.attention`: orange → purple |
-| Yellow | `.attention`: orange → purple |
-| Green | `.done`: green → indigo |
-| Graphite | none |
-
-`.failure` (Apple's red), `.ahead`, `.inactive` and the engine never change. The stand-ins
-were chosen when the board's arrows used these meaning colors; they now only matter off the
-board.
+Every app color changes the tint (controls), tints the board's squares toward it and gives the
+board its ink. Multicolor keeps the meaning colors above; every other app color tints them
+(table above). The one stand-in left: `.wrong` is purple when the app color is red or pink.
 
 Measured (OKLab ΔE of each overlay against the weaker of its two squares, ≥ ~10 clearly
 visible), on all nine boards in light and dark appearance: the ink at 38% (the rarest reply

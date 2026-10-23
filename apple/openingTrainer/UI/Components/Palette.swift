@@ -3,116 +3,108 @@ import SwiftUI
 import AppKit
 #endif
 
-// The app's colors, by meaning (Design/COLORS.md). Each meaning has one hue in a theme, always
-// next to a symbol, text or shape; views use these roles, never a hue by name. The accent (the
-// app color: Multicolor, blue controls, by default; on the Mac it follows the system accent) is
-// for controls and, tinted, for progress; it never carries another meaning.
+// The app's colors, by meaning (Design/COLORS.md). Views name a meaning (`ThemeColor`), never a
+// hue; the theme of the app color resolves it, always next to a symbol, text or shape.
+// Multicolor uses Anki's and Apple's colors for meanings; every other app color is tinted like
+// Apple's accented widgets: the app color, the label colors, and red for wrong.
 
 /// A color by its meaning, resolved by the app's `Theme` where it is drawn: views say what a
-/// color means (`.done`, `.attention`), the theme decides the hue, so a change of app color
+/// color means (`.learned`, `.todo`), the theme decides the hue, so a change of app color
 /// reaches every view.
 nonisolated struct ThemeColor: ShapeStyle, Hashable {
     enum Role: Hashable {
-        /// Done: covered, your move, a correct answer, learned (Anki's review, young, mature).
-        case done
-        /// Something to do: missing coverage (gaps), a streak at risk, a leech.
-        case attention
+        /// Building: the covered part of coverage bars, your saved moves, transpositions,
+        /// "Coverage target reached". The app color in every theme (it belongs with the board).
+        case built
+        /// Learned: reviews due, Anki's young (lighter) and mature, studied today.
+        case learned
+        /// Being learned: Anki's learning (lighter) and relearning.
+        case learning
         /// New, not studied yet (Anki).
         case new
-        /// Wrong, study again now (Anki's learning and relearning, Again, overdue).
+        /// Something to do: gaps, a missing move of yours, the streak, a leech, your alternative.
+        case todo
+        /// A correct answer: ✓, "Correct", correct %, Good.
+        case correct
+        /// A wrong answer: ✕, "Not quite", Again, overdue.
         case wrong
+        /// Apple's red: something failed (error messages), buttons that delete.
+        case failure
         /// Reviewed ahead (Anki's filtered decks).
         case ahead
         /// Inactive: suspended.
         case inactive
-        /// Apple's red: something failed (error messages), buttons that delete.
-        case failure
-        /// Study progress, tinted like an accented widget: the app color (indigo for graphite;
-        /// Multicolor: green). Reviews due, mature moves (young at half).
-        case progress
-        /// Moves you're learning (Anki's learning and relearning): the secondary label color.
-        case learning
-        /// New, not studied yet: the label color (Multicolor: blue); in the studied bar the empty track.
-        case unstudied
-        /// Building: the covered part of a coverage bar, the app color in every theme (it
-        /// belongs with the board).
-        case built
-        /// Gap counts: the app color (Multicolor: orange, something to do).
-        case gaps
-        /// A streak that is safe today: the label color (Multicolor: orange).
-        case streak
     }
 
     let role: Role
     var alpha: Double = 1
+    /// How far the color is mixed toward white: a lighter shade of the same meaning (young
+    /// next to mature).
+    var lightening: Double = 0
 
-    func opacity(_ alpha: Double) -> ThemeColor { ThemeColor(role: role, alpha: self.alpha * alpha) }
+    func opacity(_ alpha: Double) -> ThemeColor { ThemeColor(role: role, alpha: self.alpha * alpha, lightening: lightening) }
+    /// A lighter shade of the same color, in light and dark appearance alike.
+    func lighter(_ amount: Double = 0.45) -> ThemeColor { ThemeColor(role: role, alpha: alpha, lightening: amount) }
 
     func resolve(in environment: EnvironmentValues) -> Color.Resolved {
-        environment.theme.color(role).opacity(alpha).resolve(in: environment)
+        // On a selected row (the Mac sidebar's accent fill) colored details turn white, like
+        // Apple's own styles; lighter shades and learning stay apart by strength.
+        if environment.backgroundProminence == .increased {
+            let strength = role == .learning ? 0.55 : lightening > 0 ? 0.75 : 1
+            return Color.white.opacity(alpha * strength).resolve(in: environment)
+        }
+        var color = environment.theme.color(role)
+        if lightening > 0 { color = color.mix(with: .white, by: lightening) }
+        return color.opacity(alpha).resolve(in: environment)
     }
 }
 
 extension ShapeStyle where Self == ThemeColor {
-    /// Done: covered, your move, a correct answer, learned (Anki's review count, mature; young at
-    /// half strength).
-    static var done: ThemeColor { ThemeColor(role: .done) }
-    /// Something to do: gaps, a streak at risk, a leech.
-    static var attention: ThemeColor { ThemeColor(role: .attention) }
+    /// Building: coverage bars, saved moves, transpositions. The app color.
+    static var built: ThemeColor { ThemeColor(role: .built) }
+    /// Learned: reviews due, mature (young: `.learned.lighter()`), studied today.
+    static var learned: ThemeColor { ThemeColor(role: .learned) }
+    /// Being learned: Anki's relearning (learning: `.learning.lighter()`).
+    static var learning: ThemeColor { ThemeColor(role: .learning) }
     /// New, not studied yet (Anki).
     static var new: ThemeColor { ThemeColor(role: .new) }
-    /// Wrong, study again now: Again, Anki's learning and relearning (learning at half
-    /// strength), overdue.
+    /// Something to do: gaps, a missing move, the streak, a leech.
+    static var todo: ThemeColor { ThemeColor(role: .todo) }
+    /// A correct answer.
+    static var correct: ThemeColor { ThemeColor(role: .correct) }
+    /// A wrong answer, Again, overdue.
     static var wrong: ThemeColor { ThemeColor(role: .wrong) }
+    /// Apple's red: error messages, buttons that delete where the destructive role can't be used.
+    static var failure: ThemeColor { ThemeColor(role: .failure) }
     /// Reviewed ahead (Anki's filtered decks).
     static var ahead: ThemeColor { ThemeColor(role: .ahead) }
     /// Inactive: suspended.
     static var inactive: ThemeColor { ThemeColor(role: .inactive) }
-    /// Apple's red: error messages, buttons that delete where the destructive role can't be used.
-    static var failure: ThemeColor { ThemeColor(role: .failure) }
-    /// Study progress: the app color (Multicolor: green). Reviews due, mature (young at half).
-    static var progress: ThemeColor { ThemeColor(role: .progress) }
-    /// Moves you're learning: the secondary label color.
-    static var learning: ThemeColor { ThemeColor(role: .learning) }
-    /// New, not studied yet: the label color.
-    static var unstudied: ThemeColor { ThemeColor(role: .unstudied) }
-    /// Building: the covered part of a coverage bar, the app color in every theme.
-    static var built: ThemeColor { ThemeColor(role: .built) }
-    /// Gap counts: the app color (Multicolor: orange).
-    static var gaps: ThemeColor { ThemeColor(role: .gaps) }
-    /// A streak that is safe today: the label color (Multicolor: orange).
-    static var streak: ThemeColor { ThemeColor(role: .streak) }
 }
 
-/// The colors of one app color: every meaning's hue, and the board. Each meaning has a system
-/// color; when the app color has that hue (or tints the board too close to it), the meaning
-/// takes a stand-in from another family, everywhere (Design/COLORS.md has the table and the
-/// measurements).
+/// The colors of one app color: every meaning's color, and the board. Multicolor gives each
+/// meaning its own system color (Anki's for studying); the other app colors are tinted: the app
+/// color for building, learned, correct and to do, the label colors for learning (secondary) and
+/// new (primary), red for wrong (purple where the app color is red or pink). Design/COLORS.md
+/// has the table.
 nonisolated struct Theme {
     let appColor: AppColor
 
+    /// The tinted themes' color: the app color (graphite's gray would read as learning: indigo).
+    private var tint: Color { appColor == .graphite ? .indigo : appColor.tint }
+    private var multicolor: Bool { appColor == .multicolor }
+
     func color(_ role: ThemeColor.Role) -> Color {
         switch role {
-        case .done: appColor == .green ? .indigo : .green
-        case .attention: [.orange, .yellow].contains(appColor) ? .purple : .orange
-        case .new: appColor == .blue ? .indigo : .blue
+        case .built: tint
+        case .learned, .correct: multicolor ? .green : tint
+        case .learning: multicolor ? .red : .secondary
+        case .new: multicolor ? .blue : .primary
+        case .todo: multicolor ? .orange : tint
         case .wrong: [.red, .pink].contains(appColor) ? .purple : .red
-        case .ahead: .cyan
-        case .inactive: .gray
         case .failure: .red
-        // Multicolor keeps Anki's colors for studying: review and mature green, learning red,
-        // new blue. Building keeps the app color.
-        case .progress:
-            switch appColor {
-            case .multicolor: color(.done)
-            case .graphite: .indigo
-            default: appColor.tint
-            }
-        case .learning: appColor == .multicolor ? color(.wrong) : .secondary
-        case .unstudied: appColor == .multicolor ? color(.new) : .primary
-        case .built: appColor == .multicolor ? appColor.tint : color(.progress)
-        case .gaps: appColor == .multicolor ? color(.attention) : color(.progress)
-        case .streak: appColor == .multicolor ? color(.attention) : .primary
+        case .ahead: .cyan
+        case .inactive: multicolor ? .gray : Color.secondary.opacity(0.4)
         }
     }
 

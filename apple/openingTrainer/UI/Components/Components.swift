@@ -225,7 +225,7 @@ struct CoverageBar: View {
 }
 
 /// Studied moves by Anki's groups (mature, young, learning) over all your moves, tinted like an
-/// accented widget: the app color, at half for young, then the learning gray; moves not
+/// accented widget: the app color, lighter for young, then the learning gray; moves not
 /// studied yet are the empty track.
 struct StudiedBar: View {
     let progress: Progress
@@ -235,8 +235,8 @@ struct StudiedBar: View {
         GeometryReader { geo in
             let total = CGFloat(max(progress.cards, 1))
             HStack(spacing: 0) {
-                Rectangle().fill(.progress).frame(width: geo.size.width * CGFloat(progress.mature) / total)
-                Rectangle().fill(ThemeColor.progress.opacity(0.5)).frame(width: geo.size.width * CGFloat(progress.young) / total)
+                Rectangle().fill(.learned).frame(width: geo.size.width * CGFloat(progress.mature) / total)
+                Rectangle().fill(ThemeColor.learned.lighter()).frame(width: geo.size.width * CGFloat(progress.young) / total)
                 Rectangle().fill(.learning).frame(width: geo.size.width * CGFloat(progress.learning) / total)
                 Spacer(minLength: 0)
             }
@@ -262,13 +262,13 @@ struct DueCounts: View {
         if progress.cards == 0 {
             EmptyView()
         } else if progress.studied == 0 {
-            Text("\(counts.new) new").foregroundStyle(counts.new > 0 ? AnyShapeStyle(.unstudied) : AnyShapeStyle(.tertiary))
+            Text("\(counts.new) new").foregroundStyle(counts.new > 0 ? AnyShapeStyle(.new) : AnyShapeStyle(.tertiary))
                 .font(font.weight(.semibold).monospacedDigit())
         } else {
             HStack(spacing: 8) {
-                number(counts.new, .unstudied)
+                number(counts.new, .new)
                 number(counts.learning, .learning)
-                number(counts.review, .progress)
+                number(counts.review, .learned)
             }
             .font(font.weight(.semibold).monospacedDigit())
             .accessibilityElement(children: .ignore)

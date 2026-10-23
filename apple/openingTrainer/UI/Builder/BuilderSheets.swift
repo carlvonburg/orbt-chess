@@ -52,7 +52,7 @@ struct OutlineSheet: View {
                     .lineLimit(2)
                 HStack(spacing: 6) {
                     CoverageBar(value: completion).frame(width: 60)
-                    if gaps > 0 { Text("\(gaps) gaps").font(.caption2).foregroundStyle(.gaps) }
+                    if gaps > 0 { Text("\(gaps) gaps").font(.caption2).foregroundStyle(.todo) }
                 }
             }
         }
@@ -107,7 +107,7 @@ struct GapsSheet: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(text(for: gap)).font(.callout).lineLimit(2)
                             Text("Seen \(Format.seenEvery(gap.mass)) games")
-                                .font(.caption).foregroundStyle(.attention)
+                                .font(.caption).foregroundStyle(.todo)
                         }
                     }
                     .tint(.primary)

@@ -298,10 +298,10 @@ private enum ReviewKind: String, CaseIterable, Plottable {
     case learn = "Learn", relearn = "Relearn", young = "Young", mature = "Mature", filtered = "Filtered"
     var color: ThemeColor {
         switch self {
-        case .learn: ThemeColor.wrong.opacity(0.5)
-        case .relearn: ThemeColor.wrong
-        case .young: ThemeColor.done.opacity(0.5)
-        case .mature: ThemeColor.done
+        case .learn: ThemeColor.learning.lighter()
+        case .relearn: ThemeColor.learning
+        case .young: ThemeColor.learned.lighter()
+        case .mature: ThemeColor.learned
         case .filtered: ThemeColor.ahead
         }
     }
@@ -391,9 +391,9 @@ private struct CardCountsCard: View {
     var body: some View {
         let c = graphs.cardCounts()
         let items: [(String, Int, ThemeColor)] = [
-            ("New", Int(c.new), ThemeColor.new), ("Learning", Int(c.learn), ThemeColor.wrong.opacity(0.5)),
-            ("Relearning", Int(c.relearn), ThemeColor.wrong), ("Young", Int(c.young), ThemeColor.done.opacity(0.5)),
-            ("Mature", Int(c.mature), ThemeColor.done), ("Suspended", Int(c.suspended), ThemeColor.inactive),
+            ("New", Int(c.new), ThemeColor.new), ("Learning", Int(c.learn), ThemeColor.learning.lighter()),
+            ("Relearning", Int(c.relearn), ThemeColor.learning), ("Young", Int(c.young), ThemeColor.learned.lighter()),
+            ("Mature", Int(c.mature), ThemeColor.learned), ("Suspended", Int(c.suspended), ThemeColor.inactive),
         ]
         let suspended = c.suspended > 0
             ? " Suspended: your moves below alternative moves. They keep their progress and are studied again if their line becomes the main line."
@@ -580,7 +580,7 @@ private struct WeakestMovesCard: View {
                                         .font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                if move.leech { Label("Leech", systemImage: "ant.fill").labelStyle(.iconOnly).foregroundStyle(.attention) }
+                                if move.leech { Label("Leech", systemImage: "ant.fill").labelStyle(.iconOnly).foregroundStyle(.todo) }
                                 Image(systemName: "chevron.right").foregroundStyle(.tertiary)
                             }
                             .font(.subheadline)

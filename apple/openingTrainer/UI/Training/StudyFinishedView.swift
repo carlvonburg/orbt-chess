@@ -38,9 +38,9 @@ struct StudyFinishedView: View {
         VStack(spacing: 6) {
             Image(systemName: studied ? "checkmark" : "tray")
                 .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(studied ? AnyShapeStyle(.done) : AnyShapeStyle(.secondary))
+                .foregroundStyle(studied ? AnyShapeStyle(.learned) : AnyShapeStyle(.secondary))
                 .frame(width: 64, height: 64)
-                .background(studied ? AnyShapeStyle(ThemeColor.done.opacity(0.18)) : AnyShapeStyle(.fill.tertiary), in: .circle)
+                .background(studied ? AnyShapeStyle(ThemeColor.learned.opacity(0.18)) : AnyShapeStyle(.fill.tertiary), in: .circle)
             Text(studied ? (learningLater ? "Done for Now" : "Done for Today") : "Nothing to Study")
                 .font(.title2.weight(.semibold))
             if !studied {
@@ -51,7 +51,7 @@ struct StudyFinishedView: View {
                 Label("\(today.streak.current)-day streak", systemImage: "flame.fill")
                     .font(.subheadline)
                     // At risk until something is studied today.
-                    .foregroundStyle(today.streak.studiedToday ? AnyShapeStyle(.streak) : AnyShapeStyle(.attention))
+                    .foregroundStyle(AnyShapeStyle(.todo))
             }
         }
         .multilineTextAlignment(.center)
@@ -62,7 +62,7 @@ struct StudyFinishedView: View {
         let minutes = Int((Double(model.studiedMillis) / 60_000).rounded())
         return HStack(spacing: 10) {
             tile(model.answeredCount.formatted(), model.answeredCount == 1 ? "move" : "moves")
-            tile(Format.percent(Double(model.correctCount) / Double(model.answeredCount)), "correct", tint: AnyShapeStyle(.done))
+            tile(Format.percent(Double(model.correctCount) / Double(model.answeredCount)), "correct", tint: AnyShapeStyle(.correct))
             tile(minutes < 1 ? "<1 min" : "\(minutes) min", "time")
         }
     }
@@ -87,8 +87,8 @@ struct StudyFinishedView: View {
             }
             StudiedBar(progress: progress, height: 8)
             FlowLayout {
-                legend(progress.mature, "mature", .progress)
-                legend(progress.young, "young", ThemeColor.progress.opacity(0.5))
+                legend(progress.mature, "mature", .learned)
+                legend(progress.young, "young", ThemeColor.learned.lighter())
                 legend(progress.learning, "learning", .learning)
             }
             .font(.caption)

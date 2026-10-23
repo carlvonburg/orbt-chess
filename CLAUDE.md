@@ -149,29 +149,25 @@ with the 94 MB net downloaded in Settings (checked against its name first: Stock
 the process when a net does not load). Settings: search time, lines (1–5), cloud evals.
 
 ## Colors (see `Design/COLORS.md`, roles in `UI/Components/Palette.swift`)
-Two layers. The accent (the app color from Settings, Multicolor by default: blue controls,
-board and Built bars, Anki's colors for studying (new blue, learning red, review and mature
-green), gaps and streak orange; or any of the Mac's accent colors and indigo; on the Mac it
-follows the system accent: when that changes, the app color becomes it, Multicolor for
-Multicolor) is for controls, with one exception: progress is tinted like
-Apple's accented widgets (HIG Widgets, Complications): coverage bars, gap counts, the studied
-bar and the due counts use the app color (mature, review, covered; young at half), the
-secondary label gray (learning) and the label color (new, not studied), each count colored
-like its part of the bar. Meaning colors
-are system colors that the `Theme` in the environment resolves for each role (`ThemeColor`),
-one meaning each: green done (right, your saved moves), orange something to do (a
-missing move), blue new, red wrong / study again (and Apple's red for errors,
-delete), cyan reviewed ahead. When the app color has a
-meaning's hue, the theme gives that meaning a stand-in from another family, app-wide (table in
-`Design/COLORS.md`). Always with a symbol or text, never color alone. Anything that asks the
-user to act is colored; a color is removed only where nothing gets less clear. Prefer system
-colors and semantic styles (Apple themes them); custom values only as asset color sets with
-Dark and High Contrast variants. The board has its own theme (slate tinted toward the app
-color); its arrows, hint and ✓ are one ink (the app color 55%
-toward black, told apart by width, opacity and dashes), its highlights the app color, the ✕
-red and the engine's lines graphite. A new meaning takes a
-free system color, a `Palette.swift` role and a row in `Design/COLORS.md`. The commit hook
-blocks hue names in `UI/` outside `Palette.swift`.
+The app color (Settings; Multicolor by default, or blue, indigo or any of the Mac's accent
+colors; on the Mac it follows the system accent: when that changes, the app color becomes it,
+Multicolor for Multicolor) is the tint of every control, and views take it through `.tint`,
+never `Color.accentColor`. Views name meanings, never hues (`ThemeColor`, one set): built,
+learned, learning, new, to do, correct, wrong, failure, ahead, inactive. The `Theme` of the app
+color resolves them: Multicolor gives each its own system color (building blue, learned and
+correct green, learning and wrong red, new blue, to do orange: Anki's colors for studying);
+every other app color is tinted like Apple's accented widgets (HIG Widgets, Complications):
+the app color for building, learned, correct and to do, the secondary label gray for learning,
+the label color for new, red for wrong (purple when the app color is red or pink). Young and
+Anki's learning are `.lighter()` shades; each due count has its bar part's color. On a selected
+row (`backgroundProminence == .increased`) they turn white. Always with a symbol or text, never
+color alone. Anything that asks the user to act is colored; a color is removed only where
+nothing gets less clear. Prefer system colors and semantic styles (Apple themes them); custom
+values only as asset color sets with Dark and High Contrast variants. The board has its own
+theme (slate tinted toward the app color); its arrows, hint and ✓ are one ink (the app color
+55% toward black, told apart by width, opacity and dashes), its highlights the app color, the
+✕ `.wrong` and the engine's lines graphite. A new meaning takes a `Palette.swift` role and a row
+in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palette.swift`.
 
 ## Conventions
 - Rules belong in `ot-core`, with Rust tests; Swift never re-implements them. When the app
