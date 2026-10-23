@@ -470,9 +470,15 @@ private struct BoardColumnView: View {
     @State private var columnWidth: CGFloat = 0
 
     /// The move history's width in the bottom bar: the column less the bar's margins, and
-    /// Browse's back and forward.
+    /// Browse's back and forward. On macOS the bar is the window toolbar, with room to spare:
+    /// with the sidebar hidden the middle column's items reach into this column's, and a
+    /// history that does not fit goes to the toolbar's overflow menu and stays there.
     private func historyWidth(buttons: Bool) -> CGFloat {
+        #if os(macOS)
+        max(120, columnWidth - (buttons ? 180 : 60) - 200)
+        #else
         max(120, columnWidth - (buttons ? 180 : 60))
+        #endif
     }
 
     private var title: String {
@@ -505,6 +511,11 @@ private struct BoardColumnView: View {
             if case .builder(let model, let presentation) = board {
                 // Move navigation under the board (the top bar's leading side is the title's), as
                 // on a phone; Analysis and the menu, which act on the board, end the top bar.
+                #if os(macOS)
+                // The room the history leaves on both sides: navigation, history and Analysis
+                // centred, the menu at the end.
+                ToolbarSpacer(.flexible, placement: .bottomActions)
+                #endif
                 ToolbarItemGroup(placement: .bottomActions) { BuilderNavigationButtons(model: model) }
                 // A fixed width from the column: moving never resizes the bar; the moves
                 // scroll inside it.
@@ -512,10 +523,17 @@ private struct BoardColumnView: View {
                     MovePathStrip(model: model)
                         .frame(width: historyWidth(buttons: true))
                 }
+                #if os(macOS)
+                ToolbarItem(placement: .bottomActions) {
+                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model) }
+                }
+                ToolbarSpacer(.flexible, placement: .bottomActions)
+                #else
                 ToolbarItem(placement: .trailingBar) {
                     Button("Analysis", systemImage: "cpu") { presentation.analyze(model) }
                 }
                 ToolbarSpacer(.fixed, placement: .trailingBar)
+                #endif
                 ToolbarItem(placement: .trailingBar) { BuilderMoreMenu(model: model, presentation: presentation) }
             }
             if case .drill(let model) = board, !model.finished {
