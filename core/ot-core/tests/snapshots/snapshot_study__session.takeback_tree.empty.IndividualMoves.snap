@@ -68,13 +68,13 @@ branch [e4]:
 +238s Counts { new: 0, learning: 2, review: 0 } e4 e5 Nf3
   roles: 0 auto, 2 queued
   2 Good filtered: Learn/Learn due +909s ivl 0
-+252s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3 (skip to 7)
++252s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3 (skip to 5)
   roles: 0 auto, 2 auto, 4 auto, 6 auto, 8 auto, 10 queued
   10 Good filtered: Learn/Learn due +916s ivl 0
 +294s Counts { new: 0, learning: 2, review: 0 } e4 e5 Nf3
   roles: 0 auto, 2 queued
   2 Again filtered: Learn/Learn due +374s ivl 0
-+308s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3 (skip to 7)
++308s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3 (skip to 5)
   roles: 0 auto, 2 auto, 4 auto, 6 auto, 8 auto, 10 queued
   10 Good filtered: Review/Review due 101 ivl 1
 +350s Counts { new: 0, learning: 1, review: 0 } e4 e5 Nf3

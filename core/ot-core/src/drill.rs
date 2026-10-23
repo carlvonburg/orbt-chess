@@ -456,7 +456,7 @@ impl Drill {
 
     /// The next line, or Finished. Takes moves back to where the lines part when that is
     /// shorter than replaying from move 1; else skips the moves already shown this session,
-    /// up to three before the first move you play.
+    /// up to five half-moves before the first move you play.
     pub fn next_line(&mut self, doc: &Repertoire, timing: &SchedTiming) {
         let cards = doc.sidecar().cards();
         let Some(session) = &mut self.session else {

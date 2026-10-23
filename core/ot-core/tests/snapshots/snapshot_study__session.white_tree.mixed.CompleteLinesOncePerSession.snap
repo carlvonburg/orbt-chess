@@ -15,7 +15,7 @@ daily:
 +42s Counts { new: 0, learning: 2, review: 1 } e4 e5 Nf3
   roles: 0 auto, 2 queued
   2 Good: Review/Review due 123 ivl 23
-+56s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4 (skip to 1)
++56s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4
   roles: 0 auto, 2 auto, 4 queued
   4 Good: Learn/Learn due +738s ivl 0
 +77s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 Nc6 d4 (from 3)

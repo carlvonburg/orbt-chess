@@ -44,7 +44,7 @@ branch [d4]:
   3 Good filtered: Learn/Learn due +778s ivl 0
   5 Good filtered: Learn/Learn due +800s ivl 0
   7 Again filtered: Learn/Learn due +153s ivl 0
-+84s Counts { new: 0, learning: 4, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5 (skip to 4)
++84s Counts { new: 0, learning: 4, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5 (skip to 2)
   roles: 1 auto, 3 auto, 5 auto, 7 queued
   7 Good filtered: Learn/Learn due +805s ivl 0
 +112s Counts { new: 0, learning: 4, review: 0 } d4 d5 c4 c6 Nf3 Nf6 Nc3 e6 (from 6)
@@ -55,7 +55,7 @@ branch [d4]:
   3 Good filtered: Review/Review due 102 ivl 2
   5 Good filtered: Review/Review due 102 ivl 2
   7 Good filtered: Review/Review due 101 ivl 1
-+168s Counts { new: 0, learning: 1, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5 (skip to 4)
++168s Counts { new: 0, learning: 1, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5 (skip to 2)
   roles: 1 auto, 3 auto, 5 auto, 7 queued
   7 Again filtered: Learn/Learn due +260s ivl 0
 +196s Counts { new: 0, learning: 1, review: 0 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5 (from 7)
