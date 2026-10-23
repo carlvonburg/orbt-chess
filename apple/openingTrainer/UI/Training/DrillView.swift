@@ -115,7 +115,7 @@ final class DrillModel {
                 self.stamp += 1
             }
         }
-        changed()
+        changed(afterMove: true)
     }
 
     /// Shows the badge, and takes back a wrong move with it.
@@ -173,14 +173,16 @@ final class DrillModel {
     // MARK: Timing
 
     /// Refreshes the views and runs the timer the new phase needs.
-    private func changed() {
+    /// `afterMove`: the user just played, so the reply waits a little longer than the moves
+    /// played on the way to their turn.
+    private func changed(afterMove: Bool = false) {
         stamp += 1
         timer?.cancel()
         timer = nil
         let delay: Int
         switch session.phase() {
         case .rewinding: delay = 250
-        case .autoplay: delay = 600
+        case .autoplay: delay = afterMove ? 600 : 450
         case .lineDone: delay = 400
         case .idle, .userTurn, .finished: return
         }
