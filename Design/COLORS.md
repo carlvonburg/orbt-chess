@@ -103,7 +103,7 @@ stands out by lightness and keeps the hue.
 | reply you cover | ink, width and opacity by share | Build, their turn |
 | gap | ink, dashed, by share (like the empty coverage bar: a shape, not a hue) | Build, their turn |
 | hint | ink (100%, or 60% after a miss) | Study |
-| correct / wrong | ink ✓ / red ✕ (`.wrong`) badge on the destination square | Study |
+| correct / wrong | ✓ in `.correct` (Multicolor green; tinted themes the ink) / ✕ in `.wrong`, a badge on the destination square | Study |
 | engine lines | graphite `#2C2C2E`, best 70%, then 45%, 30% (quiet: often three) | Analysis |
 | coordinates | the opposite square's color | everywhere |
 | promotion | black 35% dim, pieces on a material | promoting |

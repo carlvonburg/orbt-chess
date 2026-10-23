@@ -164,7 +164,7 @@ row (`backgroundProminence == .increased`) they turn white. Always with a symbol
 color alone. Anything that asks the user to act is colored; a color is removed only where
 nothing gets less clear. Prefer system colors and semantic styles (Apple themes them); custom
 values only as asset color sets with Dark and High Contrast variants. The board has its own
-theme (slate tinted toward the app color); its arrows, hint and ✓ are one ink (the app color
+theme (slate tinted toward the app color); its arrows, hint and ✓ (Multicolor: a green ✓) are one ink (the app color
 55% toward black, told apart by width, opacity and dashes), its highlights the app color, the
 ✕ `.wrong` and the engine's lines graphite. A new meaning takes a `Palette.swift` role and a row
 in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palette.swift`.
