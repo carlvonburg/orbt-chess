@@ -11,11 +11,11 @@ struct WelcomeView: View {
         List {
             Section {
                 step("Enter the lines", "Your moves and the replies the book or video covers.",
-                     icon: "text.book.closed.fill", color: .done)
+                     icon: "text.book.closed.fill", color: .built)
                 step("Fill the gaps", "See which common replies you haven't answered yet.",
-                     icon: "puzzlepiece.fill", color: .attention)
+                     icon: "puzzlepiece.fill", color: .todo)
                 step("Train daily", "Spaced repetition, a few minutes a day.",
-                     icon: "graduationcap.fill", color: .done)
+                     icon: "graduationcap.fill", color: .learned)
             } header: {
                 Text("How it works")
             } footer: {

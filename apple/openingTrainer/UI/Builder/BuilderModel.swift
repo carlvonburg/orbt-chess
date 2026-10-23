@@ -77,7 +77,7 @@ final class BuilderModel {
     var movesToBoard: [PlayedMove] { observe(); return session.movesToBoard() }
 
     /// Arrows for the current node: your saved moves, or the opponent's replies sized by
-    /// frequency with missing required replies as dashed orange arrows.
+    /// frequency with missing required replies as dashed arrows.
     var arrows: [BoardArrow] { observe(); return session.arrows().map(BoardArrow.init) }
 
     // MARK: Navigation

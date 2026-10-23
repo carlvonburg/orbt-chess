@@ -342,12 +342,12 @@ struct DrillView: View {
         Group {
             switch model.feedback {
             case .correct:
-                Label("Correct", systemImage: "checkmark.circle.fill").foregroundStyle(.done)
+                Label("Correct", systemImage: "checkmark.circle.fill").foregroundStyle(.correct)
             case .wrong(let expected):
                 Label("Not quite, play \(expected.san)", systemImage: "xmark.circle.fill").foregroundStyle(.wrong)
             case .alternative:
                 Label("That's your alternative. Play your main move.", systemImage: "arrow.triangle.branch")
-                    .foregroundStyle(.attention)
+                    .foregroundStyle(.todo)
             case .newMove(let move):
                 Label("New move: play \(move.san)", systemImage: "sparkles").foregroundStyle(.new)
             case .none:
@@ -435,9 +435,9 @@ struct StudyCountsView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            number(counts.new, .unstudied, .new)
+            number(counts.new, .new, .new)
             number(counts.learning, .learning, .learning)
-            number(counts.review, .progress, .review)
+            number(counts.review, .learned, .review)
         }
         // Next to the status the numbers never truncate; the status wraps instead.
         .fixedSize()
@@ -459,9 +459,9 @@ struct StudyCountsList: View {
 
     var body: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 10) {
-            row(counts.new, .unstudied, .new, "New", "Moves you haven't studied yet")
+            row(counts.new, .new, .new, "New", "Moves you haven't studied yet")
             row(counts.learning, .learning, .learning, "Learning", "Moves you're learning, shown again within minutes")
-            row(counts.review, .progress, .review, "To Review", "Learned moves due today")
+            row(counts.review, .learned, .review, "To Review", "Learned moves due today")
         }
     }
 

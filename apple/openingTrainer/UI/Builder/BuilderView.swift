@@ -331,7 +331,7 @@ struct TranspositionNote: View {
 
     private func content(detail: String?) -> some View {
         HStack(alignment: .firstTextBaseline) {
-            Image(systemName: "arrow.triangle.branch").foregroundStyle(.done)
+            Image(systemName: "arrow.triangle.branch").foregroundStyle(.built)
             VStack(alignment: .leading, spacing: 2) {
                 Text(inDraft ? "Transposed into" : "Transposes. Lines continue after").font(.callout)
                 Text(Format.moveList(model.tree.moves(to: target), startPly: model.tree.root.ply))
@@ -462,7 +462,7 @@ struct NodeHeader: View {
                     // Anki's "leech" tag: a move you keep forgetting
                     Label("Leech", systemImage: "ant.fill")
                         .font(.caption)
-                        .statusBadge(tint: .attention)
+                        .statusBadge(tint: .todo)
                         .accessibilityHint("You keep forgetting this move.")
                 }
             }
@@ -472,7 +472,7 @@ struct NodeHeader: View {
                 Spacer(minLength: 0)
                 HStack(spacing: 0) {
                     if let gaps = info?.gapCount, gaps > 0 {
-                        Text("\(gaps.formatted()) \(gaps == 1 ? "gap" : "gaps")").foregroundStyle(.gaps)
+                        Text("\(gaps.formatted()) \(gaps == 1 ? "gap" : "gaps")").foregroundStyle(.todo)
                         Text(" · ").foregroundStyle(.secondary)
                     }
                     Text("\(saved.formatted()) \(saved == 1 ? "move" : "moves")").foregroundStyle(.secondary)
@@ -506,13 +506,13 @@ struct NodeHeader: View {
     private func statusChip(_ info: NodeCoverage?) -> some View {
         switch info?.status {
         case .gap:
-            Text("Your move is missing").font(.caption).statusBadge(tint: .attention)
+            Text("Your move is missing").font(.caption).statusBadge(tint: .todo)
         case .pending:
             Text("Stats not loaded yet").font(.caption).statusBadge()
         case .belowTarget:
             Text("Beyond your target").font(.caption).statusBadge()
         case .transposition:
-            Text("Transposes").font(.caption).statusBadge(tint: .done)
+            Text("Transposes").font(.caption).statusBadge(tint: .built)
         case .alternative:
             Text("Alternative line").font(.caption).statusBadge()
         case .unknown:
@@ -531,8 +531,10 @@ struct RepliesPanel: View {
     let model: BuilderModel
     let replies: [ReplyInfo]?
     let saved: Node?
+    @State private var eval: CloudEval?
 
     var body: some View {
+        let epd = saved?.epd ?? model.position.epd()
         Group {
             HStack {
                 Text("Replies").font(.headline)
@@ -550,7 +552,7 @@ struct RepliesPanel: View {
                 let ordered = replies.filter(matters).sorted { $0.share > $1.share }
                     + replies.filter { !matters($0) }.sorted { $0.share > $1.share }
                 ForEach(ordered, id: \.uci) { reply in
-                    ReplyRow(reply: reply, node: saved?.id, model: model)
+                    ReplyRow(reply: reply, node: saved?.id, model: model, eval: eval?.text(for: reply.uci))
                         .builderRow()
                 }
             } else {
@@ -569,7 +571,7 @@ struct RepliesPanel: View {
                         .builderRow()
                     }
                 }
-                if model.document.stats(saved?.epd ?? model.position.epd()) != nil {
+                if model.document.stats(epd) != nil {
                     Text("No games in this position.")
                         .font(.footnote).foregroundStyle(.secondary)
                         .padding(.vertical, 8)
@@ -585,6 +587,11 @@ struct RepliesPanel: View {
                 }
             }
         }
+        // Lichess's cloud eval of each reply, as for your candidates.
+        .task(id: epd) {
+            eval = nil
+            eval = await CloudEvalClient.fetch(epd)
+        }
     }
 }
 
@@ -593,6 +600,7 @@ struct ReplyPlaceholderRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Text("Nf6").font(.body.weight(.semibold)).frame(minWidth: 48, alignment: .leading)
+            Text("+0.0").font(.caption.monospacedDigit().weight(.semibold)).frame(width: 40)
             Spacer()
             Text("1 in 100").font(.caption.monospacedDigit()).frame(width: 74, alignment: .trailing)
             RoundedRectangle(cornerRadius: 3).fill(.quaternary).frame(width: 64, height: 8)
@@ -609,6 +617,8 @@ struct ReplyRow: View {
     /// The saved position the reply is at; nil in a draft.
     let node: NodeID?
     let model: BuilderModel
+    /// Lichess's cloud eval after the reply, nil while unknown.
+    var eval: String?
 
     var body: some View {
         let transposes = reply.child == nil && (reply.transposesTo != nil || model.transposition(after: reply.uci) != nil)
@@ -633,6 +643,8 @@ struct ReplyRow: View {
                     }
                 }
                 .frame(minWidth: 48, alignment: .leading)
+                Text(eval ?? "")
+                    .font(.caption.monospacedDigit().weight(.semibold)).frame(width: 40)
                 Spacer()
                 Text(Format.seenEvery(reply.reach)).font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary).frame(width: 74, alignment: .trailing)
@@ -707,7 +719,7 @@ struct CandidatesSection: View {
         ForEach(savedRows, id: \.0.uci) { played, move in
             row(uci: played.uci, san: played.san, move: move, total: stats?.total ?? 0, loading: loading)
                 .builderRow()
-                .listRowBackground(Rectangle().fill(.done.opacity(0.08)))
+                .listRowBackground(Rectangle().fill(.built.opacity(0.08)))
         }
         if collapsed {
             Button("Add Alternative Move", systemImage: "plus") { showOthers = true }
@@ -826,7 +838,7 @@ private struct DeleteMove: ViewModifier {
                         .tint(ThemeColor.failure)
                     if let promote {
                         Button("Main", systemImage: "arrow.up.to.line", action: promote)
-                            .tint(ThemeColor.done)
+                            .tint(ThemeColor.built)
                             .accessibilityLabel("Make Main Move")
                     }
                 }
@@ -936,7 +948,7 @@ struct TranspositionIcon: View {
     var body: some View {
         Image(systemName: "arrow.triangle.branch")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.done)
+            .foregroundStyle(.built)
             .accessibilityLabel("Transposes")
     }
 }
@@ -973,9 +985,9 @@ struct DraftPanel: View {
             }
             HStack(spacing: 8) {
                 if target != nil {
-                    Text("Transposed").font(.caption).statusBadge(tint: .done)
+                    Text("Transposed").font(.caption).statusBadge(tint: .built)
                 } else if reached {
-                    Text("Coverage target reached").font(.caption).statusBadge(tint: .done)
+                    Text("Coverage target reached").font(.caption).statusBadge(tint: .built)
                 } else {
                     Text("New line, not saved").font(.caption).statusBadge()
                 }
