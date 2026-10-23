@@ -57,7 +57,7 @@ struct RepertoireOverviewView: View {
                     if stats.gaps > 0 {
                         Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps.formatted()) gaps")
                             .font(.subheadline.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.progress)
+                            .foregroundStyle(.gaps)
                     }
                 }
                 CoverageBar(value: stats.completion)

@@ -27,13 +27,20 @@ nonisolated struct ThemeColor: ShapeStyle, Hashable {
         case inactive
         /// Apple's red: something failed (error messages), buttons that delete.
         case failure
-        /// Progress, tinted like an accented widget: the app color (indigo for graphite). The
-        /// covered part of a coverage bar, gap counts, reviews due, mature moves (young at half).
+        /// Study progress, tinted like an accented widget: the app color (indigo for graphite;
+        /// Multicolor: green). Reviews due, mature moves (young at half).
         case progress
         /// Moves you're learning (Anki's learning and relearning): the secondary label color.
         case learning
-        /// New, not studied yet, in counts and bars: the label color (its fill in a bar).
+        /// New, not studied yet: the label color (Multicolor: blue); in the studied bar the empty track.
         case unstudied
+        /// Building: the covered part of a coverage bar, the app color in every theme (it
+        /// belongs with the board).
+        case built
+        /// Gap counts: the app color (Multicolor: orange, something to do).
+        case gaps
+        /// A streak that is safe today: the label color (Multicolor: orange).
+        case streak
     }
 
     let role: Role
@@ -63,12 +70,18 @@ extension ShapeStyle where Self == ThemeColor {
     static var inactive: ThemeColor { ThemeColor(role: .inactive) }
     /// Apple's red: error messages, buttons that delete where the destructive role can't be used.
     static var failure: ThemeColor { ThemeColor(role: .failure) }
-    /// Progress: the app color. Covered, gap counts, reviews due, mature (young at half).
+    /// Study progress: the app color (Multicolor: green). Reviews due, mature (young at half).
     static var progress: ThemeColor { ThemeColor(role: .progress) }
     /// Moves you're learning: the secondary label color.
     static var learning: ThemeColor { ThemeColor(role: .learning) }
     /// New, not studied yet: the label color.
     static var unstudied: ThemeColor { ThemeColor(role: .unstudied) }
+    /// Building: the covered part of a coverage bar, the app color in every theme.
+    static var built: ThemeColor { ThemeColor(role: .built) }
+    /// Gap counts: the app color (Multicolor: orange).
+    static var gaps: ThemeColor { ThemeColor(role: .gaps) }
+    /// A streak that is safe today: the label color (Multicolor: orange).
+    static var streak: ThemeColor { ThemeColor(role: .streak) }
 }
 
 /// The colors of one app color: every meaning's hue, and the board. Each meaning has a system
@@ -87,9 +100,19 @@ nonisolated struct Theme {
         case .ahead: .cyan
         case .inactive: .gray
         case .failure: .red
-        case .progress: appColor == .graphite ? .indigo : appColor.tint ?? .accentColor
-        case .learning: .secondary
-        case .unstudied: .primary
+        // Multicolor keeps Anki's colors for studying: review and mature green, learning red,
+        // new blue. Building keeps the app color.
+        case .progress:
+            switch appColor {
+            case .multicolor: color(.done)
+            case .graphite: .indigo
+            default: appColor.tint ?? .accentColor
+            }
+        case .learning: appColor == .multicolor ? color(.wrong) : .secondary
+        case .unstudied: appColor == .multicolor ? color(.new) : .primary
+        case .built: appColor == .multicolor ? appColor.tint ?? .accentColor : color(.progress)
+        case .gaps: appColor == .multicolor ? color(.attention) : color(.progress)
+        case .streak: appColor == .multicolor ? color(.attention) : .primary
         }
     }
 
@@ -100,17 +123,18 @@ nonisolated extension EnvironmentValues {
     @Entry var theme = Theme(appColor: AppColor.default.resolved)
 }
 
-/// The app's color, chosen in Settings (the Mac's accent colors, blue first, then indigo; on the
-/// Mac first Automatic, the system accent): buttons, selection, progress and the board's tint.
+/// The app's color, chosen in Settings (on the Mac first Automatic, the system accent; then
+/// Multicolor, blue controls with Anki's colors for progress; then the Mac's accent colors, blue
+/// first, then indigo): buttons, selection, progress and the board's tint.
 nonisolated enum AppColor: String, CaseIterable, Identifiable {
-    case automatic, blue, indigo, purple, pink, red, orange, yellow, green, graphite
+    case automatic, multicolor, blue, indigo, purple, pink, red, orange, yellow, green, graphite
 
     static let key = "appColor"
-    /// The Mac's accent on the Mac; elsewhere blue, Apple's default accent.
+    /// The Mac's accent on the Mac; elsewhere Multicolor.
     #if os(macOS)
     static let `default` = AppColor.automatic
     #else
-    static let `default` = AppColor.blue
+    static let `default` = AppColor.multicolor
     #endif
 
     /// The colors Settings offers: Automatic only on the Mac, which has a system accent.
@@ -150,10 +174,11 @@ nonisolated enum AppColor: String, CaseIterable, Identifiable {
     }
 
     /// The tint to set; nil for blue and Automatic, the asset catalog's accent, which a Mac
-    /// user's accent color replaces.
+    /// user's accent color replaces. Multicolor is always blue.
     var tint: Color? {
         switch self {
         case .automatic, .blue: nil
+        case .multicolor: .blue
         case .indigo: .indigo
         case .purple: .purple
         case .pink: .pink
@@ -169,6 +194,7 @@ nonisolated enum AppColor: String, CaseIterable, Identifiable {
     var board: Color {
         switch self {
         case .automatic: Self.systemAccent.board
+        case .multicolor: .blue
         case .indigo: .indigo
         case .blue: .blue
         case .purple: .purple
