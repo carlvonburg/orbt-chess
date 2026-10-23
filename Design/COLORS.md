@@ -10,16 +10,14 @@ in `UI/` outside `Palette.swift`).
 1. **Two layers.**
    - The **accent** is the control color: tappable and selected things (buttons, selection,
      links, the prominent Study button, segmented pickers). It is the **app color** chosen in
-     Settings › Appearance: on the Mac first **Automatic** (the default there), the system
-     accent from System Settings, mapped to the nearest app color by hue (graphite when it is
-     nearly gray; Multicolor gives blue) and followed live; then **Multicolor** (the default on
-     iPhone and iPad): blue controls, board and Built bars, with Anki's colors for studying
-     (below); then
-     the Mac's accent colors: Blue (Apple's default accent), Indigo (the app icon's color), Purple,
-     Pink, Red, Orange, Yellow, Green or Graphite, each shown as a strip of the board it gives.
-     Blue and Automatic use the asset catalog's accent, so on the Mac controls take the
-     user's exact accent; the theme (board, ink, progress, stand-ins) takes its nearest app
-     color. So the accent **never carries
+     Settings › Appearance: **Multicolor** (the default): blue controls, board and Built bars,
+     with Anki's colors for studying (below); then the Mac's accent colors: Blue, Indigo (the
+     app icon's color), Purple, Pink, Red, Orange, Yellow, Green or Graphite, each shown as a
+     strip of the board it gives. Every view takes the app color through the tint (`.tint`,
+     never `Color.accentColor`, which on the Mac is the system accent). On the Mac the app
+     color follows the system accent (`AppleAccentColor`; none is Multicolor): when it
+     changes, the app color becomes it; a color picked in Settings stays until the next
+     change. So the accent **never carries
      meaning**; a red button next to a red ✕ is fine, the ✕ is not a button. The one
      exception is progress (below).
    - **Progress** is tinted, the way Apple tints accented widgets and watch complications
@@ -85,8 +83,8 @@ color, which is fine: the accent is only ever on controls.
 
 ## Board (`BoardTheme` in Palette.swift)
 The board is content with its own theme: the same in the app's light and dark appearance
-(dimmer squares in dark). Its squares are tinted toward the app color (`AppColor.board`;
-with Automatic, the Mac accent's nearest app color), so it carries the app's look. Its overlays are tinted the same way as
+(dimmer squares in dark). Its squares are tinted toward the app color (`AppColor.board`), so
+it carries the app's look. Its overlays are tinted the same way as
 progress (Apple's tinted mode): one **ink**, the app color mixed 55% toward black, told apart
 by width, opacity and dashes. The app color itself would vanish on its own board, the ink
 stands out by lightness and keeps the hue.
