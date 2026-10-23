@@ -149,7 +149,7 @@ with the 94 MB net downloaded in Settings (checked against its name first: Stock
 the process when a net does not load). Settings: search time, lines (1–5), cloud evals.
 
 ## Colors (see `Design/COLORS.md`, roles in `UI/Components/Palette.swift`)
-Two layers. The accent (the app color from Settings: indigo by default, the icon's color, or
+Two layers. The accent (the app color from Settings: blue by default, Apple's default accent, or
 any of the Mac's accent colors) is for controls, with one exception: progress is tinted like
 Apple's accented widgets (HIG Widgets, Complications): coverage bars, gap counts, the studied
 bar and the due counts use the app color (mature, review, covered; young at half), the

@@ -10,9 +10,9 @@ in `UI/` outside `Palette.swift`).
 1. **Two layers.**
    - The **accent** is the control color: tappable and selected things (buttons, selection,
      links, the prominent Study button, segmented pickers). It is the **app color** chosen in
-     Settings › Appearance, the Mac's accent colors: Indigo (default, Apple's system indigo,
-     the app icon's color), Blue, Purple, Pink, Red, Orange, Yellow, Green or Graphite, each
-     shown as a strip of the board it gives. Indigo uses the asset catalog's accent, so on the
+     Settings › Appearance, the Mac's accent colors: Blue (default, Apple's default accent),
+     Indigo (the app icon's color), Purple, Pink, Red, Orange, Yellow, Green or Graphite, each
+     shown as a strip of the board it gives. Blue uses the asset catalog's accent, so on the
      Mac a user-chosen accent replaces it for controls. So the accent **never carries
      meaning**; a red button next to a red ✕ is fine, the ✕ is not a button. The one
      exception is progress (below).
@@ -39,7 +39,7 @@ in `UI/` outside `Palette.swift`).
    primary action, not its label; glass stays colorless otherwise.
 
 ## Theme meanings (`ThemeColor`)
-Views name the meaning; the theme picks the color. Defaults (Indigo, the default app color):
+Views name the meaning; the theme picks the color. Defaults (Blue, the default app color, except `.new`, which Blue turns indigo, see below):
 
 | Name | Default color | Meaning | Where |
 |---|---|---|---|
@@ -104,8 +104,8 @@ the same way (mint, teal and cyan arrows measure 6–7 on a green board).
 
 | App color | Meaning colors that change |
 |---|---|
-| Indigo (default) | none |
-| Blue | `.new`: blue → indigo |
+| Blue (default) | `.new`: blue → indigo |
+| Indigo | none |
 | Purple | none |
 | Pink | `.wrong`: red → purple |
 | Red | `.wrong`: red → purple |
@@ -129,7 +129,7 @@ the ink, not the app color.
 
 ## App icon
 The icon keeps its own indigo (`#6B64B8`, `#3F3A8C`, outline `#2B2760`; dark icon
-`#2A2650`/`#14122B`). It has the same hue as Apple's indigo (~245°), the default app color.
+`#2A2650`/`#14122B`). It has the same hue as Apple's indigo (~245°), the default app color until October 2026 (now blue).
 
 ## Adding a color
 1. Name the meaning. If an existing role already means it, use that role.

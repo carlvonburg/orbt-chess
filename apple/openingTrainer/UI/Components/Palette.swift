@@ -2,8 +2,8 @@ import SwiftUI
 
 // The app's colors, by meaning (Design/COLORS.md). Each meaning has one hue in a theme, always
 // next to a symbol, text or shape; views use these roles, never a hue by name. The accent (the
-// app color, system indigo by default, or the Mac user's choice) is for controls only and never
-// carries meaning.
+// app color, system blue by default, or the Mac user's choice) is for controls and, tinted, for
+// progress; it never carries another meaning.
 
 /// A color by its meaning, resolved by the app's `Theme` where it is drawn: views say what a
 /// color means (`.done`, `.attention`), the theme decides the hue, so a change of app color
@@ -97,25 +97,25 @@ nonisolated extension EnvironmentValues {
     @Entry var theme = Theme(appColor: .default)
 }
 
-/// The app's color, chosen in Settings (the Mac's accent colors, indigo first): buttons,
+/// The app's color, chosen in Settings (the Mac's accent colors, blue first, then indigo): buttons,
 /// selection and the board's tint. It never carries meaning, so it may share a hue with a
 /// meaning color.
 nonisolated enum AppColor: String, CaseIterable, Identifiable {
-    case indigo, blue, purple, pink, red, orange, yellow, green, graphite
+    case blue, indigo, purple, pink, red, orange, yellow, green, graphite
 
     static let key = "appColor"
-    /// Indigo, the app icon's color.
-    static let `default` = AppColor.indigo
+    /// Blue, Apple's default accent.
+    static let `default` = AppColor.blue
 
     var id: Self { self }
     var title: String { rawValue.capitalized }
 
-    /// The tint to set; nil for indigo, the asset catalog's accent, which a Mac user's accent
+    /// The tint to set; nil for blue, the asset catalog's accent, which a Mac user's accent
     /// color replaces.
     var tint: Color? {
         switch self {
-        case .indigo: nil
-        case .blue: .blue
+        case .blue: nil
+        case .indigo: .indigo
         case .purple: .purple
         case .pink: .pink
         case .red: .red
