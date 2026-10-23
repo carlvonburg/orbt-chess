@@ -232,6 +232,8 @@ private struct FutureDueCard: View {
                         }
                 }
             }
+            // A fixed range, like Reviews, so the days' bars stand apart.
+            .chartXScale(domain: (overdue > 0 ? -2 : -1)...days)
             .chartXSelection(value: $selected)
             .chartXAxis { AxisMarks(values: .stride(by: 7)) }
             .frame(height: 160)

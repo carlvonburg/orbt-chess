@@ -173,7 +173,7 @@ struct BoardView: View {
                 Image(systemName: correct ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .resizable()
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(.white, correct ? theme.ink : theme.wrong)
+                    .foregroundStyle(.white, correct ? theme.correct : theme.wrong)
                     .frame(width: sq * 0.38, height: sq * 0.38)
                     .shadow(color: .black.opacity(0.3), radius: 1.5, y: 0.5)
                     .position(at)

@@ -199,8 +199,11 @@ nonisolated struct BoardTheme {
     var dark: Color { Color("BoardDark").mix(with: theme.appColor.board, by: 0.28) }
     /// The board's ink, tinted like the progress colors: the app color mixed halfway to black,
     /// which every board shows clearly (a board swallows its own hue). Your moves, the hint,
-    /// the replies you cover and, dashed, the gaps; the ✓ badge.
+    /// the replies you cover and, dashed, the gaps; the ✓ badge in tinted themes.
     var ink: Color { theme.appColor.board.mix(with: .black, by: 0.55) }
+    /// The ✓ badge: Multicolor's green for correct; tinted themes the ink (the app color itself
+    /// would fade on its own board).
+    var correct: Color { theme.appColor == .multicolor ? theme.color(.correct) : ink }
     var wrong: Color { theme.color(.wrong) }
     /// The last move and the selected square: the app color over the square (the ink for
     /// graphite, whose gray the board doesn't show).
