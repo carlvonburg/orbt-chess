@@ -116,8 +116,8 @@ chess.com green: green 6), and a graphite accent would make highlights invisible
 followed the accent, so highlights and arrows never do.
 
 ## App icon
-The icon's board is Apple's indigo `#6155F5` (light squares) with darker shades of the same
-hue (`#3B339D`, outline `#27226F`; dark icon `#241F67`/`#110D3A`), so icon and accent match.
+The icon keeps its own indigo (`#6B64B8`, `#3F3A8C`, outline `#2B2760`; dark icon
+`#2A2650`/`#14122B`). It has the same hue as Apple's indigo (~245°), the default app color.
 
 ## Adding a color
 1. Name the meaning. If an existing role already means it, use that role.
