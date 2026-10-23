@@ -24,8 +24,6 @@ nonisolated struct ThemeColor: ShapeStyle, Hashable {
         case inactive
         /// Apple's red: something failed (error messages), buttons that delete.
         case failure
-        /// The board's last move and selected square.
-        case highlight
         /// Progress, tinted like an accented widget: the app color (indigo for graphite). The
         /// covered part of a coverage bar, gap counts, reviews due, mature moves (young at half).
         case progress
@@ -86,7 +84,6 @@ nonisolated struct Theme {
         case .ahead: .cyan
         case .inactive: .gray
         case .failure: .red
-        case .highlight: appColor == .yellow ? .indigo : .yellow
         case .progress: appColor == .graphite ? .indigo : appColor.tint ?? .accentColor
         case .learning: .secondary
         case .unstudied: .primary
@@ -169,12 +166,15 @@ nonisolated struct BoardTheme {
 
     var light: Color { Color("BoardLight").mix(with: theme.appColor.board, by: 0.14) }
     var dark: Color { Color("BoardDark").mix(with: theme.appColor.board, by: 0.28) }
-    /// Your moves, the hint and the replies you cover.
-    var done: Color { theme.color(.done) }
-    var gap: Color { theme.color(.attention) }
+    /// The board's ink, tinted like the progress colors: the app color mixed halfway to black,
+    /// which every board shows clearly (a board swallows its own hue). Your moves, the hint,
+    /// the replies you cover and, dashed, the gaps; the ✓ badge.
+    var ink: Color { theme.appColor.board.mix(with: .black, by: 0.55) }
     var wrong: Color { theme.color(.wrong) }
-    var lastMove: Color { theme.color(.highlight).opacity(0.42) }
-    var selected: Color { theme.color(.highlight).opacity(0.68) }
+    /// The last move and the selected square: the app color over the square (the ink for
+    /// graphite, whose gray the board doesn't show).
+    var lastMove: Color { theme.appColor == .graphite ? ink.opacity(0.25) : theme.appColor.board.opacity(0.5) }
+    var selected: Color { theme.appColor == .graphite ? ink.opacity(0.4) : theme.appColor.board.opacity(0.75) }
     /// The engine's lines: quiet, there are often three of them.
     let engine = Color(.sRGB, red: 0x2C / 255, green: 0x2C / 255, blue: 0x2E / 255)
 }

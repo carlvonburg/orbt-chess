@@ -43,17 +43,16 @@ Views name the meaning; the theme picks the color. Defaults (Indigo, the default
 
 | Name | Default color | Meaning | Where |
 |---|---|---|---|
-| `.done` | green | done: covered, your move, correct, learned | "Coverage target reached", transposition icon and badges, reply arrows you cover, your-move and hint arrows, your saved moves' row tint, "Main" swipe, ✓ badge and "Correct", studied today, correct %, Statistics' young and mature, Welcome "build" and "study" |
+| `.done` | green | done: covered, your move, correct, learned | "Coverage target reached", transposition icon and badges, your saved moves' row tint, "Main" swipe, "Correct", studied today, correct %, Statistics' young and mature, Welcome "build" and "study" |
 | `.progress` | the app color (indigo for Graphite) | progress, tinted | the covered part of a `CoverageBar` (on a neutral track: what is left, gaps and lines not checked yet alike), gap counts, the review due count, mature moves in the studied bar and its legends (young: `.progress.opacity(0.5)`) |
 | `.learning` | secondary label gray | moves you're learning | the learning due count, the learning part of the studied bar and its legends |
 | `.unstudied` | label color | new, not studied yet | the new due count; the not-studied rest of the studied bar is its fill (`.quaternary`) |
-| `.attention` | orange | something to do | gaps (dashed arrows, gap list), "Your move is missing", "That's your alternative", streak at risk, leech, Welcome "gaps" |
+| `.attention` | orange | something to do | gaps (gap list), "Your move is missing", "That's your alternative", streak at risk, leech, Welcome "gaps" |
 | `.new` | blue | new, not studied yet (Anki) | Statistics' new group, "New move" in the drill |
 | `.wrong` | red | wrong, study again now | ✕ badge and "Not quite", Again, Statistics' learning and relearning (learning: `.wrong.opacity(0.5)`), overdue moves |
 | `.ahead` | cyan | reviewed ahead (Anki's filtered decks) | Reviews chart |
 | `.inactive` | gray | suspended | Move Counts chart |
 | `.failure` | red (Apple's) | something failed, delete | error messages, the Delete swipe |
-| board highlight | yellow | last move (42%), selected square (68%) | the board |
 | engine | graphite `#2C2C2E` | engine lines | the analysis board |
 
 The accent is not a meaning: it is the app color itself, on buttons, selection, sliders,
@@ -78,19 +77,21 @@ color, which is fine: the accent is only ever on controls.
 ## Board (`BoardTheme` in Palette.swift)
 The board is content with its own theme: the same in the app's light and dark appearance
 (dimmer squares in dark). Its squares are tinted toward the app color (`AppColor.board`; not
-a Mac user's accent, which may be green or orange like the arrows), so it carries the app's
-look.
+a Mac user's accent), so it carries the app's look. Its overlays are tinted the same way as
+progress (Apple's tinted mode): one **ink**, the app color mixed 55% toward black, told apart
+by width, opacity and dashes. The app color itself would vanish on its own board, the ink
+stands out by lightness and keeps the hue.
 
 | Element | Color | Shown in |
 |---|---|---|
 | squares | `BoardLight` `#E4E6E9` / `BoardDark` `#8E959E` (dark appearance `#C4C8CD`/`#737A84`; High Contrast wider), mixed 14% / 28% toward the app color | everywhere |
-| last move / selected square | yellow 42% / 68% | everywhere |
+| last move / selected square | the app color 50% / 75% (graphite: the ink 25% / 40%) | everywhere |
 | legal moves | black dots 22%, rings on captures 25% | moving a piece |
-| your move | green, main bold 85%, alternatives thin 50% | Build, your turn |
-| reply you cover | green, width and opacity by share | Build, their turn |
-| gap | orange, dashed, by share | Build, their turn |
-| hint | green (100%, or 60% after a miss) | Study |
-| correct / wrong | green ✓ / red ✕ badge on the destination square | Study |
+| your move | ink, main bold 85%, alternatives thin 50% | Build, your turn |
+| reply you cover | ink, width and opacity by share | Build, their turn |
+| gap | ink, dashed, by share (like the empty coverage bar: a shape, not a hue) | Build, their turn |
+| hint | ink (100%, or 60% after a miss) | Study |
+| correct / wrong | ink ✓ / red ✕ (`.wrong`) badge on the destination square | Study |
 | engine lines | graphite `#2C2C2E`, best 70%, then 45%, 30% (quiet: often three) | Analysis |
 | coordinates | the opposite square's color | everywhere |
 | promotion | black 35% dim, pieces on a material | promoting |
@@ -108,20 +109,23 @@ the same way (mint, teal and cyan arrows measure 6–7 on a green board).
 | Purple | none |
 | Pink | `.wrong`: red → purple |
 | Red | `.wrong`: red → purple |
-| Orange | `.attention`: orange → purple (board ΔE 7 → 15) |
-| Yellow | `.attention`: orange → purple (6 → 18); board highlight: yellow → indigo (9 → 15) |
-| Green | `.done`: green → indigo (7 → 14) |
+| Orange | `.attention`: orange → purple |
+| Yellow | `.attention`: orange → purple |
+| Green | `.done`: green → indigo |
 | Graphite | none |
 
-`.failure` (Apple's red), `.ahead`, `.inactive` and the engine never change. On the red board
-gap arrows stay orange (ΔE 9, dashed).
+`.failure` (Apple's red), `.ahead`, `.inactive` and the engine never change. The stand-ins
+were chosen when the board's arrows used these meaning colors; they now only matter off the
+board.
 
-Measured (OKLab ΔE of each overlay against its square, ≥ ~10 clearly visible; arrows at 45%,
-the faint end): with these stand-ins every overlay stays at 9 or more on all nine boards (the
-third engine line, faint on purpose, at 10). Brown barely tints the slate (chroma 0.6), so it
-isn't offered. A strongly colored board swallows its own hue (lichess brown: orange 6;
-chess.com green: green 6), and a graphite accent would make highlights invisible if they
-followed the accent, so highlights and arrows never do.
+Measured (OKLab ΔE of each overlay against the weaker of its two squares, ≥ ~10 clearly
+visible), on all nine boards in light and dark appearance: the ink at 38% (the rarest reply
+or gap) 10.2–14.4, at 85% 23–33; the last move 7.1–11.7 and the selected square 10.4–15.4
+(graphite's ink 5.7–6.9 and 10.1–12.2); the engine's graphite 8–12 at 30%, 12–18 at 45%. A
+white engine line was tried and fails on the light squares (3–6). Brown barely tints the slate
+(chroma 0.6), so it isn't offered. A board swallows its own hue (the app color at 40% over its
+board: 6–9; lichess brown: orange 6; chess.com green: green 6), which is why the overlays use
+the ink, not the app color.
 
 ## App icon
 The icon keeps its own indigo (`#6B64B8`, `#3F3A8C`, outline `#2B2760`; dark icon
