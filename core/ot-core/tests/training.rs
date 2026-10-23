@@ -439,7 +439,7 @@ fn next_line_takes_back_when_shorter() {
 }
 
 #[test]
-fn a_line_already_shown_starts_three_moves_before_your_move() {
+fn a_line_already_shown_starts_five_half_moves_before_your_move() {
     let mut tree = RepertoireTree::default();
     tree.add("e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3");
     let nodes = tree.path(
@@ -465,13 +465,13 @@ fn a_line_already_shown_starts_three_moves_before_your_move() {
     let shown_to = |index: usize| nodes[..=index].iter().copied().collect::<HashSet<_>>();
     // not shown yet: from move 1
     assert_eq!(line(10).skip_index(&HashSet::new()), 0);
-    // shown as far as 7. Nxd4: start there, Nf6 Nc3 g6 are played, then Be3 is asked
-    assert_eq!(line(10).skip_index(&shown_to(7)), 7);
-    assert_eq!(line(10).skip_index(&shown_to(9)), 7);
-    // shown, but not as far as 3 moves before: from move 1
-    assert_eq!(line(10).skip_index(&shown_to(6)), 0);
-    // your move within 3 of the start: from move 1
-    assert_eq!(line(2).skip_index(&shown_to(9)), 0);
+    // shown as far as 3. d4: start there, cxd4 Nxd4 Nf6 Nc3 g6 are played, then Be3 is asked
+    assert_eq!(line(10).skip_index(&shown_to(5)), 5);
+    assert_eq!(line(10).skip_index(&shown_to(9)), 5);
+    // shown, but not as far as 5 half-moves before: from move 1
+    assert_eq!(line(10).skip_index(&shown_to(4)), 0);
+    // your move within 5 half-moves of the start: from move 1
+    assert_eq!(line(4).skip_index(&shown_to(9)), 0);
 }
 
 #[test]

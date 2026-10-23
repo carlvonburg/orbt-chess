@@ -1,8 +1,8 @@
 //! Study sessions over Anki's queue. Chess additions to Anki, kept minimal:
 //! - lines start at move 1 (or take back to where they part from the last line, when
 //!   shorter), and the practice mode decides who plays your earlier moves; when not taken
-//!   back, a line whose moves were already shown this session starts three moves before the
-//!   first move you play;
+//!   back, a line whose moves were already shown this session starts five half-moves before
+//!   the first move you play;
 //! - one line answers every queued card on it;
 //! - moves you play that aren't due are reviews ahead (filtered deck);
 //! - new cards are introduced a line at a time (most reached first), and a started line is
@@ -22,7 +22,8 @@ use crate::repertoire::{NodeId, RepertoireTree};
 /// Who plays your moves on the way to the move being asked (Chessbook's practice options).
 /// Every line starts from the initial position and shows every move; the next line takes moves
 /// back to where it parts from the last one when that is shorter than replaying from move 1,
-/// else skips the moves already shown this session, up to three before the first move you play.
+/// else skips the moves already shown this session, up to five half-moves before the first move
+/// you play.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PracticeMode {
@@ -88,6 +89,9 @@ pub struct StudyLine {
 }
 
 impl StudyLine {
+    /// Half-moves still played before your move when a line skips what was already shown.
+    pub const SKIP_LEAD: usize = 5;
+
     /// Where to start this line when the board shows `previous[shown]`: the index to take
     /// moves back to, when that is fewer moves than replaying from move 1 to the same point.
     /// None starts from move 1. The point is where the lines part, or earlier if one of your
@@ -120,11 +124,14 @@ impl StudyLine {
             .map(|(&i, _)| i)
     }
 
-    /// Where to start this line when it isn't taken back to: three moves before the first
-    /// move you play when the board already showed that position this session (and so every
+    /// Where to start this line when it isn't taken back to: `SKIP_LEAD` half-moves before
+    /// the first move you play when the board already showed that position this session (and so every
     /// move to it), else move 1.
     pub fn skip_index(&self, shown: &HashSet<NodeId>) -> usize {
-        let Some(start) = self.first_played().and_then(|i| i.checked_sub(3)) else {
+        let Some(start) = self
+            .first_played()
+            .and_then(|i| i.checked_sub(Self::SKIP_LEAD))
+        else {
             return 0;
         };
         match self.nodes.get(start) {

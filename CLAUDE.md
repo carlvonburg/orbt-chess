@@ -122,7 +122,7 @@ learn-ahead 20 min, queue order and daily limits are Anki's. The defaults (Anki'
 edited in Settings; a repertoire's options set its own limits; one-day changes are custom study
 (Study More Today). Chess additions, kept minimal and listed in `training/study.rs`: lines start at move 1
 (or take back to where they part from the last line, when shorter; else, when the line was
-already shown this session, three moves before the first move you play) and the practice mode
+already shown this session, five half-moves before the first move you play) and the practice mode
 decides who plays your earlier moves; one line answers every queued card on it; moves you play that aren't due are reviews ahead (filtered deck); new cards are
 introduced a line at a time (most reached first) and a started line is finished past the
 daily limit; reviews due the same day are ordered by reach. Grading is Again/Good only
