@@ -129,7 +129,7 @@ struct AnalysisScreen: View {
             guard let move = line.moves.first else { return nil }
             let rank = Double(index)
             return BoardArrow(from: move.from, to: move.to, style: .engine,
-                              width: max(0.1, 0.2 - rank * 0.04), opacity: max(0.35, 0.85 - rank * 0.2))
+                              width: max(0.1, 0.2 - rank * 0.04), opacity: max(0.3, 0.7 - rank * 0.25))
         }
     }
 

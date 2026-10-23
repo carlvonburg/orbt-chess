@@ -51,8 +51,8 @@ struct OutlineSheet: View {
                     .fontWeight(item.id == model.current ? .bold : .regular)
                     .lineLimit(2)
                 HStack(spacing: 6) {
-                    ProgressView(value: completion).tint(.green).frame(width: 60)
-                    if gaps > 0 { Text("\(gaps) gaps").font(.caption2).foregroundStyle(.orange) }
+                    CoverageBar(value: completion).frame(width: 60)
+                    if gaps > 0 { Text("\(gaps) gaps").font(.caption2).foregroundStyle(.attention) }
                 }
             }
         }
@@ -107,7 +107,7 @@ struct GapsSheet: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(text(for: gap)).font(.callout).lineLimit(2)
                             Text("Seen \(Format.seenEvery(gap.mass)) games")
-                                .font(.caption).foregroundStyle(.orange)
+                                .font(.caption).foregroundStyle(.attention)
                         }
                     }
                     .tint(.primary)

@@ -331,7 +331,7 @@ struct TranspositionNote: View {
 
     private func content(detail: String?) -> some View {
         HStack(alignment: .firstTextBaseline) {
-            Image(systemName: "arrow.triangle.branch").foregroundStyle(.blue)
+            Image(systemName: "arrow.triangle.branch").foregroundStyle(.done)
             VStack(alignment: .leading, spacing: 2) {
                 Text(inDraft ? "Transposed into" : "Transposes. Lines continue after").font(.callout)
                 Text(Format.moveList(model.tree.moves(to: target), startPly: model.tree.root.ply))
@@ -347,7 +347,7 @@ struct TranspositionNote: View {
             }
         }
         .padding(10)
-        .background(.blue.opacity(0.12), in: .rect(cornerRadius: 10))
+        .background(.fill.tertiary, in: .rect(cornerRadius: 10))
         .contentShape(Rectangle())
     }
 }
@@ -462,17 +462,17 @@ struct NodeHeader: View {
                     // Anki's "leech" tag: a move you keep forgetting
                     Label("Leech", systemImage: "ant.fill")
                         .font(.caption.weight(.semibold))
-                        .statusBadge(tint: .orange)
+                        .statusBadge(tint: .attention)
                         .accessibilityHint("You keep forgetting this move.")
                 }
             }
             CoverageCheckStatus(document: document)
             HStack(spacing: 12) {
-                progress("Built", value: info?.completion ?? 0, tint: .green)
+                progress("Built", value: info?.completion ?? 0)
                 Spacer(minLength: 0)
                 HStack(spacing: 0) {
                     if let gaps = info?.gapCount, gaps > 0 {
-                        Text("\(gaps.formatted()) \(gaps == 1 ? "gap" : "gaps")").foregroundStyle(.orange)
+                        Text("\(gaps.formatted()) \(gaps == 1 ? "gap" : "gaps")").foregroundStyle(.attention)
                         Text(" · ").foregroundStyle(.secondary)
                     }
                     Text("\(saved.formatted()) \(saved == 1 ? "move" : "moves")").foregroundStyle(.secondary)
@@ -486,7 +486,7 @@ struct NodeHeader: View {
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(10)
-                        .background(.yellow.opacity(0.15), in: .rect(cornerRadius: 8))
+                        .background(.fill.tertiary, in: .rect(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
             }
@@ -494,10 +494,10 @@ struct NodeHeader: View {
         .padding(.top, 4)
     }
 
-    private func progress(_ title: String, value: Double, tint: Color) -> some View {
+    private func progress(_ title: String, value: Double) -> some View {
         HStack(spacing: 6) {
             Text(title).font(.caption2).foregroundStyle(.secondary)
-            ProgressView(value: value).tint(tint)
+            CoverageBar(value: value)
             Text(Format.percent(value)).font(.caption2.monospacedDigit())
         }
     }
@@ -506,13 +506,13 @@ struct NodeHeader: View {
     private func statusChip(_ info: NodeCoverage?) -> some View {
         switch info?.status {
         case .gap:
-            Text("Your move is missing").font(.caption.weight(.semibold)).statusBadge(tint: .orange)
+            Text("Your move is missing").font(.caption.weight(.semibold)).statusBadge(tint: .attention)
         case .pending:
             Text("Stats not loaded yet").font(.caption).statusBadge()
         case .belowTarget:
             Text("Beyond your target").font(.caption).statusBadge()
         case .transposition:
-            Text("Transposes").font(.caption).statusBadge(tint: .blue)
+            Text("Transposes").font(.caption).statusBadge(tint: .done)
         case .alternative:
             Text("Alternative line").font(.caption).statusBadge()
         case .unknown:
@@ -636,7 +636,7 @@ struct ReplyRow: View {
                 if isGap {
                     Text("Gap").font(.caption2.weight(.bold)).foregroundStyle(.white)
                         .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(.orange, in: .capsule)
+                        .background(.attention, in: .capsule)
                         // A tag: in a narrow column the row's other parts give way, not its letters.
                         .fixedSize()
                 }
@@ -645,13 +645,13 @@ struct ReplyRow: View {
                     .foregroundStyle(.secondary).frame(width: 74, alignment: .trailing)
                 Group {
                     if inRepertoire && reply.required {
-                        ProgressView(value: reply.completion).tint(reply.completion >= 0.999 ? .green : .yellow)
+                        CoverageBar(value: reply.completion)
                     } else if reply.excluded {
                         Text("Excluded").font(.caption2).foregroundStyle(.secondary)
                     } else if !reply.required {
                         Text("Not needed").font(.caption2).foregroundStyle(.secondary)
                     } else {
-                        ProgressView(value: 0).tint(.orange)
+                        CoverageBar(value: 0)
                     }
                 }
                 .frame(width: 64)
@@ -677,7 +677,7 @@ struct YourMovePanel: View {
         if node.children.isEmpty {
             Label("Choose your move: play it on the board or pick a candidate.", systemImage: "hand.point.up.left")
                 .font(.callout)
-                .foregroundStyle(.orange)
+                .foregroundStyle(.attention)
                 .padding(.vertical, 8)
                 .builderRow(separator: false)
         }
@@ -722,7 +722,7 @@ struct CandidatesSection: View {
         ForEach(savedRows, id: \.0.uci) { played, move in
             row(uci: played.uci, san: played.san, move: move, total: stats?.total ?? 0, loading: loading)
                 .builderRow()
-                .listRowBackground(Color.green.opacity(0.08))
+                .listRowBackground(Rectangle().fill(.done.opacity(0.08)))
         }
         if collapsed {
             Button("Add Alternative Move", systemImage: "plus") { showOthers = true }
@@ -812,7 +812,7 @@ private struct ExcludeMove: ViewModifier {
                 }
                 .swipeActions(edge: .trailing) {
                     Button(title, systemImage: icon, action: toggle)
-                        .tint(reply.excluded ? .blue : .gray)
+                        .tint(.gray)
                 }
         } else {
             content
@@ -838,10 +838,10 @@ private struct DeleteMove: ViewModifier {
                 // Not .destructive: that role removes the row before the dialog is answered.
                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button("Delete", systemImage: "trash") { confirming = true }
-                        .tint(.red)
+                        .tint(ThemeColor.failure)
                     if let promote {
                         Button("Main", systemImage: "arrow.up.to.line", action: promote)
-                            .tint(.green)
+                            .tint(ThemeColor.done)
                             .accessibilityLabel("Make Main Move")
                     }
                 }
@@ -951,7 +951,7 @@ struct TranspositionIcon: View {
     var body: some View {
         Image(systemName: "arrow.triangle.branch")
             .font(.caption.weight(.semibold))
-            .foregroundStyle(.blue)
+            .foregroundStyle(.done)
             .accessibilityLabel("Transposes")
     }
 }
@@ -988,9 +988,9 @@ struct DraftPanel: View {
             }
             HStack(spacing: 8) {
                 if target != nil {
-                    Text("Transposed").font(.caption.weight(.semibold)).statusBadge(tint: .blue)
+                    Text("Transposed").font(.caption.weight(.semibold)).statusBadge(tint: .done)
                 } else if reached {
-                    Text("Coverage target reached").font(.caption.weight(.semibold)).statusBadge(tint: .green)
+                    Text("Coverage target reached").font(.caption.weight(.semibold)).statusBadge(tint: .done)
                 } else {
                     Text("New line, not saved").font(.caption).statusBadge()
                 }

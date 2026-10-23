@@ -15,6 +15,7 @@ struct OpeningTrainerApp: App {
         WindowGroup {
             RootView()
                 .environment(model)
+                .appTint()
                 // Settings-style forms on every platform: iOS's default, and on the Mac what
                 // System Settings uses (the Mac's default is a column layout).
                 .formStyle(.grouped)
@@ -43,6 +44,7 @@ struct OpeningTrainerApp: App {
         Settings {
             SettingsView()
                 .environment(model)
+                .appTint()
                 .formStyle(.grouped)
                 .frame(width: 480, height: 600)
         }

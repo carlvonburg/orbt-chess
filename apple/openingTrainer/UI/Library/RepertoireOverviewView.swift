@@ -57,10 +57,10 @@ struct RepertoireOverviewView: View {
                     if stats.gaps > 0 {
                         Text(stats.gaps == 1 ? "1 gap" : "\(stats.gaps.formatted()) gaps")
                             .font(.subheadline.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(.attention)
                     }
                 }
-                ProgressView(value: stats.completion).tint(.green)
+                CoverageBar(value: stats.completion)
                 CoverageCheckStatus(document: document)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
@@ -80,11 +80,11 @@ struct RepertoireOverviewView: View {
                     .font(.headline.monospacedDigit())
                 StudiedBar(progress: stats.progress)
                 FlowLayout {
-                    legend(stats.progress.learning, "learning", StudyColors.learningGroup)
-                    legend(stats.progress.young, "young", StudyColors.young)
-                    legend(stats.progress.mature, "mature", StudyColors.mature)
+                    legend(stats.progress.learning, "learning", ThemeColor.wrong.opacity(0.5))
+                    legend(stats.progress.young, "young", ThemeColor.done.opacity(0.5))
+                    legend(stats.progress.mature, "mature", ThemeColor.done)
                     if stats.progress.suspended > 0 {
-                        legend(stats.progress.suspended, "suspended", StudyColors.suspended)
+                        legend(stats.progress.suspended, "suspended", ThemeColor.inactive)
                     }
                 }
                 .font(.caption)
@@ -104,7 +104,7 @@ struct RepertoireOverviewView: View {
                 }
             } else {
                 Label(doneText(stats), systemImage: stats.progress.studied > 0 ? "checkmark.circle.fill" : "checkmark.circle")
-                    .foregroundStyle(stats.progress.studied > 0 ? AnyShapeStyle(.green) : AnyShapeStyle(.secondary))
+                    .foregroundStyle(stats.progress.studied > 0 ? AnyShapeStyle(.done) : AnyShapeStyle(.secondary))
             }
             if stats.progress.cards > 0 {
                 studyButton(stats).actionButton(prominent: !buildFirst(stats))
@@ -129,7 +129,7 @@ struct RepertoireOverviewView: View {
         }
     }
 
-    private func legend(_ value: Int64, _ label: String, _ color: Color) -> some View {
+    private func legend(_ value: Int64, _ label: String, _ color: ThemeColor) -> some View {
         HStack(spacing: 4) {
             Circle().fill(color).frame(width: 7, height: 7)
             Text("\(value.formatted()) \(label)").foregroundStyle(.secondary)
@@ -139,12 +139,12 @@ struct RepertoireOverviewView: View {
     /// Only the counts above zero, in Anki's colors.
     @ViewBuilder
     private func dueCounts(_ counts: Counts) -> some View {
-        if counts.new > 0 { due(counts.new, "new", StudyColors.new) }
-        if counts.learning > 0 { due(counts.learning, "learning", StudyColors.learning) }
-        if counts.review > 0 { due(counts.review, "review", StudyColors.review) }
+        if counts.new > 0 { due(counts.new, "new", ThemeColor.new) }
+        if counts.learning > 0 { due(counts.learning, "learning", ThemeColor.wrong) }
+        if counts.review > 0 { due(counts.review, "review", ThemeColor.done) }
     }
 
-    private func due(_ value: Int64, _ label: String, _ color: Color) -> some View {
+    private func due(_ value: Int64, _ label: String, _ color: ThemeColor) -> some View {
         Text("\(value.formatted()) \(label)")
             .foregroundStyle(color)
             .fontWeight(.semibold)

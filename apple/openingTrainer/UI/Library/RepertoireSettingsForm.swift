@@ -187,7 +187,7 @@ private struct TableDownloadRow: View {
                 .foregroundStyle(.secondary)
         }
         if let file, !coverage.isReady(database), let error = coverage.failures[file.file] {
-            Text(error).font(.footnote).foregroundStyle(.red)
+            Text(error).font(.footnote).foregroundStyle(.failure)
         }
     }
 }

@@ -38,9 +38,9 @@ struct StudyFinishedView: View {
         VStack(spacing: 6) {
             Image(systemName: studied ? "checkmark" : "tray")
                 .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(studied ? .green : .secondary)
+                .foregroundStyle(studied ? AnyShapeStyle(.done) : AnyShapeStyle(.secondary))
                 .frame(width: 64, height: 64)
-                .background(studied ? AnyShapeStyle(.green.opacity(0.18)) : AnyShapeStyle(.fill.tertiary), in: .circle)
+                .background(studied ? AnyShapeStyle(ThemeColor.done.opacity(0.18)) : AnyShapeStyle(.fill.tertiary), in: .circle)
             Text(studied ? (learningLater ? "Done for Now" : "Done for Today") : "Nothing to Study")
                 .font(.title2.weight(.semibold))
             if !studied {
@@ -50,7 +50,8 @@ struct StudyFinishedView: View {
             if today.streak.current > 0 {
                 Label("\(today.streak.current)-day streak", systemImage: "flame.fill")
                     .font(.subheadline)
-                    .foregroundStyle(today.streak.studiedToday ? .orange : .secondary)
+                    // At risk until something is studied today.
+                    .foregroundStyle(today.streak.studiedToday ? AnyShapeStyle(.primary) : AnyShapeStyle(.attention))
             }
         }
         .multilineTextAlignment(.center)
@@ -61,12 +62,12 @@ struct StudyFinishedView: View {
         let minutes = Int((Double(model.studiedMillis) / 60_000).rounded())
         return HStack(spacing: 10) {
             tile(model.answeredCount.formatted(), model.answeredCount == 1 ? "move" : "moves")
-            tile(Format.percent(Double(model.correctCount) / Double(model.answeredCount)), "correct", tint: .green)
+            tile(Format.percent(Double(model.correctCount) / Double(model.answeredCount)), "correct", tint: AnyShapeStyle(.done))
             tile(minutes < 1 ? "<1 min" : "\(minutes) min", "time")
         }
     }
 
-    private func tile(_ value: String, _ label: String, tint: Color = .primary) -> some View {
+    private func tile(_ value: String, _ label: String, tint: AnyShapeStyle = AnyShapeStyle(.primary)) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.title3.weight(.semibold).monospacedDigit()).foregroundStyle(tint)
             Text(label).font(.caption).foregroundStyle(.secondary)
@@ -86,9 +87,9 @@ struct StudyFinishedView: View {
             }
             StudiedBar(progress: progress, height: 8)
             FlowLayout {
-                legend(progress.learning, "learning", StudyColors.learningGroup)
-                legend(progress.young, "young", StudyColors.young)
-                legend(progress.mature, "mature", StudyColors.mature)
+                legend(progress.learning, "learning", ThemeColor.wrong.opacity(0.5))
+                legend(progress.young, "young", ThemeColor.done.opacity(0.5))
+                legend(progress.mature, "mature", ThemeColor.done)
             }
             .font(.caption)
         }
@@ -96,7 +97,7 @@ struct StudyFinishedView: View {
         .background(.fill.quinary, in: .rect(cornerRadius: 16))
     }
 
-    private func legend(_ value: Int64, _ label: String, _ color: Color) -> some View {
+    private func legend(_ value: Int64, _ label: String, _ color: ThemeColor) -> some View {
         HStack(spacing: 4) {
             Circle().fill(color).frame(width: 7, height: 7)
             Text("\(value) \(label)").foregroundStyle(.secondary)

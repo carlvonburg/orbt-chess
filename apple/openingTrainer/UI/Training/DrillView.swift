@@ -340,14 +340,14 @@ struct DrillView: View {
         Group {
             switch model.feedback {
             case .correct:
-                Label("Correct", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                Label("Correct", systemImage: "checkmark.circle.fill").foregroundStyle(.done)
             case .wrong(let expected):
-                Label("Not quite, play \(expected.san)", systemImage: "xmark.circle.fill").foregroundStyle(.red)
+                Label("Not quite, play \(expected.san)", systemImage: "xmark.circle.fill").foregroundStyle(.wrong)
             case .alternative:
                 Label("That's your alternative. Play your main move.", systemImage: "arrow.triangle.branch")
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(.attention)
             case .newMove(let move):
-                Label("New move: play \(move.san)", systemImage: "sparkles").foregroundStyle(.blue)
+                Label("New move: play \(move.san)", systemImage: "sparkles").foregroundStyle(.new)
             case .none:
                 if model.isUserTurn {
                     Label("Your move", systemImage: "circle.fill")
@@ -433,9 +433,9 @@ struct StudyCountsView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            number(counts.new, .blue, .new)
-            number(counts.learning, .red, .learning)
-            number(counts.review, .green, .review)
+            number(counts.new, .new, .new)
+            number(counts.learning, .wrong, .learning)
+            number(counts.review, .done, .review)
         }
         // Next to the status the numbers never truncate; the status wraps instead.
         .fixedSize()
@@ -443,7 +443,7 @@ struct StudyCountsView: View {
         .accessibilityLabel("\(counts.new) new, \(counts.learning) learning, \(counts.review) to review")
     }
 
-    private func number(_ value: Int64, _ color: Color, _ kind: QueueKind) -> some View {
+    private func number(_ value: Int64, _ color: ThemeColor, _ kind: QueueKind) -> some View {
         Text(value.formatted())
             .foregroundStyle(color)
             .underline(highlight == kind)
@@ -457,13 +457,13 @@ struct StudyCountsList: View {
 
     var body: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 10) {
-            row(counts.new, .blue, .new, "New", "Moves you haven't studied yet")
-            row(counts.learning, .red, .learning, "Learning", "Moves you're learning, shown again within minutes")
-            row(counts.review, .green, .review, "To Review", "Learned moves due today")
+            row(counts.new, .new, .new, "New", "Moves you haven't studied yet")
+            row(counts.learning, .wrong, .learning, "Learning", "Moves you're learning, shown again within minutes")
+            row(counts.review, .done, .review, "To Review", "Learned moves due today")
         }
     }
 
-    private func row(_ value: Int64, _ color: Color, _ kind: QueueKind, _ title: String, _ detail: String) -> some View {
+    private func row(_ value: Int64, _ color: ThemeColor, _ kind: QueueKind, _ title: String, _ detail: String) -> some View {
         GridRow {
             Text(value.formatted())
                 .font(.title2.monospacedDigit().weight(.semibold))
