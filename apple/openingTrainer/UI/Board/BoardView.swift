@@ -394,10 +394,11 @@ struct ArrowsView: View {
                 headPath.addLine(to: CGPoint(x: shaftEnd.x - px * head * 0.6, y: shaftEnd.y - py * head * 0.6))
                 headPath.closeSubpath()
 
-                // Drawn opaque in a layer that takes the arrow's opacity, so where the shaft
-                // meets the head nothing shows through twice.
-                ctx.drawLayer { layer in
-                    layer.opacity = arrow.opacity
+                // Drawn opaque in a layer, which is faded as a whole when it is composited, so
+                // where the shaft meets the head nothing shows through twice.
+                var faded = ctx
+                faded.opacity = arrow.opacity
+                faded.drawLayer { layer in
                     let color = GraphicsContext.Shading.color(arrow.color(theme))
                     var shaft = Path()
                     shaft.move(to: begin)
