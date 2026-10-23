@@ -247,12 +247,12 @@ private struct DepthRow: View {
                 .fixedSize()
             // Study time grows roughly with the number of games covered.
             Capsule()
-                .fill(Color.accentColor.opacity(selected ? 1 : 0.45))
+                .fill(.tint.opacity(selected ? 1 : 0.45))
                 .frame(width: games.map { 6 + 40 * min(Double($0) / 800, 1.2) } ?? 0, height: 5)
                 .frame(width: 54, alignment: .leading)
             Image(systemName: "checkmark")
                 .font(.body.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(.tint)
                 .opacity(selected ? 1 : 0)
         }
         .contentShape(Rectangle())

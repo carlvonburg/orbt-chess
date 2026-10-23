@@ -149,10 +149,11 @@ with the 94 MB net downloaded in Settings (checked against its name first: Stock
 the process when a net does not load). Settings: search time, lines (1–5), cloud evals.
 
 ## Colors (see `Design/COLORS.md`, roles in `UI/Components/Palette.swift`)
-Two layers. The accent (the app color from Settings: on the Mac Automatic by default, the system
-accent mapped to its nearest app color and followed live; elsewhere Multicolor: blue controls,
+Two layers. The accent (the app color from Settings, Multicolor by default: blue controls,
 board and Built bars, Anki's colors for studying (new blue, learning red, review and mature
-green), gaps and streak orange; or any of the Mac's accent colors and indigo) is for controls, with one exception: progress is tinted like
+green), gaps and streak orange; or any of the Mac's accent colors and indigo; on the Mac it
+follows the system accent: when that changes, the app color becomes it, Multicolor for
+Multicolor) is for controls, with one exception: progress is tinted like
 Apple's accented widgets (HIG Widgets, Complications): coverage bars, gap counts, the studied
 bar and the due counts use the app color (mature, review, covered; young at half), the
 secondary label gray (learning) and the label color (new, not studied), each count colored
@@ -166,7 +167,7 @@ meaning's hue, the theme gives that meaning a stand-in from another family, app-
 user to act is colored; a color is removed only where nothing gets less clear. Prefer system
 colors and semantic styles (Apple themes them); custom values only as asset color sets with
 Dark and High Contrast variants. The board has its own theme (slate tinted toward the app
-color, with Automatic the Mac accent's nearest app color); its arrows, hint and ✓ are one ink (the app color 55%
+color); its arrows, hint and ✓ are one ink (the app color 55%
 toward black, told apart by width, opacity and dashes), its highlights the app color, the ✕
 red and the engine's lines graphite. A new meaning takes a
 free system color, a `Palette.swift` role and a row in `Design/COLORS.md`. The commit hook

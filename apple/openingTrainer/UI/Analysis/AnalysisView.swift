@@ -408,7 +408,7 @@ struct AnalysisMoveList: View {
                 .padding(.vertical, 3)
                 .background {
                     if move.isCurrent {
-                        RoundedRectangle(cornerRadius: 6).fill(Color.accentColor.opacity(0.25))
+                        RoundedRectangle(cornerRadius: 6).fill(.tint.opacity(0.25))
                     }
                 }
             }
@@ -464,7 +464,7 @@ struct AnalysisMoveChip: View {
         .padding(.vertical, 3)
         .background {
             if move.isCurrent {
-                RoundedRectangle(cornerRadius: 6).fill(Color.accentColor.opacity(0.25))
+                RoundedRectangle(cornerRadius: 6).fill(.tint.opacity(0.25))
             }
         }
     }

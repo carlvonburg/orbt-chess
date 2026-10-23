@@ -283,7 +283,7 @@ private struct CalendarCard: View {
                         ForEach(0..<weeks, id: \.self) { week in
                             let cell = cells.first { $0.week == week && $0.weekday == weekday }
                             RoundedRectangle(cornerRadius: 2)
-                                .fill(cell.map { $0.count > 0 ? Color.accentColor.opacity(0.25 + 0.75 * Double($0.count) / Double(maxCount)) : Color.secondary.opacity(0.12) } ?? .clear)
+                                .fill(cell.map { $0.count > 0 ? AnyShapeStyle(.tint.opacity(0.25 + 0.75 * Double($0.count) / Double(maxCount))) : AnyShapeStyle(Color.secondary.opacity(0.12)) } ?? AnyShapeStyle(.clear))
                                 .aspectRatio(1, contentMode: .fit)
                                 .accessibilityLabel(cell.map { "\($0.count) moves" } ?? "")
                         }
@@ -427,7 +427,7 @@ private struct HistogramCard: View {
             } else {
                 Chart(bins, id: \.start) { bin in
                     BarMark(x: .value(unit, bin.start), y: .value("Moves", bin.count))
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(.tint)
                         .cornerRadius(4)
                 }
                 .chartXAxisLabel(unit)
@@ -475,7 +475,7 @@ private struct HourlyCard: View {
         StatCard(title: "Hourly Breakdown", subtitle: "Answers by hour of day; tap a bar for the share answered correctly.") {
             Chart(Array(hours.enumerated()), id: \.offset) { hour, h in
                 BarMark(x: .value("Hour", hour), y: .value("Answers", h.total))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(.tint)
                     .cornerRadius(4)
                 if selected == hour {
                     RuleMark(x: .value("Hour", hour))

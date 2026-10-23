@@ -425,7 +425,7 @@ struct MoveChip: View {
         .padding(.vertical, 4)
         .background {
             if isCurrent {
-                RoundedRectangle(cornerRadius: 6).fill(Color.accentColor.opacity(0.25))
+                RoundedRectangle(cornerRadius: 6).fill(.tint.opacity(0.25))
             }
         }
         .overlay {
