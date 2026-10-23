@@ -415,6 +415,7 @@ fn simulate(mut session: StudySession, initial: &HashMap<Epd, Card>, max_lines: 
     let mut cards = initial.clone();
     let mut now = start.now;
     let mut previous: Option<Vec<NodeId>> = None;
+    let mut shown: HashSet<NodeId> = HashSet::new();
     let mut answers = 0;
     let scheduler = Scheduler::default();
     let mut out = String::new();
@@ -434,6 +435,7 @@ fn simulate(mut session: StudySession, initial: &HashMap<Epd, Card>, max_lines: 
         let resume = previous
             .as_ref()
             .and_then(|p| line.resume_index(p, p.len() - 1));
+        let skip = line.skip_index(&shown);
         let roles: Vec<String> = line
             .roles
             .iter()
@@ -444,7 +446,11 @@ fn simulate(mut session: StudySession, initial: &HashMap<Epd, Card>, max_lines: 
             "+{}s {counts:?} {}{}\n  roles: {}",
             now - start.now,
             line_san(&tree, &line.nodes),
-            resume.map_or(String::new(), |r| format!(" (from {r})")),
+            match resume {
+                Some(r) => format!(" (from {r})"),
+                None if skip > 0 => format!(" (skip to {skip})"),
+                None => String::new(),
+            },
             roles.join(", ")
         )
         .unwrap();
@@ -494,6 +500,7 @@ fn simulate(mut session: StudySession, initial: &HashMap<Epd, Card>, max_lines: 
             }
             session.did_play(&epd);
         }
+        shown.extend(line.nodes.iter().copied());
         previous = Some(line.nodes.clone());
     }
     writeln!(

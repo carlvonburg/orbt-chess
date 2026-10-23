@@ -46,17 +46,17 @@ branch [d4]:
   roles: 1 auto, 3 queued, 5 queued
   3 Good filtered: Review/Review due 102 ivl 2
   5 Good filtered: Review/Review due 102 ivl 2
-+105s Counts { new: 0, learning: 3, review: 0 } d4 d5 c4 c6 Nf3 Nf6
++105s Counts { new: 0, learning: 3, review: 0 } d4 d5 c4 c6 Nf3 Nf6 (skip to 2)
   roles: 1 auto, 3 auto, 5 queued
   5 Good filtered: Learn/Learn due +811s ivl 0
 +126s Counts { new: 0, learning: 3, review: 0 } d4 d5 Bf4 Nf6 Nf3 c6
   roles: 1 auto, 3 queued, 5 queued
   3 Good filtered: Review/Review due 102 ivl 2
   5 Again filtered: Learn/Learn due +207s ivl 0
-+147s Counts { new: 0, learning: 2, review: 0 } d4 d5 c4 c6 Nf3 Nf6
++147s Counts { new: 0, learning: 2, review: 0 } d4 d5 c4 c6 Nf3 Nf6 (skip to 2)
   roles: 1 auto, 3 auto, 5 queued
   5 Good filtered: Review/Review due 101 ivl 1
-+168s Counts { new: 0, learning: 1, review: 0 } d4 d5 Bf4 Nf6 Nf3 c6
++168s Counts { new: 0, learning: 1, review: 0 } d4 d5 Bf4 Nf6 Nf3 c6 (skip to 2)
   roles: 1 auto, 3 auto, 5 queued
   5 Good filtered: Learn/Learn due +916s ivl 0
 +189s Counts { new: 0, learning: 1, review: 0 } d4 d5 Bf4 Nf6 Nf3 c6 (from 5)

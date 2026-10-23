@@ -439,6 +439,42 @@ fn next_line_takes_back_when_shorter() {
 }
 
 #[test]
+fn a_line_already_shown_starts_three_moves_before_your_move() {
+    let mut tree = RepertoireTree::default();
+    tree.add("e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3");
+    let nodes = tree.path(
+        tree.find("e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3")
+            .unwrap(),
+    );
+    let line = |asked: usize| {
+        let mut roles = BTreeMap::new();
+        for i in (0..nodes.len() - 1).step_by(2) {
+            let role = if i == asked {
+                MoveRole::Answer(AnswerKind::Queued)
+            } else {
+                MoveRole::Auto
+            };
+            roles.insert(i, role);
+        }
+        StudyLine {
+            nodes: nodes.clone(),
+            roles,
+            target: tree[nodes[asked]].epd.clone(),
+        }
+    };
+    let shown_to = |index: usize| nodes[..=index].iter().copied().collect::<HashSet<_>>();
+    // not shown yet: from move 1
+    assert_eq!(line(10).skip_index(&HashSet::new()), 0);
+    // shown as far as 7. Nxd4: start there, Nf6 Nc3 g6 are played, then Be3 is asked
+    assert_eq!(line(10).skip_index(&shown_to(7)), 7);
+    assert_eq!(line(10).skip_index(&shown_to(9)), 7);
+    // shown, but not as far as 3 moves before: from move 1
+    assert_eq!(line(10).skip_index(&shown_to(6)), 0);
+    // your move within 3 of the start: from move 1
+    assert_eq!(line(2).skip_index(&shown_to(9)), 0);
+}
+
+#[test]
 fn line_run_and_alternatives() {
     let tree = white_tree();
     let t = trainer(&tree, Side::White);

@@ -1,6 +1,8 @@
 //! Study sessions over Anki's queue. Chess additions to Anki, kept minimal:
 //! - lines start at move 1 (or take back to where they part from the last line, when
-//!   shorter), and the practice mode decides who plays your earlier moves;
+//!   shorter), and the practice mode decides who plays your earlier moves; when not taken
+//!   back, a line whose moves were already shown this session starts three moves before the
+//!   first move you play;
 //! - one line answers every queued card on it;
 //! - moves you play that aren't due are reviews ahead (filtered deck);
 //! - new cards are introduced a line at a time (most reached first), and a started line is
@@ -19,7 +21,8 @@ use crate::repertoire::{NodeId, RepertoireTree};
 
 /// Who plays your moves on the way to the move being asked (Chessbook's practice options).
 /// Every line starts from the initial position and shows every move; the next line takes moves
-/// back to where it parts from the last one when that is shorter than replaying from move 1.
+/// back to where it parts from the last one when that is shorter than replaying from move 1,
+/// else skips the moves already shown this session, up to three before the first move you play.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum PracticeMode {
@@ -103,10 +106,31 @@ impl StudyLine {
             return None;
         }
         let mut start = shared - 1;
-        if let Some((&played, _)) = self.roles.iter().find(|(_, r)| **r != MoveRole::Auto) {
+        if let Some(played) = self.first_played() {
             start = start.min(played);
         }
         (shown - start < start).then_some(start)
+    }
+
+    /// Index of the first move you play on the line (asked or practiced).
+    pub fn first_played(&self) -> Option<usize> {
+        self.roles
+            .iter()
+            .find(|(_, r)| **r != MoveRole::Auto)
+            .map(|(&i, _)| i)
+    }
+
+    /// Where to start this line when it isn't taken back to: three moves before the first
+    /// move you play when the board already showed that position this session (and so every
+    /// move to it), else move 1.
+    pub fn skip_index(&self, shown: &HashSet<NodeId>) -> usize {
+        let Some(start) = self.first_played().and_then(|i| i.checked_sub(3)) else {
+            return 0;
+        };
+        match self.nodes.get(start) {
+            Some(node) if start > 0 && shown.contains(node) => start,
+            _ => 0,
+        }
     }
 }
 

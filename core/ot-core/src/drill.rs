@@ -70,6 +70,8 @@ pub struct Drill {
     pub studied_millis: i64,
     /// Cards already answered on the current line (a wrong try answers once).
     answered_on_line: HashSet<Epd>,
+    /// Every position the board showed this session, for skipping moves already seen.
+    shown: HashSet<NodeId>,
     turn_started_ms: i64,
 }
 
@@ -88,6 +90,7 @@ impl Drill {
             correct_count: 0,
             studied_millis: 0,
             answered_on_line: HashSet::new(),
+            shown: HashSet::new(),
             turn_started_ms: 0,
         }
     }
@@ -210,6 +213,17 @@ impl Drill {
 
     /// One step of the rewind or autoplay; the platform calls it on its timer.
     pub fn step(&mut self, now_ms: i64) {
+        self.play_step(now_ms);
+        self.mark_shown();
+    }
+
+    fn mark_shown(&mut self) {
+        if let Some(run) = &self.run {
+            self.shown.insert(run.current_node());
+        }
+    }
+
+    fn play_step(&mut self, now_ms: i64) {
         match self.phase {
             Phase::Rewinding => {
                 let Some((line, start)) = self.pending.clone() else {
@@ -309,6 +323,7 @@ impl Drill {
                 self.show_hint = false;
                 self.feedback = Feedback::Correct;
                 self.phase = Phase::Autoplay;
+                self.mark_shown();
             }
             LineOutcome::Alternative => self.feedback = Feedback::Alternative,
             LineOutcome::Wrong { expected } => {
@@ -440,7 +455,8 @@ impl Drill {
     }
 
     /// The next line, or Finished. Takes moves back to where the lines part when that is
-    /// shorter than replaying from move 1.
+    /// shorter than replaying from move 1; else skips the moves already shown this session,
+    /// up to three before the first move you play.
     pub fn next_line(&mut self, doc: &Repertoire, timing: &SchedTiming) {
         let cards = doc.sidecar().cards();
         let Some(session) = &mut self.session else {
@@ -471,8 +487,10 @@ impl Drill {
                 self.phase = Phase::Rewinding;
             }
             None => {
-                self.run = Some(LineRun::new(trainer, next.nodes, 0));
+                let start = next.skip_index(&self.shown);
+                self.run = Some(LineRun::new(trainer, next.nodes, start));
                 self.phase = Phase::Autoplay;
+                self.mark_shown();
             }
         }
     }
