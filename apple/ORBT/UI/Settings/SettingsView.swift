@@ -68,7 +68,7 @@ struct SettingsView: View {
                 EngineSettingsSection()
 
                 Section {
-                    LabeledContent("Storage", value: model.library.usesICloud ? "iCloud Drive › ORBT" : "On this device")
+                    LabeledContent("Storage", value: model.library.usesICloud ? "iCloud Drive › ORBT Chess" : "On this device")
                     LabeledContent("Cached positions", value: cacheCount.formatted())
                     Button("Clear Statistics Cache", role: .destructive) {
                         model.stats.clear()

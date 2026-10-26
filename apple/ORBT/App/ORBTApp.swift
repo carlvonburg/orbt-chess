@@ -40,7 +40,7 @@ struct ORBTApp: App {
             }
         }
         #if os(macOS)
-        // ORBT > Settings… (⌘,), as on every Mac app.
+        // ORBT Chess > Settings… (⌘,), as on every Mac app.
         Settings {
             SettingsView()
                 .environment(model)

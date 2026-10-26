@@ -23,7 +23,7 @@ nonisolated struct RepertoireEntry: Identifiable, Equatable, Sendable {
     }
 }
 
-/// The repertoires in the app's iCloud Drive folder ("ORBT" in Files). Falls back
+/// The repertoires in the app's iCloud Drive folder ("ORBT Chess" in Files). Falls back
 /// to the local Documents folder without iCloud. Imported PGNs are copied into this folder.
 @Observable
 final class RepertoireLibrary {

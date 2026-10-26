@@ -1,9 +1,9 @@
-# ORBT
+# ORBT Chess
 
 ORBT (said "orbit": Opening Repertoire Builder & Trainer) is a free, open-source opening
 repertoire trainer for iPhone, iPad and Mac, in the spirit of Chessbook, without a subscription.
 
-- **Your repertoire is a PGN** in iCloud Drive (Files › ORBT). Create one, or
+- **Your repertoire is a PGN** in iCloud Drive (Files › ORBT Chess). Create one, or
   import an existing PGN, which is copied into that folder. Every edit is written to the file immediately, and changes from other devices
   are merged in.
 - **Coverage** from the Lichess opening explorer (masters, or Lichess games filtered by

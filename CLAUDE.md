@@ -1,7 +1,8 @@
-# ORBT (Opening Repertoire Builder & Trainer)
+# ORBT Chess (ORBT: Opening Repertoire Builder & Trainer)
 
 Said "orbit"; website orbtchess.org. Identifiers use the domain: bundle ID `org.orbtchess.orbt`,
-iCloud container `iCloud.org.orbtchess.orbt` (the Files folder is "ORBT").
+iCloud container `iCloud.org.orbtchess.orbt` (the Files folder is "ORBT Chess").
+Users see "ORBT Chess" (display and bundle name); code, folders and identifiers say ORBT.
 
 Open-source (AGPL-3.0), subscription-free alternative to Chessbook for iPhone, iPad and Mac.
 A Rust core shared by every platform, with a SwiftUI app (iOS/iPadOS 26 and native macOS 26,
