@@ -78,6 +78,7 @@ struct InlineStatistics: View {
 
 /// The period, then the cards: one column on a phone, as many as fit on iPad and Mac.
 struct StatisticsSummary: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Bindable var model: StatisticsModel
 
     var body: some View {
@@ -89,6 +90,8 @@ struct StatisticsSummary: View {
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
+                    // Anki's calendar is as wide as the page: a year where it fits.
+                    StreakCard(graphs: graphs, weeks: isRegularWidth(sizeClass) ? 53 : 26)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 320), spacing: 16, alignment: .top)], spacing: 16) {
                         cards(graphs)
                     }
@@ -107,7 +110,6 @@ struct StatisticsSummary: View {
     private func cards(_ graphs: Graphs) -> some View {
         let range = model.range
         if let recall = model.expectedRecall { ExpectedRecallCard(recall: recall) }
-        StreakCard(graphs: graphs)
         ReviewsCard(graphs: graphs, range: range)
         MovesCard(graphs: graphs, range: range)
         UpcomingCard(graphs: graphs, range: range)
@@ -118,6 +120,7 @@ struct StatisticsSummary: View {
         }
         TimeOfDayCard(graphs: graphs, range: range)
         RecallCard(graphs: graphs, range: range)
+        IntervalsCard(graphs: graphs)
         if model.document != nil { WeakestMovesCard(model: model) }
     }
 }
@@ -139,10 +142,13 @@ private struct ExpectedRecallCard: View {
     }
 }
 
-/// The streak and Anki's calendar: the last 26 weeks, a square a day, darker the more answers.
+/// The streak and Anki's calendar: a square a day, darker the more answers, a year where it
+/// fits (half a year on a phone); pointing at a day shows its answers.
 private struct StreakCard: View {
     let graphs: Graphs
-    private static let weeks = 26
+    let weeks: Int
+    @State private var selectedWeek: String?
+    @State private var selectedWeekday: String?
 
     private struct Cell: Identifiable {
         let week: Int
@@ -157,13 +163,17 @@ private struct StreakCard: View {
         let counts = graphs.reviews().count.intKeys.mapValues { Int($0.total) }
         let cells = cells(counts)
         let maxCount = max(cells.map(\.count).max() ?? 1, 1)
-        let studied = cells.filter { $0.count > 0 }.count
+        let studied = cells.filter { $0.count > 0 }
         let months = cells.filter { Calendar.current.component(.day, from: $0.date) == 1 }
+        let selected = cells.first { String($0.week) == selectedWeek && String($0.weekday) == selectedWeekday }
         StatCard(title: "Streak", systemImage: "flame.fill", color: .todo) {
             HStack(alignment: .firstTextBaseline) {
                 StatValue(value: streak.current.formatted(), unit: streak.current == 1 ? "day" : "days")
                 Spacer()
-                if !streak.studiedToday && streak.current > 0 {
+                if let selected {
+                    Text("\(selected.date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))): \(answersText(selected.count))")
+                        .font(.footnote).foregroundStyle(.secondary).monospacedDigit()
+                } else if !streak.studiedToday && streak.current > 0 {
                     Text("Study today to keep it").font(.footnote).foregroundStyle(.todo)
                 }
             }
@@ -174,8 +184,9 @@ private struct StreakCard: View {
                     .foregroundStyle(cell.count > 0
                                      ? AnyShapeStyle(ThemeColor.todo.opacity(0.3 + 0.7 * Double(cell.count) / Double(maxCount)))
                                      : AnyShapeStyle(Color.secondary.opacity(0.15)))
+                    .opacity(selected == nil || selected?.id == cell.id ? 1 : 0.5)
             }
-            .chartXScale(domain: (0..<Self.weeks).map(String.init))
+            .chartXScale(domain: (0..<weeks).map(String.init))
             .chartYScale(domain: (0..<7).map(String.init))
             .chartXAxis {
                 AxisMarks(values: months.map { String($0.week) }) { value in
@@ -188,10 +199,28 @@ private struct StreakCard: View {
                 }
             }
             .chartYAxis(.hidden)
-            .aspectRatio(CGFloat(Self.weeks) / 7, contentMode: .fit)
-            .accessibilityLabel("Studied on \(studied) of the last \(Self.weeks * 7) days")
-            Footnote(text: "Longest streak \(streak.longest.formatted()) \(streak.longest == 1 ? "day" : "days") · studied on \(studied) days in 6 months")
+            .chartXSelection(value: $selectedWeek)
+            .chartYSelection(value: $selectedWeekday)
+            .aspectRatio(CGFloat(weeks) / 7, contentMode: .fit)
+            .accessibilityLabel("Studied on \(studied.count) of the last \(cells.count) days")
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 32) { metrics(streak, studied: studied, days: cells.count) }
+                LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)],
+                          alignment: .leading, spacing: 8) {
+                    metrics(streak, studied: studied, days: cells.count)
+                }
+            }
         }
+    }
+
+    @ViewBuilder
+    private func metrics(_ streak: Streak, studied: [Cell], days: Int) -> some View {
+        let answers = studied.reduce(0) { $0 + $1.count }
+        Metric(title: "Longest streak", value: streak.longest.formatted(), unit: streak.longest == 1 ? "day" : "days")
+        Metric(title: "Days studied", value: studied.count.formatted(),
+               unit: "of \(days.formatted()) (\(percent(Double(studied.count) / Double(max(days, 1)))))")
+        Metric(title: "On a day studied", value: studied.isEmpty ? "—" : (answers / studied.count).formatted(), unit: "answers")
+        Metric(title: "Answers", value: answers.formatted(), unit: weeks > 26 ? "this year" : "in 6 months")
     }
 
     /// Up to today, the weeks starting on the locale's first weekday.
@@ -200,9 +229,9 @@ private struct StreakCard: View {
         let today = calendar.startOfDay(for: .now)
         guard let thisWeek = calendar.dateInterval(of: .weekOfYear, for: today)?.start else { return [] }
         var cells: [Cell] = []
-        for week in 0..<Self.weeks {
+        for week in 0..<weeks {
             for weekday in 0..<7 {
-                guard let date = calendar.date(byAdding: .day, value: (week - Self.weeks + 1) * 7 + weekday, to: thisWeek),
+                guard let date = calendar.date(byAdding: .day, value: (week - weeks + 1) * 7 + weekday, to: thisWeek),
                       date <= today else { continue }
                 let day = calendar.dateComponents([.day], from: today, to: date).day ?? 0
                 cells.append(Cell(week: week, weekday: weekday, date: date, count: counts[day] ?? 0))
@@ -217,6 +246,7 @@ private struct ReviewsCard: View {
     let graphs: Graphs
     let range: GraphRange
     @State private var selected: Date?
+    @State private var showTime = false
 
     private struct Bar: Identifiable {
         let date: Date
@@ -229,24 +259,33 @@ private struct ReviewsCard: View {
         let summary = graphs.reviewsSummary(range: range)
         let first = 1 - Int(summary.periodDays)
         let unit = range.binUnit
-        let bars = bars(graphs.reviews().count.intKeys.filter { (first...0).contains($0.key) }, unit: unit)
+        let reviews = graphs.reviews()
+        let bars = bars((showTime ? reviews.time : reviews.count).intKeys.filter { (first...0).contains($0.key) }, unit: unit)
         let totals = Dictionary(grouping: bars, by: \.kind).mapValues { $0.reduce(0) { $0 + $1.value } }
         let selectedBin = selected.flatMap { Calendar.current.dateInterval(of: unit, for: $0)?.start }
         StatCard(title: "Reviews", systemImage: "chart.bar.fill") {
             HStack(alignment: .firstTextBaseline) {
                 if let selectedBin {
-                    StatValue(value: bars.filter { $0.date == selectedBin }.reduce(0) { $0 + $1.value }.formatted(), unit: "answers")
-                    Spacer()
+                    let total = bars.filter { $0.date == selectedBin }.reduce(0) { $0 + $1.value }
+                    StatValue(value: value(total), unit: showTime ? nil : "answers")
                     Text(StatDay.title(selectedBin, unit)).font(.footnote).foregroundStyle(.secondary)
                 } else {
-                    StatValue(value: (Double(summary.answers) / Double(max(summary.periodDays, 1))).formatted(.number.precision(.fractionLength(0))),
-                              unit: "answers a day")
-                    Spacer()
-                    Text(range.periodTitle).font(.footnote).foregroundStyle(.secondary)
+                    let total = Int(showTime ? summary.millis : summary.answers)
+                    StatValue(value: value(total / Int(max(summary.periodDays, 1))), unit: showTime ? "a day" : "answers a day")
                 }
+                Spacer()
+                Picker("Show", selection: $showTime) {
+                    Text("Answers").tag(false)
+                    Text("Time").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
+                .fixedSize()
             }
             Chart(bars) { bar in
-                BarMark(x: .value("Day", bar.date, unit: unit), y: .value("Answers", bar.value))
+                BarMark(x: .value("Day", bar.date, unit: unit),
+                        y: .value(showTime ? "Minutes" : "Answers", showTime ? Double(bar.value) / 60_000 : Double(bar.value)))
                     .foregroundStyle(by: .value("Kind", bar.kind))
                     .opacity(selectedBin == nil || selectedBin == bar.date ? 1 : 0.4)
             }
@@ -257,13 +296,17 @@ private struct ReviewsCard: View {
             .frame(height: 160)
             FlowLayout(spacing: 12) {
                 ForEach(ReviewKind.allCases.filter { (totals[$0] ?? 0) > 0 }, id: \.self) { kind in
-                    LegendItem(name: kind.rawValue, color: kind.color, value: (totals[kind] ?? 0).formatted())
+                    LegendItem(name: kind.rawValue, color: kind.color, value: value(totals[kind] ?? 0))
                 }
             }
-            Footnote(text: "Studied \(summary.daysStudied) of \(summary.periodDays) days · \(durationText(millis: Int(summary.millis))) in all"
+            Footnote(text: "\(range.periodTitle): studied \(summary.daysStudied) of \(summary.periodDays) days · \(answersText(Int(summary.answers))) in \(durationText(millis: Int(summary.millis)))"
                      + (summary.answers > 0 ? " · \(durationText(millis: Int(summary.millis / summary.answers))) an answer" : ""))
         }
         .onChange(of: range) { selected = nil }
+    }
+
+    private func value(_ n: Int) -> String {
+        showTime ? durationText(millis: n) : n.formatted()
     }
 
     private func bars(_ days: [Int: ReviewCounts], unit: Calendar.Component) -> [Bar] {
@@ -456,7 +499,8 @@ private struct BranchRetentionCard: View {
     }
 }
 
-/// Anki's Hourly Breakdown: answers by hour of day, and the share answered correctly.
+/// Anki's Hourly Breakdown: answers by hour (bars), and the share answered correctly (the
+/// line, on the trailing axis).
 private struct TimeOfDayCard: View {
     let graphs: Graphs
     let range: GraphRange
@@ -464,6 +508,7 @@ private struct TimeOfDayCard: View {
 
     var body: some View {
         let hours = graphs.hours(range: range)
+        let top = Double(max(hours.map(\.total).max() ?? 1, 1))
         let busiest = hours.indices.max { hours[$0].total < hours[$1].total }
         StatCard(title: "Time of Day", systemImage: "clock.fill") {
             if let hour = selected ?? busiest, hours[hour].total > 0 {
@@ -475,26 +520,44 @@ private struct TimeOfDayCard: View {
             } else {
                 Footnote(text: "No answers in this period.")
             }
-            Chart(Array(hours.enumerated()), id: \.offset) { hour, h in
-                AreaMark(x: .value("Hour", hour), y: .value("Answers", h.total))
-                    .interpolationMethod(.monotone)
-                    .foregroundStyle(.tint.opacity(0.25))
-                LineMark(x: .value("Hour", hour), y: .value("Answers", h.total))
-                    .interpolationMethod(.monotone)
-                    .foregroundStyle(.tint)
-                if selected == hour {
-                    RuleMark(x: .value("Hour", hour)).foregroundStyle(.secondary)
+            Chart {
+                ForEach(Array(hours.enumerated()), id: \.offset) { hour, h in
+                    BarMark(x: .value("Hour", hour), y: .value("Answers", h.total))
+                        .foregroundStyle(.tint)
+                        .opacity(selected == nil || selected == hour ? 1 : 0.4)
+                }
+                ForEach(Array(hours.enumerated()).filter { $0.element.total > 0 }, id: \.offset) { hour, h in
+                    LineMark(x: .value("Hour", hour), y: .value("Correct", Double(h.correct) / Double(h.total) * top),
+                             series: .value("Series", "Correct"))
+                        .interpolationMethod(.monotone)
+                        .foregroundStyle(ThemeColor.correct)
+                        .symbol(.circle)
+                        .symbolSize(16)
                 }
             }
-            .chartXScale(domain: 0...23)
+            .chartXScale(domain: -0.5...23.5)
+            // The busiest hour at the top, so 100% correct lines up with it.
+            .chartYScale(domain: 0...top)
             .chartXAxis {
-                AxisMarks(values: [0, 6, 12, 18, 23]) { value in
+                AxisMarks(values: [0, 6, 12, 18]) { value in
                     AxisGridLine()
                     AxisValueLabel { if let hour = value.as(Int.self) { Text(hourTitle(hour)) } }
                 }
             }
+            .chartYAxis {
+                AxisMarks(position: .leading)
+                AxisMarks(position: .trailing, values: [0, top / 2, top]) { value in
+                    AxisValueLabel { if let v = value.as(Double.self) { Text(percent(v / top)) } }
+                }
+            }
             .chartXSelection(value: $selected)
-            .frame(height: 120)
+            .frame(height: 160)
+            HStack(spacing: 12) {
+                Label("Answers", systemImage: "chart.bar.fill").foregroundStyle(.tint)
+                Label("Correct", systemImage: "point.topleft.down.to.point.bottomright.curvepath").foregroundStyle(.correct)
+            }
+            .font(.caption)
+            .labelStyle(.titleAndIcon)
         }
     }
 
@@ -520,7 +583,22 @@ private struct RecallCard: View {
                 Gauge(value: r.average / 100) { Text("Average recall") }
                     .gaugeStyle(.accessoryLinearCapacity)
                     .labelsHidden()
-                Footnote(text: "You would recall about \(movesText(Int(r.sum.rounded()))) right now.")
+                Chart(retrievabilityBins(r.bins.ints), id: \.start) { bin in
+                    let low = Double(bin.start)
+                    let style = bin.start < 70 ? AnyShapeStyle(.wrong) : AnyShapeStyle(.tint)
+                    RectangleMark(xStart: .value("Recall", low + 1), xEnd: .value("Recall", low + 9),
+                                  yStart: .value("Moves", 0.0), yEnd: .value("Moves", Double(bin.count)))
+                        .foregroundStyle(style)
+                }
+                .chartXScale(domain: 0...100)
+                .chartXAxis {
+                    AxisMarks(values: [0, 50, 70, 90, 100]) { value in
+                        AxisGridLine()
+                        AxisValueLabel { if let v = value.as(Int.self) { Text("\(v)%") } }
+                    }
+                }
+                .frame(height: 110)
+                Footnote(text: "You would recall about \(movesText(Int(r.sum.rounded()))) right now; below 70% in red.")
             }
             Divider()
             Text("Correct answers, \(range.periodTitle.lowercased())").font(.caption).foregroundStyle(.secondary)
@@ -531,6 +609,49 @@ private struct RecallCard: View {
                 }
             }
             Footnote(text: "Wrong: a wrong move, a hint or looking the move up.")
+        }
+    }
+}
+
+/// Retrievability in 10% bins.
+private func retrievabilityBins(_ bins: [Int: Int]) -> [(start: Int, count: Int)] {
+    var result: [Int: Int] = [:]
+    for (percent, count) in bins { result[min(percent, 99) / 10 * 10, default: 0] += count }
+    return result.sorted { $0.key < $1.key }.map { ($0.key, $0.value) }
+}
+
+/// Anki's Review Intervals: how far ahead each move is scheduled.
+private struct IntervalsCard: View {
+    let graphs: Graphs
+
+    var body: some View {
+        let intervals = graphs.intervals().ints
+        let total = intervals.values.reduce(0, +)
+        let mean = total > 0 ? Double(intervals.reduce(0) { $0 + $1.key * $1.value }) / Double(total) : 0
+        let withinWeek = intervals.filter { $0.key <= 7 }.values.reduce(0, +)
+        StatCard(title: "Intervals", systemImage: "arrow.forward.to.line") {
+            if total == 0 {
+                Footnote(text: "The days until each move comes back, once you review some.")
+            } else {
+                StatValue(value: mean.formatted(.number.precision(.fractionLength(0...1))), unit: "days on average")
+                Chart(intervalBins(intervals), id: \.label) { bin in
+                    BarMark(x: .value("Interval", bin.label), y: .value("Moves", bin.count))
+                        .foregroundStyle(.tint)
+                }
+                .frame(height: 120)
+                Footnote(text: "The days until each move comes back. \(percent(Double(withinWeek) / Double(total))) come back within a week; mature moves at 21 days or more.")
+            }
+        }
+    }
+
+    /// Anki's buckets, coarser further out.
+    private func intervalBins(_ intervals: [Int: Int]) -> [(label: String, count: Int)] {
+        let bins: [(String, ClosedRange<Int>)] = [
+            ("1d", 0...1), ("2d", 2...2), ("3d", 3...3), ("4–7d", 4...7), ("1–2w", 8...14),
+            ("2–3w", 15...20), ("3–4w", 21...30), ("1–3m", 31...90), ("3m+", 91...Int.max),
+        ]
+        return bins.map { label, range in
+            (label, intervals.filter { range.contains($0.key) }.values.reduce(0, +))
         }
     }
 }

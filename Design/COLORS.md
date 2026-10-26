@@ -88,7 +88,8 @@ where it has none.
 | Moves | `.learned` (title, moves studied over time); the studied bar: `.new`, `.learning.lighter()`, `.learning`, `.learned.lighter()`, `.learned`, `.inactive` |
 | Upcoming (Future Due) | accent; overdue `.wrong` |
 | Retention, Retention by Opening | `.correct` |
-| Time of Day, Recall | accent |
+| Time of Day | accent bars, `.correct` line (% correct) |
+| Recall, Intervals | accent; recall below 70% `.wrong` |
 | Weakest Moves | `.wrong` title; leech `.todo` |
 
 ## Board (`BoardTheme` in Palette.swift)
