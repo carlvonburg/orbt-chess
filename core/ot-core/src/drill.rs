@@ -191,22 +191,18 @@ impl Drill {
         self.session.as_ref()?.queue.kind_of(&epd)
     }
 
+    /// The answer, when it is shown: one arrow however it was revealed, so it does not change
+    /// when a wrong move's feedback times out into the hint.
     pub fn arrows(&self) -> Vec<Arrow> {
-        match &self.feedback {
-            Feedback::Wrong { expected } | Feedback::NewMove(expected) => {
-                Arrow::for_move(expected, ArrowStyle::Hint, 0.2, 1.0)
-                    .into_iter()
-                    .collect()
-            }
-            _ => match self.run.as_ref().and_then(|r| r.expected()) {
-                Some(expected) if self.show_hint => {
-                    Arrow::for_move(expected, ArrowStyle::Hint, 0.2, 0.6)
-                        .into_iter()
-                        .collect()
-                }
-                _ => Vec::new(),
-            },
-        }
+        let expected = match &self.feedback {
+            Feedback::Wrong { expected } | Feedback::NewMove(expected) => Some(expected),
+            _ if self.show_hint => self.run.as_ref().and_then(|r| r.expected()),
+            _ => None,
+        };
+        expected
+            .and_then(|m| Arrow::for_move(m, ArrowStyle::Hint, 0.2, 1.0))
+            .into_iter()
+            .collect()
     }
 
     // Playing
@@ -565,8 +561,11 @@ mod tests {
         d.user_moved(&mut doc, sq("d2"), sq("d4"), None, &timing(), 5_000);
         assert!(matches!(d.feedback, Feedback::Wrong { .. }));
         assert_eq!((d.answered_count, d.correct_count), (1, 0));
+        let arrows = d.arrows();
         d.wrong_timeout();
         assert!(d.show_hint);
+        // The answer's arrow stays as it was.
+        assert_eq!(d.arrows(), arrows);
         d.user_moved(&mut doc, sq("e2"), sq("e4"), None, &timing(), 6_000);
         assert_eq!(d.feedback, Feedback::Correct);
         assert_eq!(d.answered_count, 1);
