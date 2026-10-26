@@ -78,7 +78,6 @@ struct InlineStatistics: View {
 
 /// The period, then the cards: one column on a phone, as many as fit on iPad and Mac.
 struct StatisticsSummary: View {
-    @Environment(\.horizontalSizeClass) private var sizeClass
     @Bindable var model: StatisticsModel
 
     var body: some View {
@@ -90,8 +89,6 @@ struct StatisticsSummary: View {
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
-                    // Anki's calendar is as wide as the page: a year where it fits.
-                    StreakCard(graphs: graphs, weeks: isRegularWidth(sizeClass) ? 53 : 26)
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 320), spacing: 16, alignment: .top)], spacing: 16) {
                         cards(graphs)
                     }
@@ -109,15 +106,18 @@ struct StatisticsSummary: View {
     @ViewBuilder
     private func cards(_ graphs: Graphs) -> some View {
         let range = model.range
+        // What a new user can read from the first day comes first: how far the repertoire is
+        // learned, what comes next, how much is studied and remembered.
         if let recall = model.expectedRecall { ExpectedRecallCard(recall: recall) }
-        ReviewsCard(graphs: graphs, range: range)
         MovesCard(graphs: graphs, range: range)
         UpcomingCard(graphs: graphs, range: range)
+        ReviewsCard(graphs: graphs, range: range)
         RetentionCard(graphs: graphs)
         if model.document != nil {
             let branches = model.retentionByBranch()
             if !branches.isEmpty { BranchRetentionCard(model: model, branches: branches) }
         }
+        StreakCard(graphs: graphs)
         TimeOfDayCard(graphs: graphs, range: range)
         RecallCard(graphs: graphs, range: range)
         IntervalsCard(graphs: graphs)
@@ -142,11 +142,10 @@ private struct ExpectedRecallCard: View {
     }
 }
 
-/// The streak and Anki's calendar: a square a day, darker the more answers, a year where it
-/// fits (half a year on a phone); pointing at a day shows its answers.
+/// The streak and Anki's calendar: a square a day, darker the more answers, from the week you
+/// started (16 to 26 weeks, so it is never mostly empty); pointing at a day shows its answers.
 private struct StreakCard: View {
     let graphs: Graphs
-    let weeks: Int
     @State private var selectedWeek: String?
     @State private var selectedWeekday: String?
 
@@ -160,8 +159,10 @@ private struct StreakCard: View {
 
     var body: some View {
         let streak = graphs.streak()
-        let counts = graphs.reviews().count.intKeys.mapValues { Int($0.total) }
-        let cells = cells(counts)
+        let counts = graphs.reviews().count.intKeys.mapValues { Int($0.total) }.filter { $0.value > 0 }
+        let firstDay = min(counts.keys.min() ?? 0, 0)
+        let weeks = min(max(-firstDay / 7 + 2, 16), 26)
+        let cells = cells(counts, weeks: weeks)
         let maxCount = max(cells.map(\.count).max() ?? 1, 1)
         let studied = cells.filter { $0.count > 0 }
         let months = cells.filter { Calendar.current.component(.day, from: $0.date) == 1 }
@@ -203,28 +204,15 @@ private struct StreakCard: View {
             .chartYSelection(value: $selectedWeekday)
             .aspectRatio(CGFloat(weeks) / 7, contentMode: .fit)
             .accessibilityLabel("Studied on \(studied.count) of the last \(cells.count) days")
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 32) { metrics(streak, studied: studied, days: cells.count) }
-                LazyVGrid(columns: [GridItem(.flexible(), alignment: .leading), GridItem(.flexible(), alignment: .leading)],
-                          alignment: .leading, spacing: 8) {
-                    metrics(streak, studied: studied, days: cells.count)
-                }
+            HStack(spacing: 24) {
+                Metric(title: "Longest streak", value: streak.longest.formatted(), unit: streak.longest == 1 ? "day" : "days")
+                Metric(title: "Days studied", value: studied.count.formatted(), unit: "of \(1 - firstDay) since you started")
             }
         }
     }
 
-    @ViewBuilder
-    private func metrics(_ streak: Streak, studied: [Cell], days: Int) -> some View {
-        let answers = studied.reduce(0) { $0 + $1.count }
-        Metric(title: "Longest streak", value: streak.longest.formatted(), unit: streak.longest == 1 ? "day" : "days")
-        Metric(title: "Days studied", value: studied.count.formatted(),
-               unit: "of \(days.formatted()) (\(percent(Double(studied.count) / Double(max(days, 1)))))")
-        Metric(title: "On a day studied", value: studied.isEmpty ? "—" : (answers / studied.count).formatted(), unit: "answers")
-        Metric(title: "Answers", value: answers.formatted(), unit: weeks > 26 ? "this year" : "in 6 months")
-    }
-
     /// Up to today, the weeks starting on the locale's first weekday.
-    private func cells(_ counts: [Int: Int]) -> [Cell] {
+    private func cells(_ counts: [Int: Int], weeks: Int) -> [Cell] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: .now)
         guard let thisWeek = calendar.dateInterval(of: .weekOfYear, for: today)?.start else { return [] }
