@@ -3583,6 +3583,11 @@ public protocol GraphsProtocol: AnyObject, Sendable {
     
     func stability()  -> [Int64: Int64]
     
+    /**
+     * Each day from the first answer: the moves in each stage at its end.
+     */
+    func stagesByDay()  -> [StageCounts]
+    
     func streak()  -> Streak
     
     func today()  -> Today
@@ -3804,6 +3809,18 @@ open func stability() -> [Int64: Int64]  {
     return try!  FfiConverterDictionaryInt64Int64.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_graphs_stability(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Each day from the first answer: the moves in each stage at its end.
+     */
+open func stagesByDay() -> [StageCounts]  {
+    return try!  FfiConverterSequenceTypeStageCounts.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_stages_by_day(
             self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
@@ -9612,6 +9629,72 @@ public func FfiConverterTypeSchedTiming_lower(_ value: SchedTiming) -> RustBuffe
 }
 
 
+public struct StageCounts: Equatable, Hashable {
+    public var day: Int64
+    public var learning: Int64
+    public var relearning: Int64
+    public var young: Int64
+    public var mature: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(day: Int64, learning: Int64, relearning: Int64, young: Int64, mature: Int64) {
+        self.day = day
+        self.learning = learning
+        self.relearning = relearning
+        self.young = young
+        self.mature = mature
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension StageCounts: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeStageCounts: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> StageCounts {
+        return
+            try StageCounts(
+                day: FfiConverterInt64.read(from: &buf), 
+                learning: FfiConverterInt64.read(from: &buf), 
+                relearning: FfiConverterInt64.read(from: &buf), 
+                young: FfiConverterInt64.read(from: &buf), 
+                mature: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: StageCounts, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.day, into: &buf)
+        FfiConverterInt64.write(value.learning, into: &buf)
+        FfiConverterInt64.write(value.relearning, into: &buf)
+        FfiConverterInt64.write(value.young, into: &buf)
+        FfiConverterInt64.write(value.mature, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStageCounts_lift(_ buf: RustBuffer) throws -> StageCounts {
+    return try FfiConverterTypeStageCounts.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeStageCounts_lower(_ value: StageCounts) -> RustBuffer {
+    return FfiConverterTypeStageCounts.lower(value)
+}
+
+
 public struct StoredStats: Equatable, Hashable {
     public var epd: Epd
     public var json: Data
@@ -14456,6 +14539,31 @@ fileprivate struct FfiConverterSequenceTypeRevlogEntry: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeStageCounts: FfiConverterRustBuffer {
+    typealias SwiftType = [StageCounts]
+
+    public static func write(_ value: [StageCounts], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeStageCounts.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [StageCounts] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [StageCounts]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeStageCounts.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeStoredStats: FfiConverterRustBuffer {
     typealias SwiftType = [StoredStats]
 
@@ -16271,6 +16379,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_graphs_stability() != 26116) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_stages_by_day() != 15971) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_graphs_streak() != 42515) {

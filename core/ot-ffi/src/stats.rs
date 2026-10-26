@@ -10,7 +10,7 @@ use ot_core::http::{HttpRequest, HttpResponse};
 use ot_core::repertoire::RepertoireTree;
 use ot_core::statistics::{
     CardCounts, CardInfo, FutureDueSummary, GraphParts, GraphRange, GraphsContext, Hour,
-    RetentionPeriod, ReviewsSummary, Streak, Today, TrueRetention, WeakMove,
+    RetentionPeriod, ReviewsSummary, StageCounts, Streak, Today, TrueRetention, WeakMove,
 };
 use ot_core::training::anki::{Card, Counts, DeckConfig, RevlogEntry, SchedTiming};
 use ot_core::training::{PracticeMode, Progress};
@@ -85,6 +85,11 @@ impl Graphs {
             count: r.count.into_iter().collect(),
             time: r.time.into_iter().collect(),
         }
+    }
+
+    /// Each day from the first answer: the moves in each stage at its end.
+    pub fn stages_by_day(&self) -> Vec<StageCounts> {
+        self.0.stages_by_day()
     }
 
     /// Day → moves answered for the first time that day.

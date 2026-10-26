@@ -6,7 +6,7 @@
 mod chess_stats;
 mod scope;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 pub use chess_stats::{WeakMove, expected_recall, opening_branches, weakest_moves};
 pub use scope::{GraphParts, card_reach, repertoire_cards};
@@ -119,6 +119,58 @@ pub struct Reviews {
     pub count: BTreeMap<i64, ReviewCounts>,
     /// Day → milliseconds by kind.
     pub time: BTreeMap<i64, ReviewCounts>,
+}
+
+/// Moves by learning stage at the end of a day (Anki's card counts, replayed from the review
+/// log; not one of Anki's graphs).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct StageCounts {
+    /// 0 = today, -1 = yesterday.
+    pub day: i64,
+    pub learning: i64,
+    pub relearning: i64,
+    pub young: i64,
+    pub mature: i64,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Stage {
+    Learning,
+    Relearning,
+    Young,
+    Mature,
+}
+
+/// The stage a move is in after an answer; None when the entry leaves it as it was (a
+/// cramming answer) or makes it new again (a reset).
+fn stage_after(entry: &RevlogEntry, before: Option<Stage>) -> Option<Option<Stage>> {
+    if entry.is_cramming() {
+        return None;
+    }
+    let by_interval = |ivl: i64| {
+        if ivl >= MATURE_INTERVAL {
+            Stage::Mature
+        } else {
+            Stage::Young
+        }
+    };
+    // The answer that graduates a move is logged as learning or relearning, with its interval
+    // in days; steps have negative intervals (seconds).
+    Some(match entry.kind {
+        RevlogReviewKind::Learning | RevlogReviewKind::Relearning if entry.ivl > 0 => {
+            Some(by_interval(entry.ivl))
+        }
+        RevlogReviewKind::Learning => Some(Stage::Learning),
+        RevlogReviewKind::Relearning => Some(Stage::Relearning),
+        RevlogReviewKind::Review | RevlogReviewKind::Filtered if entry.ivl > 0 => {
+            Some(by_interval(entry.ivl))
+        }
+        RevlogReviewKind::Review | RevlogReviewKind::Filtered => before,
+        RevlogReviewKind::Manual | RevlogReviewKind::Rescheduled if entry.ivl > 0 => {
+            Some(by_interval(entry.ivl))
+        }
+        RevlogReviewKind::Manual | RevlogReviewKind::Rescheduled => None,
+    })
 }
 
 /// The table under Anki's Reviews graph (reviews.ts), over a range.
@@ -445,6 +497,42 @@ impl GraphsContext {
                 let day = (review.id / 1000 - self.next_day_start()) / 86_400;
                 *result.entry(day).or_default() += 1;
             }
+        }
+        result
+    }
+
+    /// Each day from the first answer to today: the moves in each stage at its end, replayed
+    /// from the review log (suspended moves count in the stage they were in).
+    pub fn stages_by_day(&self) -> Vec<StageCounts> {
+        let day_of = |e: &RevlogEntry| (e.id / 1000 - self.next_day_start()) / 86_400;
+        let Some(first) = self.revlog.first().map(day_of) else {
+            return Vec::new();
+        };
+        let mut stages: HashMap<&Epd, Stage> = HashMap::new();
+        let mut entries = self.revlog.iter().peekable();
+        let mut result = Vec::new();
+        for day in first.min(0)..=0 {
+            while let Some(entry) = entries.next_if(|e| day_of(e) <= day) {
+                if let Some(stage) = stage_after(entry, stages.get(&entry.cid).copied()) {
+                    match stage {
+                        Some(stage) => stages.insert(&entry.cid, stage),
+                        None => stages.remove(&entry.cid),
+                    };
+                }
+            }
+            let mut counts = StageCounts {
+                day,
+                ..StageCounts::default()
+            };
+            for stage in stages.values() {
+                match stage {
+                    Stage::Learning => counts.learning += 1,
+                    Stage::Relearning => counts.relearning += 1,
+                    Stage::Young => counts.young += 1,
+                    Stage::Mature => counts.mature += 1,
+                }
+            }
+            result.push(counts);
         }
         result
     }

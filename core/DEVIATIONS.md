@@ -19,6 +19,9 @@ crates). Each entry says why.
   still due, and answers alone count a relearned move twice.
 - **Statistics have a one-week range** besides Anki's month, three months, year and all time:
   the summary cards show this week, as Apple's Health and Fitness do.
+- **Move counts over time (`stages_by_day`)** replay the review log into Anki's card-count
+  groups for each past day; Anki only shows today's counts. The owner wants to see moves
+  reach mature. Suspended moves count in the stage they were in.
 - **Engine analysis asks Lichess for a cloud eval at every ply** (lichess mobile asks only
   before ply 15), and skips the local engine where the cloud eval is depth 30 or more with
   every line asked for: opening positions are what this app analyses, and the owner wants no

@@ -21,7 +21,7 @@ use ot_core::lichess::cloud_eval::{CloudEval, CloudEvalLookup, Pv};
 use ot_core::repertoire::{NodeId, RepertoireNode, RepertoireTree};
 use ot_core::statistics::{
     CardCounts, CardInfo, FutureDueSummary, GraphParts, GraphRange, Hour, RetentionPeriod,
-    ReviewCounts, ReviewsSummary, Streak, Today, TrueRetention, WeakMove,
+    ReviewCounts, ReviewsSummary, StageCounts, Streak, Today, TrueRetention, WeakMove,
 };
 use ot_core::training::anki::{
     Card, CardQueue, CardType, Counts, DayLimit, DeckLimits, DeckStudyStats, MemoryState,
@@ -561,6 +561,15 @@ pub struct ReviewCounts {
     pub young: i64,
     pub mature: i64,
     pub filtered: i64,
+}
+
+#[uniffi::remote(Record)]
+pub struct StageCounts {
+    pub day: i64,
+    pub learning: i64,
+    pub relearning: i64,
+    pub young: i64,
+    pub mature: i64,
 }
 
 #[uniffi::remote(Record)]

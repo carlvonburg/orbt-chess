@@ -310,57 +310,90 @@ private struct ReviewsCard: View {
     }
 }
 
-/// The repertoire growing into memory: moves studied so far over the period (Anki's Added
-/// graph, by first answer), then where all of them stand now.
+/// The repertoire growing into memory: Anki's card counts day by day over the period, so you
+/// see moves go from learning to young to mature; then where all of them stand now.
 private struct MovesCard: View {
     let graphs: Graphs
     let range: GraphRange
+    @State private var selected: Date?
+
+    /// Bottom to top: what is learned for good first.
+    private static let stages: [MoveGroup] = [.mature, .young, .relearning, .learning]
 
     private struct Point: Identifiable {
         let date: Date
-        let total: Int
-        var id: Date { date }
+        let group: MoveGroup
+        let count: Int
+        var id: String { "\(date.timeIntervalSince1970)-\(group.title)" }
     }
 
     var body: some View {
         let c = graphs.cardCounts()
-        let firstStudied = graphs.firstStudied().ints
-        let first = range == .all ? min(firstStudied.keys.min() ?? 0, 0) : 1 - Int(range.days)
-        let before = firstStudied.filter { $0.key < first }.values.reduce(0, +)
-        let points = points(firstStudied, from: first, before: before)
-        let total = points.last?.total ?? before
+        let days = graphs.stagesByDay()
+        let byDay = Dictionary(days.map { (Int($0.day), $0) }, uniquingKeysWith: { a, _ in a })
+        let first = range == .all ? min(Int(days.first?.day ?? 0), 0) : 1 - Int(range.days)
+        let start = byDay[first] ?? StageCounts(day: Int64(first), learning: 0, relearning: 0, young: 0, mature: 0)
+        let today = byDay[0] ?? start
+        let points = (first...0).flatMap { day in
+            Self.stages.map { group in
+                Point(date: StatDay.date(day), group: group, count: Self.count(group, byDay[day]))
+            }
+        }
+        let selectedDay = selected.map { Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: .now), to: $0).day ?? 0 }
+        let started = graphs.firstStudied().ints.filter { (first...0).contains($0.key) }.values.reduce(0, +)
         StatCard(title: "Moves", systemImage: "square.stack.3d.up.fill", color: .learned) {
             HStack(alignment: .firstTextBaseline) {
-                StatValue(value: total.formatted(), unit: "studied")
-                Spacer()
-                Text("+\((total - before).formatted()), \(range.periodTitle.lowercased())").font(.footnote).foregroundStyle(.secondary)
+                if let selectedDay, let counts = byDay[selectedDay] {
+                    StatValue(value: Int(counts.young + counts.mature).formatted(), unit: "learned")
+                    Spacer()
+                    Text("\(StatDay.title(StatDay.date(selectedDay), .day)): \(counts.mature) mature, \(counts.young) young, \(counts.learning + counts.relearning) learning")
+                        .font(.footnote).foregroundStyle(.secondary).monospacedDigit()
+                } else {
+                    StatValue(value: Int(today.young + today.mature).formatted(), unit: "learned")
+                    Spacer()
+                    Text("\(today.mature.formatted()) mature (\(signed(Int(today.mature - start.mature)))), \(range.periodTitle.lowercased())")
+                        .font(.footnote).foregroundStyle(.secondary).monospacedDigit()
+                }
             }
             Chart(points) { point in
-                AreaMark(x: .value("Day", point.date, unit: .day), y: .value("Moves", point.total))
+                AreaMark(x: .value("Day", point.date, unit: .day), y: .value("Moves", point.count), stacking: .standard)
                     .interpolationMethod(.monotone)
-                    .foregroundStyle(ThemeColor.learned.opacity(0.25))
-                LineMark(x: .value("Day", point.date, unit: .day), y: .value("Moves", point.total))
-                    .interpolationMethod(.monotone)
-                    .foregroundStyle(ThemeColor.learned)
+                    .foregroundStyle(by: .value("Stage", point.group.title))
+                if let selected, Calendar.current.isDate(selected, inSameDayAs: point.date), point.group == .mature {
+                    RuleMark(x: .value("Day", point.date, unit: .day)).foregroundStyle(.secondary)
+                }
             }
-            .frame(height: 140)
+            .chartForegroundStyleScale(domain: Self.stages.map(\.title), range: Self.stages.map(\.color))
+            .chartLegend(.hidden)
+            .chartXSelection(value: $selected)
+            .frame(height: 160)
+            Footnote(text: "Learned: young or mature. \(signed(started)) moves started, \(range.periodTitle.lowercased()).")
+            Divider()
+            Text("Now").font(.caption).foregroundStyle(.secondary)
             MoveGroupsBar(counts: c)
             FlowLayout(spacing: 12) {
                 ForEach(MoveGroup.allCases.filter { $0.count(c) > 0 }, id: \.self) { group in
                     LegendItem(name: group.title, color: group.color, value: group.count(c).formatted())
                 }
             }
-            Footnote(text: "Young moves are shown again within 3 weeks, mature ones later. Suspended: below alternative moves; they keep their progress.")
+            Footnote(text: "Young moves are shown again within 3 weeks, mature ones in 3 weeks or more. Suspended: below alternative moves; they keep their progress.")
+        }
+        .onChange(of: range) { selected = nil }
+    }
+
+    private static func count(_ group: MoveGroup, _ day: StageCounts?) -> Int {
+        guard let day else { return 0 }
+        switch group {
+        case .learning: return Int(day.learning)
+        case .relearning: return Int(day.relearning)
+        case .young: return Int(day.young)
+        case .mature: return Int(day.mature)
+        case .new, .suspended: return 0
         }
     }
 
-    /// Moves studied by the end of each day of the period.
-    private func points(_ firstStudied: [Int: Int], from first: Int, before: Int) -> [Point] {
-        var total = before
-        return (first...0).map { day in
-            total += firstStudied[day] ?? 0
-            return Point(date: StatDay.date(day), total: total)
-        }
+    private func signed(_ n: Int) -> String {
+        n.formatted(.number.sign(strategy: .always(includingZero: true)))
     }
 }
 

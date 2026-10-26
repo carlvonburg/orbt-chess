@@ -150,3 +150,32 @@ fn reviews_and_future_due_summaries() {
     let all = graphs.future_due_summary(GraphRange::All);
     assert_eq!((all.period_days, all.total), (21, 5));
 }
+
+#[test]
+fn stages_replayed_from_the_review_log() {
+    let day = 86_400;
+    let at = |secs_ago: i64, ivl: i64, kind: RevlogReviewKind| RevlogEntry {
+        ivl,
+        ..entry(secs_ago, 3, 0, kind)
+    };
+    let revlog = vec![
+        at(3 * day, -600, RevlogReviewKind::Learning),
+        // Graduating: logged as learning, with an interval in days.
+        at(2 * day + 3600, 1, RevlogReviewKind::Learning),
+        at(2 * day, 5, RevlogReviewKind::Review),
+        at(day, 25, RevlogReviewKind::Review),
+        // A reset makes it new again.
+        at(60, 0, RevlogReviewKind::Manual),
+    ];
+    let graphs = GraphsContext::new(vec![], 0, 0, revlog, timing(), 0);
+    let stages = graphs.stages_by_day();
+    let stage = |d: i64| {
+        let s = stages.iter().find(|s| s.day == d).unwrap();
+        (s.learning, s.young, s.mature)
+    };
+    assert_eq!(stages.first().unwrap().day, -3);
+    assert_eq!(stage(-3), (1, 0, 0));
+    assert_eq!(stage(-2), (0, 1, 0));
+    assert_eq!(stage(-1), (0, 0, 1));
+    assert_eq!(stage(0), (0, 0, 0));
+}
