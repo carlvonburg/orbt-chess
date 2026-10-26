@@ -26,6 +26,30 @@
     {
       "layers" : [
         {
+          "glass" : true,
+          "image-name" : "ring.svg",
+          "name" : "ring"
+        },
+        {
+          "glass" : false,
+          "image-name" : "track.svg",
+          "name" : "track",
+          "opacity" : 0.2
+        }
+      ],
+      "name" : "Ring",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+        {
           "glass" : false,
           "image-name" : "board.svg",
           "name" : "board"
