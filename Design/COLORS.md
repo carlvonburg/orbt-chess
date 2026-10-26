@@ -123,8 +123,9 @@ board: 6–9; lichess brown: orange 6; chess.com green: green 6), which is why t
 the ink, not the app color.
 
 ## App icon
-The icon keeps its own indigo (`#6B64B8`, `#3F3A8C`, outline `#2B2760`; dark icon
-`#2A2650`/`#14122B`). It has the same hue as Apple's indigo (~245°), the default app color until October 2026 (now blue).
+The icon keeps its own indigo (`#6B64B8`, `#3F3A8C`, the knight's eye `#2B2760`; dark icon
+`#2A2650`/`#14122B`): a white knight inside a white progress ring on a 20% track (ORBT: coming
+back round to learn). It has the same hue as Apple's indigo (~245°), the default app color until October 2026 (now blue).
 
 ## Adding a color
 1. Name the meaning. If an existing role already means it, use that role.
