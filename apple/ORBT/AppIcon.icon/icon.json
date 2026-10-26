@@ -1,13 +1,55 @@
 {
+  "fill" : {
+    "solid" : "srgb:0.24706,0.22745,0.54902,1.00000"
+  },
+  "fill-specializations" : [
+    {
+      "value" : {
+        "solid" : "srgb:0.24706,0.22745,0.54902,1.00000"
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : {
+        "solid" : "srgb:0.07843,0.07059,0.16863,1.00000"
+      }
+    }
+  ],
   "groups" : [
     {
       "layers" : [
         {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "srgb:0.16863,0.15294,0.37647,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "srgb:0.05490,0.05098,0.12157,1.00000"
+              }
+            }
+          ],
           "glass" : true,
           "image-name" : "eye.svg",
           "name" : "eye"
         },
         {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "srgb:0.92549,0.91765,0.99216,1.00000"
+              }
+            }
+          ],
           "glass" : true,
           "image-name" : "knight.svg",
           "name" : "knight"
@@ -18,6 +60,7 @@
         "kind" : "neutral",
         "opacity" : 0.5
       },
+      "specular" : true,
       "translucency" : {
         "enabled" : true,
         "value" : 0.5
@@ -26,15 +69,31 @@
     {
       "layers" : [
         {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "srgb:0.92549,0.91765,0.99216,1.00000"
+              }
+            }
+          ],
           "glass" : true,
           "image-name" : "ring.svg",
           "name" : "ring"
         },
         {
-          "glass" : false,
+          "fill" : {
+            "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
+          },
+          "glass" : true,
           "image-name" : "track.svg",
           "name" : "track",
-          "opacity" : 0.2
+          "opacity" : 0.25
         }
       ],
       "name" : "Ring",
@@ -42,6 +101,7 @@
         "kind" : "neutral",
         "opacity" : 0.5
       },
+      "specular" : true,
       "translucency" : {
         "enabled" : true,
         "value" : 0.5
@@ -50,9 +110,22 @@
     {
       "layers" : [
         {
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "srgb:0.41961,0.39216,0.72157,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "srgb:0.16471,0.14902,0.31373,1.00000"
+              }
+            }
+          ],
           "glass" : false,
-          "image-name" : "board.svg",
-          "name" : "board"
+          "image-name" : "squares.svg",
+          "name" : "light squares"
         }
       ],
       "name" : "Board",
