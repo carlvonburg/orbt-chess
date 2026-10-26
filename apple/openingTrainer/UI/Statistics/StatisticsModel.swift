@@ -18,6 +18,8 @@ final class StatisticsModel {
     private(set) var cards: [EPD: Card] = [:]
     /// The open repertoire, for reach, opening branches and move names.
     private(set) var document: RepertoireDocument?
+    /// True retention, all time, of each repertoire (all repertoires only).
+    private(set) var repertoireRetention: [(String, TrueRetention)] = []
     private(set) var isLoading = false
 
     func load(_ app: AppModel) async {
@@ -29,15 +31,23 @@ final class StatisticsModel {
         case .all:
             document = nil
             var parts: [GraphParts] = []
+            var retention: [(String, TrueRetention)] = []
             for entry in app.library.entries where !entry.needsSetup {
                 let revlogURL = RepertoireLibrary.revlogURL(for: entry.pgnURL)
+                let part: GraphParts
                 if let doc = app.documents[entry.id] {
-                    parts.append(await doc.graphParts(wholeCollection: true))
+                    part = await doc.graphParts(wholeCollection: true)
                 } else if let sidecar = entry.sidecar {
-                    parts.append(sidecar.graphParts(revlog: await StudyLog.readData(revlogURL)))
+                    part = sidecar.graphParts(revlog: await StudyLog.readData(revlogURL))
+                } else {
+                    continue
                 }
+                parts.append(part)
+                let r = Graphs.fromParts(parts: [part], timing: timing, localOffsetSecs: offset).retentionTable()[.allTime] ?? TrueRetention()
+                if r.count > 0 { retention.append((entry.name, r)) }
             }
             cards = [:]
+            repertoireRetention = retention
             graphs = Graphs.fromParts(parts: parts, timing: timing, localOffsetSecs: offset)
         case .repertoire(let id):
             guard let entry = app.library.entry(id: id), let doc = await app.open(entry) else {
@@ -45,6 +55,7 @@ final class StatisticsModel {
                 return
             }
             document = doc
+            repertoireRetention = []
             cards = doc.core.repertoireCards()
             let parts = await doc.graphParts(wholeCollection: false)
             graphs = Graphs.fromParts(parts: [parts], timing: timing, localOffsetSecs: offset)

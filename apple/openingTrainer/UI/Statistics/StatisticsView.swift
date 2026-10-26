@@ -108,39 +108,29 @@ struct StatisticsSummary: View {
         let range = model.range
         // What a new user can read from the first day comes first: how far the repertoire is
         // learned, what comes next, how much is studied and remembered.
-        if let recall = model.expectedRecall { ExpectedRecallCard(recall: recall) }
         MovesCard(graphs: graphs, range: range)
         UpcomingCard(graphs: graphs, range: range)
         ReviewsCard(graphs: graphs, range: range)
         RetentionCard(graphs: graphs)
         if model.document != nil {
-            let branches = model.retentionByBranch()
-            if !branches.isEmpty { BranchRetentionCard(model: model, branches: branches) }
+            let branches = model.retentionByBranch().map { (model.document?.tree.lineText(to: $0.0) ?? "", $0.1) }
+            if !branches.isEmpty {
+                RetentionRowsCard(title: "Retention by Opening", systemImage: "arrow.triangle.branch", rows: branches,
+                                  footnote: "All time, for each reply to your first move: the share of reviews after a day or more answered correctly, and how many.")
+            }
+        } else if !model.repertoireRetention.isEmpty {
+            RetentionRowsCard(title: "Retention by Repertoire", systemImage: "books.vertical.fill", rows: model.repertoireRetention,
+                              footnote: "All time, for each repertoire: the share of reviews after a day or more answered correctly, and how many.")
         }
         StreakCard(graphs: graphs)
         TimeOfDayCard(graphs: graphs, range: range)
-        RecallCard(graphs: graphs, range: range)
+        RecallCard(graphs: graphs, range: range, expected: model.expectedRecall)
         IntervalsCard(graphs: graphs)
         if model.document != nil { WeakestMovesCard(model: model) }
     }
 }
 
 // MARK: Cards
-
-private struct ExpectedRecallCard: View {
-    let recall: Double
-
-    var body: some View {
-        StatCard(title: "Expected Recall", systemImage: "brain", color: .learned) {
-            StatValue(value: percent(recall), unit: "in your games")
-            Gauge(value: recall) { Text("Expected recall") }
-                .gaugeStyle(.accessoryLinearCapacity)
-                .tint(ThemeColor.learned)
-                .labelsHidden()
-            Footnote(text: "The chance you know your move in the positions you will meet, weighted by how often they come up. Moves not studied yet count as forgotten.")
-        }
-    }
-}
 
 /// The streak and Anki's calendar: a square a day, darker the more answers, from the week you
 /// started (16 to 26 weeks, so it is never mostly empty); pointing at a day shows its answers.
@@ -497,16 +487,17 @@ private struct RetentionCard: View {
     }
 }
 
-/// True retention for each reply to your first move, all time.
-private struct BranchRetentionCard: View {
-    let model: StatisticsModel
-    let branches: [(NodeID, TrueRetention)]
+/// True retention, all time, for each opening (one repertoire) or each repertoire (all).
+private struct RetentionRowsCard: View {
+    let title: String
+    let systemImage: String
+    let rows: [(String, TrueRetention)]
+    let footnote: String
 
     var body: some View {
-        let rows = branches.map { (model.document?.tree.lineText(to: $0.0) ?? "", $0.1) }
-        StatCard(title: "Retention by Opening", systemImage: "arrow.triangle.branch", color: .correct) {
+        StatCard(title: title, systemImage: systemImage, color: .correct) {
             Chart(rows, id: \.0) { line, r in
-                BarMark(x: .value("Retention", r.total ?? 0), y: .value("Opening", line))
+                BarMark(x: .value("Retention", r.total ?? 0), y: .value("Name", line))
                     .foregroundStyle(ThemeColor.correct)
                     .annotation(position: .trailing) {
                         Text("\(percent(r.total)) · \(r.count)").font(.caption).foregroundStyle(.secondary).monospacedDigit()
@@ -515,7 +506,7 @@ private struct BranchRetentionCard: View {
             .chartXScale(domain: 0...1.25)
             .chartXAxis(.hidden)
             .frame(height: CGFloat(rows.count) * 32 + 8)
-            Footnote(text: "All time: the share of reviews after a day or more answered correctly, and how many.")
+            Footnote(text: footnote)
         }
     }
 }
@@ -588,22 +579,36 @@ private struct TimeOfDayCard: View {
     }
 }
 
-/// FSRS's average recall now, and Anki's Answer Buttons as correct answers by stage.
+/// FSRS's average recall now, the expected recall in your games (one repertoire), and Anki's
+/// Answer Buttons as correct answers by stage.
 private struct RecallCard: View {
     let graphs: Graphs
     let range: GraphRange
+    let expected: Double?
 
     var body: some View {
         let r = graphs.retrievability()
         let b = graphs.buttons(range: range)
         StatCard(title: "Recall", systemImage: "brain.head.profile") {
-            if r.bins.isEmpty {
+            if r.bins.isEmpty && expected == nil {
                 Footnote(text: "How likely you are to recall each move, once you have studied some.")
             } else {
-                StatValue(value: percent(r.average / 100), unit: "average recall now")
-                Gauge(value: r.average / 100) { Text("Average recall") }
-                    .gaugeStyle(.accessoryLinearCapacity)
-                    .labelsHidden()
+                HStack(alignment: .top, spacing: 32) {
+                    if !r.bins.isEmpty {
+                        VStack(alignment: .leading, spacing: 2) {
+                            StatValue(value: percent(r.average / 100), unit: "now")
+                            Text("Your studied moves").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    if let expected {
+                        VStack(alignment: .leading, spacing: 2) {
+                            StatValue(value: percent(expected), unit: "in your games")
+                            Text("Weighted by how often they come up").font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            if !r.bins.isEmpty {
                 Chart(retrievabilityBins(r.bins.ints), id: \.start) { bin in
                     let low = Double(bin.start)
                     let style = bin.start < 70 ? AnyShapeStyle(.wrong) : AnyShapeStyle(.tint)
@@ -619,7 +624,8 @@ private struct RecallCard: View {
                     }
                 }
                 .frame(height: 110)
-                Footnote(text: "You would recall about \(movesText(Int(r.sum.rounded()))) right now; below 70% in red.")
+                Footnote(text: "You would recall about \(movesText(Int(r.sum.rounded()))) right now; below 70% in red."
+                         + (expected == nil ? "" : " In your games, moves you have not studied count as forgotten."))
             }
             Divider()
             Text("Correct answers, \(range.periodTitle.lowercased())").font(.caption).foregroundStyle(.secondary)

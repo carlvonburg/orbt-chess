@@ -82,12 +82,12 @@ where it has none.
 
 | Card / chart | Colors |
 |---|---|
-| Expected Recall | `.learned` |
+
 | Streak (calendar) | `.todo` (days by intensity; days without answers neutral) |
 | Reviews | accent title; by kind: learning and relearning `.learning` (lighter / full), young and mature `.learned` (lighter / full), `.ahead` |
 | Moves | `.learned` (title, moves studied over time); the studied bar: `.new`, `.learning.lighter()`, `.learning`, `.learned.lighter()`, `.learned`, `.inactive` |
 | Upcoming (Future Due) | accent; overdue `.wrong` |
-| Retention, Retention by Opening | `.correct` |
+| Retention, Retention by Opening or Repertoire | `.correct` |
 | Time of Day | accent bars, `.correct` line (% correct) |
 | Recall, Intervals | accent; recall below 70% `.wrong` |
 | Weakest Moves | `.wrong` title; leech `.todo` |
