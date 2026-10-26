@@ -549,9 +549,14 @@ private struct BoardColumnView: View {
                                                  orientation: model.color, origin: .study)
                     }
                 }
+                if model.phase == .lineDone && model.nextLineAt == nil {
+                    ToolbarSpacer(.fixed, placement: .trailingBar)
+                    ToolbarItem(placement: .trailingBar) { LineEndButton(model: model) }
+                }
             }
         }
-        .analysisBoard($analysis)
+        // Study goes on (or waits for Next at a line's end) when the board closes.
+        .analysisBoard($analysis) { if case .drill(let model) = board { model.start() } }
     }
 }
 

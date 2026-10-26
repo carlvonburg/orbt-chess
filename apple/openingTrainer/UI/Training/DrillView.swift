@@ -12,8 +12,8 @@ extension DrillMode {
 
 /// Plays study lines one after another. The Rust core (`DrillSession`) answers the cards and
 /// decides what happens next; this runs its timers: the rewind and the opponent's moves step
-/// on a clock, the next line follows a finished one after a pause, and a wrong move's
-/// feedback turns into a hint after a moment.
+/// on a clock, the next line follows a finished one after a countdown (or when Next is
+/// tapped), and a wrong move's feedback turns into a hint after a moment.
 @Observable
 final class DrillModel {
     let document: RepertoireDocument
@@ -25,6 +25,15 @@ final class DrillModel {
     @ObservationIgnored private var timer: Task<Void, Never>?
     @ObservationIgnored private var wrongTimer: Task<Void, Never>?
     @ObservationIgnored private var badgeTimer: Task<Void, Never>?
+    /// The pause at the end of a line, to look at it before the next one starts.
+    static let lineDoneSeconds: TimeInterval = 3
+    /// When the next line starts on its own; nil while it waits for Next.
+    private(set) var nextLineAt: Date?
+    /// The line's end waits for Next: the user left the board to look at it, or the
+    /// countdown is off (VoiceOver: no time limits).
+    @ObservationIgnored private var waitsForNext = false
+    /// Off with VoiceOver, which gets no time limit.
+    @ObservationIgnored var autoAdvance = true
     /// Bumped after every change, so views re-read the session.
     private var stamp = 0
 
@@ -94,6 +103,30 @@ final class DrillModel {
     func stop() {
         timer?.cancel()
         timer = nil
+        nextLineAt = nil
+    }
+
+    /// Leaving the board to look at it (analysis, browsing): the opponent's moves stop, and a
+    /// finished line waits for Next when the user comes back (`start`).
+    private func hold() {
+        if session.phase() == .lineDone { waitsForNext = true }
+        stop()
+    }
+
+    /// Stops the countdown at a line's end: it waits for Next.
+    func pause() {
+        guard session.phase() == .lineDone else { return }
+        waitsForNext = true
+        changed()
+    }
+
+    func nextLine() {
+        guard session.phase() == .lineDone else { return }
+        timer?.cancel()
+        timer = nil
+        badge = nil
+        session.nextLine(timing: SchedTiming())
+        changed()
     }
 
     func userMoved(from: BoardSquare, to: BoardSquare, promotion: PieceKind?) {
@@ -133,6 +166,7 @@ final class DrillModel {
     /// The node to open when the user browses the repertoire mid-line. Browsing on your
     /// own turn reveals the answer, so it counts as Again.
     func browseNode() -> NodeID? {
+        hold()
         let result = session.browseNode(timing: SchedTiming(), nowMs: Self.nowMs)
         document.apply(result.changes)
         changed()
@@ -146,6 +180,7 @@ final class DrillModel {
 
     /// The moves to the board, for the analysis board. Looking counts as Again, like browsing.
     func analysisMoves() -> [PlayedMove] {
+        hold()
         let result = session.analysisMoves(timing: SchedTiming(), nowMs: Self.nowMs)
         document.apply(result.changes)
         changed()
@@ -179,11 +214,17 @@ final class DrillModel {
         stamp += 1
         timer?.cancel()
         timer = nil
+        nextLineAt = nil
+        let phase = session.phase()
+        if phase != .lineDone { waitsForNext = false }
         let delay: Int
-        switch session.phase() {
+        switch phase {
         case .rewinding: delay = 250
         case .autoplay: delay = afterMove ? 600 : 450
-        case .lineDone: delay = 400
+        case .lineDone:
+            guard autoAdvance, !waitsForNext else { return }
+            delay = Int(Self.lineDoneSeconds * 1000)
+            nextLineAt = .now + Self.lineDoneSeconds
         case .idle, .userTurn, .finished: return
         }
         timer = Task { [weak self] in
@@ -205,6 +246,7 @@ final class DrillModel {
 struct DrillView: View {
     /// In the split view (iPad, Mac) the board is in the board column and this is the panel.
     @Environment(\.inSplitView) private var inSplitView
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Environment(\.openScreen) private var openScreen
     let model: DrillModel
     @State private var browsing: BrowseRequest?
@@ -229,11 +271,15 @@ struct DrillView: View {
     var body: some View {
         content
             .hidesTabBar()
-            .task { model.start() }
+            .task {
+                model.autoAdvance = !voiceOver
+                model.start()
+            }
+            .onChange(of: voiceOver) { model.autoAdvance = !voiceOver }
         // Browsing pushes the builder on top; training goes on when it's popped.
         .onDisappear { if browsing == nil { model.stop() } }
         .checksCoverage(model.document)
-        .analysisBoard($analysis)
+        .analysisBoard($analysis) { model.start() }
     }
 
     private var content: some View {
@@ -283,9 +329,11 @@ struct DrillView: View {
         .boardScreenTitle(model.mode.title, repertoire: model.document.name, inSplitView: inSplitView)
         .toolbar {
             if !model.finished {
-                // In the split view the actions are in the panel's bar, as in the builder.
+                // In the split view the actions are in the panel's bar, as in the builder;
+                // Analysis and Next are in the board column's bar.
                 let split = inSplitView
                 let actions: ToolbarItemPlacement = split ? .trailingBar : .bottomActions
+                // Disabled at a line's end (no move to ask about), in its place.
                 ToolbarItem(placement: actions) {
                     Button("Hint", systemImage: "lightbulb") { model.hint() }
                         .disabled(!model.canMove)
@@ -293,8 +341,8 @@ struct DrillView: View {
                 if !split {
                     ToolbarSpacer(.flexible, placement: .bottomActions)
                 }
-                // Both leave the board to look the move up, so both count as Again. In the split
-                // view Analysis is in the board column's bar.
+                // Both leave the board to look the move up, so both count as Again (not once
+                // the line is done).
                 ToolbarItemGroup(placement: actions) {
                     Button("Browse Repertoire", systemImage: "list.bullet.indent") {
                         if let node = model.browseNode() { browse(node) }
@@ -305,6 +353,10 @@ struct DrillView: View {
                                                      orientation: model.color, origin: .study)
                         }
                     }
+                }
+                if !split && model.phase == .lineDone && model.nextLineAt == nil {
+                    ToolbarSpacer(.fixed, placement: .bottomActions)
+                    ToolbarItem(placement: .bottomActions) { LineEndButton(model: model) }
                 }
             }
         }
@@ -351,7 +403,9 @@ struct DrillView: View {
             case .newMove(let move):
                 Label("New move: play \(move.san)", systemImage: "sparkles").foregroundStyle(.new)
             case .none:
-                if model.isUserTurn {
+                if model.phase == .lineDone {
+                    Label("End of the line", systemImage: "flag.checkered").foregroundStyle(.secondary)
+                } else if model.isUserTurn {
                     Label("Your move", systemImage: "circle.fill")
                 } else {
                     Label("Playing the line…", systemImage: "circle.dotted").foregroundStyle(.secondary)
@@ -360,6 +414,18 @@ struct DrillView: View {
         }
         .font(.headline)
         .animation(.default, value: model.feedback)
+    }
+}
+
+/// Next, once a finished line waits (paused, or looked at): trailing in the board's bar,
+/// where it slides in, and prominent, the one thing to do.
+struct LineEndButton: View {
+    let model: DrillModel
+
+    var body: some View {
+        Button("Next Line", systemImage: "forward.fill") { model.nextLine() }
+            .buttonStyle(.borderedProminent)
+            .keyboardShortcut(.defaultAction)
     }
 }
 
@@ -386,6 +452,53 @@ struct DrillBoard: View {
                   arrows: model.arrows, badge: model.badge, movableSide: model.canMove ? model.color : nil) { from, to, promotion in
             model.userMoved(from: from, to: to, promotion: promotion)
         }
+        // While a finished line counts down to the next one the board dims under the
+        // countdown; a tap on it pauses, and Next comes in the bar.
+        .opacity(model.nextLineAt == nil ? 1 : 0.4)
+        .overlay {
+            if let end = model.nextLineAt {
+                Button { model.pause() } label: {
+                    LineCountdown(end: end)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Pause")
+                .accessibilityHint("Stays on this line until you choose Next")
+            }
+        }
+        .animation(.default, value: model.nextLineAt == nil)
+    }
+}
+
+/// The time left before the next line, on the dimmed board: the system's ring, emptying,
+/// "Next line in N" and what a tap does, on glass so it reads over the pieces.
+private struct LineCountdown: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let end: Date
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: reduceMotion ? 0.5 : nil)) { context in
+            let left = max(0, end.timeIntervalSince(context.date))
+            VStack(spacing: 10) {
+                Gauge(value: left, in: 0...DrillModel.lineDoneSeconds) {
+                    EmptyView()
+                } currentValueLabel: {
+                    Image(systemName: "pause.fill")
+                }
+                .gaugeStyle(.accessoryCircularCapacity)
+                VStack(spacing: 2) {
+                    Text("Next line in \(Int(left.rounded(.up)))")
+                        .font(.headline)
+                        .monospacedDigit()
+                    Text("Tap to pause")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(20)
+        .glassEffect(in: .rect(cornerRadius: 28))
     }
 }
 

@@ -2,8 +2,9 @@
 //! like an Anki card: a wrong move, a hint or browsing is Again; a correct move is Good.
 //!
 //! The platform runs the timing: while `phase` is `Rewinding` or `Autoplay` it calls `step`
-//! every 250 ms or 450 ms; on `LineDone` it waits 400 ms and calls `next_line`; 1.2 s after a
-//! wrong move it calls `wrong_timeout`.
+//! every 250 ms or 450 ms; on `LineDone` it calls `next_line` after a countdown, or when the
+//! user taps Next (it waits while the user looks at the line); 1.2 s after a wrong move it
+//! calls `wrong_timeout`.
 
 use std::collections::HashSet;
 use std::sync::Arc;

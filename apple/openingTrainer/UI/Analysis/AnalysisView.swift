@@ -3,12 +3,13 @@ import SwiftUI
 
 extension View {
     /// Presents the analysis board over Browse or Study: full screen on iPhone and iPad, a
-    /// sheet on the Mac. However it closes, the line goes back as `AnalysisModel.finish` says.
-    func analysisBoard(_ model: Binding<AnalysisModel?>) -> some View {
+    /// sheet on the Mac. However it closes, the line goes back as `AnalysisModel.finish` says,
+    /// then `onDismiss` runs.
+    func analysisBoard(_ model: Binding<AnalysisModel?>, onDismiss: (() -> Void)? = nil) -> some View {
         #if os(iOS)
-        fullScreenCover(item: model) { AnalysisScreen(model: $0) }
+        fullScreenCover(item: model, onDismiss: onDismiss) { AnalysisScreen(model: $0) }
         #else
-        sheet(item: model) { AnalysisScreen(model: $0).frame(minWidth: 900, minHeight: 680) }
+        sheet(item: model, onDismiss: onDismiss) { AnalysisScreen(model: $0).frame(minWidth: 900, minHeight: 680) }
         #endif
     }
 }
