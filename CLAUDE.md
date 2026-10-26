@@ -94,8 +94,17 @@ One folder per platform around a shared core (Android and web would be `android/
   - `OpeningCoreRust/` — Swift package over the Rust core: the xcframework (built, not
     committed), the generated `opening_core.swift` (never edit by hand) and `Additions.swift`
     (hand-written conveniences: names, conformances; no rules).
-- `Design/` — app icon sources; `COLORS.md`, how the app uses color (read before any color
-  change).
+- `Design/` — `AppIcon-*.svg`, flat references of the app icon; `COLORS.md`, how the app uses
+  color (read before any color change).
+- The app icon is the Icon Composer document `apple/ORBT/AppIcon.icon` (one for every platform):
+  a knight in a progress ring on a 2×2 board. Keep it Icon Composer's: the `Assets/` SVGs are
+  plain white shapes, and their colors are fills in `icon.json` (`fill-specializations` for dark;
+  the board's dark squares are the document fill); glass, specular, shadows, tinted and clear
+  come from the system, never baked into the SVGs. An open stroked path gets its chord filled, so
+  draw rings as filled outlines. Check every appearance with Icon Composer's renderer:
+  `"/Applications/Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool" apple/ORBT/AppIcon.icon --export-image --output-file out.png --platform iOS --rendition Default --width 1024 --height 1024 --scale 1`
+  (renditions Default, Dark, TintedLight, TintedDark, ClearLight, ClearDark), then update the
+  `Design/` references and the App icon section of `COLORS.md`.
 - `testData/` — real repertoires for testing by hand and timing (`OT_LARGE_PGN`): a 3.8k-move
   Berlin and a 1.2 MB Chessbook Semi-Slav export.
 - `FUTURE.md` — web, Android, other storage providers, a sync server.
