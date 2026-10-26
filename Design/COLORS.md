@@ -130,8 +130,8 @@ the ink, not the app color.
 
 ## App icon
 The icon keeps its own indigo (`#6B64B8`, `#3F3A8C`, the knight's eye `#2B2760`; dark icon
-`#2A2650`/`#14122B`): a white knight inside a white progress ring on a 25% track (ORBT: coming
-back round to learn). `AppIcon.icon` holds the shapes in white; the colors are its fills, set in
+`#2A2650`/`#14122B`): a white knight on a loose stack of two glass flashcards (40% and 22%): openings,
+learned by review. `AppIcon.icon` holds the shapes in white; the colors are its fills, set in
 Icon Composer (light and dark), which derives tinted and clear. `Design/AppIcon-*.svg` are flat
 references. It has the same hue as Apple's indigo (~245°), the default app color until October 2026 (now blue).
 
