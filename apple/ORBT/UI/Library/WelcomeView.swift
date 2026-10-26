@@ -19,7 +19,7 @@ struct WelcomeView: View {
             } header: {
                 Text("How it works")
             } footer: {
-                Text(usesICloud ? "Repertoires are PGN files in iCloud Drive › Opening Trainer."
+                Text(usesICloud ? "Repertoires are PGN files in iCloud Drive › ORBT."
                                 : "Repertoires are PGN files on this device.")
             }
         }

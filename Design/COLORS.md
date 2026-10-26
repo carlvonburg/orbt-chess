@@ -1,6 +1,6 @@
 # Colors
 
-How the app uses color. Everything lives in `apple/openingTrainer/UI/Components/Palette.swift`:
+How the app uses color. Everything lives in `apple/ORBT/UI/Components/Palette.swift`:
 the `Theme` (one per app color, in the environment) decides every hue, and views only name a
 meaning (`ThemeColor`: `.built`, `.learned`, `.learning`, `.new`, `.todo`, `.correct`,
 `.wrong`, `.failure`, `.ahead`, `.inactive`), never a hue (the commit hook blocks `.orange`, `Color(red:` …

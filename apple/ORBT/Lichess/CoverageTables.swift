@@ -30,7 +30,7 @@ final class CoverageTables {
     static let server = URL(string: "https://pub-7bc2c6c30e4d4311a454d55fb34e57ba.r2.dev/coverage_bins/")!
     static let directory = URL.applicationSupportDirectory.appending(path: "Coverage", directoryHint: .isDirectory)
     private static var savedManifest: URL { directory.appending(path: "manifest.json") }
-    private static let log = Logger(subsystem: "ch.cvb.openingTrainer", category: "coverage")
+    private static let log = Logger(subsystem: "org.orbtchess.orbt", category: "coverage")
 
     init(explorer: ExplorerService) {
         self.explorer = explorer

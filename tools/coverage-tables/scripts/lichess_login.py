@@ -1,10 +1,10 @@
-"""Lichess OAuth (PKCE, no scopes) for CLI tools: saves a token to ~/.config/opening-trainer/lichess_token."""
+"""Lichess OAuth (PKCE, no scopes) for CLI tools: saves a token to ~/.config/orbt/lichess_token."""
 import base64, hashlib, http.server, json, os, secrets, subprocess, urllib.parse, urllib.request
 
 PORT = 8765
 REDIRECT = f"http://localhost:{PORT}/callback"
-CLIENT_ID = "opening-trainer-cli"
-TOKEN_PATH = os.path.expanduser("~/.config/opening-trainer/lichess_token")
+CLIENT_ID = "orbt-cli"
+TOKEN_PATH = os.path.expanduser("~/.config/orbt/lichess_token")
 
 verifier = secrets.token_urlsafe(64)
 challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode()

@@ -115,7 +115,7 @@ final class LichessAuth {
 }
 
 enum Keychain {
-    private static let service = "ch.cvb.openingTrainer"
+    private static let service = "org.orbtchess.orbt"
 
     static func read(_ key: String) -> String? {
         let query: [String: Any] = [

@@ -5,7 +5,7 @@
 #   core/ot-ffi/ or Cargo.lock changed -> core/scripts/build-apple.sh; the committed Swift
 #                               bindings must already be up to date
 #   apple/ or the FFI changed -> the iOS simulator build
-#   apple/openingTrainer/UI/ changed -> no colors by name outside Palette.swift
+#   apple/ORBT/UI/ changed -> no colors by name outside Palette.swift
 # Other commands pass through untouched.
 set -uo pipefail
 
@@ -55,19 +55,22 @@ if touches '^core/(ot-ffi/|Cargo\.lock)'; then
   fi
 fi
 
-if touches '^apple/openingTrainer/UI/'; then
+if touches '^apple/ORBT/UI/'; then
   # Colors come from the roles in Palette.swift (Design/COLORS.md), never a hue by name.
   hues=$(grep -rnE '\.(red|green|blue|orange|yellow|purple|teal|mint|cyan|indigo|pink|brown)\b|Color\(red:|UIColor\(red:|NSColor\(red:' \
-    apple/openingTrainer/UI --include='*.swift' | grep -v '/Palette.swift:')
+    apple/ORBT/UI --include='*.swift' | grep -v '/Palette.swift:')
   if [[ -n "$hues" ]]; then
-    echo "Commit blocked: colors by name in the UI. Use a role from apple/openingTrainer/UI/Components/Palette.swift (see Design/COLORS.md):" >&2
+    echo "Commit blocked: colors by name in the UI. Use a role from apple/ORBT/UI/Components/Palette.swift (see Design/COLORS.md):" >&2
     echo "$hues" >&2
     exit 2
   fi
 fi
 
 if $app_needed; then
-  xcodebuild -project apple/openingTrainer.xcodeproj -scheme openingTrainer \
+  # The checkout's own project, whatever it is called (its scheme has the same name).
+  project=(apple/*.xcodeproj(N))
+  [[ ${#project} -eq 1 ]] || { echo "no single Xcode project in apple/" >"$log"; fail "finding the Xcode project"; }
+  xcodebuild -project "$project" -scheme "${project:t:r}" \
     -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' -quiet build \
     >>"$log" 2>&1 || fail "the iOS simulator build"
 fi

@@ -1,12 +1,12 @@
 """Compares OTB tables (summed) with the Lichess masters explorer on a few positions.
-Usage: compare_masters.py <dump binary> <table>... (token from ~/.config/opening-trainer/lichess_token)"""
+Usage: compare_masters.py <dump binary> <table>... (token from ~/.config/orbt/lichess_token)"""
 import json, os, subprocess, sys, time, urllib.parse, urllib.request
 
 LINES = ["", "e2e4", "d2d4", "c2c4", "g1f3", "e2e4 c7c5", "e2e4 e7e5", "e2e4 e7e5 g1f3", "e2e4 e7e5 g1f3 b8c6",
          "e2e4 e7e5 g1f3 b8c6 f1b5", "e2e4 c7c5 g1f3", "e2e4 c7c5 g1f3 d7d6 d2d4 c5d4 f3d4 g8f6 b1c3",
          "e2e4 e7e6 d2d4", "e2e4 c7c6 d2d4", "d2d4 g8f6 c2c4", "d2d4 g8f6 c2c4 e7e6", "d2d4 d7d5 c2c4",
          "d2d4 g8f6 c2c4 g7g6", "c2c4 e7e5", "g1f3 d7d5"]
-token = open(os.path.expanduser("~/.config/opening-trainer/lichess_token")).read().strip()
+token = open(os.path.expanduser("~/.config/orbt/lichess_token")).read().strip()
 dump, tables = sys.argv[1], sys.argv[2:]
 ours = {}
 for l in subprocess.run([dump, *tables, "--", *LINES], capture_output=True, text=True, check=True).stdout.splitlines():

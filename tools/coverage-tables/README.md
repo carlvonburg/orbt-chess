@@ -38,5 +38,5 @@ core/scripts/coverage-manifest.py <lichess tables dir> <otb tables dir>
 - `verify`: reads tables back and prints the moves of given lines.
 - `dump`: per-move counts of given lines, summed over tables, as JSON lines.
 - `headers`, `dates`, `levels`, `prefix`: analyses of the PGN's tags used to choose the filters.
-- `scripts/`: `lichess_login.py` saves a Lichess token to `~/.config/opening-trainer/lichess_token`;
+- `scripts/`: `lichess_login.py` saves a Lichess token to `~/.config/orbt/lichess_token`;
   `compare_masters.py` compares the tables with the Lichess masters explorer.

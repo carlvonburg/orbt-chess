@@ -11,9 +11,9 @@ use crate::chess::{PlayedMove, Side, san};
 use crate::http::{HttpMethod, HttpRequest, HttpResponse};
 
 pub const HOST: &str = "https://lichess.org";
-pub const CLIENT_ID: &str = "ch.cvb.openingTrainer";
-pub const CALLBACK_SCHEME: &str = "ch.cvb.openingtrainer";
-pub const REDIRECT_URI: &str = "ch.cvb.openingtrainer://oauth-callback";
+pub const CLIENT_ID: &str = "org.orbtchess.orbt";
+pub const CALLBACK_SCHEME: &str = "org.orbtchess.orbt";
+pub const REDIRECT_URI: &str = "org.orbtchess.orbt://oauth-callback";
 /// Without `expires_in`, Lichess tokens last about a year.
 pub const DEFAULT_TOKEN_SECS: i64 = 365 * 86_400;
 
@@ -285,14 +285,14 @@ mod tests {
     fn authorize_and_callback() {
         let url = authorize_url("verifier", "st8");
         assert!(url.starts_with(
-            "https://lichess.org/oauth?response_type=code&client_id=ch.cvb.openingTrainer"
+            "https://lichess.org/oauth?response_type=code&client_id=org.orbtchess.orbt"
         ));
-        assert!(url.contains("redirect_uri=ch.cvb.openingtrainer%3A%2F%2Foauth-callback"));
+        assert!(url.contains("redirect_uri=org.orbtchess.orbt%3A%2F%2Foauth-callback"));
         assert!(url.ends_with("&state=st8"));
-        let cb = "ch.cvb.openingtrainer://oauth-callback?code=abc%2B1&state=st8";
+        let cb = "org.orbtchess.orbt://oauth-callback?code=abc%2B1&state=st8";
         assert_eq!(parse_callback(cb, "st8"), Ok(Some("abc+1".into())));
         assert_eq!(parse_callback(cb, "other"), Err(AuthError::StateMismatch));
-        let denied = "ch.cvb.openingtrainer://oauth-callback?error=access_denied&state=st8";
+        let denied = "org.orbtchess.orbt://oauth-callback?error=access_denied&state=st8";
         assert_eq!(parse_callback(denied, "st8"), Ok(None));
     }
 
@@ -301,7 +301,7 @@ mod tests {
         let body = token_request_body("c o", "v");
         assert_eq!(
             body,
-            "grant_type=authorization_code&code=c%20o&code_verifier=v&redirect_uri=ch.cvb.openingtrainer%3A%2F%2Foauth-callback&client_id=ch.cvb.openingTrainer"
+            "grant_type=authorization_code&code=c%20o&code_verifier=v&redirect_uri=org.orbtchess.orbt%3A%2F%2Foauth-callback&client_id=org.orbtchess.orbt"
         );
         let request = token_request("c o", "v");
         assert_eq!(request.method, HttpMethod::Post);

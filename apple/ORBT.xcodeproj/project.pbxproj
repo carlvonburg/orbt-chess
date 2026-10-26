@@ -16,25 +16,25 @@
 			containerPortal = 1F1758793083B5B8003B959B /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 1F1758803083B5B8003B959B;
-			remoteInfo = openingTrainer;
+			remoteInfo = ORBT;
 		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		1F1758813083B5B8003B959B /* openingTrainer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = openingTrainer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1F1758813083B5B8003B959B /* ORBT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ORBT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000000B4 /* OpeningCoreRust */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = OpeningCoreRust; sourceTree = "<group>"; };
-		BB0000000000000000000001 /* openingTrainerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = openingTrainerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB0000000000000000000001 /* ORBTTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ORBTTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		1F1758833083B5B8003B959B /* openingTrainer */ = {
+		1F1758833083B5B8003B959B /* ORBT */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = openingTrainer;
+			path = ORBT;
 			sourceTree = "<group>";
 		};
-		BB0000000000000000000002 /* openingTrainerTests */ = {
+		BB0000000000000000000002 /* ORBTTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = openingTrainerTests;
+			path = ORBTTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -62,8 +62,8 @@
 			isa = PBXGroup;
 			children = (
 				AA00000000000000000000B4 /* OpeningCoreRust */,
-				1F1758833083B5B8003B959B /* openingTrainer */,
-				BB0000000000000000000002 /* openingTrainerTests */,
+				1F1758833083B5B8003B959B /* ORBT */,
+				BB0000000000000000000002 /* ORBTTests */,
 				1F1758823083B5B8003B959B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -71,8 +71,8 @@
 		1F1758823083B5B8003B959B /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1F1758813083B5B8003B959B /* openingTrainer.app */,
-				BB0000000000000000000001 /* openingTrainerTests.xctest */,
+				1F1758813083B5B8003B959B /* ORBT.app */,
+				BB0000000000000000000001 /* ORBTTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -80,9 +80,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1F1758803083B5B8003B959B /* openingTrainer */ = {
+		1F1758803083B5B8003B959B /* ORBT */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 1F17588C3083B5B9003B959B /* Build configuration list for PBXNativeTarget "openingTrainer" */;
+			buildConfigurationList = 1F17588C3083B5B9003B959B /* Build configuration list for PBXNativeTarget "ORBT" */;
 			buildPhases = (
 				1F17587D3083B5B8003B959B /* Sources */,
 				1F17587E3083B5B8003B959B /* Frameworks */,
@@ -93,19 +93,19 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				1F1758833083B5B8003B959B /* openingTrainer */,
+				1F1758833083B5B8003B959B /* ORBT */,
 			);
-			name = openingTrainer;
+			name = ORBT;
 			packageProductDependencies = (
 				AA00000000000000000000B3 /* OpeningCoreRust */,
 			);
-			productName = openingTrainer;
-			productReference = 1F1758813083B5B8003B959B /* openingTrainer.app */;
+			productName = ORBT;
+			productReference = 1F1758813083B5B8003B959B /* ORBT.app */;
 			productType = "com.apple.product-type.application";
 		};
-		BB0000000000000000000003 /* openingTrainerTests */ = {
+		BB0000000000000000000003 /* ORBTTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = BB000000000000000000000A /* Build configuration list for PBXNativeTarget "openingTrainerTests" */;
+			buildConfigurationList = BB000000000000000000000A /* Build configuration list for PBXNativeTarget "ORBTTests" */;
 			buildPhases = (
 				BB0000000000000000000007 /* Sources */,
 				BB0000000000000000000006 /* Frameworks */,
@@ -117,13 +117,13 @@
 				BB0000000000000000000004 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				BB0000000000000000000002 /* openingTrainerTests */,
+				BB0000000000000000000002 /* ORBTTests */,
 			);
-			name = openingTrainerTests;
+			name = ORBTTests;
 			packageProductDependencies = (
 			);
-			productName = openingTrainerTests;
-			productReference = BB0000000000000000000001 /* openingTrainerTests.xctest */;
+			productName = ORBTTests;
+			productReference = BB0000000000000000000001 /* ORBTTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -145,7 +145,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 1F17587C3083B5B8003B959B /* Build configuration list for PBXProject "openingTrainer" */;
+			buildConfigurationList = 1F17587C3083B5B8003B959B /* Build configuration list for PBXProject "ORBT" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -162,8 +162,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1F1758803083B5B8003B959B /* openingTrainer */,
-				BB0000000000000000000003 /* openingTrainerTests */,
+				1F1758803083B5B8003B959B /* ORBT */,
+				BB0000000000000000000003 /* ORBTTests */,
 			);
 		};
 /* End PBXProject section */
@@ -205,7 +205,7 @@
 /* Begin PBXTargetDependency section */
 		BB0000000000000000000004 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 1F1758803083B5B8003B959B /* openingTrainer */;
+			target = 1F1758803083B5B8003B959B /* ORBT */;
 			targetProxy = BB0000000000000000000005 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -339,8 +339,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Config/openingTrainer.entitlements;
-				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/openingTrainer-macOS.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Config/ORBT.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/ORBT-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5UQ3MTX86T;
@@ -351,7 +351,7 @@
 				"ENABLE_USER_SELECTED_FILES[sdk=macosx*]" = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Opening Trainer";
+				INFOPLIST_KEY_CFBundleDisplayName = ORBT;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -367,7 +367,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ch.cvb.openingTrainer;
+				PRODUCT_BUNDLE_IDENTIFIER = org.orbtchess.orbt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -389,8 +389,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Config/openingTrainer.entitlements;
-				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/openingTrainer-macOS.entitlements";
+				CODE_SIGN_ENTITLEMENTS = Config/ORBT.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "Config/ORBT-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 5UQ3MTX86T;
@@ -401,7 +401,7 @@
 				"ENABLE_USER_SELECTED_FILES[sdk=macosx*]" = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Config/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Opening Trainer";
+				INFOPLIST_KEY_CFBundleDisplayName = ORBT;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -417,7 +417,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ch.cvb.openingTrainer;
+				PRODUCT_BUNDLE_IDENTIFIER = org.orbtchess.orbt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -443,7 +443,7 @@
 				DEVELOPMENT_TEAM = 5UQ3MTX86T;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ch.cvb.openingTrainerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.orbtchess.orbtTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -453,7 +453,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/openingTrainer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/openingTrainer";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ORBT.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ORBT";
 			};
 			name = Debug;
 		};
@@ -466,7 +466,7 @@
 				DEVELOPMENT_TEAM = 5UQ3MTX86T;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = ch.cvb.openingTrainerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = org.orbtchess.orbtTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
@@ -476,14 +476,14 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/openingTrainer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/openingTrainer";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ORBT.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ORBT";
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		1F17587C3083B5B8003B959B /* Build configuration list for PBXProject "openingTrainer" */ = {
+		1F17587C3083B5B8003B959B /* Build configuration list for PBXProject "ORBT" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1F17588A3083B5B9003B959B /* Debug */,
@@ -492,7 +492,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		1F17588C3083B5B9003B959B /* Build configuration list for PBXNativeTarget "openingTrainer" */ = {
+		1F17588C3083B5B9003B959B /* Build configuration list for PBXNativeTarget "ORBT" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				1F17588D3083B5B9003B959B /* Debug */,
@@ -501,7 +501,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		BB000000000000000000000A /* Build configuration list for PBXNativeTarget "openingTrainerTests" */ = {
+		BB000000000000000000000A /* Build configuration list for PBXNativeTarget "ORBTTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				BB000000000000000000000B /* Debug */,

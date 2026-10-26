@@ -112,7 +112,7 @@ final class ExplorerService {
 
     /// The end of a ban, kept across launches: a relaunch must not restart Lichess's penalty.
     private static let bannedUntilKey = "explorerBannedUntil"
-    private static let log = Logger(subsystem: "ch.cvb.openingTrainer", category: "explorer")
+    private static let log = Logger(subsystem: "org.orbtchess.orbt", category: "explorer")
 
     init(store: ExplorerCacheStore, auth: LichessAuth) {
         self.store = store

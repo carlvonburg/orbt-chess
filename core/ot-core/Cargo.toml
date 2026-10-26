@@ -1,6 +1,6 @@
 [package]
 name = "ot-core"
-description = "Opening Trainer domain core: chess, PGN, repertoire, coverage, training. No IO, no platform APIs."
+description = "ORBT domain core: chess, PGN, repertoire, coverage, training. No IO, no platform APIs."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

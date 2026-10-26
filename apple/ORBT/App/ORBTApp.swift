@@ -4,7 +4,7 @@ import UIKit
 #endif
 
 @main
-struct OpeningTrainerApp: App {
+struct ORBTApp: App {
     @State private var model = AppModel()
     @Environment(\.scenePhase) private var scenePhase
     #if os(macOS)
@@ -40,7 +40,7 @@ struct OpeningTrainerApp: App {
             }
         }
         #if os(macOS)
-        // Opening Trainer > Settings… (⌘,), as on every Mac app.
+        // ORBT > Settings… (⌘,), as on every Mac app.
         Settings {
             SettingsView()
                 .environment(model)

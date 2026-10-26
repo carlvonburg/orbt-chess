@@ -1,12 +1,12 @@
 /*
-  Opening Trainer's entry point into one flavour of Stockfish, compiled once per flavour with
+  ORBT's entry point into one flavour of Stockfish, compiled once per flavour with
   OT_SF_MAIN naming the C function and sfio_config.h naming the engine's namespace.
 
   It mirrors upstream's src/main.cpp (and lichess's multistockfish shim) except that the
   engine reads and writes the descriptors it is given instead of stdin and stdout, so the
   app's own streams are untouched and two flavours can be linked into one binary.
 
-  Copyright (C) 2026 Opening Trainer contributors; Stockfish (C) the Stockfish developers.
+  Copyright (C) 2026 ORBT contributors; Stockfish (C) the Stockfish developers.
   GPL-3.0-or-later, see ../vendor/stockfish/Copying.txt.
 */
 

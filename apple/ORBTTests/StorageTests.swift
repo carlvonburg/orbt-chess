@@ -1,7 +1,7 @@
 import Foundation
 import OpeningCoreRust
 import Testing
-@testable import openingTrainer
+@testable import ORBT
 
 /// iCloud conflict merging and file presenters, over a temporary folder. Real conflict versions
 /// can only come from iCloud, so versions are handed in as readers of other files.

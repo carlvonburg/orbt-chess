@@ -23,11 +23,11 @@ nonisolated struct RepertoireEntry: Identifiable, Equatable, Sendable {
     }
 }
 
-/// The repertoires in the app's iCloud Drive folder ("Opening Trainer" in Files). Falls back
+/// The repertoires in the app's iCloud Drive folder ("ORBT" in Files). Falls back
 /// to the local Documents folder without iCloud. Imported PGNs are copied into this folder.
 @Observable
 final class RepertoireLibrary {
-    nonisolated static let containerID = "iCloud.ch.cvb.openingTrainer"
+    nonisolated static let containerID = "iCloud.org.orbtchess.orbt"
     nonisolated static let sidecarExtension = OpeningCoreRust.sidecarExtension()
 
     private(set) var folder: URL?

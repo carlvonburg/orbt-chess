@@ -1,4 +1,7 @@
-# Opening Trainer
+# ORBT (Opening Repertoire Builder & Trainer)
+
+Said "orbit"; website orbtchess.org. Identifiers use the domain: bundle ID `org.orbtchess.orbt`,
+iCloud container `iCloud.org.orbtchess.orbt` (the Files folder is "ORBT").
 
 Open-source (AGPL-3.0), subscription-free alternative to Chessbook for iPhone, iPad and Mac.
 A Rust core shared by every platform, with a SwiftUI app (iOS/iPadOS 26 and native macOS 26,
@@ -72,7 +75,7 @@ One folder per platform around a shared core (Android and web would be `android/
     The core must not panic or recurse per ply on any input: the app calls it on small
     stacks, and a panic or overflow in a non-throwing call crashes it on every launch.
 - `apple/` — the iPhone, iPad and Mac app (one multiplatform target, not Catalyst):
-  - `openingTrainer.xcodeproj`; `openingTrainer/` is the app target (folder-synced group, new
+  - `ORBT.xcodeproj`; `ORBT/` is the app target (folder-synced group, new
     files are picked up automatically): `Engine/` (the engine service, the full net download), `Lichess/`, `Storage/`, `UI/`. `Config/` holds the
     Info.plist and the iOS and macOS entitlements (same iCloud container; macOS sandboxed).
   - The Swift side does IO and platform work only: files (NSFileCoordinator, iCloud conflict
@@ -81,7 +84,7 @@ One folder per platform around a shared core (Android and web would be `android/
     drill's step clock), UserDefaults and the UI. Models (`RepertoireDocument`, `BuilderModel`,
     `DrillModel`, `StatisticsModel`, `ExplorerService`) are thin `@Observable` wrappers that
     forward to the core and re-read it when its revision changes.
-  - `openingTrainerTests/` — Swift Testing target hosted in the app (folder-synced): conflict
+  - `ORBTTests/` — Swift Testing target hosted in the app (folder-synced): conflict
     merging and file presenters over a temporary folder.
   - `UI/Components/Platform.swift` — the few iOS-only modifiers and what macOS uses instead.
   - `UI/Components/Palette.swift` — every color: the `Theme` (one per app color, in the
@@ -207,7 +210,7 @@ in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palett
      bindings.
   2. `core/scripts/check.sh` before committing Rust changes (needs
      `cargo install --locked cargo-deny` once).
-  3. `xcodebuild -project apple/openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' build`
+  3. `xcodebuild -project apple/ORBT.xcodeproj -scheme ORBT -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' build`
      (iPad: `name=iPad Pro 13-inch (M5)`; Mac: `-destination 'platform=macOS'`, which needs a
      Mac development profile for the iCloud entitlement, or `CODE_SIGNING_ALLOWED=NO` to compile
      only).

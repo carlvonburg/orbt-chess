@@ -1,9 +1,9 @@
-# Opening Trainer
+# ORBT
 
-A free, open-source opening repertoire trainer for iPhone, iPad and Mac, in the spirit of
-Chessbook, without a subscription.
+ORBT (said "orbit": Opening Repertoire Builder & Trainer) is a free, open-source opening
+repertoire trainer for iPhone, iPad and Mac, in the spirit of Chessbook, without a subscription.
 
-- **Your repertoire is a PGN** in iCloud Drive (Files › Opening Trainer). Create one, or
+- **Your repertoire is a PGN** in iCloud Drive (Files › ORBT). Create one, or
   import an existing PGN, which is copied into that folder. Every edit is written to the file immediately, and changes from other devices
   are merged in.
 - **Coverage** from the Lichess opening explorer (masters, or Lichess games filtered by
@@ -37,7 +37,7 @@ Requires Xcode 26 (iOS 26, macOS 26) and Rust (`brew install rustup`, then `rust
 
 ```
 core/scripts/build-apple.sh
-xcodebuild -project apple/openingTrainer.xcodeproj -scheme openingTrainer -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+xcodebuild -project apple/ORBT.xcodeproj -scheme ORBT -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 core/scripts/check.sh
 ```
 
