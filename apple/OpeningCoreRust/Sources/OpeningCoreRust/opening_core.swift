@@ -3558,6 +3558,11 @@ public protocol GraphsProtocol: AnyObject, Sendable {
     
     func futureDue()  -> FutureDue
     
+    /**
+     * Moves due over a range from today (the table under Anki's Future Due graph).
+     */
+    func futureDueSummary(range: GraphRange)  -> FutureDueSummary
+    
     func hours(range: GraphRange)  -> [Hour]
     
     func intervals()  -> [Int64: Int64]
@@ -3565,6 +3570,11 @@ public protocol GraphsProtocol: AnyObject, Sendable {
     func retrievability()  -> Retrievability
     
     func reviews()  -> Reviews
+    
+    /**
+     * Days studied, answers and time over a range (the table under Anki's Reviews graph).
+     */
+    func reviewsSummary(range: GraphRange)  -> ReviewsSummary
     
     func stability()  -> [Int64: Int64]
     
@@ -3710,6 +3720,19 @@ open func futureDue() -> FutureDue  {
 })
 }
     
+    /**
+     * Moves due over a range from today (the table under Anki's Future Due graph).
+     */
+open func futureDueSummary(range: GraphRange) -> FutureDueSummary  {
+    return try!  FfiConverterTypeFutureDueSummary_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_future_due_summary(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeGraphRange_lower(range),uniffiCallStatus
+    )
+})
+}
+    
 open func hours(range: GraphRange) -> [Hour]  {
     return try!  FfiConverterSequenceTypeHour.lift(try! rustCall() {
         uniffiCallStatus in
@@ -3743,6 +3766,19 @@ open func reviews() -> Reviews  {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_graphs_reviews(
             self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Days studied, answers and time over a range (the table under Anki's Reviews graph).
+     */
+open func reviewsSummary(range: GraphRange) -> ReviewsSummary  {
+    return try!  FfiConverterTypeReviewsSummary_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_reviews_summary(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeGraphRange_lower(range),uniffiCallStatus
     )
 })
 }
@@ -7524,6 +7560,72 @@ public func FfiConverterTypeFutureDue_lower(_ value: FutureDue) -> RustBuffer {
 }
 
 
+public struct FutureDueSummary: Equatable, Hashable {
+    public var periodDays: Int64
+    public var total: Int64
+    public var overdue: Int64
+    public var dueTomorrow: Int64
+    public var dailyLoad: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(periodDays: Int64, total: Int64, overdue: Int64, dueTomorrow: Int64, dailyLoad: Int64) {
+        self.periodDays = periodDays
+        self.total = total
+        self.overdue = overdue
+        self.dueTomorrow = dueTomorrow
+        self.dailyLoad = dailyLoad
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FutureDueSummary: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFutureDueSummary: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FutureDueSummary {
+        return
+            try FutureDueSummary(
+                periodDays: FfiConverterInt64.read(from: &buf), 
+                total: FfiConverterInt64.read(from: &buf), 
+                overdue: FfiConverterInt64.read(from: &buf), 
+                dueTomorrow: FfiConverterInt64.read(from: &buf), 
+                dailyLoad: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FutureDueSummary, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.periodDays, into: &buf)
+        FfiConverterInt64.write(value.total, into: &buf)
+        FfiConverterInt64.write(value.overdue, into: &buf)
+        FfiConverterInt64.write(value.dueTomorrow, into: &buf)
+        FfiConverterInt64.write(value.dailyLoad, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFutureDueSummary_lift(_ buf: RustBuffer) throws -> FutureDueSummary {
+    return try FfiConverterTypeFutureDueSummary.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFutureDueSummary_lower(_ value: FutureDueSummary) -> RustBuffer {
+    return FfiConverterTypeFutureDueSummary.lower(value)
+}
+
+
 /**
  * What one repertoire contributes to the statistics.
  */
@@ -9292,6 +9394,68 @@ public func FfiConverterTypeReviews_lift(_ buf: RustBuffer) throws -> Reviews {
 #endif
 public func FfiConverterTypeReviews_lower(_ value: Reviews) -> RustBuffer {
     return FfiConverterTypeReviews.lower(value)
+}
+
+
+public struct ReviewsSummary: Equatable, Hashable {
+    public var periodDays: Int64
+    public var daysStudied: Int64
+    public var answers: Int64
+    public var millis: Int64
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(periodDays: Int64, daysStudied: Int64, answers: Int64, millis: Int64) {
+        self.periodDays = periodDays
+        self.daysStudied = daysStudied
+        self.answers = answers
+        self.millis = millis
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ReviewsSummary: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeReviewsSummary: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ReviewsSummary {
+        return
+            try ReviewsSummary(
+                periodDays: FfiConverterInt64.read(from: &buf), 
+                daysStudied: FfiConverterInt64.read(from: &buf), 
+                answers: FfiConverterInt64.read(from: &buf), 
+                millis: FfiConverterInt64.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ReviewsSummary, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.periodDays, into: &buf)
+        FfiConverterInt64.write(value.daysStudied, into: &buf)
+        FfiConverterInt64.write(value.answers, into: &buf)
+        FfiConverterInt64.write(value.millis, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReviewsSummary_lift(_ buf: RustBuffer) throws -> ReviewsSummary {
+    return try FfiConverterTypeReviewsSummary.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeReviewsSummary_lower(_ value: ReviewsSummary) -> RustBuffer {
+    return FfiConverterTypeReviewsSummary.lower(value)
 }
 
 
@@ -11225,6 +11389,7 @@ public func FfiConverterTypeGapKind_lower(_ value: GapKind) -> RustBuffer {
 
 public enum GraphRange: Equatable, Hashable {
     
+    case week
     case month
     case threeMonths
     case year
@@ -11250,13 +11415,15 @@ public struct FfiConverterTypeGraphRange: FfiConverterRustBuffer {
         let variant: Int32 = try readInt(&buf)
         switch variant {
         
-        case 1: return .month
+        case 1: return .week
         
-        case 2: return .threeMonths
+        case 2: return .month
         
-        case 3: return .year
+        case 3: return .threeMonths
         
-        case 4: return .all
+        case 4: return .year
+        
+        case 5: return .all
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -11266,20 +11433,24 @@ public struct FfiConverterTypeGraphRange: FfiConverterRustBuffer {
         switch value {
         
         
-        case .month:
+        case .week:
             writeInt(&buf, Int32(1))
         
         
-        case .threeMonths:
+        case .month:
             writeInt(&buf, Int32(2))
         
         
-        case .year:
+        case .threeMonths:
             writeInt(&buf, Int32(3))
         
         
-        case .all:
+        case .year:
             writeInt(&buf, Int32(4))
+        
+        
+        case .all:
+            writeInt(&buf, Int32(5))
         
         }
     }
@@ -16061,6 +16232,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_graphs_future_due() != 50195) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_graphs_future_due_summary() != 57500) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_graphs_hours() != 3747) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -16071,6 +16245,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_graphs_reviews() != 6063) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_reviews_summary() != 31288) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_graphs_stability() != 26116) {

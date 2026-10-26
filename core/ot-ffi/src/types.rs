@@ -20,8 +20,8 @@ use ot_core::http::{Header, HttpMethod, HttpRequest, HttpResponse};
 use ot_core::lichess::cloud_eval::{CloudEval, CloudEvalLookup, Pv};
 use ot_core::repertoire::{NodeId, RepertoireNode, RepertoireTree};
 use ot_core::statistics::{
-    CardCounts, CardInfo, GraphParts, GraphRange, Hour, RetentionPeriod, ReviewCounts, Streak,
-    Today, TrueRetention, WeakMove,
+    CardCounts, CardInfo, FutureDueSummary, GraphParts, GraphRange, Hour, RetentionPeriod,
+    ReviewCounts, ReviewsSummary, Streak, Today, TrueRetention, WeakMove,
 };
 use ot_core::training::anki::{
     Card, CardQueue, CardType, Counts, DayLimit, DeckLimits, DeckStudyStats, MemoryState,
@@ -513,6 +513,7 @@ pub enum Phase {
 
 #[uniffi::remote(Enum)]
 pub enum GraphRange {
+    Week,
     Month,
     ThreeMonths,
     Year,
@@ -560,6 +561,23 @@ pub struct ReviewCounts {
     pub young: i64,
     pub mature: i64,
     pub filtered: i64,
+}
+
+#[uniffi::remote(Record)]
+pub struct ReviewsSummary {
+    pub period_days: i64,
+    pub days_studied: i64,
+    pub answers: i64,
+    pub millis: i64,
+}
+
+#[uniffi::remote(Record)]
+pub struct FutureDueSummary {
+    pub period_days: i64,
+    pub total: i64,
+    pub overdue: i64,
+    pub due_tomorrow: i64,
+    pub daily_load: i64,
 }
 
 #[uniffi::remote(Record)]

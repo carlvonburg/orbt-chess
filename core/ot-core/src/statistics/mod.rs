@@ -20,6 +20,8 @@ use crate::training::anki::{
 /// Time ranges of Anki's graphs.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum GraphRange {
+    /// Not one of Anki's ranges: the summary's "this week".
+    Week,
     Month,
     ThreeMonths,
     Year,
@@ -27,7 +29,8 @@ pub enum GraphRange {
 }
 
 impl GraphRange {
-    pub const ALL: [GraphRange; 4] = [
+    pub const ALL: [GraphRange; 5] = [
+        GraphRange::Week,
         GraphRange::Month,
         GraphRange::ThreeMonths,
         GraphRange::Year,
@@ -36,6 +39,7 @@ impl GraphRange {
 
     pub fn days(self) -> i64 {
         match self {
+            GraphRange::Week => 7,
             GraphRange::Month => 30,
             GraphRange::ThreeMonths => 90,
             GraphRange::Year => 365,
@@ -45,6 +49,7 @@ impl GraphRange {
 
     pub fn title(self) -> &'static str {
         match self {
+            GraphRange::Week => "1 week",
             GraphRange::Month => "1 month",
             GraphRange::ThreeMonths => "3 months",
             GraphRange::Year => "1 year",
@@ -114,6 +119,27 @@ pub struct Reviews {
     pub count: BTreeMap<i64, ReviewCounts>,
     /// Day → milliseconds by kind.
     pub time: BTreeMap<i64, ReviewCounts>,
+}
+
+/// The table under Anki's Reviews graph (reviews.ts), over a range.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ReviewsSummary {
+    /// Days in the range; for all time, from the first day with answers.
+    pub period_days: i64,
+    pub days_studied: i64,
+    pub answers: i64,
+    pub millis: i64,
+}
+
+/// The table under Anki's Future Due graph (future-due.ts), over a range from today.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct FutureDueSummary {
+    pub period_days: i64,
+    /// Due within the range, overdue moves included (they are due now).
+    pub total: i64,
+    pub overdue: i64,
+    pub due_tomorrow: i64,
+    pub daily_load: i64,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -407,6 +433,45 @@ impl GraphsContext {
             }
         }
         result
+    }
+
+    pub fn reviews_summary(&self, range: GraphRange) -> ReviewsSummary {
+        let reviews = self.reviews();
+        let first = match range {
+            GraphRange::All => reviews.count.keys().next().copied().unwrap_or(0).min(0),
+            _ => 1 - range.days(),
+        };
+        let mut summary = ReviewsSummary {
+            period_days: 1 - first,
+            ..ReviewsSummary::default()
+        };
+        for (day, counts) in reviews.count.range(first..=0) {
+            if counts.total() > 0 {
+                summary.days_studied += 1;
+                summary.answers += counts.total();
+                summary.millis += reviews.time.get(day).map_or(0, ReviewCounts::total);
+            }
+        }
+        summary
+    }
+
+    pub fn future_due_summary(&self, range: GraphRange) -> FutureDueSummary {
+        let due = self.future_due();
+        let last = match range {
+            GraphRange::All => due
+                .due_by_day
+                .keys()
+                .next_back()
+                .map_or(1, |&d| d.max(0) + 1),
+            _ => range.days(),
+        };
+        FutureDueSummary {
+            period_days: last,
+            total: due.due_by_day.range(..last).map(|(_, n)| n).sum(),
+            overdue: due.due_by_day.range(..0).map(|(_, n)| n).sum(),
+            due_tomorrow: due.due_by_day.get(&1).copied().unwrap_or(0),
+            daily_load: due.daily_load,
+        }
     }
 
     fn since(&self, range: GraphRange) -> i64 {

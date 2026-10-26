@@ -110,3 +110,37 @@ fn streak_current_and_longest() {
     assert_eq!(Streak::from_days(&days(&[-2, -3])).current, 0);
     assert_eq!(Streak::from_days(&days(&[])), Streak::default());
 }
+
+#[test]
+fn reviews_and_future_due_summaries() {
+    let revlog = vec![
+        entry(60, 3, 0, RevlogReviewKind::Learning),
+        entry(120, 1, 30, RevlogReviewKind::Review),
+        entry(2 * 86_400, 3, 30, RevlogReviewKind::Review),
+        entry(40 * 86_400, 3, 30, RevlogReviewKind::Review),
+    ];
+    let review = |due: i64| Card {
+        ctype: CardType::Review,
+        queue: CardQueue::Review,
+        due: timing().days_elapsed + due,
+        interval: 10,
+        ..Card::new(1, 0, 0)
+    };
+    let cards = vec![review(-3), review(0), review(1), review(1), review(20)];
+    let graphs = GraphsContext::new(cards, 0, 0, revlog, timing(), 0);
+
+    let week = graphs.reviews_summary(GraphRange::Week);
+    assert_eq!(week.period_days, 7);
+    assert_eq!(
+        (week.days_studied, week.answers, week.millis),
+        (2, 3, 12_000)
+    );
+    let all = graphs.reviews_summary(GraphRange::All);
+    assert_eq!((all.period_days, all.days_studied, all.answers), (41, 3, 4));
+
+    let due = graphs.future_due_summary(GraphRange::Week);
+    assert_eq!(due.period_days, 7);
+    assert_eq!((due.total, due.overdue, due.due_tomorrow), (4, 1, 2));
+    let all = graphs.future_due_summary(GraphRange::All);
+    assert_eq!((all.period_days, all.total), (21, 5));
+}

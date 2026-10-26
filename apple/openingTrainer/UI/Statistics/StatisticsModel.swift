@@ -12,12 +12,13 @@ final class StatisticsModel {
     }
 
     var scope = Scope.all
-    var range = GraphRange.month
 
     private(set) var graphs: Graphs?
     private(set) var cards: [EPD: Card] = [:]
     /// The open repertoire, for reach, opening branches and move names.
     private(set) var document: RepertoireDocument?
+    /// Moves still due today (with the daily limits, as Study counts them).
+    private(set) var dueLeft = 0
     private(set) var isLoading = false
 
     func load(_ app: AppModel) async {
@@ -29,6 +30,7 @@ final class StatisticsModel {
         case .all:
             document = nil
             var parts: [GraphParts] = []
+            var due = 0
             for entry in app.library.entries where !entry.needsSetup {
                 let revlogURL = RepertoireLibrary.revlogURL(for: entry.pgnURL)
                 if let doc = app.documents[entry.id] {
@@ -36,8 +38,10 @@ final class StatisticsModel {
                 } else if let sidecar = entry.sidecar {
                     parts.append(sidecar.graphParts(revlog: await StudyLog.readData(revlogURL)))
                 }
+                due += Int(EntryStats(entry: entry, document: app.documents[entry.id]).counts.total)
             }
             cards = [:]
+            dueLeft = due
             graphs = Graphs.fromParts(parts: parts, timing: timing, localOffsetSecs: offset)
         case .repertoire(let id):
             guard let entry = app.library.entry(id: id), let doc = await app.open(entry) else {
@@ -46,6 +50,7 @@ final class StatisticsModel {
             }
             document = doc
             cards = doc.core.repertoireCards()
+            dueLeft = Int(EntryStats(document: doc).counts.total)
             let parts = await doc.graphParts(wholeCollection: false)
             graphs = Graphs.fromParts(parts: [parts], timing: timing, localOffsetSecs: offset)
         }
@@ -59,8 +64,8 @@ final class StatisticsModel {
                                               nowSecs: Date.now.timeIntervalSince1970)
     }
 
-    var weakestMoves: [WeakMove] {
-        OpeningCoreRust.weakestMoves(cards: cards, nowSecs: Date.now.timeIntervalSince1970, limit: 10)
+    func weakestMoves(limit: Int) -> [WeakMove] {
+        OpeningCoreRust.weakestMoves(cards: cards, nowSecs: Date.now.timeIntervalSince1970, limit: UInt32(limit))
     }
 
     /// The first node with a position, for naming and opening it.

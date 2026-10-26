@@ -77,14 +77,20 @@ A new meaning: Multicolor takes a free system color (teal, mint, brown, indigo, 
 themes a label color or a shade of the app color.
 
 ## Statistics
-| Chart | Colors |
+Each summary card's title and symbol name its subject in its meaning's color, or the accent
+where it has none.
+
+| Card / chart | Colors |
 |---|---|
-| Move Counts | `.new`, `.learning.lighter()` (learning), `.learning` (relearning), `.learned.lighter()` (young), `.learned` (mature), `.inactive` |
-| Reviews | learning and relearning `.learning` (lighter / full), young and mature `.learned` (lighter / full), `.ahead` |
-| Answer Buttons, card info | Again `.wrong` |
-| Future Due | the tint; overdue `.wrong` |
-| Calendar, Intervals, Difficulty, Stability, Retrievability, Hourly | accent (bars only count; the calendar by intensity) |
-| Weakest Moves | leech `.todo` |
+| Today | `.learned` (title, the studied ring) |
+| Expected Recall | `.learned` |
+| Streak, Calendar | `.todo` (ticked days; calendar days by intensity, today's outline) |
+| Reviews | accent; by kind: learning and relearning `.learning` (lighter / full), young and mature `.learned` (lighter / full), `.ahead` |
+| Upcoming (Future Due) | accent; overdue `.wrong` |
+| Retention | `.correct` |
+| Moves (counts) | `.learned` title; `.new`, `.learning.lighter()` (learning), `.learning` (relearning), `.learned.lighter()` (young), `.learned` (mature), `.inactive` |
+| Weakest Moves | `.wrong` title; leech `.todo` |
+| Memory, Intervals, Difficulty, Stability, Retrievability, Time of Day | accent (bars only count) |
 
 ## Board (`BoardTheme` in Palette.swift)
 The board is content with its own theme: the same in the app's light and dark appearance

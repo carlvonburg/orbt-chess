@@ -17,6 +17,8 @@ crates). Each entry says why.
 - **Today's stats also count distinct moves (`Today::card_count`)**, which Anki's today
   graph doesn't: the library's progress ring sets the moves answered today against those
   still due, and answers alone count a relearned move twice.
+- **Statistics have a one-week range** besides Anki's month, three months, year and all time:
+  the summary cards show this week, as Apple's Health and Fitness do.
 - **Engine analysis asks Lichess for a cloud eval at every ply** (lichess mobile asks only
   before ply 15), and skips the local engine where the cloud eval is depth 30 or more with
   every line asked for: opening positions are what this app analyses, and the owner wants no

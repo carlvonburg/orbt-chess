@@ -497,11 +497,8 @@ private struct BoardColumnView: View {
             case .drill(let model):
                 DrillBoardColumn(model: model)
             case nil:
-                ScrollView {
-                    InlineStatistics(scope: statisticsScope)
-                        .id(statisticsScope)
-                        .scenePadding()
-                }
+                InlineStatistics(scope: statisticsScope)
+                    .id(statisticsScope)
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { columnWidth = $0 }

@@ -9,8 +9,8 @@ use ot_core::formats::{Sidecar, Summary, Timestamp, revlog};
 use ot_core::http::{HttpRequest, HttpResponse};
 use ot_core::repertoire::RepertoireTree;
 use ot_core::statistics::{
-    CardCounts, CardInfo, GraphParts, GraphRange, GraphsContext, Hour, RetentionPeriod, Streak,
-    Today, TrueRetention, WeakMove,
+    CardCounts, CardInfo, FutureDueSummary, GraphParts, GraphRange, GraphsContext, Hour,
+    RetentionPeriod, ReviewsSummary, Streak, Today, TrueRetention, WeakMove,
 };
 use ot_core::training::anki::{Card, Counts, DeckConfig, RevlogEntry, SchedTiming};
 use ot_core::training::{PracticeMode, Progress};
@@ -85,6 +85,16 @@ impl Graphs {
             count: r.count.into_iter().collect(),
             time: r.time.into_iter().collect(),
         }
+    }
+
+    /// Days studied, answers and time over a range (the table under Anki's Reviews graph).
+    pub fn reviews_summary(&self, range: GraphRange) -> ReviewsSummary {
+        self.0.reviews_summary(range)
+    }
+
+    /// Moves due over a range from today (the table under Anki's Future Due graph).
+    pub fn future_due_summary(&self, range: GraphRange) -> FutureDueSummary {
+        self.0.future_due_summary(range)
     }
 
     pub fn hours(&self, range: GraphRange) -> Vec<Hour> {

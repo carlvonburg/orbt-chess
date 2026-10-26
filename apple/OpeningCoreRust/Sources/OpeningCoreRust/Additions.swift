@@ -214,7 +214,7 @@ extension PracticeMode: CaseIterable, RawRepresentable, Identifiable {
 }
 
 extension GraphRange: CaseIterable, Identifiable {
-    public static var allCases: [GraphRange] { [.month, .threeMonths, .year, .all] }
+    public static var allCases: [GraphRange] { [.week, .month, .threeMonths, .year, .all] }
     public var id: Self { self }
     public var title: String { rangeTitle(range: self) }
     /// Days the range covers; 0 for all time.
