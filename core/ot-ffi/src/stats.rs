@@ -87,6 +87,11 @@ impl Graphs {
         }
     }
 
+    /// Day → moves answered for the first time that day.
+    pub fn first_studied(&self) -> HashMap<i64, i64> {
+        self.0.first_studied().into_iter().collect()
+    }
+
     /// Days studied, answers and time over a range (the table under Anki's Reviews graph).
     pub fn reviews_summary(&self, range: GraphRange) -> ReviewsSummary {
         self.0.reviews_summary(range)

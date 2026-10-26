@@ -3556,6 +3556,11 @@ public protocol GraphsProtocol: AnyObject, Sendable {
     
     func difficulty()  -> [Int64: Int64]
     
+    /**
+     * Day → moves answered for the first time that day.
+     */
+    func firstStudied()  -> [Int64: Int64]
+    
     func futureDue()  -> FutureDue
     
     /**
@@ -3706,6 +3711,18 @@ open func difficulty() -> [Int64: Int64]  {
     return try!  FfiConverterDictionaryInt64Int64.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_graphs_difficulty(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Day → moves answered for the first time that day.
+     */
+open func firstStudied() -> [Int64: Int64]  {
+    return try!  FfiConverterDictionaryInt64Int64.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_graphs_first_studied(
             self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
@@ -16227,6 +16244,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_graphs_difficulty() != 15225) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_graphs_first_studied() != 27657) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_graphs_future_due() != 50195) {

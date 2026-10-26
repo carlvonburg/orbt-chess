@@ -435,6 +435,20 @@ impl GraphsContext {
         result
     }
 
+    /// Day (0 = today) → moves answered for the first time that day (Anki's Added graph, by
+    /// first answer: a move counts once it is studied, not when its line is saved).
+    pub fn first_studied(&self) -> BTreeMap<i64, i64> {
+        let mut seen = BTreeSet::new();
+        let mut result = BTreeMap::new();
+        for review in self.revlog.iter().filter(|r| is_scheduling(r)) {
+            if seen.insert(&review.cid) {
+                let day = (review.id / 1000 - self.next_day_start()) / 86_400;
+                *result.entry(day).or_default() += 1;
+            }
+        }
+        result
+    }
+
     pub fn reviews_summary(&self, range: GraphRange) -> ReviewsSummary {
         let reviews = self.reviews();
         let first = match range {

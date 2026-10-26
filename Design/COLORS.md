@@ -82,15 +82,14 @@ where it has none.
 
 | Card / chart | Colors |
 |---|---|
-| Today | `.learned` (title, the studied ring) |
 | Expected Recall | `.learned` |
-| Streak, Calendar | `.todo` (ticked days; calendar days by intensity, today's outline) |
-| Reviews | accent; by kind: learning and relearning `.learning` (lighter / full), young and mature `.learned` (lighter / full), `.ahead` |
+| Streak (calendar) | `.todo` (days by intensity; days without answers neutral) |
+| Reviews | accent title; by kind: learning and relearning `.learning` (lighter / full), young and mature `.learned` (lighter / full), `.ahead` |
+| Moves | `.learned` (title, moves studied over time); the studied bar: `.new`, `.learning.lighter()`, `.learning`, `.learned.lighter()`, `.learned`, `.inactive` |
 | Upcoming (Future Due) | accent; overdue `.wrong` |
-| Retention | `.correct` |
-| Moves (counts) | `.learned` title; `.new`, `.learning.lighter()` (learning), `.learning` (relearning), `.learned.lighter()` (young), `.learned` (mature), `.inactive` |
+| Retention, Retention by Opening | `.correct` |
+| Time of Day, Recall | accent |
 | Weakest Moves | `.wrong` title; leech `.todo` |
-| Memory, Intervals, Difficulty, Stability, Retrievability, Time of Day | accent (bars only count) |
 
 ## Board (`BoardTheme` in Palette.swift)
 The board is content with its own theme: the same in the app's light and dark appearance

@@ -129,6 +129,12 @@ fn reviews_and_future_due_summaries() {
     let cards = vec![review(-3), review(0), review(1), review(1), review(20)];
     let graphs = GraphsContext::new(cards, 0, 0, revlog, timing(), 0);
 
+    // One move, first answered 40 days ago.
+    assert_eq!(
+        graphs.first_studied().into_iter().collect::<Vec<_>>(),
+        vec![(-40, 1)]
+    );
+
     let week = graphs.reviews_summary(GraphRange::Week);
     assert_eq!(week.period_days, 7);
     assert_eq!(
