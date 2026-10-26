@@ -537,11 +537,17 @@ private struct BoardColumnView: View {
                 ToolbarItem(placement: .trailingBar) { BuilderMoreMenu(model: model, presentation: presentation) }
             }
             if case .drill(let model) = board, !model.finished {
-                // The moves played, in the bottom bar as Browse's are.
+                // The moves played, in the bottom bar as Browse's are (centred on the Mac).
+                #if os(macOS)
+                ToolbarSpacer(.flexible, placement: .bottomActions)
+                #endif
                 ToolbarItem(placement: .bottomActions) {
                     LineHistory(tree: model.document.tree, nodes: model.playedNodes)
                         .frame(width: historyWidth(buttons: false))
                 }
+                #if os(macOS)
+                ToolbarSpacer(.flexible, placement: .bottomActions)
+                #endif
                 // Looking the move up counts as Again, as Browse in the panel does.
                 ToolbarItem(placement: .trailingBar) {
                     Button("Analysis", systemImage: "cpu") {
