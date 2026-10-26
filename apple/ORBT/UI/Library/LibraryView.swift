@@ -473,6 +473,14 @@ private struct BoardColumnView: View {
     /// Browse's back and forward. On macOS the bar is the window toolbar, with room to spare:
     /// with the sidebar hidden the middle column's items reach into this column's, and a
     /// history that does not fit goes to the toolbar's overflow menu and stays there.
+    /// Looking the move up counts as Again, as Browse in the panel does.
+    private func studyAnalysisButton(_ model: DrillModel) -> some View {
+        Button("Analysis", systemImage: "cpu") {
+            analysis = AnalysisModel(document: model.document, moves: model.analysisMoves(),
+                                     orientation: model.color, origin: .study)
+        }
+    }
+
     private func historyWidth(buttons: Bool) -> CGFloat {
         #if os(macOS)
         max(120, columnWidth - (buttons ? 180 : 60) - 200)
@@ -534,7 +542,8 @@ private struct BoardColumnView: View {
                 ToolbarItem(placement: .trailingBar) { BuilderMoreMenu(model: model, presentation: presentation) }
             }
             if case .drill(let model) = board, !model.finished {
-                // The moves played, in the bottom bar as Browse's are (centred on the Mac).
+                // The moves played, in the bottom bar as Browse's are; on the Mac history and
+                // Analysis centred, as Browse's.
                 #if os(macOS)
                 ToolbarSpacer(.flexible, placement: .bottomActions)
                 #endif
@@ -543,15 +552,11 @@ private struct BoardColumnView: View {
                         .frame(width: historyWidth(buttons: false))
                 }
                 #if os(macOS)
+                ToolbarItem(placement: .bottomActions) { studyAnalysisButton(model) }
                 ToolbarSpacer(.flexible, placement: .bottomActions)
+                #else
+                ToolbarItem(placement: .trailingBar) { studyAnalysisButton(model) }
                 #endif
-                // Looking the move up counts as Again, as Browse in the panel does.
-                ToolbarItem(placement: .trailingBar) {
-                    Button("Analysis", systemImage: "cpu") {
-                        analysis = AnalysisModel(document: model.document, moves: model.analysisMoves(),
-                                                 orientation: model.color, origin: .study)
-                    }
-                }
                 if model.phase == .lineDone && model.nextLineAt == nil {
                     ToolbarSpacer(.fixed, placement: .trailingBar)
                     ToolbarItem(placement: .trailingBar) { LineEndButton(model: model) }
