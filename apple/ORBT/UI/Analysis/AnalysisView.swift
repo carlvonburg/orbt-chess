@@ -138,18 +138,18 @@ struct AnalysisView: View {
         }
     }
 
-    /// A List section like the explorer's, so both have the system's header. The rows lay
+    /// Laid out as Browse's panel: its heading a headline row, then the rows. The move rows lay
     /// out their own moves, edge to edge; each move has its own context menu.
     private func moves(showsHeader: Bool) -> some View {
         ScrollViewReader { proxy in
             List {
-                Section {
-                    AnalysisMoveList(model: model)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                } header: {
-                    if showsHeader { Text("Moves") }
+                if showsHeader {
+                    Text("Moves").font(.headline).padding(.top, 8)
+                        .builderRow(separator: false)
                 }
+                AnalysisMoveList(model: model)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
             }
             #if os(iOS)
             .listStyle(.plain)
@@ -168,6 +168,7 @@ struct AnalysisView: View {
         #if os(iOS)
         .listStyle(.plain)
         #endif
+        .environment(\.defaultMinListRowHeight, 0)
     }
 
     /// On a phone move navigation is in the bottom bar, the engine and the menu top trailing,
@@ -606,19 +607,29 @@ struct AnalysisMoveChip: View {
     }
 }
 
-/// The explorer's moves in the position, from the repertoire's database, in Browse's rows
-/// (`CandidateRow`): tap one to play it.
+/// The explorer's moves in the position, laid out as Browse's candidates (`CandidatesSection`):
+/// the opening name, an "Explorer" heading, then `CandidateRow`s. Tap one to play it.
 struct AnalysisExplorerSection: View {
     @Environment(AppModel.self) private var app
     let model: AnalysisModel
-    /// Off under the phone's Moves/Explorer control, which already names the section.
+    /// The opening name and heading; off under the phone's Moves/Explorer control, which
+    /// already names it.
     var showsHeader = true
     @State private var eval: CloudEval?
 
     var body: some View {
         let epd = model.position.epd()
         let stats = model.document.stats(epd)
-        Section {
+        Group {
+            if showsHeader {
+                if let name = stats?.opening?.name {
+                    Text(name).font(.subheadline.weight(.semibold)).lineLimit(2)
+                        .padding(.top, 8)
+                        .builderRow(separator: false)
+                }
+                Text("Explorer").font(.headline).padding(.top, 8)
+                    .builderRow(separator: false)
+            }
             if let stats {
                 ForEach(stats.moves.prefix(12), id: \.uci) { move in
                     CandidateRow(san: move.san, move: move, total: stats.total, eval: eval?.text(for: move.uci),
@@ -638,10 +649,6 @@ struct AnalysisExplorerSection: View {
             } else {
                 StatsUnavailableNote()
                     .builderRow(separator: false)
-            }
-        } header: {
-            if showsHeader {
-                Text(stats?.opening.map { "\($0.eco) \($0.name)" } ?? "Explorer")
             }
         }
         .task(id: epd) {
