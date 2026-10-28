@@ -7,20 +7,31 @@ import SwiftUI
 /// The core's learning progress, not Foundation's `Progress`.
 typealias Progress = OpeningCoreRust.Progress
 
-/// The split view's board column: the board as large as the column allows (edge to edge
-/// across its width, or its height in a wide window), then what belongs under it.
-struct BoardColumnLayout<Board: View, Below: View>: View {
+/// The split view's board column: what belongs above the board, the board as large as the
+/// column allows (edge to edge across its width, or its height in a wide window, then on the
+/// leading side), then what belongs under it. What is above and below the board keeps the
+/// scene's margins, as the title does.
+struct BoardColumnLayout<Above: View, Board: View, Below: View>: View {
+    @ViewBuilder var above: Above
     @ViewBuilder var board: Board
     @ViewBuilder var below: Below
 
     var body: some View {
-        VStack {
+        VStack(alignment: .leading) {
+            above
+                .scenePadding(.horizontal)
             board
                 .aspectRatio(1, contentMode: .fit)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             below
                 .scenePadding(.horizontal)
         }
+    }
+}
+
+extension BoardColumnLayout where Above == EmptyView {
+    init(@ViewBuilder board: () -> Board, @ViewBuilder below: () -> Below) {
+        self.init(above: { EmptyView() }, board: board, below: below)
     }
 }
 

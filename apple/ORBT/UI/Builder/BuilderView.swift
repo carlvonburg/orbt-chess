@@ -9,6 +9,7 @@ struct BuilderView: View {
     @Environment(\.inSplitView) private var inSplitView
     @Environment(\.undoManager) private var undoManager
     @Environment(\.openScreen) private var openScreen
+    @Environment(\.openAnalysis) private var openAnalysis
     let model: BuilderModel
     let presentation: BuilderPresentation
 
@@ -59,7 +60,7 @@ struct BuilderView: View {
         .toolbar { toolbar }
         .hidesTabBar()
         .sheet(item: $presentation.sheet) { sheet in sheetContent(sheet).presentationSizing(.form) }
-        .analysisBoard($presentation.analysis)
+        .analysisDestination($presentation.analysis)
         .navigationDestination(item: $presentation.drill) { request in
             DrillScreen(document: document, mode: request.mode)
         }
@@ -130,7 +131,7 @@ struct BuilderView: View {
             // While a new line is on the board: keep it or drop it.
             ToolbarItemGroup(placement: actions) {
                 if !split {
-                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model) }
+                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model, open: openAnalysis) }
                 }
                 Button("Discard", systemImage: "xmark", role: .destructive) { model.discardDraft() }
             }
@@ -148,7 +149,7 @@ struct BuilderView: View {
                 Button("Study Branch", systemImage: "graduationcap") { studyBranch(model.current) }
                 .disabled(document.learningProgress(under: model.current).cards == 0)
                 if !split {
-                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model) }
+                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model, open: openAnalysis) }
                 }
             }
         }
@@ -190,8 +191,8 @@ struct BuilderScreen: View {
     }
 }
 
-/// What the builder presents: a sheet, the analysis board, a branch drill. In the split view
-/// the board column's buttons set it and the panel presents it.
+/// What the builder presents: a sheet, the analysis board (outside the library), a branch
+/// drill. In the split view the board column's buttons set it and the panel presents it.
 @Observable
 final class BuilderPresentation {
     var sheet: BuilderView.Sheet?
@@ -202,11 +203,12 @@ final class BuilderPresentation {
         self.sheet = sheet
     }
 
-    /// The analysis board from the position on the board; leaving it puts its line on the
-    /// builder as a draft.
-    func analyze(_ model: BuilderModel) {
-        analysis = AnalysisModel(document: model.document, moves: model.movesToBoard,
-                                 orientation: model.orientation, origin: .build(model))
+    /// The analysis board from the position on the board, pushed through the library (`open`),
+    /// else here; going back puts its line on the builder as a draft.
+    func analyze(_ model: BuilderModel, open: ((AnalysisModel) -> Void)?) {
+        let analysis = AnalysisModel(document: model.document, moves: model.movesToBoard,
+                                     orientation: model.orientation, origin: .build(model))
+        if let open { open(analysis) } else { self.analysis = analysis }
     }
 }
 
