@@ -36,13 +36,24 @@ extension BoardColumnLayout where Above == EmptyView {
 }
 
 extension View {
-    /// The title of Browse, Study and Analysis on every device: the screen, with what it shows
-    /// as its subtitle (the repertoire; Analysis: where the engine's lines come from), inline as
-    /// on any pushed screen whose content fills it. In the split view the board column has no
-    /// title of its own: on the Mac the window shows one.
+    /// The title of Browse, Study and Analysis: the screen, inline as on any pushed screen whose
+    /// content fills it. On a phone with what it shows as its subtitle (the repertoire; Analysis:
+    /// where the engine's lines come from); in the split view the sidebar shows the repertoire,
+    /// and the board column has no title of its own (on the Mac the window shows one).
     func boardScreenTitle(_ screen: String, subtitle: String) -> some View {
-        navigationTitle(screen)
-            .navigationSubtitle(subtitle)
+        modifier(BoardScreenTitle(screen: screen, subtitle: subtitle))
+    }
+}
+
+private struct BoardScreenTitle: ViewModifier {
+    @Environment(\.inSplitView) private var inSplitView
+    let screen: String
+    let subtitle: String
+
+    func body(content: Content) -> some View {
+        content
+            .navigationTitle(screen)
+            .navigationSubtitle(inSplitView ? "" : subtitle)
             .toolbarTitleDisplayMode(.inline)
     }
 }

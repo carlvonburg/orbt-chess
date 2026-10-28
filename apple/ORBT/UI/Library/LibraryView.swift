@@ -482,6 +482,7 @@ struct LibraryView: View {
 private struct BoardColumnView: View {
     let board: LibraryScreens.Board?
     let statisticsScope: StatisticsModel.Scope
+    @Environment(AppModel.self) private var app
     @Environment(\.openAnalysis) private var openAnalysis
     @State private var columnWidth: CGFloat = 0
 
@@ -521,7 +522,15 @@ private struct BoardColumnView: View {
                 DrillBoardColumn(model: model)
             case .analysis(let model):
                 BoardColumnLayout {
-                    AnalysisEngineLines(model: model)
+                    // Where the lines come from, above them (on a phone it is the subtitle).
+                    VStack(alignment: .leading, spacing: 4) {
+                        if model.engineOn {
+                            Text(app.engine.status(for: model))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        AnalysisEngineLines(model: model)
+                    }
                 } board: {
                     AnalysisBoard(model: model)
                 } below: {
