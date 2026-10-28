@@ -486,10 +486,6 @@ private struct BoardColumnView: View {
     @Environment(\.openAnalysis) private var openAnalysis
     @State private var columnWidth: CGFloat = 0
 
-    /// The move history's width in the bottom bar: the column less the bar's margins, and
-    /// Browse's back and forward. On macOS the bar is the window toolbar, with room to spare:
-    /// with the sidebar hidden the middle column's items reach into this column's, and a
-    /// history that does not fit goes to the toolbar's overflow menu and stays there.
     /// Looking the move up counts as Again, as Browse in the panel does.
     private func studyAnalysisButton(_ model: DrillModel) -> some View {
         Button("Analysis", systemImage: "cpu") {
@@ -498,11 +494,16 @@ private struct BoardColumnView: View {
         }
     }
 
-    private func historyWidth(buttons: Bool) -> CGFloat {
+    /// The history in the bottom bar: on iPad as wide as the bar allows. On the Mac the bar is
+    /// the window toolbar: with the sidebar hidden the middle column's items reach into this
+    /// column's, and a history that does not fit goes to the overflow menu and stays there, so
+    /// it gets a fixed width from the column.
+    @ViewBuilder
+    private func historyFrame(_ history: some View, buttons: Bool) -> some View {
         #if os(macOS)
-        max(120, columnWidth - (buttons ? 180 : 60) - 200)
+        history.frame(width: max(120, columnWidth - (buttons ? 180 : 60) - 200))
         #else
-        max(120, columnWidth - (buttons ? 180 : 60))
+        history.frame(maxWidth: .infinity)
         #endif
     }
 
@@ -557,8 +558,7 @@ private struct BoardColumnView: View {
                 // A fixed width from the column: moving never resizes the bar; the moves
                 // scroll inside it.
                 ToolbarItem(placement: .bottomActions) {
-                    MovePathStrip(model: model)
-                        .frame(width: historyWidth(buttons: true))
+                    historyFrame(MovePathStrip(model: model), buttons: true)
                 }
                 #if os(macOS)
                 ToolbarItem(placement: .bottomActions) {
@@ -580,8 +580,7 @@ private struct BoardColumnView: View {
                 ToolbarSpacer(.flexible, placement: .bottomActions)
                 #endif
                 ToolbarItem(placement: .bottomActions) {
-                    LineHistory(tree: model.document.tree, nodes: model.playedNodes)
-                        .frame(width: historyWidth(buttons: false))
+                    historyFrame(LineHistory(tree: model.document.tree, nodes: model.playedNodes), buttons: false)
                 }
                 #if os(macOS)
                 ToolbarItem(placement: .bottomActions) { studyAnalysisButton(model) }
@@ -602,8 +601,7 @@ private struct BoardColumnView: View {
                 #endif
                 ToolbarItemGroup(placement: .bottomActions) { AnalysisNavigationButtons(model: model) }
                 ToolbarItem(placement: .bottomActions) {
-                    AnalysisPathStrip(model: model)
-                        .frame(width: historyWidth(buttons: true))
+                    historyFrame(AnalysisPathStrip(model: model), buttons: true)
                 }
                 #if os(macOS)
                 ToolbarSpacer(.flexible, placement: .bottomActions)
