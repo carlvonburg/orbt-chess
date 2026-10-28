@@ -26,7 +26,7 @@ final class DrillModel {
     @ObservationIgnored private var wrongTimer: Task<Void, Never>?
     @ObservationIgnored private var badgeTimer: Task<Void, Never>?
     /// The pause at the end of a line, to look at it before the next one starts.
-    static let lineDoneSeconds: TimeInterval = 3
+    static let lineDoneSeconds: TimeInterval = 2
     /// When the next line starts on its own; nil while it waits for Next.
     private(set) var nextLineAt: Date?
     /// The line's end waits for Next: the user left the board to look at it, or the
