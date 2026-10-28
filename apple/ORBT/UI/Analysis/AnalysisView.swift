@@ -42,8 +42,11 @@ struct AnalysisView: View {
             } else if isRegularWidth(sizeClass) {
                 // Outside the library on an iPad (Browse from Statistics): board and panel.
                 HStack(spacing: 0) {
-                    AnalysisBoard(model: model)
-                        .scenePadding()
+                    VStack(spacing: 0) {
+                        AnalysisEngineLines(model: model)
+                        AnalysisBoard(model: model)
+                    }
+                    .scenePadding()
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     Divider()
                     panel(compact: false).frame(width: 380)
@@ -51,7 +54,11 @@ struct AnalysisView: View {
             } else {
                 VStack(spacing: 0) {
                     // Edge to edge on a phone; the moves scroll below.
-                    AnalysisBoard(model: model).layoutPriority(1)
+                    VStack(spacing: 0) {
+                        AnalysisEngineLines(model: model)
+                        AnalysisBoard(model: model)
+                    }
+                    .layoutPriority(1)
                     panel(compact: true)
                 }
             }
@@ -131,33 +138,27 @@ struct AnalysisView: View {
         }
     }
 
-    /// Not a List: a list row has one context menu, and each move needs its own. Titled as the
-    /// explorer's section is (off under the phone's Moves/Explorer control, which names it).
+    /// A List section like the explorer's, so both have the system's header. The rows lay
+    /// out their own moves, edge to edge; each move has its own context menu.
     private func moves(showsHeader: Bool) -> some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
-                    Section {
-                        AnalysisMoveList(model: model)
-                    } header: {
-                        if showsHeader {
-                            Text("Moves")
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal)
-                                .padding(.vertical, 8)
-                                .background(.background)
-                        }
-                    }
+            List {
+                Section {
+                    AnalysisMoveList(model: model)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                } header: {
+                    if showsHeader { Text("Moves") }
                 }
-                .padding(.bottom, 8)
             }
+            #if os(iOS)
+            .listStyle(.plain)
+            #endif
+            .environment(\.defaultMinListRowHeight, 0)
             .onChange(of: model.currentRow) { _, row in
                 if let row { withAnimation { proxy.scrollTo(row) } }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func explorer(showsHeader: Bool) -> some View {
@@ -226,24 +227,31 @@ extension EngineService {
     }
 }
 
-/// The analysis board: the engine's lines above it, their first moves as arrows. On a phone
-/// at the top of the screen; in the split view in the board column.
+/// The engine's lines, above the board while the engine is on: on a phone at the top of the
+/// screen; in the split view the board column's top inset.
+struct AnalysisEngineLines: View {
+    @Environment(AppModel.self) private var app
+    let model: AnalysisModel
+
+    var body: some View {
+        if model.engineOn {
+            EngineLinesView(lines: app.engine.shownLines(for: model)) { model.play(uci: $0) }
+        }
+    }
+}
+
+/// The analysis board, the first moves of the engine's lines as arrows.
 struct AnalysisBoard: View {
     @Environment(AppModel.self) private var app
     let model: AnalysisModel
 
     var body: some View {
-        let lines = app.engine.shownLines(for: model)
-        VStack(spacing: 0) {
-            if model.engineOn {
-                EngineLinesView(lines: lines) { model.play(uci: $0) }
-            }
-            BoardView(position: model.position, orientation: model.orientation, lastMove: model.lastMove,
-                      arrows: arrows(lines), movableSide: model.position.sideToMove()) { from, to, promotion in
-                model.play(from: from, to: to, promotion: promotion)
-            }
-            .aspectRatio(1, contentMode: .fit)
+        BoardView(position: model.position, orientation: model.orientation, lastMove: model.lastMove,
+                  arrows: arrows(app.engine.shownLines(for: model)),
+                  movableSide: model.position.sideToMove()) { from, to, promotion in
+            model.play(from: from, to: to, promotion: promotion)
         }
+        .aspectRatio(1, contentMode: .fit)
     }
 
     /// The first move of each engine line, the best one boldest.

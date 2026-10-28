@@ -528,10 +528,13 @@ private struct BoardColumnView: View {
             case .drill(let model):
                 DrillBoardColumn(model: model)
             case .analysis(let model):
-                // The board the column's full width, as Browse's, the engine's lines just above
-                // it (not the square of lines and board together).
-                AnalysisBoard(model: model)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Laid out as Browse's board, in the room the engine's lines leave above it.
+                BoardColumnLayout {
+                    AnalysisBoard(model: model)
+                } below: {
+                    EmptyView()
+                }
+                .safeAreaInset(edge: .top, spacing: 0) { AnalysisEngineLines(model: model) }
             case nil:
                 InlineStatistics(scope: statisticsScope)
                     .id(statisticsScope)
