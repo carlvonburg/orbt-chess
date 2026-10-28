@@ -7,21 +7,38 @@ import SwiftUI
 /// The core's learning progress, not Foundation's `Progress`.
 typealias Progress = OpeningCoreRust.Progress
 
-/// The split view's board column: the board as large as the column allows (edge to edge
-/// across its width, or its height in a wide window), then what belongs under it.
-struct BoardColumnLayout<Board: View, Below: View>: View {
+/// The split view's board column: what belongs above the board, the board as large as the
+/// column allows (its width, or its height in a wide window), then what belongs under it. All
+/// on the column's leading margin, the title's, so title, board and what is above it share one
+/// edge; spare width stays on the trailing side.
+struct BoardColumnLayout<Above: View, Board: View, Below: View>: View {
+    @Environment(\.reportBoardWidth) private var reportBoardWidth
+    @ViewBuilder var above: Above
     @ViewBuilder var board: Board
     @ViewBuilder var below: Below
 
     var body: some View {
-        VStack {
+        VStack(alignment: .leading) {
+            above
             board
                 .aspectRatio(1, contentMode: .fit)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { reportBoardWidth?($0) }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             below
-                .scenePadding(.horizontal)
         }
+        .scenePadding(.horizontal)
     }
+}
+
+extension BoardColumnLayout where Above == EmptyView {
+    init(@ViewBuilder board: () -> Board, @ViewBuilder below: () -> Below) {
+        self.init(above: { EmptyView() }, board: board, below: below)
+    }
+}
+
+extension EnvironmentValues {
+    /// Told the board column's board width, so the column's bottom bar can keep to it.
+    @Entry var reportBoardWidth: ((CGFloat) -> Void)?
 }
 
 extension View {

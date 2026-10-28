@@ -485,6 +485,7 @@ private struct BoardColumnView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.openAnalysis) private var openAnalysis
     @State private var columnWidth: CGFloat = 0
+    @State private var boardWidth: CGFloat = 0
 
     /// The move history's width in the bottom bar: the column less the bar's margins, and
     /// Browse's back and forward. On macOS the bar is the window toolbar, with room to spare:
@@ -502,7 +503,9 @@ private struct BoardColumnView: View {
         #if os(macOS)
         max(120, columnWidth - (buttons ? 180 : 60) - 200)
         #else
-        max(120, columnWidth - (buttons ? 180 : 60))
+        // The bar under the board, inset as much on each side: the board less the buttons
+        // and the bar's margins.
+        max(120, (boardWidth > 0 ? boardWidth : columnWidth) - (buttons ? 140 : 40))
         #endif
     }
 
@@ -528,19 +531,20 @@ private struct BoardColumnView: View {
             case .drill(let model):
                 DrillBoardColumn(model: model)
             case .analysis(let model):
-                // Laid out as Browse's board, in the room the engine's lines leave above it.
                 BoardColumnLayout {
+                    AnalysisEngineLines(model: model)
+                } board: {
                     AnalysisBoard(model: model)
                 } below: {
                     EmptyView()
                 }
-                .safeAreaInset(edge: .top, spacing: 0) { AnalysisEngineLines(model: model) }
             case nil:
                 InlineStatistics(scope: statisticsScope)
                     .id(statisticsScope)
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { columnWidth = $0 }
+        .environment(\.reportBoardWidth) { boardWidth = $0 }
         // The left column names the repertoire; this column what it shows.
         .navigationTitle(title)
         .navigationSubtitle(subtitle)
@@ -552,6 +556,9 @@ private struct BoardColumnView: View {
                 // The room the history leaves on both sides: navigation, history and Analysis
                 // centred, the menu at the end.
                 ToolbarSpacer(.flexible, placement: .bottomActions)
+                #else
+                // Inset from the board's leading edge as much as from its trailing one.
+                ToolbarSpacer(.fixed, placement: .bottomActions)
                 #endif
                 ToolbarItemGroup(placement: .bottomActions) { BuilderNavigationButtons(model: model) }
                 // A fixed width from the column: moving never resizes the bar; the moves
@@ -566,6 +573,8 @@ private struct BoardColumnView: View {
                 }
                 ToolbarSpacer(.flexible, placement: .bottomActions)
                 #else
+                // From the board's leading edge, as the board is on the column's leading margin.
+                ToolbarSpacer(.flexible, placement: .bottomActions)
                 ToolbarItem(placement: .trailingBar) {
                     Button("Analysis", systemImage: "cpu") { presentation.analyze(model, open: openAnalysis) }
                 }
@@ -578,6 +587,9 @@ private struct BoardColumnView: View {
                 // Analysis centred, as Browse's.
                 #if os(macOS)
                 ToolbarSpacer(.flexible, placement: .bottomActions)
+                #else
+                // Inset from the board's leading edge as much as from its trailing one.
+                ToolbarSpacer(.fixed, placement: .bottomActions)
                 #endif
                 ToolbarItem(placement: .bottomActions) {
                     LineHistory(tree: model.document.tree, nodes: model.playedNodes)
@@ -587,6 +599,7 @@ private struct BoardColumnView: View {
                 ToolbarItem(placement: .bottomActions) { studyAnalysisButton(model) }
                 ToolbarSpacer(.flexible, placement: .bottomActions)
                 #else
+                ToolbarSpacer(.flexible, placement: .bottomActions)
                 ToolbarItem(placement: .trailingBar) { studyAnalysisButton(model) }
                 #endif
                 if model.phase == .lineDone && model.nextLineAt == nil {
@@ -599,15 +612,16 @@ private struct BoardColumnView: View {
                 // Mac); the engine and the menu, which act on the board, end the top bar.
                 #if os(macOS)
                 ToolbarSpacer(.flexible, placement: .bottomActions)
+                #else
+                // Inset from the board's leading edge as much as from its trailing one.
+                ToolbarSpacer(.fixed, placement: .bottomActions)
                 #endif
                 ToolbarItemGroup(placement: .bottomActions) { AnalysisNavigationButtons(model: model) }
                 ToolbarItem(placement: .bottomActions) {
                     AnalysisPathStrip(model: model)
                         .frame(width: historyWidth(buttons: true))
                 }
-                #if os(macOS)
                 ToolbarSpacer(.flexible, placement: .bottomActions)
-                #endif
                 ToolbarItem(placement: .trailingBar) { AnalysisEngineToggle(model: model) }
                 ToolbarSpacer(.fixed, placement: .trailingBar)
                 ToolbarItem(placement: .trailingBar) { AnalysisMoreMenu(model: model) }

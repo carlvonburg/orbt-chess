@@ -47,7 +47,7 @@ struct AnalysisView: View {
                         AnalysisBoard(model: model)
                     }
                     .scenePadding()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     Divider()
                     panel(compact: false).frame(width: 380)
                 }
@@ -56,6 +56,7 @@ struct AnalysisView: View {
                     // Edge to edge on a phone; the moves scroll below.
                     VStack(spacing: 0) {
                         AnalysisEngineLines(model: model)
+                            .padding(.horizontal)
                         AnalysisBoard(model: model)
                     }
                     .layoutPriority(1)
@@ -404,7 +405,6 @@ struct EngineLinesView: View {
                     .accessibilityHidden(true)
             }
         }
-        .padding(.horizontal)
         .padding(.vertical, 6)
         .animation(nil, value: lines)
     }
