@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ORBT Chess — Opening Repertoire Builder &amp; Trainer</title>
+  <meta name="description" content="Build your chess opening repertoire, see which opponent moves you haven't prepared for, and learn it with spaced repetition. Free and open source for iPhone, iPad and Mac.">
+  <link rel="canonical" href="https://orbtchess.org/">
+  <meta property="og:title" content="ORBT Chess">
+  <meta property="og:description" content="Free, open-source opening repertoire builder and trainer for iPhone, iPad and Mac.">
+  <meta property="og:url" content="https://orbtchess.org/">
+  <meta property="og:image" content="https://orbtchess.org/assets/icon.png">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#f7f8fb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="/assets/site.css?v=7">
+  <script src="/assets/site.js?v=5" defer></script>
+</head>
+<body>
+  <div class="scroll-progress" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="28" height="28">ORBT Chess</a>
+      <nav class="site-nav" aria-label="Site">
+        <a class="wide" href="/#how">How it works</a>
+        <a class="wide" href="/#features">Features</a>
+        <a class="github" href="https://github.com/GimliTheWise/chess-opening-trainer" aria-label="ORBT Chess on GitHub">
+          <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><use href="#gh"/></svg>
+          <span>GitHub</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="wrap hero-inner">
+        <p class="pill"><span class="dot"></span>Free · Open source · iPhone, iPad, Mac</p>
+        <h1>Build an opening repertoire <span class="grad">you actually know.</span></h1>
+        <p class="lede">See every opponent move you haven't prepared, choose your answers with the explorer and the engine, and learn them with spaced repetition.</p>
+        <div class="cta">
+          <a class="app-store" href="#" aria-label="Download on the App Store"><img src="/assets/app-store-badge.svg" alt="Download on the App Store" width="150" height="50"></a>
+          <a class="button ghost" href="https://github.com/GimliTheWise/chess-opening-trainer">
+            <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><use href="#gh"/></svg>
+            Source on GitHub
+          </a>
+        </div>
+      </div>
+      <div class="wrap stage-wrap">
+        <div class="stage">
+          <picture class="device ipad">
+            <source srcset="/assets/screens/ipad-build-dark.webp?v=4" media="(prefers-color-scheme: dark)">
+            <img src="/assets/screens/ipad-build-light.webp?v=4" alt="ORBT Chess on iPad: the repertoire list beside the Najdorf, with White's replies and how often each is played" width="1800" height="1350">
+          </picture>
+          <picture class="device iphone">
+            <source srcset="/assets/screens/iphone-study-dark.webp?v=4" media="(prefers-color-scheme: dark)">
+            <img src="/assets/screens/iphone-study-light.webp?v=4" alt="ORBT Chess on iPhone: studying the Najdorf, asked to play d6" width="585" height="1266">
+          </picture>
+        </div>
+      </div>
+    </section>
+
+    <!-- Moving strip of facts -->
+    <section class="marquee" aria-label="At a glance">
+      <div class="marquee-track">
+        <ul>
+          <li>Lichess opening explorer</li><li>Stockfish on your device</li><li>Anki's FSRS scheduler</li><li>Offline coverage tables</li><li>PGN files in iCloud Drive</li><li>No account needed</li><li>AGPL-3.0</li>
+        </ul>
+        <ul aria-hidden="true">
+          <li>Lichess opening explorer</li><li>Stockfish on your device</li><li>Anki's FSRS scheduler</li><li>Offline coverage tables</li><li>PGN files in iCloud Drive</li><li>No account needed</li><li>AGPL-3.0</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- The name -->
+    <section class="name wrap" aria-label="What ORBT stands for">
+      <p class="eyebrow">Said “orbit”</p>
+      <p class="acronym"><span><b>O</b>pening</span> <span><b>R</b>epertoire</span> <span><b>B</b>uilder&nbsp;&amp;</span> <span><b>T</b>rainer</span></p>
+      <p class="name-note">Your repertoire is the set of lines you keep coming back to. ORBT brings each move back around just before you'd forget it.</p>
+    </section>
+
+    <!-- How it works: the steps scroll, the phone stays (wide screens) -->
+    <section id="how" class="story wrap">
+      <header class="section-head">
+        <p class="eyebrow">How it works</p>
+        <h2>Build it, check it, learn it.</h2>
+      </header>
+      <div class="story-grid">
+        <ol class="story-steps">
+          <li class="story-step" data-step="0">
+            <span class="step built">1</span>
+            <p class="kicker built">Build</p>
+            <h3>Pick your moves with the numbers</h3>
+            <p>Every move shows how often it's played, how it scores and the engine's evaluation. Choose the moves that work, follow the coverage to the next reply that needs an answer, or enter lines you already know.</p>
+            <div class="focus story-inline"><div class="app-card explorer" role="img" aria-label="The opening explorer after 5…a6: 6.Bg5 evaluated +0.2, White wins 47%, Black 49%, 84 thousand games; 6.Be3 +0.2, 48% and 48%, 83 thousand; 6.Be2 47% and 48%, 53 thousand; 6.Bc4 48% and 47%, 52 thousand.">
+  <div class="app-card-head"><span>Explorer</span><span>after 5…a6</span></div>
+  <div class="ex-row ex-head"><span>Move</span><span>Eval</span><span>White · Draw · Black</span><span>Games</span></div>
+  <div class="ex-row"><b>Bg5</b><span class="ev">+0.2</span><span class="wdl"><s class="w" style="--p:47%">47%</s><s class="dr" style="--p:4%"></s><s class="b" style="--p:49%">49%</s></span><span class="games">84k <em>· 20%</em></span></div>
+  <div class="ex-row"><b>Be3</b><span class="ev">+0.2</span><span class="wdl"><s class="w" style="--p:48%">48%</s><s class="dr" style="--p:4%"></s><s class="b" style="--p:48%">48%</s></span><span class="games">83k <em>· 20%</em></span></div>
+  <div class="ex-row"><b>Be2</b><span class="ev"></span><span class="wdl"><s class="w" style="--p:47%">47%</s><s class="dr" style="--p:5%"></s><s class="b" style="--p:48%">48%</s></span><span class="games">53k <em>· 13%</em></span></div>
+  <div class="ex-row"><b>Bc4</b><span class="ev"></span><span class="wdl"><s class="w" style="--p:48%">48%</s><s class="dr" style="--p:5%"></s><s class="b" style="--p:47%">47%</s></span><span class="games">52k <em>· 13%</em></span></div>
+</div></div>
+          </li>
+          <li class="story-step" data-step="1">
+            <span class="step accent">2</span>
+            <p class="kicker accent">Analyse</p>
+            <h3>Find out why a move fails</h3>
+            <p>One tap opens the position on an analysis board, with the moves that led there. It shows Lichess's stored engine evaluation when there is one, and otherwise runs Stockfish on your device.</p>
+            <div class="focus story-inline"><div class="app-card engine">
+  <div class="app-card-head"><span>Analysis</span><span>Cloud · depth 54</span></div>
+  <div class="lines">
+    <div class="line"><span class="eval">+0.3</span><span>6. h3 e6 7. g4 d5 8. exd5 Nxd5</span></div>
+    <div class="line"><span class="eval">+0.2</span><span>6. Be3 Ng4 7. Bc1 Nf6 8. h3 e6</span></div>
+    <div class="line"><span class="eval">+0.2</span><span>6. f3 e5 7. Nb3 Be6 8. Be3 Nbd7</span></div>
+  </div>
+  <div class="board" role="img" aria-label="The position after 5…a6 with arrows for the engine's three best moves: h3, Be3 and f3"><i class="sq l"><img src="/assets/pieces/bR.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bN.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bB.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bQ.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bK.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bB.svg" alt=""></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/bR.svg" alt=""></i><i class="sq d last"></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l last"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/bN.svg" alt=""></i><i class="sq l"></i><i class="sq d"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/wN.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/wN.svg" alt=""></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wR.svg" alt=""></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/wB.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wQ.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wK.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wB.svg" alt=""></i><i class="sq d"></i><i class="sq l"><img src="/assets/pieces/wR.svg" alt=""></i><svg class="arrows" viewBox="0 0 8 8" aria-hidden="true"><polygon points="7.580,6.450 7.580,5.916 7.772,5.916 7.500,5.500 7.228,5.916 7.420,5.916 7.420,6.450" opacity="0.75"/><polygon points="2.581,7.511 4.277,5.815 4.401,5.938 4.500,5.500 4.062,5.599 4.185,5.723 2.489,7.419" opacity="0.55"/><polygon points="5.555,6.450 5.555,5.880 5.740,5.880 5.500,5.500 5.260,5.880 5.445,5.880 5.445,6.450" opacity="0.4"/></svg></div>
+</div></div>
+          </li>
+          <li class="story-step" data-step="2">
+            <span class="step todo">3</span>
+            <p class="kicker todo">Find the gaps</p>
+            <h3>See what you haven't covered</h3>
+            <p>Set a target such as “every move played once in 500 games”. ORBT lists each opponent move above it that you have no answer for, and how complete each line is.</p>
+            <div class="focus story-inline"><div class="group" role="img" aria-label="In the Najdorf after 5…a6, White's replies: 6.Bg5 played once in 38 games, covered; 6.Be3 once in 39, 75% covered; 6.Be2 once in 61, covered; 6.Bc4 once in 61, no answer yet.">
+  <div class="group-header">Najdorf after 5…a6 · White's replies</div>
+  <div class="cells">
+    <div class="cell"><span class="title">6.Bg5</span><i class="bar"><s style="--w:100%"></s></i><span class="value ok">✓ 1 in 38</span></div>
+    <div class="cell"><span class="title">6.Be3</span><i class="bar"><s style="--w:75%"></s></i><span class="value">75% · 1 in 39</span></div>
+    <div class="cell"><span class="title">6.Be2</span><i class="bar"><s style="--w:100%"></s></i><span class="value ok">✓ 1 in 61</span></div>
+    <div class="cell"><span class="title">6.Bc4</span><i class="bar"><s style="--w:0%"></s></i><span class="value gap">Gap · 1 in 61</span></div>
+  </div>
+  <div class="group-footer">“1 in 38”: White plays it once in 38 games that reach the position.</div>
+</div></div>
+          </li>
+          <li class="story-step" data-step="3">
+            <span class="step learned">4</span>
+            <p class="kicker learned">Study</p>
+            <h3>Learn it with spaced repetition</h3>
+            <p>Each position where it's your move is a flashcard, scheduled by Anki's algorithm and shown again just before you'd forget it. Study everything, or one branch. It all works offline.</p>
+            <div class="focus story-inline"><div class="app-card study">
+  <div class="app-card-head"><span>Study</span><span>Najdorf</span></div>
+  <div class="board" role="img" aria-label="Studying as Black after 1.e4 c5 2.Nf3, with an arrow from d7 to d6"><i class="sq l"><img src="/assets/pieces/wR.svg" alt=""></i><i class="sq d last"></i><i class="sq l"><img src="/assets/pieces/wB.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wK.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wQ.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wB.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wN.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wR.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"></i><i class="sq d"></i><i class="sq l last"><img src="/assets/pieces/wN.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"></i><i class="sq d"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bR.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bN.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bB.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bK.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bQ.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bB.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bN.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bR.svg" alt=""></i><svg class="arrows" viewBox="0 0 8 8" aria-hidden="true"><polygon points="4.580,6.450 4.580,5.916 4.772,5.916 4.500,5.500 4.228,5.916 4.420,5.916 4.420,6.450" opacity="0.9"/></svg></div>
+  <div class="study-moves"><span>1.</span>e4 <span class="sp"></span>c5 <span class="sp"></span><b><span>2.</span>Nf3</b></div>
+  <div class="study-prompt"><span class="spark">✦</span><span>New move: play d6</span><span class="due"><u class="new">19</u><span class="lrn">1</span><span class="rev">0</span></span></div>
+</div></div>
+          </li>
+        </ol>
+        <div class="story-stage" aria-hidden="true">
+          <div class="story-focus">
+            <div class="focus is-active" data-step="0"><div class="app-card explorer" role="img" aria-label="The opening explorer after 5…a6: 6.Bg5 evaluated +0.2, White wins 47%, Black 49%, 84 thousand games; 6.Be3 +0.2, 48% and 48%, 83 thousand; 6.Be2 47% and 48%, 53 thousand; 6.Bc4 48% and 47%, 52 thousand.">
+  <div class="app-card-head"><span>Explorer</span><span>after 5…a6</span></div>
+  <div class="ex-row ex-head"><span>Move</span><span>Eval</span><span>White · Draw · Black</span><span>Games</span></div>
+  <div class="ex-row"><b>Bg5</b><span class="ev">+0.2</span><span class="wdl"><s class="w" style="--p:47%">47%</s><s class="dr" style="--p:4%"></s><s class="b" style="--p:49%">49%</s></span><span class="games">84k <em>· 20%</em></span></div>
+  <div class="ex-row"><b>Be3</b><span class="ev">+0.2</span><span class="wdl"><s class="w" style="--p:48%">48%</s><s class="dr" style="--p:4%"></s><s class="b" style="--p:48%">48%</s></span><span class="games">83k <em>· 20%</em></span></div>
+  <div class="ex-row"><b>Be2</b><span class="ev"></span><span class="wdl"><s class="w" style="--p:47%">47%</s><s class="dr" style="--p:5%"></s><s class="b" style="--p:48%">48%</s></span><span class="games">53k <em>· 13%</em></span></div>
+  <div class="ex-row"><b>Bc4</b><span class="ev"></span><span class="wdl"><s class="w" style="--p:48%">48%</s><s class="dr" style="--p:5%"></s><s class="b" style="--p:47%">47%</s></span><span class="games">52k <em>· 13%</em></span></div>
+</div></div>
+            <div class="focus" data-step="1"><div class="app-card engine">
+  <div class="app-card-head"><span>Analysis</span><span>Cloud · depth 54</span></div>
+  <div class="lines">
+    <div class="line"><span class="eval">+0.3</span><span>6. h3 e6 7. g4 d5 8. exd5 Nxd5</span></div>
+    <div class="line"><span class="eval">+0.2</span><span>6. Be3 Ng4 7. Bc1 Nf6 8. h3 e6</span></div>
+    <div class="line"><span class="eval">+0.2</span><span>6. f3 e5 7. Nb3 Be6 8. Be3 Nbd7</span></div>
+  </div>
+  <div class="board" role="img" aria-label="The position after 5…a6 with arrows for the engine's three best moves: h3, Be3 and f3"><i class="sq l"><img src="/assets/pieces/bR.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bN.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bB.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bQ.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bK.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bB.svg" alt=""></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/bR.svg" alt=""></i><i class="sq d last"></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l last"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/bN.svg" alt=""></i><i class="sq l"></i><i class="sq d"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/wN.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/wN.svg" alt=""></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wR.svg" alt=""></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/wB.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wQ.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wK.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wB.svg" alt=""></i><i class="sq d"></i><i class="sq l"><img src="/assets/pieces/wR.svg" alt=""></i><svg class="arrows" viewBox="0 0 8 8" aria-hidden="true"><polygon points="7.580,6.450 7.580,5.916 7.772,5.916 7.500,5.500 7.228,5.916 7.420,5.916 7.420,6.450" opacity="0.75"/><polygon points="2.581,7.511 4.277,5.815 4.401,5.938 4.500,5.500 4.062,5.599 4.185,5.723 2.489,7.419" opacity="0.55"/><polygon points="5.555,6.450 5.555,5.880 5.740,5.880 5.500,5.500 5.260,5.880 5.445,5.880 5.445,6.450" opacity="0.4"/></svg></div>
+</div></div>
+            <div class="focus" data-step="2"><div class="group" role="img" aria-label="In the Najdorf after 5…a6, White's replies: 6.Bg5 played once in 38 games, covered; 6.Be3 once in 39, 75% covered; 6.Be2 once in 61, covered; 6.Bc4 once in 61, no answer yet.">
+  <div class="group-header">Najdorf after 5…a6 · White's replies</div>
+  <div class="cells">
+    <div class="cell"><span class="title">6.Bg5</span><i class="bar"><s style="--w:100%"></s></i><span class="value ok">✓ 1 in 38</span></div>
+    <div class="cell"><span class="title">6.Be3</span><i class="bar"><s style="--w:75%"></s></i><span class="value">75% · 1 in 39</span></div>
+    <div class="cell"><span class="title">6.Be2</span><i class="bar"><s style="--w:100%"></s></i><span class="value ok">✓ 1 in 61</span></div>
+    <div class="cell"><span class="title">6.Bc4</span><i class="bar"><s style="--w:0%"></s></i><span class="value gap">Gap · 1 in 61</span></div>
+  </div>
+  <div class="group-footer">“1 in 38”: White plays it once in 38 games that reach the position.</div>
+</div></div>
+            <div class="focus" data-step="3"><div class="app-card study">
+  <div class="app-card-head"><span>Study</span><span>Najdorf</span></div>
+  <div class="board" role="img" aria-label="Studying as Black after 1.e4 c5 2.Nf3, with an arrow from d7 to d6"><i class="sq l"><img src="/assets/pieces/wR.svg" alt=""></i><i class="sq d last"></i><i class="sq l"><img src="/assets/pieces/wB.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wK.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wQ.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wB.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wN.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wR.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq l"></i><i class="sq d"></i><i class="sq l last"><img src="/assets/pieces/wN.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"><img src="/assets/pieces/wP.svg" alt=""></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"></i><i class="sq d"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq d"></i><i class="sq l"></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"></i><i class="sq l"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bP.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bR.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bN.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bB.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bK.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bQ.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bB.svg" alt=""></i><i class="sq d"><img src="/assets/pieces/bN.svg" alt=""></i><i class="sq l"><img src="/assets/pieces/bR.svg" alt=""></i><svg class="arrows" viewBox="0 0 8 8" aria-hidden="true"><polygon points="4.580,6.450 4.580,5.916 4.772,5.916 4.500,5.500 4.228,5.916 4.420,5.916 4.420,6.450" opacity="0.9"/></svg></div>
+  <div class="study-moves"><span>1.</span>e4 <span class="sp"></span>c5 <span class="sp"></span><b><span>2.</span>Nf3</b></div>
+  <div class="study-prompt"><span class="spark">✦</span><span>New move: play d6</span><span class="due"><u class="new">19</u><span class="lrn">1</span><span class="rev">0</span></span></div>
+</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features bento -->
+    <section id="features" class="features wrap">
+      <header class="section-head">
+        <p class="eyebrow">Built in</p>
+        <h2>Made for real repertoires.</h2>
+      </header>
+      <div class="bento">
+        <article class="tile t-gaps">
+          <div class="tile-text">
+            <p class="kicker built">Progress</p>
+            <h3>Building and learning, apart</h3>
+            <p>Coverage shows how complete your preparation is; the study counts show how well you know it.</p>
+          </div>
+          <div class="focus"><div class="app-card progress" role="img" aria-label="A repertoire's overview: coverage 76% complete with 3 gaps; 12 of 41 moves studied, 8 new and 3 learning due today.">
+  <div class="pg-label">Coverage</div>
+  <div class="pg-card">
+    <div class="pg-top"><b>76% complete</b><span class="gap">3 gaps</span></div>
+    <i class="bar"><s style="--w:76%"></s></i>
+    <div class="pg-row"><span>Saved moves</span><span class="muted">57</span></div>
+  </div>
+  <div class="pg-label">Study</div>
+  <div class="pg-card">
+    <div class="pg-top"><b>12 of 41 moves studied</b></div>
+    <div class="studied"><s class="mature" style="--w:10%"></s><s class="young" style="--w:12%"></s><s class="learning" style="--w:7%"></s></div>
+    <ul class="legend"><li class="mature">4 mature</li><li class="young">5 young</li><li class="learning">3 learning</li></ul>
+    <div class="pg-row"><span>Due today</span><span class="due-text"><span class="new">8 new</span> <span class="lrn">3 learning</span></span></div>
+  </div>
+</div></div>
+        </article>
+
+        <article class="tile t-offline">
+          <div class="tile-text">
+            <p class="kicker todo">Offline coverage</p>
+            <h3>Coverage the moment you import</h3>
+            <p>Statistics for the common lines are a small one-time download: Lichess Blitz or Rapid games by rating, or over-the-board Classical games since 2000. No waiting on Lichess, even for a repertoire with thousands of moves.</p>
+          </div>
+          <div class="import-race" role="img" aria-label="Importing a repertoire of 3,800 moves. Asking Lichess one position at a time takes 136 requests, about 8 minutes. With the offline tables the gaps show right away.">
+            <div class="race-file"><span class="doc">PGN</span><div><b>Imported repertoire</b><span>3,800 moves · target 1 in 400</span></div></div>
+            <div class="race-row">
+              <div class="race-label"><span>Asking Lichess, one position at a time</span><span class="race-time slow">≈ 8 min</span></div>
+              <i class="race-bar"><s class="slow"></s></i>
+              <span class="race-note">136 requests, paced to Lichess's limit</span>
+            </div>
+            <div class="race-row">
+              <div class="race-label"><span>With the offline tables</span><span class="race-time fast">Right away</span></div>
+              <i class="race-bar"><s class="fast"></s></i>
+              <span class="race-note">Answered on your device</span>
+            </div>
+            <ul class="race-dbs" aria-label="Offline tables">
+              <li><b>Blitz</b><span>Lichess · by rating</span></li>
+              <li><b>Rapid</b><span>Lichess · by rating</span></li>
+              <li><b>Classical</b><span>Over the board · FIDE</span></li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="tile t-ipad">
+          <div class="tile-text">
+            <p class="kicker accent">iPad &amp; Mac</p>
+            <h3>Room for everything</h3>
+            <p>Your repertoires, the moves, the explorer, the engine and the board on one screen.</p>
+          </div>
+          <picture class="crop-tablet">
+            <source srcset="/assets/screens/ipad-analysis-dark.webp?v=4" media="(prefers-color-scheme: dark)">
+            <img src="/assets/screens/ipad-analysis-light.webp?v=4" alt="The analysis board on iPad with the repertoire list, the opening explorer, the move list and engine lines" width="1800" height="1350" loading="lazy">
+          </picture>
+        </article>
+
+        <article class="tile t-files">
+          <div class="tile-text">
+            <p class="kicker built">Your files</p>
+            <h3>Just a PGN</h3>
+            <p>Each repertoire is a PGN file in your iCloud Drive, saved on every edit and synced to your other devices.</p>
+          </div>
+          <div class="group" role="img" aria-label="The ORBT Chess folder in iCloud Drive with Italian Game.pgn, Najdorf.pgn and Queen's Gambit Declined.pgn">
+            <div class="group-header">iCloud Drive › ORBT Chess</div>
+            <div class="cells">
+              <div class="cell"><span class="doc">PGN</span><span>Italian Game.pgn</span><span class="value">White</span></div>
+              <div class="cell"><span class="doc">PGN</span><span>Najdorf.pgn</span><span class="value">Black</span></div>
+              <div class="cell"><span class="doc">PGN</span><span>Queen's Gambit Declined.pgn</span><span class="value">Black</span></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="tile t-works-offline">
+          <div class="tile-text">
+            <p class="kicker learned">Works offline</p>
+            <h3>No signal, no problem</h3>
+            <p>Only fetching new statistics needs the internet.</p>
+          </div>
+          <div class="group">
+            <div class="cells">
+              <div class="cell"><span class="check">✓</span><span>Studying and drilling</span></div>
+              <div class="cell"><span class="check">✓</span><span>Stockfish analysis</span></div>
+              <div class="cell"><span class="check">✓</span><span>Coverage from the downloaded tables</span></div>
+              <div class="cell"><span class="check">✓</span><span>Editing your repertoire</span></div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Other platforms -->
+    <section class="platforms wrap">
+      <div class="platforms-card">
+        <div>
+          <p class="eyebrow">What's next</p>
+          <h2>Android, Windows, Linux or the web?</h2>
+          <p class="lede">Not built yet. ORBT's chess logic is a Rust core that could run on all of them, so the next platform depends on what people ask for.</p>
+        </div>
+        <div class="platforms-side">
+          <ul class="roadmap" aria-label="Platforms">
+            <li class="done"><span class="mark" aria-hidden="true">✓</span><span>iPhone, iPad and Mac</span><span class="state">Available</span></li>
+            <li><span class="mark" aria-hidden="true"></span><span>Android</span><span class="state">Not built yet</span></li>
+            <li><span class="mark" aria-hidden="true"></span><span>Windows and Linux</span><span class="state">Not built yet</span></li>
+            <li><span class="mark" aria-hidden="true"></span><span>Web</span><span class="state">Not built yet</span></li>
+          </ul>
+          <a class="button" href="https://github.com/GimliTheWise/chess-opening-trainer/issues">Tell us which one you'd use</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Open source -->
+    <section class="closing">
+      <div class="closing-bg" aria-hidden="true"></div>
+      <div class="wrap">
+        <h2>Free. Open source. <span class="grad">Yours.</span></h2>
+        <p class="lede">No subscription, no ads, no tracking. Read the code, report an issue, send a pull request.</p>
+        <div class="cta">
+          <a class="app-store" href="#" aria-label="Download on the App Store"><img src="/assets/app-store-badge.svg" alt="Download on the App Store" width="150" height="50"></a>
+          <a class="button" href="https://github.com/GimliTheWise/chess-opening-trainer">
+            <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><use href="#gh"/></svg>
+            Star on GitHub
+          </a>
+        </div>
+        <p class="credits">Built on <a href="https://apps.ankiweb.net">Anki</a>, <a href="https://lichess.org">Lichess</a>, <a href="https://stockfishchess.org">Stockfish</a>, <a href="https://github.com/niklasf/shakmaty">shakmaty</a> and <a href="https://lumbrasgigabase.com">Lumbra's Gigabase</a>. Pieces: cburnett (GPLv2+).</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="24" height="24">ORBT Chess</a>
+      <nav aria-label="Footer">
+        <a href="/support/">Support</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/contact/">Contact</a>
+        <a href="https://github.com/GimliTheWise/chess-opening-trainer">GitHub</a>
+      </nav>
+      <span class="legal">© 2026 ORBT Chess · <a href="https://github.com/GimliTheWise/chess-opening-trainer/blob/main/LICENSE">AGPL-3.0</a></span>
+    </div>
+  </footer>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="gh" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></symbol></svg>
+</body>
+</html>

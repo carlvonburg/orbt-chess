@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Support — ORBT Chess</title>
+  <meta name="description" content="Help with ORBT Chess: frequently asked questions, reporting a bug and contacting support.">
+  <link rel="canonical" href="https://orbtchess.org/support/">
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="/assets/site.css?v=5">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="28" height="28">ORBT Chess</a>
+      <nav class="site-nav" aria-label="Site">
+        <a class="wide" href="/#how">How it works</a>
+        <a class="wide" href="/#features">Features</a>
+        <a class="github" href="https://github.com/GimliTheWise/chess-opening-trainer" aria-label="ORBT Chess on GitHub">
+          <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><use href="#gh"/></svg>
+          <span>GitHub</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap page">
+    <h1>Support</h1>
+    <p>Found a bug or have an idea? <a href="https://github.com/GimliTheWise/chess-opening-trainer/issues">Open an issue on GitHub</a>, or email <a href="mailto:support@orbtchess.org">support@orbtchess.org</a>. Please include your device, its OS version and the app version (Settings › About ORBT Chess).</p>
+
+    <h2>Frequently asked questions</h2>
+
+    <details>
+      <summary>Is ORBT Chess really free?</summary>
+      <p>Yes. No subscription, no in-app purchases, no ads. It's open source under the AGPL-3.0.</p>
+    </details>
+
+    <details>
+      <summary>Where are my repertoires stored?</summary>
+      <p>Each repertoire is a PGN file in iCloud Drive, in the <code>ORBT Chess</code> folder (Files app on iPhone and iPad, Finder on the Mac). Without iCloud they're in the app's Documents folder. Every edit is saved immediately. Settings and training progress are in files next to it (<code>.otrep.json</code> and <code>.otlog.jsonl</code>), never inside the PGN.</p>
+    </details>
+
+    <details>
+      <summary>How do I import a PGN I already have?</summary>
+      <p>In the repertoire list, choose Import and pick the file. It's copied into the ORBT Chess folder; the original isn't changed. A PGN with several games from the starting position becomes one repertoire.</p>
+    </details>
+
+    <details>
+      <summary>What does “seen every N games” mean?</summary>
+      <p>It's how often you'd reach that position in your games, from the opening explorer's statistics. Each repertoire has a coverage target, such as “cover moves seen once in 500 games”: opponent moves more common than that count as gaps until you add a reply.</p>
+    </details>
+
+    <details>
+      <summary>Which games are the statistics based on?</summary>
+      <p>You choose per repertoire: Lichess Blitz or Rapid games at a rating range, or Classical over-the-board games since 2000 by FIDE rating (Lumbra's Gigabase). Offline coverage tables for your choice are downloaded once, so most checks need no network.</p>
+    </details>
+
+    <details>
+      <summary>Do I need a Lichess account?</summary>
+      <p>No. The offline coverage tables answer most positions without one. Lichess's opening explorer only answers signed-in users, so sign in (Settings) for live statistics on positions the tables don't hold. If statistics stop loading for a minute, Lichess is limiting the rate of requests; the app waits and continues on its own.</p>
+    </details>
+
+    <details>
+      <summary>How does training work?</summary>
+      <p>Every position where it's your move is a card, scheduled with Anki's algorithm (FSRS). You play through whole lines from the start, and one line answers every due move on it. You can also drill everything under a single branch, and it all works offline.</p>
+    </details>
+
+    <details>
+      <summary>Does the engine work offline?</summary>
+      <p>Yes. Stockfish runs on your device with a small built-in network. For stronger analysis, download the full network in Settings. Lichess cloud evaluations are used first when you're online.</p>
+    </details>
+
+    <details>
+      <summary>My edits on two devices conflicted. What happens?</summary>
+      <p>When iCloud reports a conflict, ORBT merges both versions of the repertoire, its settings and its review history, so no line or review is lost.</p>
+    </details>
+
+    <h2>Contact</h2>
+    <p>For anything else, see the <a href="/contact/">contact page</a>.</p>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="24" height="24">ORBT Chess</a>
+      <nav aria-label="Footer">
+        <a href="/support/">Support</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="/contact/">Contact</a>
+        <a href="https://github.com/GimliTheWise/chess-opening-trainer">GitHub</a>
+      </nav>
+      <span class="legal">© 2026 ORBT Chess · <a href="https://github.com/GimliTheWise/chess-opening-trainer/blob/main/LICENSE">AGPL-3.0</a></span>
+    </div>
+  </footer>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="gh" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/></symbol></svg>
+</body>
+</html>
