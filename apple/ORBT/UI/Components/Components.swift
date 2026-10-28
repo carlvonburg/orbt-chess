@@ -12,7 +12,6 @@ typealias Progress = OpeningCoreRust.Progress
 /// on the column's leading margin, the title's, so title, board and what is above it share one
 /// edge; spare width stays on the trailing side.
 struct BoardColumnLayout<Above: View, Board: View, Below: View>: View {
-    @Environment(\.reportBoardWidth) private var reportBoardWidth
     @ViewBuilder var above: Above
     @ViewBuilder var board: Board
     @ViewBuilder var below: Below
@@ -22,7 +21,6 @@ struct BoardColumnLayout<Above: View, Board: View, Below: View>: View {
             above
             board
                 .aspectRatio(1, contentMode: .fit)
-                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { reportBoardWidth?($0) }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             below
         }
@@ -34,11 +32,6 @@ extension BoardColumnLayout where Above == EmptyView {
     init(@ViewBuilder board: () -> Board, @ViewBuilder below: () -> Below) {
         self.init(above: { EmptyView() }, board: board, below: below)
     }
-}
-
-extension EnvironmentValues {
-    /// Told the board column's board width, so the column's bottom bar can keep to it.
-    @Entry var reportBoardWidth: ((CGFloat) -> Void)?
 }
 
 extension View {
