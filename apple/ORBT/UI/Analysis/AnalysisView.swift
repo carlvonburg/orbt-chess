@@ -606,63 +606,48 @@ struct AnalysisMoveChip: View {
     }
 }
 
-/// The explorer's moves in the position, from the repertoire's database: tap to play one.
+/// The explorer's moves in the position, from the repertoire's database, in Browse's rows
+/// (`CandidateRow`): tap one to play it.
 struct AnalysisExplorerSection: View {
     @Environment(AppModel.self) private var app
     let model: AnalysisModel
     /// Off under the phone's Moves/Explorer control, which already names the section.
     var showsHeader = true
+    @State private var eval: CloudEval?
 
     var body: some View {
         let epd = model.position.epd()
         let stats = model.document.stats(epd)
         Section {
             if let stats {
-                if stats.moves.isEmpty {
-                    Text("No games in this position.").foregroundStyle(.secondary)
-                }
-                let total = max(stats.white + stats.draws + stats.black, 1)
                 ForEach(stats.moves.prefix(12), id: \.uci) { move in
-                    let games = move.white + move.draws + move.black
-                    Button { model.play(uci: move.uci) } label: {
-                        row(san: move.san, games: Format.games(games),
-                            share: Format.percent(Double(games) / Double(total))) {
-                            ScoreBar(white: move.white, draws: move.draws, black: move.black)
-                        }
-                        .contentShape(.rect)
-                    }
-                    .buttonStyle(.plain)
+                    CandidateRow(san: move.san, move: move, total: stats.total, eval: eval?.text(for: move.uci),
+                                 saved: nil, select: { model.play(uci: move.uci) })
+                        .builderRow()
+                }
+                if stats.moves.isEmpty {
+                    Text("No games in this position.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                        .builderRow(separator: false)
                 }
             } else if app.isLoadingStats {
-                // Placeholders while the stats load, as in Browse.
-                ForEach(0..<5, id: \.self) { _ in
-                    row(san: "Nf3", games: "1.2M", share: "45%") {
-                        RoundedRectangle(cornerRadius: 3).fill(.quaternary).frame(height: 18)
-                    }
-                    .redacted(reason: .placeholder)
-                    .accessibilityHidden(true)
+                ForEach(0..<4, id: \.self) { _ in
+                    CandidatePlaceholderRow().builderRow()
                 }
             } else {
                 StatsUnavailableNote()
+                    .builderRow(separator: false)
             }
         } header: {
             if showsHeader {
                 Text(stats?.opening.map { "\($0.eco) \($0.name)" } ?? "Explorer")
             }
         }
-        .task(id: epd) { model.document.requestStats(for: epd) }
-    }
-
-    private func row(san: String, games: String, share: String,
-                     @ViewBuilder bar: () -> some View) -> some View {
-        HStack(spacing: 10) {
-            Text(san).frame(width: 56, alignment: .leading)
-            Text(games).monospacedDigit()
-                .frame(width: 56, alignment: .trailing)
-            Text(share).monospacedDigit()
-                .foregroundStyle(.secondary)
-                .frame(width: 40, alignment: .trailing)
-            bar()
+        .task(id: epd) {
+            model.document.requestStats(for: epd)
+            eval = nil
+            eval = await CloudEvalClient.fetch(epd)
         }
     }
 }
