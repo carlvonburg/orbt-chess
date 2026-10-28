@@ -1,6 +1,6 @@
 # orbtchess.org
 
-The project website: plain static HTML, one stylesheet and one small script in `public/`, no
+The project website: plain static HTML and one stylesheet in `public/`, no JavaScript and no
 build step. It is hosted on Cloudflare Pages (free plan), uploaded from the command line.
 
 ## Deploy
@@ -33,8 +33,8 @@ orbtchess › Custom domains).
   (developer.apple.com/app-store/marketing/guidelines); its link is `#` until the app is live.
 - Header and footer are repeated in each page; change them in all of them.
 - Motion: scroll-driven CSS animations (`animation-timeline`) that only move things, never hide
-  them, and `assets/site.js`, which pins a phone beside "How it works" on wide screens. Without
-  the script, or on phones, each step shows its own screenshot. All off with reduced motion.
+  them; off with reduced motion. The boards and lists in How it works are HTML drawn like the app
+  (its pieces in `assets/pieces/`, cburnett, GPLv2+), not screenshots.
 - Colors come from the app: its icon's indigo, its blue tint, its board squares and its meaning
   colors (`Design/COLORS.md`).
 
