@@ -505,7 +505,7 @@ private struct BoardColumnView: View {
         #else
         // The bar under the board, inset as much on each side: the board less the buttons
         // and the bar's margins.
-        max(120, (boardWidth > 0 ? boardWidth : columnWidth) - (buttons ? 140 : 40))
+        max(120, (boardWidth > 0 ? boardWidth : columnWidth) - (buttons ? 110 : 20))
         #endif
     }
 
