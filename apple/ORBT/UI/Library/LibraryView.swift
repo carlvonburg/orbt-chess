@@ -482,6 +482,7 @@ struct LibraryView: View {
 private struct BoardColumnView: View {
     let board: LibraryScreens.Board?
     let statisticsScope: StatisticsModel.Scope
+    @Environment(AppModel.self) private var app
     @Environment(\.openAnalysis) private var openAnalysis
     @State private var columnWidth: CGFloat = 0
 
@@ -514,6 +515,11 @@ private struct BoardColumnView: View {
         }
     }
 
+    /// Where the engine's lines come from, under Analysis (as on a phone).
+    private var subtitle: String {
+        if case .analysis(let model) = board { app.engine.status(for: model) } else { "" }
+    }
+
     var body: some View {
         Group {
             switch board {
@@ -537,6 +543,7 @@ private struct BoardColumnView: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { columnWidth = $0 }
         // The left column names the repertoire; this column what it shows.
         .navigationTitle(title)
+        .navigationSubtitle(subtitle)
         .toolbar {
             if case .builder(let model, let presentation) = board {
                 // Move navigation under the board (the top bar's leading side is the title's), as
