@@ -73,6 +73,15 @@ final class BuilderModel {
     /// Opponent replies at the board position while a draft is on it.
     var draftReplies: [ReplyInfo]? { observe(); return session.draftReplies() }
 
+    /// The draft is deep enough to save: every reply at the board position is rarer than the
+    /// coverage target (the panel's "Coverage target reached").
+    var draftReachedTarget: Bool {
+        guard !isUserTurnOnBoard, reachOnBoard != nil, let replies = draftReplies, !replies.isEmpty else {
+            return false
+        }
+        return !replies.contains(where: \.required)
+    }
+
     /// Moves from the start to the board position, including the draft.
     var movesToBoard: [PlayedMove] { observe(); return session.movesToBoard() }
 

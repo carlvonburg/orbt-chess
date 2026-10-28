@@ -9,6 +9,8 @@ struct StudyFinishedView: View {
     let model: DrillModel
     /// The next repertoire when studying all of them.
     let next: (name: String, start: () -> Void)?
+    /// The tour's Study step is done: its next step is the user's own repertoire.
+    var tourEnd = false
     @State private var today = LibraryTodayModel()
 
     private var document: RepertoireDocument { model.document }
@@ -147,6 +149,24 @@ struct StudyFinishedView: View {
     /// Main button first: the next repertoire during Study All, else studying more today.
     @ViewBuilder
     private var actions: some View {
+        if tourEnd {
+            VStack(spacing: 8) {
+                Text("You've filled a gap and learned the move. Now make a repertoire for the opening you play.")
+                    .font(.subheadline).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                Button("Create Your Own Repertoire") { Tour.advance(from: .studying, to: .finish) }
+                    .buttonStyle(.glassProminent)
+                    .controlSize(.extraLarge)
+                    .buttonSizing(.flexible)
+            }
+            .padding()
+        } else {
+            studyActions
+        }
+    }
+
+    @ViewBuilder
+    private var studyActions: some View {
         let notStudied = document.learningProgress().notStudied
         let extraReviews = model.isFiltered ? 0 : document.reviewsBeyondLimit()
         let canStudyMore = !model.isFiltered && (notStudied > 0 || extraReviews > 0)

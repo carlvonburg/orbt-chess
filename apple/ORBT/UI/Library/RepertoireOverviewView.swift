@@ -25,7 +25,9 @@ struct RepertoireOverviewView: View {
             coverageSection(stats)
             studySection(stats)
         }
+        .tourScreen(running: isSample)
         .checksCoverage(document)
+        .onAppear { if isSample { Tour.advance(from: .ready, to: .browse) } }
         .navigationTitle(document.name)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -46,6 +48,8 @@ struct RepertoireOverviewView: View {
         }
     }
 
+    private var isSample: Bool { RepertoireLibrary.isSample(document.pgnURL) }
+
     // MARK: Coverage
 
     private func coverageSection(_ stats: EntryStats) -> some View {
@@ -65,6 +69,7 @@ struct RepertoireOverviewView: View {
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
             Button("Browse / Edit", action: editLines).actionButton(prominent: buildFirst(stats))
+                .tourTarget(.browseButton)
         } header: {
             Text("Coverage")
         }
@@ -74,58 +79,69 @@ struct RepertoireOverviewView: View {
 
     private func studySection(_ stats: EntryStats) -> some View {
         Section {
-            // Like Coverage: how far along, then the numbers.
-            VStack(alignment: .leading, spacing: 8) {
-                Text("\(stats.progress.studied.formatted()) of \(stats.progress.cards.formatted()) moves studied")
-                    .font(.headline.monospacedDigit())
-                StudiedBar(progress: stats.progress)
-                FlowLayout {
-                    legend(stats.progress.mature, "mature", .learned)
-                    legend(stats.progress.young, "young", ThemeColor.learned.lighter())
-                    legend(stats.progress.learning, "learning", .learning)
-                    if stats.progress.suspended > 0 {
-                        legend(stats.progress.suspended, "suspended", ThemeColor.inactive)
-                    }
-                }
-                .font(.caption)
-            }
-            if stats.counts.total > 0 {
-                // One line when it fits, else the counts below the label (narrow or large text).
-                ViewThatFits(in: .horizontal) {
-                    HStack {
-                        Text("Due today")
-                        Spacer(minLength: 12)
-                        HStack(spacing: 10) { dueCounts(stats.counts) }.fixedSize()
-                    }
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Due today")
-                        FlowLayout(spacing: 10) { dueCounts(stats.counts) }
-                    }
-                }
+            if stats.progress.cards == 0 {
+                // Nothing to count yet: only what to do.
+                Label("Add moves of yours to study them.", systemImage: "checkmark.circle")
+                    .foregroundStyle(.secondary)
             } else {
-                Label(doneText(stats), systemImage: stats.progress.studied > 0 ? "checkmark.circle.fill" : "checkmark.circle")
-                    .foregroundStyle(stats.progress.studied > 0 ? AnyShapeStyle(.learned) : AnyShapeStyle(.secondary))
-            }
-            if stats.progress.cards > 0 {
-                studyButton(stats).actionButton(prominent: !buildFirst(stats))
-            }
-            // The split view shows the statistics beside the overview.
-            if !inSplitView {
-                Button {
-                    app.statisticsScope = .repertoire(document.entryID)
-                    app.selectedTab = .statistics
-                } label: {
-                    HStack {
-                        Label("Statistics", systemImage: "chart.bar")
-                        Spacer()
-                        Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .tint(.primary)
+                studyProgress(stats)
             }
         } header: {
             Text("Study")
+        }
+    }
+
+    @ViewBuilder
+    private func studyProgress(_ stats: EntryStats) -> some View {
+        // Like Coverage: how far along, then the numbers.
+        VStack(alignment: .leading, spacing: 8) {
+            Text("\(stats.progress.studied.formatted()) of \(stats.progress.cards.formatted()) moves studied")
+                .font(.headline.monospacedDigit())
+            StudiedBar(progress: stats.progress)
+            FlowLayout {
+                legend(stats.progress.mature, "mature", .learned)
+                legend(stats.progress.young, "young", ThemeColor.learned.lighter())
+                legend(stats.progress.learning, "learning", .learning)
+                if stats.progress.suspended > 0 {
+                    legend(stats.progress.suspended, "suspended", ThemeColor.inactive)
+                }
+            }
+            .font(.caption)
+        }
+        if stats.counts.total > 0 {
+            // One line when it fits, else the counts below the label (narrow or large text).
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    Text("Due today")
+                    Spacer(minLength: 12)
+                    HStack(spacing: 10) { dueCounts(stats.counts) }.fixedSize()
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Due today")
+                    FlowLayout(spacing: 10) { dueCounts(stats.counts) }
+                }
+            }
+        } else {
+            Label(doneText(stats), systemImage: stats.progress.studied > 0 ? "checkmark.circle.fill" : "checkmark.circle")
+                .foregroundStyle(stats.progress.studied > 0 ? AnyShapeStyle(.learned) : AnyShapeStyle(.secondary))
+        }
+        if stats.progress.cards > 0 {
+            studyButton(stats).actionButton(prominent: !buildFirst(stats))
+        }
+        // The split view shows the statistics beside the overview.
+        if !inSplitView {
+            Button {
+                app.statisticsScope = .repertoire(document.entryID)
+                app.selectedTab = .statistics
+            } label: {
+                HStack {
+                    Label("Statistics", systemImage: "chart.bar")
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .tint(.primary)
         }
     }
 

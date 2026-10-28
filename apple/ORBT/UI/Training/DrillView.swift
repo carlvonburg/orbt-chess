@@ -257,6 +257,10 @@ struct DrillView: View {
     }
 
     @State private var analysis: AnalysisModel?
+    /// The tour's Study step: on the sample, with its card (it doesn't block).
+    private var inTour: Bool {
+        TourGuide.shared.step == .studying && RepertoireLibrary.isSample(model.document.pgnURL)
+    }
 
     /// The next repertoire when studying all of them: its name and how to go on.
     private let next: (name: String, start: () -> Void)?
@@ -287,7 +291,7 @@ struct DrillView: View {
     private var content: some View {
         Group {
             if model.finished {
-                StudyFinishedView(model: model, next: next)
+                StudyFinishedView(model: model, next: next, tourEnd: inTour)
                     .padding(.vertical)
             } else if inSplitView {
                 // The board is in the board column: the counts, with what each means, and
@@ -299,6 +303,7 @@ struct DrillView: View {
                             openingName
                             status
                         }
+                        if inTour { TourStudyCard() }
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -322,6 +327,9 @@ struct DrillView: View {
                     }
                     .frame(maxWidth: 680, alignment: .leading)
                     .padding(.horizontal)
+                    if inTour {
+                        TourStudyCard().frame(maxWidth: 680).padding(.horizontal)
+                    }
                     Spacer(minLength: 0)
                 }
                 // The board under the bar, as in the builder.
@@ -603,4 +611,21 @@ struct StudyCountsList: View {
 
 extension String {
     var nilIfEmpty: String? { isEmpty ? nil : self }
+}
+
+/// The tour's card in Study: what to do, without blocking the board.
+private struct TourStudyCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(Tour.Step.studying.title).font(.headline)
+            Text(Tour.Step.studying.message).font(.subheadline).foregroundStyle(.secondary)
+            HStack {
+                Spacer()
+                SkipTourButton().font(.subheadline)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassEffect(.regular, in: .rect(cornerRadius: 20))
+    }
 }

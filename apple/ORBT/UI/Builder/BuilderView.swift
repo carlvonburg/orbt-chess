@@ -26,6 +26,15 @@ struct BuilderView: View {
     }
 
     private var document: RepertoireDocument { model.document }
+    /// The tour's step for the draft on the board, while it builds the line.
+    private var tourDraftStep: Tour.Step? {
+        guard isSample, [.answer, .extend, .save].contains(Tour.current), model.hasDraft else { return nil }
+        if model.isUserTurnOnBoard { return .answer }
+        return model.draftReachedTarget ? .save : .extend
+    }
+
+    /// The bundled sample, where the tour's tips show.
+    private var isSample: Bool { RepertoireLibrary.isSample(document.pgnURL) }
 
     var body: some View {
         let _ = document.revision
@@ -46,9 +55,17 @@ struct BuilderView: View {
             panelRows
         }
         .listStyle(.plain)
+        .tourScreen(running: isSample)
         .environment(\.defaultMinListRowHeight, 0)
         .scrollDismissesKeyboard(.immediately)
         .onAppear {
+            if isSample {
+                Tour.advance(from: .browse, to: .biggestGap)
+                // A line being built is gone (the app was closed): find the gap again.
+                if !model.hasDraft {
+                    for step in [Tour.Step.answer, .extend, .save] { Tour.advance(from: step, to: .biggestGap) }
+                }
+            }
             // Edit > Undo and ⌘Z undo through the builder, which also leaves a removed position.
             document.attachUndo(undoManager) { [weak model, weak document] in
                 if let model { model.undo() } else { document?.undo() }
@@ -67,6 +84,11 @@ struct BuilderView: View {
         .checksCoverage(document)
         .onChange(of: model.current, initial: true) { requestStats() }
         .onChange(of: model.draft) { requestStats() }
+        // The tour builds the line until coverage is reached: your answer, then a reply that
+        // needs one, and so on; Save only once every reply is below the target.
+        .onChange(of: tourDraftStep) { _, step in
+            if let step { Tour.draftChanged(to: step) }
+        }
         .alert("Could not save", isPresented: Binding(
             get: { document.saveError != nil }, set: { if !$0 { document.dismissSaveError() } })) {
             Button("OK") {}
@@ -124,7 +146,9 @@ struct BuilderView: View {
         let split = inSplitView
         let actions: ToolbarItemPlacement = split ? .trailingBar : .bottomActions
         if !split {
-            ToolbarItemGroup(placement: .bottomActions) { BuilderNavigationButtons(model: model) }
+            ToolbarItemGroup(placement: .bottomActions) {
+                BuilderNavigationButtons(model: model, tourRunning: isSample)
+            }
             ToolbarSpacer(.flexible, placement: .bottomActions)
         }
         if model.hasDraft {
@@ -132,29 +156,60 @@ struct BuilderView: View {
             ToolbarItemGroup(placement: actions) {
                 if !split {
                     Button("Analysis", systemImage: "cpu") { presentation.analyze(model, open: openAnalysis) }
+                        .tourBarButton(.analysis, running: isSample)
                 }
                 Button("Discard", systemImage: "xmark", role: .destructive) { model.discardDraft() }
+                    .tourBarButton(nil, running: isSample)
             }
             ToolbarSpacer(.fixed, placement: actions)
             ToolbarItem(placement: actions) {
-                Button { model.saveDraft() } label: {
+                Button {
+                    // Where the draft starts, and its first move (Biggest Gap's reply).
+                    let start = model.current
+                    let first = model.draft.first?.uci
+                    model.saveDraft()
+                    if isSample, Tour.current == .save {
+                        Tour.saved()
+                        // To the first new move, so Study Branch trains only the line just added
+                        // (from `start`, it would also train the rest of the repertoire).
+                        model.go(to: first.flatMap { model.tree.child(of: start, uci: $0) } ?? start)
+                    }
+                } label: {
                     Label(model.draft.count == 1 ? "Save" : "Save \(model.draft.count)", systemImage: "checkmark")
                 }
                 .buttonStyle(.glassProminent)
+                .tourBarButton(.save, running: isSample)
+
             }
         } else {
             ToolbarItemGroup(placement: actions) {
-                Button("Biggest Gap", systemImage: "scope") { model.goToBiggestGap() }
-                    .disabled(document.coverage.root?.biggestGap == nil)
-                Button("Study Branch", systemImage: "graduationcap") { studyBranch(model.current) }
+                Button("Biggest Gap", systemImage: "scope") {
+                    model.goToBiggestGap()
+                    if isSample {
+                        Tour.advance(from: .biggestGap, to: .answer)
+                    }
+                }
+                .disabled(document.coverage.root?.biggestGap == nil)
+                .tourBarButton(.biggestGap, running: isSample)
+
+                Button("Study Branch", systemImage: "graduationcap") {
+                    // The tour's last step.
+                    if isSample { Tour.advance(from: .study, to: .studying) }
+                    studyBranch(model.current)
+                }
                 .disabled(document.learningProgress(under: model.current).cards == 0)
+                .tourBarButton(.studyBranch, running: isSample)
+
                 if !split {
                     Button("Analysis", systemImage: "cpu") { presentation.analyze(model, open: openAnalysis) }
+                        .tourBarButton(nil, running: isSample)
                 }
             }
         }
         if !split {
-            ToolbarItem(placement: .trailingBar) { BuilderMoreMenu(model: model, presentation: presentation) }
+            ToolbarItem(placement: .trailingBar) {
+                BuilderMoreMenu(model: model, presentation: presentation).tourBarButton(nil, running: isSample)
+            }
         }
     }
 
@@ -244,6 +299,7 @@ struct BuilderBoard: View {
                   arrows: model.arrows, movableSide: model.position.sideToMove()) { from, to, promotion in
             model.play(from: from, to: to, promotion: promotion)
         }
+        .tourTarget(.board)
     }
 }
 
@@ -251,12 +307,17 @@ struct BuilderBoard: View {
 /// keys (←/→) are in the menu bar's Move menu.
 struct BuilderNavigationButtons: View {
     let model: BuilderModel
+    /// On the sample: the tour locks them while a step asks for something else.
+    var tourRunning = false
 
     var body: some View {
+        // Each button its own: the bar takes the buttons out of this view.
         Button("Back", systemImage: "chevron.backward") { model.back() }
             .disabled(!model.canBack)
+            .tourBarButton(nil, running: tourRunning)
         Button("Forward", systemImage: "chevron.forward") { model.forward() }
             .disabled(!model.canForward)
+            .tourBarButton(nil, running: tourRunning)
     }
 }
 
@@ -540,12 +601,14 @@ struct RepliesPanel: View {
         Group {
             HStack {
                 Text("Replies").font(.headline)
+                    // The tour's replies step shows the heading row with the replies.
                 Spacer()
                 Text("Seen").font(.caption).foregroundStyle(.secondary).frame(width: 74, alignment: .trailing)
                 Text("Covered").font(.caption).foregroundStyle(.secondary).frame(width: 64, alignment: .trailing)
                 Text("Games").font(.caption).foregroundStyle(.secondary).frame(width: 40, alignment: .trailing)
             }
             .padding(.top, 8)
+            .tourTarget(.replies, part: -1)
             .builderRow(separator: false)
             if let replies, !replies.isEmpty {
                 // Replies in the repertoire, needed or excluded first, then the ones not needed;
@@ -553,8 +616,10 @@ struct RepliesPanel: View {
                 let matters = { (r: ReplyInfo) in r.child != nil || r.transposesTo != nil || r.required || r.excluded }
                 let ordered = replies.filter(matters).sorted { $0.share > $1.share }
                     + replies.filter { !matters($0) }.sorted { $0.share > $1.share }
-                ForEach(ordered, id: \.uci) { reply in
+                ForEach(Array(ordered.enumerated()), id: \.element.uci) { index, reply in
                     ReplyRow(reply: reply, node: saved?.id, model: model, eval: eval?.text(for: reply.uci))
+                        // The first few, so the highlight ends above the bottom bar.
+                        .tourTarget(.replies, part: index < 4 ? index : nil)
                         .builderRow()
                 }
             } else {
@@ -712,6 +777,8 @@ struct CandidatesSection: View {
         let collapsed = !saved.isEmpty && !showOthers
         let loading = stats == nil && app.isLoadingStats
         Text(saved.isEmpty ? title : "Your Moves").font(.headline).padding(.top, 8)
+            // The tour's answer step shows the heading with the candidates under it.
+            .tourTarget(.candidates, part: -1)
             .builderRow(separator: false)
             .task(id: epd) {
                 showOthers = false
@@ -732,8 +799,12 @@ struct CandidatesSection: View {
                 Text(title).font(.headline).padding(.top, 8)
                     .builderRow(separator: false)
             }
-            ForEach(otherRows, id: \.uci) { move in
+            ForEach(Array(otherRows.enumerated()), id: \.element.uci) { index, move in
                 row(uci: move.uci, san: move.san, move: move, total: stats?.total ?? 0)
+                    // The tour's answer step points at the candidates: the first few, so the
+                    // highlight ends above the bottom bar. Inside the row's own modifiers:
+                    // after them, the List sizes the row as a new one.
+                    .tourTarget(.candidates, part: index < 4 ? index : nil)
                     .builderRow()
             }
             if loading {
@@ -978,8 +1049,7 @@ struct DraftPanel: View {
         let target = model.draftTransposition
         let replies = model.isUserTurnOnBoard ? nil : model.draftReplies
         // Every reply is below the target: the line is deep enough to save.
-        let reached = model.reachOnBoard != nil && replies?.isEmpty == false
-            && replies?.contains(where: \.required) == false
+        let reached = model.draftReachedTarget
         // Laid out like NodeHeader: opening name, then status and reach.
         VStack(alignment: .leading, spacing: 8) {
             if let name = openingName {

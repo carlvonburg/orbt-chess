@@ -15,6 +15,14 @@ enum CoverageSource: Hashable, CaseIterable {
         }
     }
 
+    /// Whose games they are.
+    var detail: String {
+        switch self {
+        case .blitz, .rapid: "Lichess games, Lichess rating"
+        case .classical: "Over-the-board games, FIDE rating"
+        }
+    }
+
     func database(rating: Int) -> ExplorerDatabase {
         switch self {
         case .blitz: .lichess(ratings: [Int64(rating)], speeds: [.blitz])
@@ -60,6 +68,31 @@ struct RepertoireSettingsDraft: Equatable {
 
     var database: ExplorerDatabase { source.database(rating: rating) }
 
+    /// The defaults with the last new repertoire's games, rating and depth (not its side):
+    /// a second repertoire usually prepares for the same opponents.
+    static func lastUsed() -> Self {
+        var draft = Self()
+        let defaults = UserDefaults.standard
+        if let source = defaults.string(forKey: Self.sourceKey),
+           let saved = CoverageSource.allCases.first(where: { "\($0)" == source }) {
+            draft.source = saved
+        }
+        if defaults.object(forKey: Self.ratingKey) != nil { draft.rating = defaults.integer(forKey: Self.ratingKey) }
+        if defaults.object(forKey: Self.depthKey) != nil { draft.targetGames = defaults.integer(forKey: Self.depthKey) }
+        return draft
+    }
+
+    func remember() {
+        let defaults = UserDefaults.standard
+        defaults.set("\(source)", forKey: Self.sourceKey)
+        defaults.set(rating, forKey: Self.ratingKey)
+        defaults.set(targetGames, forKey: Self.depthKey)
+    }
+
+    private static let sourceKey = "newRepertoireSource"
+    private static let ratingKey = "newRepertoireRating"
+    private static let depthKey = "newRepertoireDepth"
+
     var isValid: Bool { true }
 
     /// The sidecar file of a new repertoire with these settings.
@@ -69,14 +102,10 @@ struct RepertoireSettingsDraft: Equatable {
     }
 }
 
+/// Every repertoire setting on one page (Repertoire Settings); new repertoires take them one
+/// step at a time (`RepertoireSetupFlow`).
 struct RepertoireSettingsForm: View {
-    @Environment(AppModel.self) private var model
     @Binding var draft: RepertoireSettingsDraft
-    @State private var customTarget = false
-
-    private var coverage: CoverageTables { model.coverage }
-    /// Every offline selection: on the server or on this device.
-    private var tables: [ExplorerDatabase] { coverage.selections }
 
     var body: some View {
         Section("I play") {
@@ -86,54 +115,68 @@ struct RepertoireSettingsForm: View {
             }
             .pickerStyle(.segmented)
         }
-
-        Section {
-            Picker("Database", selection: $draft.source) {
-                ForEach(CoverageSource.allCases, id: \.self) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            ratingPicker
-        } header: {
-            Text("Coverage database")
-        } footer: {
-            Text(draft.source == .classical
-                 ? "Opponent move frequencies come from over-the-board games since the year 2000 at this average FIDE rating (Lumbra's Gigabase, CC BY-NC 4.0), downloaded to this device. Only positions it doesn't hold come from the Lichess explorer (\(classicalBackup))."
-                 : "Opponent move frequencies come from Lichess \(draft.source.title.lowercased()) games at this average rating, downloaded to this device. Positions it doesn't hold come from the Lichess explorer.")
-        }
-
-        Section {
-            let isPreset = CoverageDepth(games: draft.targetGames) != nil
-            ForEach(CoverageDepth.allCases) { depth in
-                Button {
-                    customTarget = false
-                    draft.targetGames = depth.games
-                } label: {
-                    DepthRow(name: depth.title, games: depth.games,
-                             selected: !customTarget && draft.targetGames == depth.games)
-                }
-                .tint(.primary)
-            }
-            Button {
-                customTarget = true
-            } label: {
-                DepthRow(name: "Custom", games: isPreset && !customTarget ? nil : draft.targetGames,
-                         selected: customTarget || !isPreset)
-            }
-            .tint(.primary)
-            if customTarget || !isPreset {
-                Stepper("1 in \(draft.targetGames.formatted()) games", value: $draft.targetGames, in: 20...20000, step: 50)
-            }
-        } header: {
-            Text("How much do you want to learn?")
-        } footer: {
-            Text("Every opponent move you would meet at least once in this many games must have an answer in your repertoire. Deeper goals mean more lines to learn.")
-        }
+        CoverageSourceSection(draft: $draft, style: .segmented)
+        DepthSection(targetGames: $draft.targetGames)
     }
 }
 
-extension RepertoireSettingsForm {
-    /// The rating bins with a table for the chosen time control, the chosen one's download
-    /// state, and the download itself, started as soon as a bin is chosen.
+/// Where opponent move frequencies come from: the time control, the rating bin and its table
+/// (downloaded as soon as it is chosen).
+struct CoverageSourceSection: View {
+    enum Style { case segmented, list }
+
+    @Environment(AppModel.self) private var model
+    @Binding var draft: RepertoireSettingsDraft
+    let style: Style
+
+    private var coverage: CoverageTables { model.coverage }
+    /// Every offline selection: on the server or on this device.
+    private var tables: [ExplorerDatabase] { coverage.selections }
+
+    var body: some View {
+        switch style {
+        case .segmented:
+            Section {
+                Picker("Database", selection: $draft.source) {
+                    ForEach(CoverageSource.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                ratingPicker
+            } header: {
+                Text("Coverage database")
+            } footer: {
+                footer
+            }
+        case .list:
+            Section {
+                Picker("Games", selection: $draft.source) {
+                    ForEach(CoverageSource.allCases, id: \.self) { source in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(source.title)
+                            Text(source.detail).font(.footnote).foregroundStyle(.secondary)
+                        }
+                        .tag(source)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Their games")
+            }
+            Section {
+                ratingPicker
+            } footer: {
+                footer
+            }
+        }
+    }
+
+    private var footer: Text {
+        Text(draft.source == .classical
+             ? "Opponent move frequencies come from over-the-board games since the year 2000 at this average FIDE rating (Lumbra's Gigabase, CC BY-NC 4.0), downloaded to this device. Only positions it doesn't hold come from the Lichess explorer (\(classicalBackup))."
+             : "Opponent move frequencies come from Lichess \(draft.source.title.lowercased()) games at this average rating, downloaded to this device. Positions it doesn't hold come from the Lichess explorer.")
+    }
+
     /// Which Lichess games answer the positions a Classical table lacks, for the footer.
     private var classicalBackup: String {
         let backup = draft.database.fetchedAs
@@ -141,9 +184,11 @@ extension RepertoireSettingsForm {
         return "\(backup.summary), one rating bin up, as Lichess ratings run higher than FIDE"
     }
 
+    /// The rating bins with a table for the chosen time control, the chosen one's download
+    /// state, and the download itself, started as soon as a bin is chosen.
     @ViewBuilder private var ratingPicker: some View {
         let bins = tables.filter(draft.source.matches).map(\.lowestRating).sorted()
-        Picker("Opponent rating", selection: $draft.rating) {
+        Picker(style == .list ? "Their rating" : "Opponent rating", selection: $draft.rating) {
             ForEach(bins.contains(draft.rating) ? bins : bins + [draft.rating], id: \.self) { bin in
                 Text(ExplorerDatabase.ratingLabel(bin)).tag(bin)
             }
@@ -160,6 +205,45 @@ extension RepertoireSettingsForm {
                 // Not tied to this view: the download finishes after the sheet closes.
                 coverage.ensure(draft.database)
             }
+    }
+}
+
+/// How much to learn: the named coverage targets, or a custom one.
+struct DepthSection: View {
+    @Binding var targetGames: Int
+    /// In the setup flow, whose step title asks the question and which can be changed later.
+    var inSetup = false
+    @State private var customTarget = false
+
+    var body: some View {
+        Section {
+            let isPreset = CoverageDepth(games: targetGames) != nil
+            ForEach(CoverageDepth.allCases) { depth in
+                Button {
+                    customTarget = false
+                    targetGames = depth.games
+                } label: {
+                    DepthRow(name: depth.title, games: depth.games,
+                             selected: !customTarget && targetGames == depth.games)
+                }
+                .tint(.primary)
+            }
+            Button {
+                customTarget = true
+            } label: {
+                DepthRow(name: "Custom", games: isPreset && !customTarget ? nil : targetGames,
+                         selected: customTarget || !isPreset)
+            }
+            .tint(.primary)
+            if customTarget || !isPreset {
+                Stepper("1 in \(targetGames.formatted()) games", value: $targetGames, in: 20...20000, step: 50)
+            }
+        } header: {
+            if !inSetup { Text("How much do you want to learn?") }
+        } footer: {
+            Text("Every opponent move you would meet at least once in this many games must have an answer in your repertoire. Deeper goals mean more lines to learn."
+                 + (inSetup ? " You can change this later in the repertoire's settings." : ""))
+        }
     }
 }
 
