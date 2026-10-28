@@ -44,6 +44,12 @@ extension EnvironmentValues {
     @Entry var openScreen: ((LibraryRoute) -> Void)?
 }
 
+/// A setup sheet to show (`RepertoireSetupFlow`).
+struct SetupRequest: Identifiable {
+    let id = UUID()
+    let mode: RepertoireSetupFlow.Mode
+}
+
 /// Anki's deck list: today's totals, then one row per repertoire. A row opens the overview.
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
@@ -56,9 +62,9 @@ struct LibraryView: View {
     /// The models of the Browse and Study screens on the path.
     @State private var screens = LibraryScreens()
     @State private var columns = NavigationSplitViewVisibility.all
-    @State private var showNew = false
+    /// The step-by-step setup of a new, imported or dropped-in repertoire.
+    @State private var setup: SetupRequest?
     @State private var showImport = false
-    @State private var setupEntry: RepertoireEntry?
     @State private var deleteEntry: RepertoireEntry?
     @State private var sheet: EntrySheet?
     @State private var errorMessage: String?
@@ -66,6 +72,11 @@ struct LibraryView: View {
     /// app menu (the `Settings` scene).
     @State private var showSettings = false
     @State private var today = LibraryTodayModel()
+    /// The tour's step and progress (`Tour`): while it runs, its section takes Today's place.
+    @AppStorage(Tour.stepKey) private var tourStep = Tour.Step.off.rawValue
+    /// Whether this device's first launch has offered the sample (`Tour.wasOffered`).
+    @AppStorage(Tour.offeredKey) private var sampleOffered = false
+    @Environment(\.theme) private var theme
 
     var body: some View {
         Group {
@@ -77,15 +88,29 @@ struct LibraryView: View {
                 if case .overview(let id) = path.first {
                     selection = .repertoire(id)
                     path.removeFirst()
+                } else if case .repertoire = selection {
+                    // Already selected by `show` as the split view turned on (Create makes the
+                    // first repertoire); its screens are on their way.
                 } else {
                     selection = .today
                 }
-            } else if case .repertoire(let id) = selection {
-                path.insert(.overview(id), at: 0)
+            } else {
+                if case .repertoire(let id) = selection {
+                    path.insert(.overview(id), at: 0)
+                }
+                // The stack has no selection: a later split view starts from its path.
+                selection = .today
             }
         }
         // Going back from the analysis board (not covering it) hands its line back.
         .onChange(of: path) { screens.finishAnalyses(notIn: path) }
+        // The tour's last step, from Study's end: back to the library, at New Repertoire.
+        .onChange(of: tourStep) { _, step in
+            guard step == Tour.Step.finish.rawValue else { return }
+            path = []
+            if usesSplit { selection = .today }
+            createOwnRepertoire()
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView().presentationSizing(.form)
         }
@@ -100,20 +125,21 @@ struct LibraryView: View {
             }
             .presentationSizing(.form)
         }
-        .sheet(isPresented: $showNew) {
-            NewRepertoireSheet { entry in show(entry.id, then: [.builder(entry.id)]) }
-                .presentationSizing(.form)
-        }
-        .sheet(item: $setupEntry) { entry in
-            SetupSheet(title: "Set up \(entry.name)") { sidecar in
-                try model.library.saveSidecar(sidecar, for: entry)
-                show(entry.id, then: [])
+        .sheet(item: $setup) { request in
+            RepertoireSetupFlow(mode: request.mode) { entry in
+                // A new repertoire opens on Browse, to enter its first moves.
+                if case .new = request.mode {
+                    show(entry.id, then: [.builder(entry.id)])
+                } else {
+                    show(entry.id, then: [])
+                }
             }
             .presentationSizing(.form)
         }
         .fileImporter(isPresented: $showImport, allowedContentTypes: [.pgn, .plainText]) { result in
             do {
-                setupEntry = try model.library.importPGN(from: result.get())
+                let file = try RepertoireLibrary.readImport(result.get())
+                setup = SetupRequest(mode: .importing(data: file.data, name: file.name))
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -153,11 +179,16 @@ struct LibraryView: View {
     /// Shows `newPath` once the models of its Browse and Study screens are made, so the screen
     /// and the split view's board column show the same model from the start. Screens no
     /// longer on the path (popped) are forgotten first: opening one again starts afresh.
-    private func go(to newPath: [LibraryRoute]) {
+    private func go(to newPath: [LibraryRoute], then next: (() -> Void)? = nil) {
         screens.keep(path)
         Task {
             if await screens.prepare(newPath, app: model) {
                 path = newPath
+                if let next {
+                    // After the push has started, so the stack sees two pushes.
+                    try? await Task.sleep(for: .milliseconds(350))
+                    next()
+                }
             } else {
                 errorMessage = "The repertoire could not be opened."
             }
@@ -224,6 +255,8 @@ struct LibraryView: View {
         let stats = entryStats
         return List {
             Section { todayRows(stats) }
+                // The column's plain list draws one under the last button too.
+                .listSectionSeparator(.hidden, edges: .bottom)
         }
         .navigationTitle("Today")
     }
@@ -243,7 +276,7 @@ struct LibraryView: View {
     /// Today across every repertoire, with Study All: atop the library on a phone, in the
     /// middle column when Today is selected in the split view.
     private func todayCard(_ stats: [String: EntryStats]) -> some View {
-        TodayCard(entries: model.library.entries.filter { !$0.needsSetup }.map { ($0, stats[$0.id]!) },
+        TodayCard(entries: model.library.entries.filter { !$0.needsSetup }.map { ($0, entryStats(for: $0, in: stats)) },
                   today: today.today, streak: today.streak,
                   studyAll: { open(.studyAll(studyAllEntries)) }, open: open)
     }
@@ -297,13 +330,16 @@ struct LibraryView: View {
             Button("Settings", systemImage: "gearshape") { showSettings = true }
         }
         #endif
+        // An empty library offers these in its middle (`EmptyLibraryView`).
+        if !model.library.entries.isEmpty {
         ToolbarItem(placement: .primaryAction) {
             Menu {
-                Button("New Repertoire", systemImage: "plus") { showNew = true }
+                Button("New Repertoire", systemImage: "plus") { setup = SetupRequest(mode: .new(side: nil)) }
                 Button("Import PGN…", systemImage: "square.and.arrow.down") { showImport = true }
             } label: {
                 Label("Add", systemImage: "plus")
             }
+        }
         }
     }
 
@@ -350,7 +386,11 @@ struct LibraryView: View {
         if usesSplit {
             select(.repertoire(id), then: routes)
         } else {
-            go(to: [.overview(id)] + routes)
+            // The overview first, then the screens on it: a stack given two screens at once
+            // shows the top one's bottom bar twice (iOS 26).
+            go(to: [.overview(id)]) {
+                if !routes.isEmpty { go(to: [.overview(id)] + routes) }
+            }
         }
     }
 
@@ -366,6 +406,12 @@ struct LibraryView: View {
                 }
             }
         }
+    }
+
+    /// An entry's stats from the snapshot, or made now: an entry added since (a new
+    /// repertoire) can be drawn before the snapshot is taken again.
+    private func entryStats(for entry: RepertoireEntry, in snapshot: [String: EntryStats]) -> EntryStats {
+        snapshot[entry.id] ?? EntryStats(entry: entry, document: model.documents[entry.id])
     }
 
     private var entryStats: [String: EntryStats] {
@@ -391,8 +437,14 @@ struct LibraryView: View {
         let library = model.library
         if !library.isLoaded {
             ProgressView()
+        } else if library.entries.isEmpty && !sampleOffered {
+            // The first launch adds the sample: still loading, not an empty library.
+            ProgressView()
+                .task { await offerSample() }
         } else if library.entries.isEmpty {
-            WelcomeView(usesICloud: library.usesICloud, newRepertoire: { showNew = true }, importPGN: { showImport = true })
+            EmptyLibraryView(newRepertoire: { setup = SetupRequest(mode: .new(side: $0)) },
+                             importPGN: { showImport = true },
+                             takeTour: startTour)
         } else {
             let stats = entryStats
             Group {
@@ -403,6 +455,8 @@ struct LibraryView: View {
                 }
             }
             .refreshable { await library.refresh() }
+            // Repertoires from the start: no sample later, even if they are all deleted.
+            .task { if !Tour.wasOffered { Tour.markOffered() } }
             .task(id: TodayKey(entries: library.entries.count, answered: stats.values.reduce(0) { $0 + $1.counts.total })) {
                 await today.load(model)
             }
@@ -411,14 +465,15 @@ struct LibraryView: View {
 
     @ViewBuilder
     private func rows(_ stats: [String: EntryStats]) -> some View {
-        if !model.auth.isSignedIn {
-            SignInBanner()
-        }
         if usesSplit {
+            if tourRunning { tourSection }
             // Today's card is in the middle column when this row is selected.
             Label("Today", systemImage: "calendar")
                 .badge(Int(stats.values.reduce(0) { $0 + $1.counts.total }))
                 .tag(SidebarItem.today)
+        } else if tourRunning {
+            // Studying moves you haven't built yet isn't the next step.
+            tourSection
         } else {
             Section("Today") { todayRows(stats) }
         }
@@ -428,15 +483,113 @@ struct LibraryView: View {
             if !entries.isEmpty {
                 Section(group.title) {
                     ForEach(entries) { entry in
-                        row(entry, stats[entry.id]!)
-                            .swipeActions {
-                                Button("Delete", systemImage: "trash", role: .destructive) { deleteEntry = entry }
+                        row(entry, entryStats(for: entry, in: stats))
+                            // Not .destructive: that role removes the row before the dialog
+                            // is answered (as `DeleteMove` in Browse).
+                            .swipeActions(allowsFullSwipe: false) {
+                                Button("Delete", systemImage: "trash") { deleteEntry = entry }
+                                    .tint(ThemeColor.failure)
                             }
                             .contextMenu { if !entry.needsSetup { menu(entry) } }
                     }
                 }
             }
         }
+    }
+
+    /// The tour, from Start Tour to its end (Today's place in the library).
+    private var tourRunning: Bool {
+        tourStep != Tour.Step.off.rawValue
+            && model.library.entries.contains { RepertoireLibrary.isSample($0.pgnURL) }
+    }
+
+    /// The tour in Today's place: what it is, how far it got, or, once the sample's gap is
+    /// studied, the user's own repertoire; its one main action first.
+    private var tourSection: some View {
+        let step = Tour.Step(rawValue: tourStep) ?? .off
+        let yourTurn = step == .studying || step == .finish
+        let (title, detail): (String, String) = switch step {
+        case .ready: ("Learn by Filling a Gap",
+                      "Answer a common reply in a sample 1.e4 repertoire, then study it. About two minutes.")
+        case .studying, .finish: ("Your Turn",
+                                  "Now build a repertoire for the opening you play. The sample stays here to try things on.")
+        default: ("Tour in Progress", "Pick up where you left off in the sample.")
+        }
+        // A row per button (a row's tap goes to all its buttons), without separators.
+        return Section("Tour") {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).font(.headline)
+                Text(detail).font(.footnote).foregroundStyle(.secondary)
+            }
+            .listRowSeparator(.hidden)
+            if yourTurn {
+                Button("Create Your Repertoire", action: createOwnRepertoire)
+                    .actionButton(prominent: true)
+                    .listRowSeparator(.hidden)
+                Button { Tour.skip() } label: {
+                    Text("Not Now").foregroundStyle(theme.appColor.tint)
+                }
+                .actionButton(prominent: false)
+                .tint(.secondary)
+                .listRowSeparator(.hidden)
+            } else {
+                Button(step == .ready ? "Start Tour" : "Continue Tour", action: continueTour)
+                    .actionButton(prominent: true)
+                    .listRowSeparator(.hidden)
+                // The secondary action: a gray button with the label in the app color (UIKit's
+                // gray configuration), so only the main action is filled with it.
+                SkipTourButton {
+                    Text("Skip Tour").foregroundStyle(theme.appColor.tint)
+                }
+                .actionButton(prominent: false)
+                .tint(.secondary)
+                .listRowSeparator(.hidden)
+            }
+        }
+        // Open, so its row shows its moves and gaps (an unopened new sidecar has none yet).
+        .task {
+            if let sample = model.library.entries.first(where: { RepertoireLibrary.isSample($0.pgnURL) }) {
+                _ = await model.open(sample)
+            }
+        }
+    }
+
+    /// The tour's end: New Repertoire, for the user's own.
+    private func createOwnRepertoire() {
+        Tour.skip()
+        setup = SetupRequest(mode: .new(side: nil))
+    }
+
+    /// The sample's overview, or its Browse once the tour got there.
+    private func continueTour() {
+        guard let sample = model.library.entries.first(where: { RepertoireLibrary.isSample($0.pgnURL) }) else { return }
+        show(sample.id, then: tourStep >= Tour.Step.biggestGap.rawValue ? [.builder(sample.id)] : [])
+    }
+
+    /// Adds the sample and offers the tour on it.
+    private func startTour() {
+        // The tour first: the sample's row shows its first tip, made with this run's id.
+        Tour.start()
+        do {
+            let sample = try model.library.addSample()
+            // Opened now, so its row and Today show its moves and gaps from the start.
+            Task { _ = await model.open(sample) }
+        } catch {
+            Tour.skip()
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    /// The first launch on this device starts with the sample and its tour. With iCloud the
+    /// folder is given a moment first: on a new device the repertoires may still be arriving.
+    private func offerSample() async {
+        guard !Tour.wasOffered else { return }
+        if model.library.usesICloud {
+            try? await Task.sleep(for: .seconds(3))
+            await model.library.refresh()
+        }
+        guard !Tour.wasOffered else { return }
+        if model.library.entries.isEmpty { startTour() } else { Tour.markOffered() }
     }
 
     /// Repertoires with moves due today, in list order.
@@ -463,7 +616,7 @@ struct LibraryView: View {
     @ViewBuilder
     private func row(_ entry: RepertoireEntry, _ stats: EntryStats) -> some View {
         if entry.needsSetup {
-            Button { setupEntry = entry } label: {
+            Button { setup = SetupRequest(mode: .setup(entry)) } label: {
                 LibraryRow(entry: entry, stats: stats, status: entry.isDownloading ? "Downloading from iCloud…" : "New PGN. Tap to set it up.")
             }
             .tint(.primary)
@@ -681,7 +834,7 @@ private struct TodayCard: View {
                 studiedLine
             case .empty:
                 Text("Nothing to study yet").font(.headline)
-                Text("Enter the moves from a book or video, then study them here.")
+                Text("Answer the replies your opponents play, then study your moves here.")
                     .font(.footnote).foregroundStyle(.secondary)
             case .doneForNow(let count, let at):
                 doneHeader("Done for Now", "checkmark.circle.fill")
@@ -1015,16 +1168,6 @@ struct EntryStats {
 
 /// Signing in to Lichess as a list section, as Settings offers signing in: the action as a row,
 /// why in the footer.
-struct SignInBanner: View {
-    var body: some View {
-        Section {
-            SignInButton()
-        } footer: {
-            Text("Coverage needs opponent statistics from the Lichess opening explorer, which needs a free Lichess account. Training works without it.")
-        }
-    }
-}
-
 /// Signs in to Lichess (a list row), with the last sign-in error under it.
 struct SignInButton: View {
     @Environment(AppModel.self) private var model
@@ -1038,85 +1181,6 @@ struct SignInButton: View {
         }
         if let error = model.auth.lastError {
             Text(error).font(.footnote).foregroundStyle(.failure)
-        }
-    }
-}
-
-struct NewRepertoireSheet: View {
-    @Environment(AppModel.self) private var model
-    @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var draft = RepertoireSettingsDraft()
-    @State private var error: String?
-    let onCreated: (RepertoireEntry) -> Void
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("Name") {
-                    TextField("e.g. Najdorf", text: $name)
-                        .wordsAutocapitalization()
-                        .onChange(of: name) { name = name.safeRepertoireName }
-                }
-                RepertoireSettingsForm(draft: $draft)
-                if let error {
-                    Text(error).foregroundStyle(.failure)
-                }
-            }
-            .navigationTitle("New Repertoire")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", systemImage: "xmark") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Create", systemImage: "checkmark") {
-                        do {
-                            let entry = try model.library.create(name: name, sidecar: draft.makeSidecar())
-                            dismiss()
-                            onCreated(entry)
-                        } catch {
-                            self.error = (error as? CocoaError)?.code == .fileWriteFileExists
-                                ? "A repertoire with this name already exists." : error.localizedDescription
-                        }
-                    }
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || !draft.isValid)
-                }
-            }
-        }
-    }
-}
-
-/// Settings for a PGN that has no sidecar yet (imported or dropped into the folder).
-struct SetupSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    let title: String
-    let onSave: (Data) throws -> Void
-    @State private var draft = RepertoireSettingsDraft()
-    @State private var error: String?
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                RepertoireSettingsForm(draft: $draft)
-                if let error { Text(error).foregroundStyle(.failure) }
-            }
-            .navigationTitle(title)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", systemImage: "xmark") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save", systemImage: "checkmark") {
-                        do {
-                            try onSave(draft.makeSidecar())
-                            dismiss()
-                        } catch {
-                            self.error = error.localizedDescription
-                        }
-                    }
-                    .disabled(!draft.isValid)
-                }
-            }
         }
     }
 }

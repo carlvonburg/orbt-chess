@@ -139,34 +139,65 @@ final class RepertoireLibrary {
 
     /// Creates `<name>.pgn` and its sidecar (bytes from `newSidecar`) in the repertoire folder.
     func create(name: String, sidecar: Data) throws -> RepertoireEntry {
+        try add(name: name, pgn: { Data(newRepertoirePgn(name: $0).utf8) }, sidecar: sidecar)
+    }
+
+    /// Adds a PGN picked from Files as `<name>.pgn`, with its sidecar. Nothing is written
+    /// until the user has set it up, so cancelling leaves no file behind.
+    func importPGN(data: Data, name: String, sidecar: Data) throws -> RepertoireEntry {
+        try add(name: name, pgn: { _ in data }, sidecar: sidecar)
+    }
+
+    /// The bundled sample repertoire (White, 1.e4), added the first time; later calls return the existing
+    /// one (also when another device added it to the same iCloud folder).
+    func addSample() throws -> RepertoireEntry {
+        guard let folder else { throw CocoaError(.fileNoSuchFile) }
+        let pgn = folder.appending(path: Self.sampleName + ".pgn")
+        if FileManager.default.fileExists(atPath: pgn.path) {
+            return entries.first { $0.pgnURL.standardizedFileURL == pgn.standardizedFileURL } ?? insertEntry(for: pgn)
+        }
+        guard let url = Bundle.main.url(forResource: Self.sampleName, withExtension: "pgn") else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        var draft = RepertoireSettingsDraft()
+        draft.color = .white
+        draft.source = .blitz
+        draft.rating = 1600
+        // A small target, so a short repertoire is nearly complete: at 1 in 20 games of the
+        // blitz 1600–1799 table it leaves three gaps (1...e6, 3...Nf6 in the Italian, and
+        // 5...cxd4 in the Alapin), at depths 1, 3 and 5, for the tour to fill.
+        draft.targetGames = 20
+        return try add(name: Self.sampleName, pgn: { _ in try Data(contentsOf: url) }, sidecar: draft.makeSidecar())
+    }
+
+    /// The sample's name, also its bundled file's.
+    nonisolated static let sampleName = "1.e4 (Sample)"
+
+    /// Whether this PGN is the bundled sample's.
+    nonisolated static func isSample(_ pgnURL: URL) -> Bool {
+        pgnURL.deletingPathExtension().lastPathComponent == sampleName
+    }
+
+    private func add(name: String, pgn: (String) throws -> Data, sidecar: Data) throws -> RepertoireEntry {
         guard let folder else { throw CocoaError(.fileNoSuchFile) }
         let clean = Self.cleanName(name)
         guard !clean.isEmpty else { throw CocoaError(.fileWriteInvalidFileName) }
-        let pgn = folder.appending(path: clean + ".pgn")
-        guard !FileManager.default.fileExists(atPath: pgn.path) else { throw CocoaError(.fileWriteFileExists) }
-        try FileAccess.write(Data(newRepertoirePgn(name: clean).utf8), to: pgn)
-        try FileAccess.write(sidecar, to: Self.sidecarURL(for: pgn))
-        return insertEntry(for: pgn)
+        let url = folder.appending(path: clean + ".pgn")
+        guard !FileManager.default.fileExists(atPath: url.path),
+              !FileManager.default.fileExists(atPath: Self.sidecarURL(for: url).path) else {
+            throw CocoaError(.fileWriteFileExists)
+        }
+        try FileAccess.write(pgn(clean), to: url)
+        try FileAccess.write(sidecar, to: Self.sidecarURL(for: url))
+        return insertEntry(for: url)
     }
 
-    /// Copies a PGN picked from Files into the repertoire folder, as "Name 2.pgn" when the
-    /// name is taken. The new entry has no sidecar yet and needs setup.
-    func importPGN(from url: URL) throws -> RepertoireEntry {
-        guard let folder else { throw CocoaError(.fileNoSuchFile) }
+    /// A PGN picked from Files, read in its security scope: its bytes and a name for it.
+    nonisolated static func readImport(_ url: URL) throws -> (data: Data, name: String) {
         let accessing = url.startAccessingSecurityScopedResource()
         defer { if accessing { url.stopAccessingSecurityScopedResource() } }
         let data = try FileAccess.read(url)
-        let base = Self.cleanName(url.deletingPathExtension().lastPathComponent).nonEmpty ?? "Imported"
-        var pgn = folder.appending(path: base + ".pgn")
-        var n = 2
-        while FileManager.default.fileExists(atPath: pgn.path)
-                || FileManager.default.fileExists(atPath: Self.sidecarURL(for: pgn).path)
-                || FileManager.default.fileExists(atPath: Self.revlogURL(for: pgn).path) {
-            pgn = folder.appending(path: "\(base) \(n).pgn")
-            n += 1
-        }
-        try FileAccess.write(data, to: pgn)
-        return insertEntry(for: pgn)
+        return (data, cleanName(url.deletingPathExtension().lastPathComponent).nonEmpty ?? "Imported")
     }
 
     /// Writes a sidecar for a PGN that was imported or dropped into the folder.
@@ -235,7 +266,7 @@ final class RepertoireLibrary {
     }
 }
 
-private extension String {
+nonisolated private extension String {
     var nonEmpty: String? { isEmpty ? nil : self }
 }
 

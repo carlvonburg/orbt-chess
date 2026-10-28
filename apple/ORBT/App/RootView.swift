@@ -5,6 +5,13 @@ struct RootView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
+        content
+            // The tour's spotlight, over the whole window: bars included.
+            .overlay { TourSpotlight() }
+    }
+
+    @ViewBuilder
+    private var content: some View {
         @Bindable var model = model
         if isRegularWidth(sizeClass) {
             // iPad and Mac: the library's sidebar, with statistics in each overview.

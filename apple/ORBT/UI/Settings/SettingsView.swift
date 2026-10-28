@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(\.webAuthenticationSession) private var webAuth
     @Environment(\.dismiss) private var dismiss
     @State private var cacheCount = 0
+    @State private var tourError: String?
     @AppStorage(TrainingDefaults.newPerDayKey) private var newPerDay = Int(TrainingDefaults.preset.newPerDay)
     @AppStorage(TrainingDefaults.reviewsPerDayKey) private var reviewsPerDay = Int(TrainingDefaults.preset.reviewsPerDay)
     @AppStorage(TrainingDefaults.practiceModeKey) private var practiceMode = PracticeMode.default
@@ -79,6 +80,23 @@ struct SettingsView: View {
                 } footer: {
                     Text((model.library.usesICloud ? "" : "iCloud Drive is off, so repertoires are stored on this device only. ")
                          + "Repertoires are PGN files you can open in any chess program. Statistics are cached on this device and fetched again when needed.")
+                }
+
+                Section {
+                    Button("Show Tour", systemImage: "point.topleft.down.to.point.bottomright.curvepath") {
+                        Tour.start()
+                        do {
+                            _ = try model.library.addSample()
+                            model.selectedTab = .repertoires
+                            dismiss()
+                        } catch {
+                            Tour.skip()
+                            tourError = error.localizedDescription
+                        }
+                    }
+                    if let tourError { Text(tourError).font(.footnote).foregroundStyle(.failure) }
+                } footer: {
+                    Text("Fills the gaps of a sample repertoire, adding it again if you deleted it.")
                 }
 
                 AboutSection()
