@@ -328,7 +328,7 @@ struct DrillView: View {
                 .padding(.bottom)
             }
         }
-        .boardScreenTitle(model.mode.title, repertoire: model.document.name, inSplitView: inSplitView)
+        .boardScreenTitle(model.mode.title, subtitle: model.document.name)
         .toolbar {
             if !model.finished {
                 // In the split view the actions are in the panel's bar, as in the builder;

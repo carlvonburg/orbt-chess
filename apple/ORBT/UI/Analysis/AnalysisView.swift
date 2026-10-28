@@ -64,7 +64,7 @@ struct AnalysisView: View {
                 }
             }
         }
-        .modifier(AnalysisTitle(model: model, inSplitView: inSplitView))
+        .boardScreenTitle("Analysis", subtitle: app.engine.status(for: model))
         .toolbar { toolbar }
         .hidesTabBar()
         .webPage($model.page)
@@ -186,26 +186,6 @@ struct AnalysisView: View {
             ToolbarItem(placement: .trailingBar) { AnalysisEngineToggle(model: model) }
             ToolbarSpacer(.fixed, placement: .trailingBar)
             ToolbarItem(placement: .trailingBar) { AnalysisMoreMenu(model: model) }
-        }
-    }
-}
-
-/// The title of the analysis board: on a phone "Analysis" with where the engine's lines come
-/// from; in the split view the panel names the repertoire, as Browse's does (the board column
-/// names the screen).
-private struct AnalysisTitle: ViewModifier {
-    @Environment(AppModel.self) private var app
-    let model: AnalysisModel
-    let inSplitView: Bool
-
-    func body(content: Content) -> some View {
-        if inSplitView {
-            content.navigationTitle(model.document.name)
-        } else {
-            content
-                .navigationTitle("Analysis")
-                .navigationSubtitle(app.engine.status(for: model))
-                .toolbarTitleDisplayMode(.inline)
         }
     }
 }

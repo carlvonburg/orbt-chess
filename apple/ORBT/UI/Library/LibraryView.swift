@@ -507,18 +507,10 @@ private struct BoardColumnView: View {
         #endif
     }
 
+    /// Statistics is a screen of its own; a board belongs to the panel's screen, which the
+    /// panel names (Browse, Study, Analysis).
     private var title: String {
-        switch board {
-        case .builder: "Browse"
-        case .drill(let model): model.mode.title
-        case .analysis: "Analysis"
-        case nil: "Statistics"
-        }
-    }
-
-    /// Where the engine's lines come from, under Analysis (as on a phone).
-    private var subtitle: String {
-        if case .analysis(let model) = board { app.engine.status(for: model) } else { "" }
+        board == nil ? "Statistics" : ""
     }
 
     var body: some View {
@@ -530,7 +522,15 @@ private struct BoardColumnView: View {
                 DrillBoardColumn(model: model)
             case .analysis(let model):
                 BoardColumnLayout {
-                    AnalysisEngineLines(model: model)
+                    // Where the lines come from, above them (on a phone it is the subtitle).
+                    VStack(alignment: .leading, spacing: 4) {
+                        if model.engineOn {
+                            Text(app.engine.status(for: model))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        AnalysisEngineLines(model: model)
+                    }
                 } board: {
                     AnalysisBoard(model: model)
                 } below: {
@@ -542,9 +542,7 @@ private struct BoardColumnView: View {
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { columnWidth = $0 }
-        // The left column names the repertoire; this column what it shows.
         .navigationTitle(title)
-        .navigationSubtitle(subtitle)
         .toolbar {
             if case .builder(let model, let presentation) = board {
                 // Move navigation under the board (the top bar's leading side is the title's), as
