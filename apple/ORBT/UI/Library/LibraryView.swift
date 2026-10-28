@@ -22,6 +22,9 @@ enum LibraryRoute: Hashable {
     case browse(String, NodeID)
     /// Study one branch: Study Branch in Browse.
     case branch(String, NodeID)
+    /// The analysis board, pushed on Browse or Study; its model is made by the screen it is
+    /// opened from (`LibraryScreens.add`).
+    case analysis(String, UUID)
 }
 
 extension LibraryRoute {
@@ -29,7 +32,7 @@ extension LibraryRoute {
     var entryID: String? {
         switch self {
         case .overview(let id), .builder(let id), .study(let id), .learnMore(let id), .gaps(let id),
-             .practice(let id), .browse(let id, _), .branch(let id, _): id
+             .practice(let id), .browse(let id, _), .branch(let id, _), .analysis(let id, _): id
         case .studyAll: nil
         }
     }
@@ -81,6 +84,8 @@ struct LibraryView: View {
                 path.insert(.overview(id), at: 0)
             }
         }
+        // Going back from the analysis board (not covering it) hands its line back.
+        .onChange(of: path) { screens.finishAnalyses(notIn: path) }
         .sheet(isPresented: $showSettings) {
             SettingsView().presentationSizing(.form)
         }
@@ -142,6 +147,7 @@ struct LibraryView: View {
                 .navigationDestination(for: LibraryRoute.self, destination: route)
         }
         .environment(\.openScreen, openScreen)
+        .environment(\.openAnalysis, openAnalysis)
     }
 
     /// Shows `newPath` once the models of its Browse and Study screens are made, so the screen
@@ -188,6 +194,7 @@ struct LibraryView: View {
         }
         .environment(\.inSplitView, true)
         .environment(\.openScreen, openScreen)
+        .environment(\.openAnalysis, openAnalysis)
     }
 
     /// The sidebar's selection as the list sets it: choosing another item starts its column
@@ -272,6 +279,12 @@ struct LibraryView: View {
         go(to: Array(overview) + Array(path.dropFirst(overview.count).suffix(1)) + [route])
     }
 
+    /// Pushes the analysis board on the screen it is opened from, keeping everything under it.
+    private func openAnalysis(_ analysis: AnalysisModel) {
+        screens.keep(path)
+        path.append(screens.add(analysis))
+    }
+
     /// The statistics beside Today (every repertoire) or the selected repertoire.
     private var statisticsScope: StatisticsModel.Scope {
         if case .repertoire(let id) = selection { .repertoire(model.currentID(id)) } else { .all }
@@ -297,7 +310,9 @@ struct LibraryView: View {
     /// A pushed screen. The navigation action is set on it: set on the stack, it does not
     /// reach the screens the stack pushes (in the split view's column).
     private func route(_ route: LibraryRoute) -> some View {
-        screen(route).environment(\.openScreen, openScreen)
+        screen(route)
+            .environment(\.openScreen, openScreen)
+            .environment(\.openAnalysis, openAnalysis)
     }
 
     @ViewBuilder
@@ -321,6 +336,8 @@ struct LibraryView: View {
                 DrillView(model: model)
             case .studyAll(let all):
                 StudyAllView(model: all)
+            case .analysis(let model):
+                AnalysisView(model: model)
             case nil:
                 ContentUnavailableView("Repertoire unavailable", systemImage: "exclamationmark.triangle")
             }
@@ -465,8 +482,8 @@ struct LibraryView: View {
 private struct BoardColumnView: View {
     let board: LibraryScreens.Board?
     let statisticsScope: StatisticsModel.Scope
-    /// Study's analysis board (Browse's is presented by its panel).
-    @State private var analysis: AnalysisModel?
+    @Environment(AppModel.self) private var app
+    @Environment(\.openAnalysis) private var openAnalysis
     @State private var columnWidth: CGFloat = 0
 
     /// The move history's width in the bottom bar: the column less the bar's margins, and
@@ -476,8 +493,8 @@ private struct BoardColumnView: View {
     /// Looking the move up counts as Again, as Browse in the panel does.
     private func studyAnalysisButton(_ model: DrillModel) -> some View {
         Button("Analysis", systemImage: "cpu") {
-            analysis = AnalysisModel(document: model.document, moves: model.analysisMoves(),
-                                     orientation: model.color, origin: .study)
+            openAnalysis?(AnalysisModel(document: model.document, moves: model.analysisMoves(),
+                                        orientation: model.color, origin: .study))
         }
     }
 
@@ -493,6 +510,7 @@ private struct BoardColumnView: View {
         switch board {
         case .builder: "Browse"
         case .drill(let model): model.mode.title
+        case .analysis: "Analysis"
         case nil: "Statistics"
         }
     }
@@ -504,6 +522,16 @@ private struct BoardColumnView: View {
                 BuilderBoardColumn(model: model)
             case .drill(let model):
                 DrillBoardColumn(model: model)
+            case .analysis(let model):
+                BoardColumnLayout {
+                    AnalysisBoard(model: model)
+                } below: {
+                    // Where the engine's lines come from: under the board, as a subtitle would
+                    // crowd the column's large title.
+                    Text(app.engine.status(for: model))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             case nil:
                 InlineStatistics(scope: statisticsScope)
                     .id(statisticsScope)
@@ -530,12 +558,12 @@ private struct BoardColumnView: View {
                 }
                 #if os(macOS)
                 ToolbarItem(placement: .bottomActions) {
-                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model) }
+                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model, open: openAnalysis) }
                 }
                 ToolbarSpacer(.flexible, placement: .bottomActions)
                 #else
                 ToolbarItem(placement: .trailingBar) {
-                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model) }
+                    Button("Analysis", systemImage: "cpu") { presentation.analyze(model, open: openAnalysis) }
                 }
                 ToolbarSpacer(.fixed, placement: .trailingBar)
                 #endif
@@ -562,9 +590,21 @@ private struct BoardColumnView: View {
                     ToolbarItem(placement: .trailingBar) { LineEndButton(model: model) }
                 }
             }
+            if case .analysis(let model) = board {
+                // Move navigation under the board, as Browse's (centred on the Mac); the engine
+                // and the menu, which act on the board, end the top bar.
+                #if os(macOS)
+                ToolbarSpacer(.flexible, placement: .bottomActions)
+                #endif
+                ToolbarItemGroup(placement: .bottomActions) { AnalysisNavigationButtons(model: model) }
+                #if os(macOS)
+                ToolbarSpacer(.flexible, placement: .bottomActions)
+                #endif
+                ToolbarItem(placement: .trailingBar) { AnalysisEngineToggle(model: model) }
+                ToolbarSpacer(.fixed, placement: .trailingBar)
+                ToolbarItem(placement: .trailingBar) { AnalysisMoreMenu(model: model) }
+            }
         }
-        // Study goes on (or waits for Next at a line's end) when the board closes.
-        .analysisBoard($analysis) { if case .drill(let model) = board { model.start() } }
     }
 }
 

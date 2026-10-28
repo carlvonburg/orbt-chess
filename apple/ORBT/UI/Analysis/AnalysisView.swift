@@ -1,28 +1,32 @@
 import OpeningCoreRust
 import SwiftUI
 
+extension EnvironmentValues {
+    /// Pushes the analysis board on the screen it is opened from (set by the library). Going
+    /// back finishes it (`AnalysisModel.finish`).
+    @Entry var openAnalysis: ((AnalysisModel) -> Void)?
+}
+
 extension View {
-    /// Presents the analysis board over Browse or Study: full screen on iPhone and iPad, a
-    /// sheet on the Mac. However it closes, the line goes back as `AnalysisModel.finish` says,
-    /// then `onDismiss` runs.
-    func analysisBoard(_ model: Binding<AnalysisModel?>, onDismiss: (() -> Void)? = nil) -> some View {
-        #if os(iOS)
-        fullScreenCover(item: model, onDismiss: onDismiss) { AnalysisScreen(model: $0) }
-        #else
-        sheet(item: model, onDismiss: onDismiss) { AnalysisScreen(model: $0).frame(minWidth: 900, minHeight: 680) }
-        #endif
+    /// Pushes the analysis board where the library doesn't (`openAnalysis` unset): Browse or
+    /// Study opened from Statistics. Going back finishes it.
+    func analysisDestination(_ model: Binding<AnalysisModel?>) -> some View {
+        navigationDestination(item: model) { AnalysisView(model: $0) }
+            .onChange(of: model.wrappedValue) { old, new in
+                if new == nil { old?.finish() }
+            }
     }
 }
 
-/// The analysis board: engine lines above the board (Lichess's cloud eval, then Stockfish),
-/// the moves with their variations and evaluations, and the explorer's moves.
-struct AnalysisScreen: View {
+/// The analysis board, pushed on Browse or Study and laid out as they are: the engine's lines
+/// above the board (Lichess's cloud eval, then Stockfish), and in the panel the moves with their
+/// variations and evaluations, then the explorer's moves. In the split view this is the panel;
+/// the board is in the board column (`AnalysisBoard`).
+struct AnalysisView: View {
     @Environment(AppModel.self) private var app
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.inSplitView) private var inSplitView
     let model: AnalysisModel
-    @State private var page: WebPage?
-    @State private var showsSettings = false
     /// On a phone the panel shows the moves or the explorer, not both.
     @State private var tab = PanelTab.explorer
     /// The evaluation last written to the move list, so it is written once per depth.
@@ -31,33 +35,32 @@ struct AnalysisScreen: View {
     private var engine: EngineService { app.engine }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if isRegularWidth(sizeClass) {
-                    HStack(spacing: 0) {
-                        boardColumn
-                            .scenePadding()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                        Divider()
-                        panel(compact: false).frame(width: 380)
-                    }
-                } else {
-                    VStack(spacing: 0) {
-                        // Edge to edge on a phone; the moves scroll below.
-                        boardColumn.layoutPriority(1)
-                        panel(compact: true)
-                    }
+        @Bindable var model = model
+        Group {
+            if inSplitView {
+                panel(compact: false)
+            } else if isRegularWidth(sizeClass) {
+                // Outside the library on an iPad (Browse from Statistics): board and panel.
+                HStack(spacing: 0) {
+                    AnalysisBoard(model: model)
+                        .scenePadding()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    Divider()
+                    panel(compact: false).frame(width: 380)
+                }
+            } else {
+                VStack(spacing: 0) {
+                    // Edge to edge on a phone; the moves scroll below.
+                    AnalysisBoard(model: model).layoutPriority(1)
+                    panel(compact: true)
                 }
             }
-            .navigationTitle("Analysis")
-            .navigationSubtitle(engineStatus)
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar { toolbar }
         }
-        .webPage($page)
-        .sheet(isPresented: $showsSettings, onDismiss: reanalyse) { EngineSettingsSheet() }
+        .modifier(AnalysisTitle(model: model, inSplitView: inSplitView))
+        .toolbar { toolbar }
+        .hidesTabBar()
+        .webPage($model.page)
+        .sheet(isPresented: $model.showsSettings, onDismiss: reanalyse) { EngineSettingsSheet() }
         .task(id: EngineTask(key: model.engineKey, on: model.engineOn)) {
             if model.engineOn {
                 engine.analyse(model.engineKey, epd: model.position.epd())
@@ -66,10 +69,8 @@ struct AnalysisScreen: View {
             }
         }
         .onChange(of: engine.lines) { record() }
-        .onDisappear {
-            engine.stop()
-            model.finish()
-        }
+        // Covered (or popped): the engine stops, and runs again when the screen is back.
+        .onDisappear { engine.stop() }
     }
 
     /// Analyses the position again with the settings just changed.
@@ -84,24 +85,6 @@ struct AnalysisScreen: View {
         let on: Bool
     }
 
-    /// Where the lines come from, under the title: a Lichess cloud eval, or Stockfish at some
-    /// depth. Empty while the engine is off.
-    private var engineStatus: String {
-        guard model.engineOn else { return "" }
-        let shown = engine.lines
-        if let source = shown.source, !shownLines.isEmpty {
-            return "\(source == .cloud ? "Cloud" : engine.name ?? "Stockfish") · depth \(shown.depth)"
-        }
-        // Until lines come in (the placeholders show that), which engine will run.
-        return engine.error ?? engine.name ?? ""
-    }
-
-    /// The engine's lines for the position on the board, if they are for it.
-    private var shownLines: [PvLine] {
-        guard model.engineOn, engine.analysed == model.engineKey else { return [] }
-        return engine.lines.lines
-    }
-
     private func record() {
         let key = model.engineKey
         guard engine.analysed == key, let best = engine.lines.lines.first else { return }
@@ -109,29 +92,6 @@ struct AnalysisScreen: View {
         if let recorded, recorded.key == key, recorded.depth == depth { return }
         recorded = (key, depth)
         model.setEval(NodeEval(text: best.eval, depth: depth))
-    }
-
-    private var boardColumn: some View {
-        VStack(spacing: 0) {
-            if model.engineOn {
-                EngineLinesView(lines: shownLines) { model.play(uci: $0) }
-            }
-            BoardView(position: model.position, orientation: model.orientation, lastMove: model.lastMove,
-                      arrows: arrows, movableSide: model.position.sideToMove()) { from, to, promotion in
-                model.play(from: from, to: to, promotion: promotion)
-            }
-            .aspectRatio(1, contentMode: .fit)
-        }
-    }
-
-    /// The first move of each engine line, the best one boldest.
-    private var arrows: [BoardArrow] {
-        shownLines.enumerated().compactMap { index, line in
-            guard let move = line.moves.first else { return nil }
-            let rank = Double(index)
-            return BoardArrow(from: move.from, to: move.to, style: .engine,
-                              width: max(0.1, 0.2 - rank * 0.04), opacity: max(0.3, 0.7 - rank * 0.25))
-        }
     }
 
     private enum PanelTab: Hashable {
@@ -187,33 +147,131 @@ struct AnalysisScreen: View {
         #endif
     }
 
+    /// On a phone move navigation is in the bottom bar, the engine and the menu top trailing,
+    /// as in Browse. In the split view they act on the board, so they are in the board
+    /// column's bar. Leaving is the back button: it adds nothing to the repertoire (Browse
+    /// gets an unsaved draft).
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        // Close, not Done: leaving adds nothing to the repertoire (Browse gets an unsaved draft).
-        ToolbarItem(placement: .cancellationAction) {
-            Button(role: .close) { dismiss() }
+        if !inSplitView {
+            ToolbarItemGroup(placement: .bottomActions) { AnalysisNavigationButtons(model: model) }
+            ToolbarSpacer(.flexible, placement: .bottomActions)
+            ToolbarItem(placement: .trailingBar) { AnalysisEngineToggle(model: model) }
+            ToolbarSpacer(.fixed, placement: .trailingBar)
+            ToolbarItem(placement: .trailingBar) { AnalysisMoreMenu(model: model) }
         }
-        ToolbarItemGroup(placement: .bottomActions) {
-            Button("Back", systemImage: "chevron.backward") { model.back() }
-                .keyboardShortcut(.leftArrow, modifiers: [])
-                .disabled(!model.canBack)
-            Button("Forward", systemImage: "chevron.forward") { model.forward() }
-                .keyboardShortcut(.rightArrow, modifiers: [])
-                .disabled(!model.canForward)
+    }
+}
+
+/// The title of the analysis board: on a phone "Analysis" with where the engine's lines come
+/// from; in the split view the panel names the repertoire, as Browse's does (the board column
+/// names the screen).
+private struct AnalysisTitle: ViewModifier {
+    @Environment(AppModel.self) private var app
+    let model: AnalysisModel
+    let inSplitView: Bool
+
+    func body(content: Content) -> some View {
+        if inSplitView {
+            content.navigationTitle(model.document.name)
+        } else {
+            content
+                .navigationTitle("Analysis")
+                .navigationSubtitle(app.engine.status(for: model))
+                .toolbarTitleDisplayMode(.inline)
         }
-        ToolbarItemGroup(placement: .primaryAction) {
-            Toggle(isOn: Binding(get: { model.engineOn }, set: { model.engineOn = $0 })) {
-                Label("Engine", systemImage: "cpu")
+    }
+}
+
+extension EngineService {
+    /// Where the lines come from, under the title: a Lichess cloud eval, or Stockfish at some
+    /// depth. Empty while the engine is off.
+    func status(for model: AnalysisModel) -> String {
+        guard model.engineOn else { return "" }
+        if let source = lines.source, !shownLines(for: model).isEmpty {
+            return "\(source == .cloud ? "Cloud" : name ?? "Stockfish") · depth \(lines.depth)"
+        }
+        // Until lines come in (the placeholders show that), which engine will run.
+        return error ?? name ?? ""
+    }
+
+    /// The engine's lines for the position on the board, if they are for it.
+    func shownLines(for model: AnalysisModel) -> [PvLine] {
+        guard model.engineOn, analysed == model.engineKey else { return [] }
+        return lines.lines
+    }
+}
+
+/// The analysis board: the engine's lines above it, their first moves as arrows. On a phone
+/// at the top of the screen; in the split view in the board column.
+struct AnalysisBoard: View {
+    @Environment(AppModel.self) private var app
+    let model: AnalysisModel
+
+    var body: some View {
+        let lines = app.engine.shownLines(for: model)
+        VStack(spacing: 0) {
+            if model.engineOn {
+                EngineLinesView(lines: lines) { model.play(uci: $0) }
             }
-            Menu("More", systemImage: "ellipsis") {
-                Button("Flip Board", systemImage: "arrow.up.arrow.down") { model.orientation = model.orientation.opposite }
-                Button("Copy PGN", systemImage: "doc.on.doc") { copy(model.pgn) }
-                Button("Open in Lichess", systemImage: "safari") {
-                    page = WebPage(url: LichessLinks.analysis(moves: model.movesToBoard, orientation: model.orientation))
-                }
-                Divider()
-                Button("Engine Settings", systemImage: "gearshape") { showsSettings = true }
+            BoardView(position: model.position, orientation: model.orientation, lastMove: model.lastMove,
+                      arrows: arrows(lines), movableSide: model.position.sideToMove()) { from, to, promotion in
+                model.play(from: from, to: to, promotion: promotion)
             }
+            .aspectRatio(1, contentMode: .fit)
+        }
+    }
+
+    /// The first move of each engine line, the best one boldest.
+    private func arrows(_ lines: [PvLine]) -> [BoardArrow] {
+        lines.enumerated().compactMap { index, line in
+            guard let move = line.moves.first else { return nil }
+            let rank = Double(index)
+            return BoardArrow(from: move.from, to: move.to, style: .engine,
+                              width: max(0.1, 0.2 - rank * 0.04), opacity: max(0.3, 0.7 - rank * 0.25))
+        }
+    }
+}
+
+/// Back and forward through the analysis, with ← and →: in the bottom bar, as Browse's.
+struct AnalysisNavigationButtons: View {
+    let model: AnalysisModel
+
+    var body: some View {
+        Button("Back", systemImage: "chevron.backward") { model.back() }
+            .keyboardShortcut(.leftArrow, modifiers: [])
+            .disabled(!model.canBack)
+        Button("Forward", systemImage: "chevron.forward") { model.forward() }
+            .keyboardShortcut(.rightArrow, modifiers: [])
+            .disabled(!model.canForward)
+    }
+}
+
+/// The engine on or off.
+struct AnalysisEngineToggle: View {
+    let model: AnalysisModel
+
+    var body: some View {
+        Toggle(isOn: Binding(get: { model.engineOn }, set: { model.engineOn = $0 })) {
+            Label("Engine", systemImage: "cpu")
+        }
+    }
+}
+
+/// The analysis board's menu: top trailing on a phone, at the end of the board column's bar
+/// in the split view.
+struct AnalysisMoreMenu: View {
+    let model: AnalysisModel
+
+    var body: some View {
+        Menu("More", systemImage: "ellipsis") {
+            Button("Flip Board", systemImage: "arrow.up.arrow.down") { model.orientation = model.orientation.opposite }
+            Button("Copy PGN", systemImage: "doc.on.doc") { copy(model.pgn) }
+            Button("Open in Lichess", systemImage: "safari") {
+                model.page = WebPage(url: LichessLinks.analysis(moves: model.movesToBoard, orientation: model.orientation))
+            }
+            Divider()
+            Button("Engine Settings", systemImage: "gearshape") { model.showsSettings = true }
         }
     }
 }
@@ -250,7 +308,7 @@ func copy(_ text: String) {
 }
 
 /// The engine's lines above the board: the evaluation and the moves, tap to play the first.
-/// Where they come from is the screen's subtitle (`AnalysisScreen.engineStatus`).
+/// Where they come from is the screen's subtitle (`EngineService.status(for:)`).
 struct EngineLinesView: View {
     let lines: [PvLine]
     let play: (String) -> Void

@@ -12,6 +12,7 @@ final class LibraryScreens {
         case builder(BuilderModel, BuilderPresentation)
         case drill(DrillModel)
         case studyAll(StudyAllModel)
+        case analysis(AnalysisModel)
 
         /// The model whose board the board column shows (Study All: the repertoire studied now).
         var board: Board? {
@@ -19,6 +20,7 @@ final class LibraryScreens {
             case .builder(let model, let presentation): .builder(model, presentation)
             case .drill(let model): .drill(model)
             case .studyAll(let all): all.drill.map { .drill($0) }
+            case .analysis(let model): .analysis(model)
             }
         }
     }
@@ -26,6 +28,7 @@ final class LibraryScreens {
     enum Board {
         case builder(BuilderModel, BuilderPresentation)
         case drill(DrillModel)
+        case analysis(AnalysisModel)
     }
 
     private var screens: [LibraryRoute: Screen] = [:]
@@ -45,6 +48,21 @@ final class LibraryScreens {
             screens[route] = screen
         }
         return true
+    }
+
+    /// The route of an analysis board made by the screen it is opened from.
+    func add(_ analysis: AnalysisModel) -> LibraryRoute {
+        let route = LibraryRoute.analysis(analysis.document.entryID, analysis.id)
+        screens[route] = .analysis(analysis)
+        return route
+    }
+
+    /// Finishes the analysis boards no longer on the path: going back from one hands its line
+    /// to Browse (Study drops it). Only a pop does, not a sheet or another column covering it.
+    func finishAnalyses(notIn path: [LibraryRoute]) {
+        for (route, screen) in screens where !path.contains(route) {
+            if case .analysis(let model) = screen { model.finish() }
+        }
     }
 
     /// Forgets the models of screens no longer on the path.
@@ -76,6 +94,9 @@ final class LibraryScreens {
             return await open(id).map { .drill(DrillModel(document: $0, mode: .branch(RepertoireTree.rootID))) }
         case .branch(let id, let node):
             return await open(id).map { .drill(DrillModel(document: $0, mode: .branch(node))) }
+        case .analysis:
+            // Made by the screen it is opened from (`add`).
+            return nil
         case .studyAll(let ids):
             let all = StudyAllModel(entries: ids.compactMap { app.library.entry(id: $0) })
             await all.openCurrent(app: app)

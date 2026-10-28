@@ -248,6 +248,7 @@ struct DrillView: View {
     @Environment(\.inSplitView) private var inSplitView
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Environment(\.openScreen) private var openScreen
+    @Environment(\.openAnalysis) private var openAnalysis
     let model: DrillModel
     @State private var browsing: BrowseRequest?
 
@@ -276,10 +277,11 @@ struct DrillView: View {
                 model.start()
             }
             .onChange(of: voiceOver) { model.autoAdvance = !voiceOver }
-        // Browsing pushes the builder on top; training goes on when it's popped.
+        // Browsing or Analysis pushed on top stops the opponent's moves; training goes on (or
+        // waits for Next at a line's end) when it's popped, as the task runs again.
         .onDisappear { if browsing == nil { model.stop() } }
         .checksCoverage(model.document)
-        .analysisBoard($analysis) { model.start() }
+        .analysisDestination($analysis)
     }
 
     private var content: some View {
@@ -348,10 +350,7 @@ struct DrillView: View {
                         if let node = model.browseNode() { browse(node) }
                     }
                     if !split {
-                        Button("Analysis", systemImage: "cpu") {
-                            analysis = AnalysisModel(document: model.document, moves: model.analysisMoves(),
-                                                     orientation: model.color, origin: .study)
-                        }
+                        Button("Analysis", systemImage: "cpu", action: analyze)
                     }
                 }
                 if !split && model.phase == .lineDone && model.nextLineAt == nil {
@@ -380,6 +379,14 @@ struct DrillView: View {
         } else {
             browsing = BrowseRequest(node: node)
         }
+    }
+
+    /// The analysis board from the position on the board: through the library, else pushed
+    /// here. Looking the move up counts as Again.
+    private func analyze() {
+        let analysis = AnalysisModel(document: model.document, moves: model.analysisMoves(),
+                                     orientation: model.color, origin: .study)
+        if let openAnalysis { openAnalysis(analysis) } else { self.analysis = analysis }
     }
 
     @ViewBuilder
