@@ -8,9 +8,9 @@ import SwiftUI
 typealias Progress = OpeningCoreRust.Progress
 
 /// The split view's board column: what belongs above the board, the board as large as the
-/// column allows (its width, or its height in a wide window), then what belongs under it. All
-/// on the column's leading margin, the title's, so title, board and what is above it share one
-/// edge; spare width stays on the trailing side.
+/// column allows (edge to edge across its width, or its height in a wide window, then on the
+/// leading side), then what belongs under it. What is above and below the board keeps the
+/// scene's margins, as the title does.
 struct BoardColumnLayout<Above: View, Board: View, Below: View>: View {
     @ViewBuilder var above: Above
     @ViewBuilder var board: Board
@@ -19,12 +19,13 @@ struct BoardColumnLayout<Above: View, Board: View, Below: View>: View {
     var body: some View {
         VStack(alignment: .leading) {
             above
+                .scenePadding(.horizontal)
             board
                 .aspectRatio(1, contentMode: .fit)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             below
+                .scenePadding(.horizontal)
         }
-        .scenePadding(.horizontal)
     }
 }
 
