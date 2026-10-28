@@ -103,7 +103,7 @@ struct AnalysisView: View {
             if compact {
                 switch tab {
                 case .explorer: explorer(showsHeader: false)
-                case .moves: moves
+                case .moves: moves(showsHeader: false)
                 }
             } else {
                 // The explorer first, where Browse has its replies; the moves below. Half each,
@@ -112,7 +112,7 @@ struct AnalysisView: View {
                     explorer(showsHeader: true)
                         .frame(maxHeight: .infinity)
                     Divider()
-                    moves
+                    moves(showsHeader: true)
                         .frame(maxHeight: .infinity)
                 }
             }
@@ -131,14 +131,27 @@ struct AnalysisView: View {
         }
     }
 
-    /// Not a List: a list row has one context menu, and each move needs its own.
-    private var moves: some View {
+    /// Not a List: a list row has one context menu, and each move needs its own. Titled as the
+    /// explorer's section is (off under the phone's Moves/Explorer control, which names it).
+    private func moves(showsHeader: Bool) -> some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    AnalysisMoveList(model: model)
+                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
+                    Section {
+                        AnalysisMoveList(model: model)
+                    } header: {
+                        if showsHeader {
+                            Text("Moves")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal)
+                                .padding(.vertical, 8)
+                                .background(.background)
+                        }
+                    }
                 }
-                .padding(.vertical, 8)
+                .padding(.bottom, 8)
             }
             .onChange(of: model.currentRow) { _, row in
                 if let row { withAnimation { proxy.scrollTo(row) } }

@@ -515,6 +515,11 @@ private struct BoardColumnView: View {
         }
     }
 
+    /// Where the engine's lines come from, under Analysis (as on a phone).
+    private var subtitle: String {
+        if case .analysis(let model) = board { app.engine.status(for: model) } else { "" }
+    }
+
     var body: some View {
         Group {
             switch board {
@@ -523,15 +528,10 @@ private struct BoardColumnView: View {
             case .drill(let model):
                 DrillBoardColumn(model: model)
             case .analysis(let model):
-                BoardColumnLayout {
-                    AnalysisBoard(model: model)
-                } below: {
-                    // Where the engine's lines come from: under the board, as a subtitle would
-                    // crowd the column's large title.
-                    Text(app.engine.status(for: model))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+                // The board the column's full width, as Browse's, the engine's lines just above
+                // it (not the square of lines and board together).
+                AnalysisBoard(model: model)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             case nil:
                 InlineStatistics(scope: statisticsScope)
                     .id(statisticsScope)
@@ -540,6 +540,7 @@ private struct BoardColumnView: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { columnWidth = $0 }
         // The left column names the repertoire; this column what it shows.
         .navigationTitle(title)
+        .navigationSubtitle(subtitle)
         .toolbar {
             if case .builder(let model, let presentation) = board {
                 // Move navigation under the board (the top bar's leading side is the title's), as
