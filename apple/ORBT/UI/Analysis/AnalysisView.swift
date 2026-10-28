@@ -106,10 +106,14 @@ struct AnalysisView: View {
                 case .moves: moves
                 }
             } else {
+                // The explorer first, where Browse has its replies; the moves below. Half each,
+                // both scrolling, so neither leaves a gap when the other is short.
                 VStack(spacing: 0) {
-                    moves
-                    Divider()
                     explorer(showsHeader: true)
+                        .frame(maxHeight: .infinity)
+                    Divider()
+                    moves
+                        .frame(maxHeight: .infinity)
                 }
             }
         }
@@ -129,11 +133,16 @@ struct AnalysisView: View {
 
     /// Not a List: a list row has one context menu, and each move needs its own.
     private var moves: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                AnalysisMoveList(model: model)
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    AnalysisMoveList(model: model)
+                }
+                .padding(.vertical, 8)
             }
-            .padding(.vertical, 8)
+            .onChange(of: model.currentRow) { _, row in
+                if let row { withAnimation { proxy.scrollTo(row) } }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -154,6 +163,8 @@ struct AnalysisView: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         if !inSplitView {
+            // Back and forward centred: nothing else is in the bottom bar.
+            ToolbarSpacer(.flexible, placement: .bottomActions)
             ToolbarItemGroup(placement: .bottomActions) { AnalysisNavigationButtons(model: model) }
             ToolbarSpacer(.flexible, placement: .bottomActions)
             ToolbarItem(placement: .trailingBar) { AnalysisEngineToggle(model: model) }
@@ -244,6 +255,47 @@ struct AnalysisNavigationButtons: View {
         Button("Forward", systemImage: "chevron.forward") { model.forward() }
             .keyboardShortcut(.rightArrow, modifiers: [])
             .disabled(!model.canForward)
+    }
+}
+
+/// The moves to the board and the line ahead, as Browse's history (`MovePathStrip`): tap a move
+/// to go to it. In the board column's bottom bar, after back and forward.
+struct AnalysisPathStrip: View {
+    let model: AnalysisModel
+
+    var body: some View {
+        let path = model.movesToBoard
+        // One list for the moves to here and the line ahead, so going back or forward only
+        // moves the highlight: no chip comes or goes.
+        let line = path + model.lineAhead
+        let firstPly = model.startPly + 1
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    if !path.isEmpty {
+                        Button { model.go(toPly: 0) } label: {
+                            Image(systemName: "house")
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 6)
+                        .accessibilityLabel("Start position")
+                    }
+                    ForEach(Array(line.enumerated()), id: \.offset) { index, move in
+                        MoveChip(ply: firstPly + index, san: move.san, isCurrent: index == path.count - 1)
+                            .opacity(index < path.count ? 1 : 0.45)
+                            .onTapGesture { model.go(toPly: index + 1) }
+                            .id(index)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            // Room at both ends, so the first and last moves (highlighted) clear the bar's edge.
+            .contentMargins(.horizontal, 8, for: .scrollContent)
+            .onAppear { proxy.scrollTo(path.count - 1, anchor: .center) }
+            .onChange(of: path.count) {
+                withAnimation { proxy.scrollTo(path.count - 1, anchor: .center) }
+            }
+        }
     }
 }
 
@@ -384,48 +436,52 @@ struct AnalysisMoveList: View {
                 .padding(.horizontal)
         }
         ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
-            switch row {
-            case .main(let row):
-                HStack(spacing: 4) {
-                    Text("\(row.number)")
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
-                        .frame(minWidth: 28, alignment: .leading)
-                    cell(row.white)
-                    // "…" where the line goes on below the variations, nothing at its end.
-                    // keeps its half either way, so White's move stays its width.
-                    if row.black != nil || index < rows.count - 1 {
-                        cell(row.black)
-                    } else {
-                        Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 2)
-            case .variation(let row):
-                HStack(alignment: .top, spacing: 4) {
+            Group {
+                switch row {
+                case .main(let row):
                     HStack(spacing: 4) {
-                        ForEach(Array(row.guides.enumerated()), id: \.offset) { level, goesOn in
-                            Guide(own: level == row.guides.count - 1, goesOn: goesOn)
-                                .stroke(.tertiary, lineWidth: 1)
-                                .frame(width: 12)
+                        Text("\(row.number)")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                            .frame(minWidth: 28, alignment: .leading)
+                        cell(row.white)
+                        // "…" where the line goes on below the variations, nothing at its end.
+                        // keeps its half either way, so White's move stays its width.
+                        if row.black != nil || index < rows.count - 1 {
+                            cell(row.black)
+                        } else {
+                            Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
                         }
                     }
-                    FlowLayout(spacing: 2, lineSpacing: 2) {
-                        ForEach(Array(row.tokens.enumerated()), id: \.offset) { _, token in
-                            switch token {
-                            case .move(let move): button(move) { AnalysisMoveChip(move: move) }
-                            case .open: Text("(").foregroundStyle(.secondary)
-                            case .close: Text(")").foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                    .padding(.vertical, 2)
+                case .variation(let row):
+                    HStack(alignment: .top, spacing: 4) {
+                        HStack(spacing: 4) {
+                            ForEach(Array(row.guides.enumerated()), id: \.offset) { level, goesOn in
+                                Guide(own: level == row.guides.count - 1, goesOn: goesOn)
+                                    .stroke(.tertiary, lineWidth: 1)
+                                    .frame(width: 12)
                             }
                         }
+                        FlowLayout(spacing: 2, lineSpacing: 2) {
+                            ForEach(Array(row.tokens.enumerated()), id: \.offset) { _, token in
+                                switch token {
+                                case .move(let move): button(move) { AnalysisMoveChip(move: move) }
+                                case .open: Text("(").foregroundStyle(.secondary)
+                                case .close: Text(")").foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 2)
                     }
-                    .padding(.vertical, 2)
+                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.secondary.opacity(0.06))
                 }
-                .padding(.horizontal)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color.secondary.opacity(0.06))
             }
+            // Scrolled to, so the move on the board stays in view (`AnalysisModel.currentRow`).
+            .id(index)
         }
     }
 

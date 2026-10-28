@@ -50,7 +50,26 @@ final class AnalysisModel: Identifiable, Hashable {
     var movesToBoard: [PlayedMove] { observe(); return session.movesToBoard() }
     /// The move list: the main line cut where variations branch off, variations indented.
     var moveList: [MoveListRow] { observe(); return session.moveList() }
+    /// The moves ahead on the line forward follows (each move's first child).
+    var lineAhead: [PlayedMove] { observe(); return session.lineAhead() }
     var canBack: Bool { current != 0 }
+
+    /// The ply before the first move: the start position's (from its FEN's side and move number).
+    var startPly: Int {
+        let fields = startFen.split(separator: " ")
+        guard fields.count >= 6, let number = Int(fields[5]) else { return 0 }
+        return (number - 1) * 2 + (fields[1] == "b" ? 1 : 0)
+    }
+
+    /// The move list's row holding the move on the board, nil at the start.
+    var currentRow: Int? {
+        moveList.firstIndex { row in
+            switch row {
+            case .main(let row): row.white?.isCurrent == true || row.black?.isCurrent == true
+            case .variation(let row): row.tokens.contains { if case .move(let move) = $0 { move.isCurrent } else { false } }
+            }
+        }
+    }
     var canForward: Bool { observe(); return !session.lineAhead().isEmpty }
 
     var orientation: Side {
@@ -74,6 +93,19 @@ final class AnalysisModel: Identifiable, Hashable {
     func play(uci: String) { act(session.playUci(uci: uci)) }
     func go(to id: UInt32) { act(session.go(id: id)) }
     func back() { act(session.back()) }
+
+    /// Goes to the move `plies` half-moves into the history strip's line: back along the moves
+    /// to the board, or forward along the line ahead (0: the start).
+    func go(toPly plies: Int) {
+        let here = session.movesToBoard().count
+        var changed = false
+        if plies < here {
+            for _ in plies..<here { changed = session.back() || changed }
+        } else {
+            for _ in here..<plies { changed = session.forward() || changed }
+        }
+        act(changed)
+    }
     func forward() { act(session.forward()) }
 
     func promote(_ id: UInt32) { act(session.promote(id: id)) }

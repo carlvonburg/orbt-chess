@@ -591,12 +591,16 @@ private struct BoardColumnView: View {
                 }
             }
             if case .analysis(let model) = board {
-                // Move navigation under the board, as Browse's (centred on the Mac); the engine
-                // and the menu, which act on the board, end the top bar.
+                // Move navigation and the history under the board, as Browse's (centred on the
+                // Mac); the engine and the menu, which act on the board, end the top bar.
                 #if os(macOS)
                 ToolbarSpacer(.flexible, placement: .bottomActions)
                 #endif
                 ToolbarItemGroup(placement: .bottomActions) { AnalysisNavigationButtons(model: model) }
+                ToolbarItem(placement: .bottomActions) {
+                    AnalysisPathStrip(model: model)
+                        .frame(width: historyWidth(buttons: true))
+                }
                 #if os(macOS)
                 ToolbarSpacer(.flexible, placement: .bottomActions)
                 #endif
