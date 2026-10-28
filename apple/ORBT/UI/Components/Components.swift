@@ -36,18 +36,14 @@ extension BoardColumnLayout where Above == EmptyView {
 }
 
 extension View {
-    /// The title of Browse and Study. In the split view the panel names the repertoire (the
-    /// board column names the screen). On a phone the screen is named, with the repertoire as
-    /// its subtitle, inline as on any pushed screen whose content fills it.
-    @ViewBuilder
-    func boardScreenTitle(_ screen: String, repertoire: String, inSplitView: Bool) -> some View {
-        if inSplitView {
-            navigationTitle(repertoire)
-        } else {
-            navigationTitle(screen)
-                .navigationSubtitle(repertoire)
-                .toolbarTitleDisplayMode(.inline)
-        }
+    /// The title of Browse, Study and Analysis on every device: the screen, with what it shows
+    /// as its subtitle (the repertoire; Analysis: where the engine's lines come from), inline as
+    /// on any pushed screen whose content fills it. In the split view the board column has no
+    /// title of its own: on the Mac the window shows one.
+    func boardScreenTitle(_ screen: String, subtitle: String) -> some View {
+        navigationTitle(screen)
+            .navigationSubtitle(subtitle)
+            .toolbarTitleDisplayMode(.inline)
     }
 }
 
