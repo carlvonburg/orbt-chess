@@ -81,15 +81,7 @@ struct SettingsView: View {
                          + "Repertoires are PGN files you can open in any chess program. Statistics are cached on this device and fetched again when needed.")
                 }
 
-                Section("About") {
-                    LabeledContent("License", value: "AGPL-3.0")
-                    LabeledContent("Core", value: "Rust \(coreVersion())")
-                    Link("Lichess opening explorer", destination: URL(string: "https://lichess.org/analysis#explorer")!)
-                    Link("Stockfish source code", destination: URL(string: "https://github.com/official-stockfish/Stockfish")!)
-                    Text("Pieces: cburnett (GPLv2+), via Lichess. Rules: chesskit-swift (MIT). Scheduling: ported from Anki (AGPL-3.0) and fsrs-rs (BSD-3-Clause). Engine: Stockfish 19 by the Stockfish developers (GPL-3.0), built as in Lichess's multistockfish.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+                AboutSection()
             }
             .navigationTitle("Settings")
             #if os(iOS)

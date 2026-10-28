@@ -66,7 +66,8 @@ One folder per platform around a shared core (Android and web would be `android/
   - `rust-toolchain.toml` pins the Rust version, components and targets; `deny.toml` configures
     cargo-deny (licenses compatible with AGPL-3.0-or-later, RustSec advisories, bans, sources).
   - `scripts/check.sh` (fmt, clippy -D warnings, tests, wasm32 check, cargo deny),
-    `scripts/build-apple.sh`, `scripts/git-hooks/` (git hooks, on with
+    `scripts/build-apple.sh` (also runs `scripts/acknowledgements.py`: the linked crates and
+    their license texts in the app's `UI/Settings/Acknowledgements.json`), `scripts/git-hooks/` (git hooks, on with
     `git config core.hooksPath core/scripts/git-hooks`: rebuild the xcframework when a merge,
     pull, rebase or branch switch changes the core, so it never lags the committed bindings;
     a new worktree copies another worktree's xcframework when `scripts/core-fingerprint.sh`
@@ -108,7 +109,7 @@ One folder per platform around a shared core (Android and web would be `android/
   `Design/` references and the App icon section of `COLORS.md`.
 - `testData/` — real repertoires for testing by hand and timing (`OT_LARGE_PGN`): a 3.8k-move
   Berlin and a 1.2 MB Chessbook Semi-Slav export.
-- `FUTURE.md` — web, Android, other storage providers, a sync server.
+- `FUTURE.md` — web, Android, other storage providers.
 
 ## Transpositions (see `repertoire::tree`, `RepertoireTree::merge`)
 Each position's lines are stored once. When a PGN move order reaches a position whose

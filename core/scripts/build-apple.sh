@@ -3,6 +3,7 @@
 #   apple/OpeningCoreRust/OpeningCoreFFI.xcframework   (static libraries + C headers, not committed)
 #   apple/OpeningCoreRust/Sources/OpeningCoreRust/      (generated Swift bindings, committed)
 #   apple/OpeningCoreRust/OpeningCoreFFI.sources        (core-fingerprint.sh of a release build)
+#   apple/ORBT/UI/Settings/Acknowledgements.json        (the linked crates' licenses, committed)
 # Usage: core/scripts/build-apple.sh [--debug]
 set -euo pipefail
 
@@ -62,5 +63,6 @@ xcodebuild -create-xcframework \
 sources="$package_dir/Sources/OpeningCoreRust"
 mkdir -p "$sources"
 cp "$work/generated/"*.swift "$sources/"
+"$core_dir/scripts/acknowledgements.py"
 [[ "$profile" == release ]] && echo "$fingerprint" > "$stamp"
 echo "updated $package_dir"

@@ -47,10 +47,11 @@ touches '^apple/' && app_needed=true
 if touches '^core/(ot-ffi/|Cargo\.lock)'; then
   app_needed=true
   bindings=apple/OpeningCoreRust/Sources/OpeningCoreRust/opening_core.swift
-  before=$(shasum "$bindings" 2>/dev/null)
+  acknowledgements=apple/ORBT/UI/Settings/Acknowledgements.json
+  before=$(shasum "$bindings" "$acknowledgements" 2>/dev/null)
   core/scripts/build-apple.sh >>"$log" 2>&1 || fail "core/scripts/build-apple.sh"
-  if [[ "$(shasum "$bindings" 2>/dev/null)" != "$before" ]]; then
-    echo "Commit blocked: the Swift bindings were out of date. build-apple.sh has regenerated $bindings; review and stage it, then commit again." >&2
+  if [[ "$(shasum "$bindings" "$acknowledgements" 2>/dev/null)" != "$before" ]]; then
+    echo "Commit blocked: the Swift bindings or the acknowledgements were out of date. build-apple.sh has regenerated $bindings and $acknowledgements; review and stage them, then commit again." >&2
     exit 2
   fi
 fi
