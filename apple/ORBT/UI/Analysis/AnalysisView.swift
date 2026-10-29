@@ -339,6 +339,7 @@ private struct EngineSettingsSheet: View {
     var body: some View {
         NavigationStack {
             Form { EngineSettingsSection() }
+            .formStyle(.grouped)
                 .navigationTitle("Engine Settings")
                 #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)

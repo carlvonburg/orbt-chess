@@ -101,6 +101,7 @@ struct SettingsView: View {
 
                 AboutSection()
             }
+            .formStyle(.grouped)
             .navigationTitle("Settings")
             #if os(iOS)
             // A sheet on iPhone and iPad; the Mac's Settings window closes like any window.

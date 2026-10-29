@@ -62,7 +62,8 @@ struct RepertoireSetupFlow: View {
                 if case .setup = mode {
                     Text(name)
                 } else {
-                    TextField("Najdorf", text: $name)
+                    TextField("Name", text: $name, prompt: Text("Najdorf"))
+                        .labelsHidden()
                         .wordsAutocapitalization()
                         .focused($nameFocused)
                         .submitLabel(.next)
@@ -81,6 +82,7 @@ struct RepertoireSetupFlow: View {
                 Text(error).foregroundStyle(.failure)
             }
         }
+        .formStyle(.grouped)
         .navigationTitle(title)
         .navigationSubtitle("Step 1 of 3")
         .toolbar {
@@ -105,6 +107,7 @@ struct RepertoireSetupFlow: View {
             }
             CoverageSourceSection(draft: $draft, style: .list)
         }
+        .formStyle(.grouped)
         .navigationTitle("Your Opponents")
         .navigationSubtitle("Step 2 of 3")
         .toolbar {
@@ -118,6 +121,7 @@ struct RepertoireSetupFlow: View {
         Form {
             DepthSection(targetGames: $draft.targetGames, inSetup: true)
         }
+        .formStyle(.grouped)
         .navigationTitle("How Much to Learn")
         .navigationSubtitle("Step 3 of 3")
         .toolbar {

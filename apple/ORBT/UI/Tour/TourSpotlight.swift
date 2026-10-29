@@ -4,6 +4,10 @@ import SwiftUI
 /// targets is dimmed and takes no touches, so the only way on is the control the card points at,
 /// or Skip Tour. Shown while a tour screen is (`tourScreen`) and its targets are found.
 struct TourSpotlight: View {
+    /// The step's bar buttons weren't found (the bar not laid out as expected): the card shows
+    /// anyway, under the bar, and the button is marked by `tourBarButton` alone.
+    @State private var barNotFound = false
+
     var body: some View {
         let guide = TourGuide.shared
         let step = guide.step
@@ -37,18 +41,27 @@ struct TourSpotlight: View {
                     card(step, around: holes[0], in: proxy.size)
                 }
                 .transition(.opacity)
+            } else if barNotFound, guide.screens > 0 {
+                card(step, around: nil, in: proxy.size)
+                    .transition(.opacity)
             }
         }
         .ignoresSafeArea()
         // Bar buttons have no SwiftUI geometry: look them up while the step lasts (they move
         // as the bar lays out, appears or changes its items).
         .task(id: "\(step) \(guide.screens > 0)") {
+            barNotFound = false
             let inBar = targets.filter(\.inBar)
             guard !inBar.isEmpty, guide.screens > 0 else { return }
+            var looks = 0
             while !Task.isCancelled {
                 for target in inBar {
                     guide.set(target, frame: target.barLabel.flatMap(BarButtonLocator.frame(label:)))
                 }
+                // A second to lay out the bar before giving up on finding it.
+                looks += 1
+                let found = inBar.contains { guide.frames[$0] != nil }
+                if found || looks >= 4, barNotFound == found { withAnimation { barNotFound = !found } }
                 try? await Task.sleep(for: .milliseconds(250))
             }
         }
@@ -60,13 +73,15 @@ struct TourSpotlight: View {
     }
 
     /// The step's instruction as a callout, on the side of the target with more room, its
-    /// pointer aimed at the target.
-    private func card(_ step: Tour.Step, around target: CGRect, in size: CGSize) -> some View {
+    /// pointer aimed at the target. `target` nil: a bar button not found, so under the bar
+    /// without a pointer.
+    private func card(_ step: Tour.Step, around target: CGRect?, in size: CGSize) -> some View {
+        let target = target ?? CGRect(x: 0, y: 0, width: size.width, height: Self.barHeight)
         let below = target.midY < size.height / 2
         let width = min(size.width - 32, 480)
         let minX = (size.width - width) / 2
         let pointerX = min(max(target.midX - minX, 30), width - 30)
-        let shape = Callout(pointerX: pointerX, pointsUp: below)
+        let shape = Callout(pointerX: pointerX, pointsUp: below, hasPointer: target.width < size.width)
         return VStack(spacing: 0) {
             if below {
                 Color.clear.frame(height: target.maxY + 4)
@@ -96,6 +111,9 @@ struct TourSpotlight: View {
         }
         .frame(width: size.width, height: size.height)
     }
+
+    /// Room for the window's toolbar, above a card that can't point at its button.
+    private static let barHeight: CGFloat = 52
 }
 
 /// A rounded rectangle with a pointer on its top or bottom edge at `pointerX`, the pointer
@@ -104,12 +122,15 @@ private struct Callout: Shape {
     static let pointerHeight: CGFloat = 16
     var pointerX: CGFloat
     var pointsUp: Bool
+    /// Without one, the pointer's room is left empty.
+    var hasPointer = true
 
     func path(in rect: CGRect) -> Path {
         let h = Self.pointerHeight
         let body = CGRect(x: rect.minX, y: rect.minY + (pointsUp ? h : 0),
                           width: rect.width, height: rect.height - h)
         var path = RoundedRectangle(cornerRadius: 20).path(in: body)
+        guard hasPointer else { return path }
         let x = rect.minX + pointerX
         let base = pointsUp ? body.minY + 1 : body.maxY - 1
         let tip = pointsUp ? rect.minY : rect.maxY

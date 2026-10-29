@@ -90,6 +90,7 @@ struct AboutView: View {
                 Text("Version \(AppLinks.version). ORBT Chess is free software: you can share and change it under the GNU AGPL 3.0 or later.")
             }
         }
+        .formStyle(.grouped)
         .navigationTitle("About")
     }
 }
@@ -124,6 +125,7 @@ private struct LicensesView: View {
             Section { row(app) }
             Section { ForEach(entries) { row($0) } }
         }
+        .formStyle(.grouped)
         .navigationTitle("Licenses")
     }
 

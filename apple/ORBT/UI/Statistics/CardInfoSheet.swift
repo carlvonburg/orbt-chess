@@ -51,6 +51,7 @@ struct CardInfoSheet: View {
                     Text("This move has not been studied yet.").foregroundStyle(.secondary)
                 }
             }
+            .formStyle(.grouped)
             .task { revlog = await document.reviewLog() }
             .navigationTitle("Move Info")
             .toolbar {
