@@ -106,7 +106,7 @@
    ]
   },
   {
-   "file": "statistics.png",
+   "file": "statistics-reviews.png",
    "color": "green",
    "title": "Make it stick",
    "subtitle": "Watch every move go from new to mature",
@@ -115,10 +115,10 @@
      "kind": "html",
      "screen": [
       0.5,
-      0.435
+      0.41
      ],
      "anchor": "center",
-     "html": "<div class='card' style='padding:34px 40px 30px;width:1220px;border-radius:36px'><div style='display:flex;align-items:baseline;gap:18px;margin-bottom:18px'><span style='font-size:84px;font-weight:700'>634</span><span style='font-size:46px;color:#8a8a8e;font-weight:600'>learned</span><span style='flex:1'></span><span style='font-size:38px;color:#34c759;font-weight:600'>+155 mature this month</span></div><div style='height:430px;background-image:url({raw});background-repeat:no-repeat;background-size:1452px auto;background-position:-121px -1205px;border-radius:10px'></div></div>"
+     "html": "<div class='card' style='padding:34px 40px 32px;width:1220px;border-radius:36px'><div style='display:flex;align-items:baseline;gap:18px;margin-bottom:22px'><span style='font-size:84px;font-weight:700'>36</span><span style='font-size:46px;color:#8a8a8e;font-weight:600'>answers a day</span><span style='flex:1'></span><span style='font-size:38px;color:#34c759;font-weight:600'>29 of 30 days studied</span></div><div style='height:505px;background-image:url({raw});background-repeat:no-repeat;background-size:1320px auto;background-position:-90px -945px;border-radius:10px'></div><div style='display:flex;justify-content:space-between;margin-top:24px;font-size:38px;font-weight:500'><span style='display:inline-flex;align-items:center;gap:12px'><span style='width:26px;height:26px;border-radius:50%;background:#ffa39b'></span><span style='color:#6e6e73'>Learning</span><b>287</b></span><span style='display:inline-flex;align-items:center;gap:12px'><span style='width:26px;height:26px;border-radius:50%;background:#ff3b30'></span><span style='color:#6e6e73'>Relearning</span><b>69</b></span><span style='display:inline-flex;align-items:center;gap:12px'><span style='width:26px;height:26px;border-radius:50%;background:#a1e2a5'></span><span style='color:#6e6e73'>Young</span><b>544</b></span><span style='display:inline-flex;align-items:center;gap:12px'><span style='width:26px;height:26px;border-radius:50%;background:#34c759'></span><span style='color:#6e6e73'>Mature</span><b>185</b></span></div></div>"
     }
    ]
   },
