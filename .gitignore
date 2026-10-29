@@ -9,3 +9,4 @@ xcuserdata/
 /testData/
 /.claude/worktrees/
 .claude/settings.local.json
+.wrangler/
