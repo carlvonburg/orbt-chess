@@ -76,7 +76,6 @@ struct LibraryView: View {
     @AppStorage(Tour.stepKey) private var tourStep = Tour.Step.off.rawValue
     /// Whether this device's first launch has offered the sample (`Tour.wasOffered`).
     @AppStorage(Tour.offeredKey) private var sampleOffered = false
-    @Environment(\.theme) private var theme
 
     var body: some View {
         Group {
@@ -106,6 +105,11 @@ struct LibraryView: View {
         .onChange(of: path) { screens.finishAnalyses(notIn: path) }
         // The tour's last step, from Study's end: back to the library, at New Repertoire.
         .onChange(of: tourStep) { _, step in
+            // Started (Settings › Show Tour): its card is in Today's place, so show Today.
+            if step == Tour.Step.ready.rawValue, usesSplit {
+                path = []
+                selection = .today
+            }
             guard step == Tour.Step.finish.rawValue else { return }
             path = []
             if usesSplit { selection = .today }
@@ -250,13 +254,16 @@ struct LibraryView: View {
         }
     }
 
-    /// Today in the middle column: the card with Study All, then each repertoire's due moves.
+    /// Today in the middle column: the card with Study All, then each repertoire's due moves;
+    /// while the tour runs, its card instead.
     private var todayColumn: some View {
         let stats = entryStats
         return List {
-            Section { todayRows(stats) }
-                // The column's plain list draws one under the last button too.
-                .listSectionSeparator(.hidden, edges: .bottom)
+            Group {
+                if tourRunning { tourSection } else { Section { todayRows(stats) } }
+            }
+            // The column's plain list draws one under the last button too.
+            .listSectionSeparator(.hidden, edges: .bottom)
         }
         .navigationTitle("Today")
     }
@@ -466,8 +473,7 @@ struct LibraryView: View {
     @ViewBuilder
     private func rows(_ stats: [String: EntryStats]) -> some View {
         if usesSplit {
-            if tourRunning { tourSection }
-            // Today's card is in the middle column when this row is selected.
+            // Today's card (or the tour's) is in the middle column when this row is selected.
             Label("Today", systemImage: "calendar")
                 .badge(Int(stats.values.reduce(0) { $0 + $1.counts.total }))
                 .tag(SidebarItem.today)
@@ -503,8 +509,8 @@ struct LibraryView: View {
             && model.library.entries.contains { RepertoireLibrary.isSample($0.pgnURL) }
     }
 
-    /// The tour in Today's place: what it is, how far it got, or, once the sample's gap is
-    /// studied, the user's own repertoire; its one main action first.
+    /// The tour in Today's place, drawn like Today's card: what it is, how far it got, or, once
+    /// the sample's gap is studied, the user's own repertoire; its one main action first.
     private var tourSection: some View {
         let step = Tour.Step(rawValue: tourStep) ?? .off
         let yourTurn = step == .studying || step == .finish
@@ -515,36 +521,25 @@ struct LibraryView: View {
                                   "Now build a repertoire for the opening you play. The sample stays here to try things on.")
         default: ("Tour in Progress", "Pick up where you left off in the sample.")
         }
-        // A row per button (a row's tap goes to all its buttons), without separators.
-        return Section("Tour") {
-            VStack(alignment: .leading, spacing: 4) {
+        // Today's card's layout: the text, then its buttons, one filled (the main action).
+        // Headed like Today's section on a phone; under the column's title in the split view.
+        return Section {
+            VStack(alignment: .leading, spacing: 8) {
                 Text(title).font(.headline)
                 Text(detail).font(.footnote).foregroundStyle(.secondary)
             }
-            .listRowSeparator(.hidden)
             if yourTurn {
                 Button("Create Your Repertoire", action: createOwnRepertoire)
                     .actionButton(prominent: true)
-                    .listRowSeparator(.hidden)
-                Button { Tour.skip() } label: {
-                    Text("Not Now").foregroundStyle(theme.appColor.tint)
-                }
-                .actionButton(prominent: false)
-                .tint(.secondary)
-                .listRowSeparator(.hidden)
+                Button("Not Now") { Tour.skip() }
+                    .actionButton(prominent: false)
             } else {
                 Button(step == .ready ? "Start Tour" : "Continue Tour", action: continueTour)
                     .actionButton(prominent: true)
-                    .listRowSeparator(.hidden)
-                // The secondary action: a gray button with the label in the app color (UIKit's
-                // gray configuration), so only the main action is filled with it.
-                SkipTourButton {
-                    Text("Skip Tour").foregroundStyle(theme.appColor.tint)
-                }
-                .actionButton(prominent: false)
-                .tint(.secondary)
-                .listRowSeparator(.hidden)
+                SkipTourButton().actionButton(prominent: false)
             }
+        } header: {
+            if !usesSplit { Text("Tour") }
         }
         // Open, so its row shows its moves and gaps (an unopened new sidecar has none yet).
         .task {
