@@ -98,6 +98,7 @@ pub enum ExplorerSpeed {
 pub enum HttpMethod {
     Get,
     Post,
+    Patch,
     Delete,
 }
 

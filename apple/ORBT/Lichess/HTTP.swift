@@ -11,6 +11,7 @@ enum HTTP {
         urlRequest.httpMethod = switch request.method {
         case .get: "GET"
         case .post: "POST"
+        case .patch: "PATCH"
         case .delete: "DELETE"
         }
         for header in request.headers {

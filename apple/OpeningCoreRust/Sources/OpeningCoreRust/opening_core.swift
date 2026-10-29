@@ -5690,6 +5690,351 @@ public func FfiConverterTypeRepertoireDoc_lower(_ value: RepertoireDoc) -> UInt6
 
 
 /**
+ * The repertoire folder synced with Dropbox or Google Drive: the platform sends the requests
+ * `poll` hands out, passes the answers to `on_response` and applies the outcome to its files
+ * (see `orbt_core::sync`).
+ */
+public protocol RepertoireSyncProtocol: AnyObject, Sendable {
+    
+    /**
+     * A local file was written (`data`) or deleted (None), saves of open repertoires included.
+     */
+    func localChanged(name: String, data: Data?) 
+    
+    /**
+     * The answer to an op (`response` None: no answer, e.g. offline). Apply the outcome:
+     * write and delete the local files (an open repertoire's through its document:
+     * `remote_pgn`, `remote_sidecar`), persist the state when asked.
+     */
+    func onResponse(op: SyncOp, response: HttpResponse?, nowMs: Int64)  -> SyncOutcome
+    
+    /**
+     * The requests to send now, and when to poll again.
+     */
+    func poll(nowMs: Int64)  -> SyncPoll
+    
+    /**
+     * The network is back.
+     */
+    func resume() 
+    
+    /**
+     * Persist this when an outcome says `save_state` (no secrets in it).
+     */
+    func savedState()  -> Data
+    
+    /**
+     * After signing in, or a fresh token (`expires_at` in unix ms). Dropbox: pass the refresh
+     * token, the core refreshes the access token itself.
+     */
+    func setCredentials(accessToken: String?, expiresAt: Int64?, refreshToken: String?) 
+    
+    func setListener(listener: SyncListener) 
+    
+    /**
+     * Every file of the local folder, once at start.
+     */
+    func setLocalFiles(files: [LocalFile]) 
+    
+    /**
+     * Long-poll for changes (Dropbox) while the app is in front.
+     */
+    func setWatching(watching: Bool) 
+    
+    func state()  -> SyncState
+    
+    /**
+     * On open and on focus: look for changes from other devices.
+     */
+    func syncNow() 
+    
+    /**
+     * Files whose local version is not uploaded yet.
+     */
+    func unsyncedFiles()  -> [String]
+    
+}
+/**
+ * The repertoire folder synced with Dropbox or Google Drive: the platform sends the requests
+ * `poll` hands out, passes the answers to `on_response` and applies the outcome to its files
+ * (see `orbt_core::sync`).
+ */
+open class RepertoireSync: RepertoireSyncProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_repertoiresync(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_repertoiresync(handle, $0) }
+    }
+
+    
+    /**
+     * The "ORBT Chess" folder in Google Drive (`drive.file` scope).
+     */
+public static func drive(savedState: Data) -> RepertoireSync  {
+    return try!  FfiConverterTypeRepertoireSync_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_repertoiresync_drive(
+        FfiConverterData.lower(savedState),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Dropbox's App folder; `app_key` is the OAuth client id. `saved_state`: what
+     * `saved_state` returned last time (empty to start over).
+     */
+public static func dropbox(appKey: String, savedState: Data) -> RepertoireSync  {
+    return try!  FfiConverterTypeRepertoireSync_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_repertoiresync_dropbox(
+        FfiConverterString.lower(appKey),
+        FfiConverterData.lower(savedState),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+    /**
+     * A local file was written (`data`) or deleted (None), saves of open repertoires included.
+     */
+open func localChanged(name: String, data: Data?)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_local_changed(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(name),
+        FfiConverterOptionData.lower(data),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * The answer to an op (`response` None: no answer, e.g. offline). Apply the outcome:
+     * write and delete the local files (an open repertoire's through its document:
+     * `remote_pgn`, `remote_sidecar`), persist the state when asked.
+     */
+open func onResponse(op: SyncOp, response: HttpResponse?, nowMs: Int64) -> SyncOutcome  {
+    return try!  FfiConverterTypeSyncOutcome_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_on_response(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSyncOp_lower(op),
+        FfiConverterOptionTypeHttpResponse.lower(response),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The requests to send now, and when to poll again.
+     */
+open func poll(nowMs: Int64) -> SyncPoll  {
+    return try!  FfiConverterTypeSyncPoll_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_poll(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The network is back.
+     */
+open func resume()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_resume(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * Persist this when an outcome says `save_state` (no secrets in it).
+     */
+open func savedState() -> Data  {
+    return try!  FfiConverterData.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_saved_state(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * After signing in, or a fresh token (`expires_at` in unix ms). Dropbox: pass the refresh
+     * token, the core refreshes the access token itself.
+     */
+open func setCredentials(accessToken: String?, expiresAt: Int64?, refreshToken: String?)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_set_credentials(
+            self.uniffiCloneHandle(),
+        FfiConverterOptionString.lower(accessToken),
+        FfiConverterOptionInt64.lower(expiresAt),
+        FfiConverterOptionString.lower(refreshToken),uniffiCallStatus
+    )
+}
+}
+    
+open func setListener(listener: SyncListener)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_set_listener(
+            self.uniffiCloneHandle(),
+        FfiConverterTypeSyncListener_lower(listener),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * Every file of the local folder, once at start.
+     */
+open func setLocalFiles(files: [LocalFile])  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_set_local_files(
+            self.uniffiCloneHandle(),
+        FfiConverterSequenceTypeLocalFile.lower(files),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * Long-poll for changes (Dropbox) while the app is in front.
+     */
+open func setWatching(watching: Bool)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_set_watching(
+            self.uniffiCloneHandle(),
+        FfiConverterBool.lower(watching),uniffiCallStatus
+    )
+}
+}
+    
+open func state() -> SyncState  {
+    return try!  FfiConverterTypeSyncState_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_state(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * On open and on focus: look for changes from other devices.
+     */
+open func syncNow()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_sync_now(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+    /**
+     * Files whose local version is not uploaded yet.
+     */
+open func unsyncedFiles() -> [String]  {
+    return try!  FfiConverterSequenceString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_unsynced_files(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeRepertoireSync: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = RepertoireSync
+
+    public static func lift(_ handle: UInt64) throws -> RepertoireSync {
+        return RepertoireSync(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: RepertoireSync) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> RepertoireSync {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: RepertoireSync, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRepertoireSync_lift(_ handle: UInt64) throws -> RepertoireSync {
+    return try FfiConverterTypeRepertoireSync.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeRepertoireSync_lower(_ value: RepertoireSync) -> UInt64 {
+    return FfiConverterTypeRepertoireSync.lower(value)
+}
+
+
+
+
+
+
+/**
  * Where the platform keeps explorer stats between launches (a local, unsynced cache).
  */
 public protocol StatsStore: AnyObject, Sendable {
@@ -5934,6 +6279,207 @@ public func FfiConverterTypeStatsStore_lift(_ handle: UInt64) throws -> StatsSto
 #endif
 public func FfiConverterTypeStatsStore_lower(_ value: StatsStore) -> UInt64 {
     return FfiConverterTypeStatsStore.lower(value)
+}
+
+
+
+
+
+
+/**
+ * Told when there is syncing to do: call `RepertoireSync::poll`.
+ */
+public protocol SyncListener: AnyObject, Sendable {
+    
+    func wake() 
+    
+}
+/**
+ * Told when there is syncing to do: call `RepertoireSync::poll`.
+ */
+open class SyncListenerImpl: SyncListener, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_opening_core_fn_clone_synclistener(self.handle, $0) }
+    }
+    // No primary constructor declared for this class.
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_opening_core_fn_free_synclistener(handle, $0) }
+    }
+
+    
+
+    
+open func wake()  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_synclistener_wake(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+}
+}
+    
+
+    
+}
+
+
+
+// Put the implementation in a struct so we don't pollute the top-level namespace
+fileprivate struct UniffiCallbackInterfaceSyncListener {
+
+    // Create the VTable using a series of closures.
+    // Swift automatically converts these into C callback functions.
+    //
+    // Store the vtable directly.
+    static let vtable: UniffiVTableCallbackInterfaceSyncListener = UniffiVTableCallbackInterfaceSyncListener(
+        uniffiFree: { (uniffiHandle: UInt64) -> () in
+            do {
+                try FfiConverterTypeSyncListener.handleMap.remove(handle: uniffiHandle)
+            } catch {
+                print("Uniffi callback interface SyncListener: handle missing in uniffiFree")
+            }
+        },
+        uniffiClone: { (uniffiHandle: UInt64) -> UInt64 in
+            do {
+                return try FfiConverterTypeSyncListener.handleMap.clone(handle: uniffiHandle)
+            } catch {
+                fatalError("Uniffi callback interface SyncListener: handle missing in uniffiClone")
+            }
+        },
+        wake: { (
+            uniffiHandle: UInt64,
+            uniffiOutReturn: UnsafeMutableRawPointer,
+            uniffiCallStatus: UnsafeMutablePointer<RustCallStatus>
+        ) in
+            let makeCall = {
+                () throws -> () in
+                guard let uniffiObj = try? FfiConverterTypeSyncListener.handleMap.get(handle: uniffiHandle) else {
+                    throw UniffiInternalError.unexpectedStaleHandle
+                }
+                return uniffiObj.wake(
+                )
+            }
+
+            
+            let writeReturn = { () }
+            uniffiTraitInterfaceCall(
+                callStatus: uniffiCallStatus,
+                makeCall: makeCall,
+                writeReturn: writeReturn
+            )
+        }
+    )
+
+    // Rust stores this pointer for future callback invocations, so it must live
+    // for the process lifetime (not just for the init function call).
+    //
+    // `nonisolated(unsafe)` is needed under Swift 6 strict concurrency.
+    // This is safe because the pointee is initialized once during static init
+    // and never mutated by either side of the FFI.  Its fields are C function pointers.
+    nonisolated(unsafe) static let vtablePtr: UnsafePointer<UniffiVTableCallbackInterfaceSyncListener> = {
+        let ptr = UnsafeMutablePointer<UniffiVTableCallbackInterfaceSyncListener>.allocate(capacity: 1)
+        ptr.initialize(to: vtable)
+        return UnsafePointer(ptr)
+    }()
+}
+
+private func uniffiCallbackInitSyncListener() {
+    uniffi_opening_core_fn_init_callback_vtable_synclistener(UniffiCallbackInterfaceSyncListener.vtablePtr)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSyncListener: FfiConverter {
+    fileprivate static let handleMap = UniffiHandleMap<SyncListener>()
+
+    typealias FfiType = UInt64
+    typealias SwiftType = SyncListener
+
+    public static func lift(_ handle: UInt64) throws -> SyncListener {
+        if ((handle & 1) == 0) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return SyncListenerImpl(unsafeFromHandle: handle)
+        } else {
+            // Swift-generated handle, get the object from the handle map
+            return try handleMap.remove(handle: handle)
+        }
+    }
+
+    public static func lower(_ value: SyncListener) -> UInt64 {
+         if let rustImpl = value as? SyncListenerImpl {
+             // Rust-implemented object.  Clone the handle and return it
+            return rustImpl.uniffiCloneHandle()
+         } else {
+            // Swift object, generate a new vtable handle and return that.
+            return handleMap.insert(obj: value)
+         }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SyncListener {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: SyncListener, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncListener_lift(_ handle: UInt64) throws -> SyncListener {
+    return try FfiConverterTypeSyncListener.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncListener_lower(_ value: SyncListener) -> UInt64 {
+    return FfiConverterTypeSyncListener.lower(value)
 }
 
 
@@ -7954,6 +8500,118 @@ public func FfiConverterTypeHttpResponse_lift(_ buf: RustBuffer) throws -> HttpR
 #endif
 public func FfiConverterTypeHttpResponse_lower(_ value: HttpResponse) -> RustBuffer {
     return FfiConverterTypeHttpResponse.lower(value)
+}
+
+
+public struct LocalFile: Equatable, Hashable {
+    public var name: String
+    public var data: Data
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(name: String, data: Data) {
+        self.name = name
+        self.data = data
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension LocalFile: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLocalFile: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LocalFile {
+        return
+            try LocalFile(
+                name: FfiConverterString.read(from: &buf), 
+                data: FfiConverterData.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: LocalFile, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.name, into: &buf)
+        FfiConverterData.write(value.data, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLocalFile_lift(_ buf: RustBuffer) throws -> LocalFile {
+    return try FfiConverterTypeLocalFile.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLocalFile_lower(_ value: LocalFile) -> RustBuffer {
+    return FfiConverterTypeLocalFile.lower(value)
+}
+
+
+public struct LocalWrite: Equatable, Hashable {
+    public var name: String
+    public var data: Data
+    public var created: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(name: String, data: Data, created: Bool) {
+        self.name = name
+        self.data = data
+        self.created = created
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension LocalWrite: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeLocalWrite: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> LocalWrite {
+        return
+            try LocalWrite(
+                name: FfiConverterString.read(from: &buf), 
+                data: FfiConverterData.read(from: &buf), 
+                created: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: LocalWrite, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.name, into: &buf)
+        FfiConverterData.write(value.data, into: &buf)
+        FfiConverterBool.write(value.created, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLocalWrite_lift(_ buf: RustBuffer) throws -> LocalWrite {
+    return try FfiConverterTypeLocalWrite.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeLocalWrite_lower(_ value: LocalWrite) -> RustBuffer {
+    return FfiConverterTypeLocalWrite.lower(value)
 }
 
 
@@ -10007,6 +10665,188 @@ public func FfiConverterTypeSummary_lower(_ value: Summary) -> RustBuffer {
 }
 
 
+public struct SyncOp: Equatable, Hashable {
+    public var id: UInt64
+    public var kind: SyncOpKind
+    public var file: String?
+    public var request: HttpRequest
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: UInt64, kind: SyncOpKind, file: String?, request: HttpRequest) {
+        self.id = id
+        self.kind = kind
+        self.file = file
+        self.request = request
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SyncOp: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSyncOp: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SyncOp {
+        return
+            try SyncOp(
+                id: FfiConverterUInt64.read(from: &buf), 
+                kind: FfiConverterTypeSyncOpKind.read(from: &buf), 
+                file: FfiConverterOptionString.read(from: &buf), 
+                request: FfiConverterTypeHttpRequest.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SyncOp, into buf: inout [UInt8]) {
+        FfiConverterUInt64.write(value.id, into: &buf)
+        FfiConverterTypeSyncOpKind.write(value.kind, into: &buf)
+        FfiConverterOptionString.write(value.file, into: &buf)
+        FfiConverterTypeHttpRequest.write(value.request, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncOp_lift(_ buf: RustBuffer) throws -> SyncOp {
+    return try FfiConverterTypeSyncOp.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncOp_lower(_ value: SyncOp) -> RustBuffer {
+    return FfiConverterTypeSyncOp.lower(value)
+}
+
+
+public struct SyncOutcome: Equatable, Hashable {
+    public var writes: [LocalWrite]
+    public var deletes: [String]
+    public var needs: AuthNeed?
+    public var saveState: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(writes: [LocalWrite], deletes: [String], needs: AuthNeed?, saveState: Bool) {
+        self.writes = writes
+        self.deletes = deletes
+        self.needs = needs
+        self.saveState = saveState
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SyncOutcome: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSyncOutcome: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SyncOutcome {
+        return
+            try SyncOutcome(
+                writes: FfiConverterSequenceTypeLocalWrite.read(from: &buf), 
+                deletes: FfiConverterSequenceString.read(from: &buf), 
+                needs: FfiConverterOptionTypeAuthNeed.read(from: &buf), 
+                saveState: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SyncOutcome, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypeLocalWrite.write(value.writes, into: &buf)
+        FfiConverterSequenceString.write(value.deletes, into: &buf)
+        FfiConverterOptionTypeAuthNeed.write(value.needs, into: &buf)
+        FfiConverterBool.write(value.saveState, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncOutcome_lift(_ buf: RustBuffer) throws -> SyncOutcome {
+    return try FfiConverterTypeSyncOutcome.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncOutcome_lower(_ value: SyncOutcome) -> RustBuffer {
+    return FfiConverterTypeSyncOutcome.lower(value)
+}
+
+
+public struct SyncPoll: Equatable, Hashable {
+    public var ops: [SyncOp]
+    public var wakeAt: Int64?
+    public var needs: AuthNeed?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(ops: [SyncOp], wakeAt: Int64?, needs: AuthNeed?) {
+        self.ops = ops
+        self.wakeAt = wakeAt
+        self.needs = needs
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension SyncPoll: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSyncPoll: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SyncPoll {
+        return
+            try SyncPoll(
+                ops: FfiConverterSequenceTypeSyncOp.read(from: &buf), 
+                wakeAt: FfiConverterOptionInt64.read(from: &buf), 
+                needs: FfiConverterOptionTypeAuthNeed.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: SyncPoll, into buf: inout [UInt8]) {
+        FfiConverterSequenceTypeSyncOp.write(value.ops, into: &buf)
+        FfiConverterOptionInt64.write(value.wakeAt, into: &buf)
+        FfiConverterOptionTypeAuthNeed.write(value.needs, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncPoll_lift(_ buf: RustBuffer) throws -> SyncPoll {
+    return try FfiConverterTypeSyncPoll.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncPoll_lower(_ value: SyncPoll) -> RustBuffer {
+    return FfiConverterTypeSyncPoll.lower(value)
+}
+
+
 public struct Today: Equatable, Hashable {
     public var answerCount: Int64
     public var cardCount: Int64
@@ -10480,6 +11320,72 @@ public func FfiConverterTypeArrowStyle_lift(_ buf: RustBuffer) throws -> ArrowSt
 #endif
 public func FfiConverterTypeArrowStyle_lower(_ value: ArrowStyle) -> RustBuffer {
     return FfiConverterTypeArrowStyle.lower(value)
+}
+
+
+
+
+public enum AuthNeed: Equatable, Hashable {
+    
+    case token
+    case signIn
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension AuthNeed: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeAuthNeed: FfiConverterRustBuffer {
+    typealias SwiftType = AuthNeed
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> AuthNeed {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .token
+        
+        case 2: return .signIn
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: AuthNeed, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .token:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .signIn:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuthNeed_lift(_ buf: RustBuffer) throws -> AuthNeed {
+    return try FfiConverterTypeAuthNeed.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeAuthNeed_lower(_ value: AuthNeed) -> RustBuffer {
+    return FfiConverterTypeAuthNeed.lower(value)
 }
 
 
@@ -11417,6 +12323,79 @@ public func FfiConverterTypeFeedback_lower(_ value: Feedback) -> RustBuffer {
 
 
 
+public enum FileKind: Equatable, Hashable {
+    
+    case pgn
+    case sidecar
+    case revlog
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension FileKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFileKind: FfiConverterRustBuffer {
+    typealias SwiftType = FileKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FileKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .pgn
+        
+        case 2: return .sidecar
+        
+        case 3: return .revlog
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: FileKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .pgn:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .sidecar:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .revlog:
+            writeInt(&buf, Int32(3))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFileKind_lift(_ buf: RustBuffer) throws -> FileKind {
+    return try FfiConverterTypeFileKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFileKind_lower(_ value: FileKind) -> RustBuffer {
+    return FfiConverterTypeFileKind.lower(value)
+}
+
+
+
+
 public enum GapKind: Equatable, Hashable {
     
     case missingMove
@@ -11578,6 +12557,7 @@ public enum HttpMethod: Equatable, Hashable {
     
     case get
     case post
+    case patch
     case delete
 
 
@@ -11604,7 +12584,9 @@ public struct FfiConverterTypeHttpMethod: FfiConverterRustBuffer {
         
         case 2: return .post
         
-        case 3: return .delete
+        case 3: return .patch
+        
+        case 4: return .delete
         
         default: throw UniffiInternalError.unexpectedEnumCase
         }
@@ -11622,8 +12604,12 @@ public struct FfiConverterTypeHttpMethod: FfiConverterRustBuffer {
             writeInt(&buf, Int32(2))
         
         
-        case .delete:
+        case .patch:
             writeInt(&buf, Int32(3))
+        
+        
+        case .delete:
+            writeInt(&buf, Int32(4))
         
         }
     }
@@ -13023,6 +14009,214 @@ public func FfiConverterTypeStatus_lower(_ value: Status) -> RustBuffer {
 }
 
 
+
+
+public enum SyncOpKind: Equatable, Hashable {
+    
+    case refresh
+    case findFolder
+    case createFolder
+    case list
+    case download
+    case upload
+    case delete
+    case watch
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension SyncOpKind: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSyncOpKind: FfiConverterRustBuffer {
+    typealias SwiftType = SyncOpKind
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SyncOpKind {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .refresh
+        
+        case 2: return .findFolder
+        
+        case 3: return .createFolder
+        
+        case 4: return .list
+        
+        case 5: return .download
+        
+        case 6: return .upload
+        
+        case 7: return .delete
+        
+        case 8: return .watch
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: SyncOpKind, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .refresh:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .findFolder:
+            writeInt(&buf, Int32(2))
+        
+        
+        case .createFolder:
+            writeInt(&buf, Int32(3))
+        
+        
+        case .list:
+            writeInt(&buf, Int32(4))
+        
+        
+        case .download:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .upload:
+            writeInt(&buf, Int32(6))
+        
+        
+        case .delete:
+            writeInt(&buf, Int32(7))
+        
+        
+        case .watch:
+            writeInt(&buf, Int32(8))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncOpKind_lift(_ buf: RustBuffer) throws -> SyncOpKind {
+    return try FfiConverterTypeSyncOpKind.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncOpKind_lower(_ value: SyncOpKind) -> RustBuffer {
+    return FfiConverterTypeSyncOpKind.lower(value)
+}
+
+
+
+
+public enum SyncState: Equatable, Hashable {
+    
+    case idle
+    case syncing
+    case offline(until: Int64
+    )
+    case paused(until: Int64
+    )
+    case needsToken
+    case needsSignIn
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension SyncState: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeSyncState: FfiConverterRustBuffer {
+    typealias SwiftType = SyncState
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SyncState {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .idle
+        
+        case 2: return .syncing
+        
+        case 3: return .offline(until: try FfiConverterInt64.read(from: &buf)
+        )
+        
+        case 4: return .paused(until: try FfiConverterInt64.read(from: &buf)
+        )
+        
+        case 5: return .needsToken
+        
+        case 6: return .needsSignIn
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: SyncState, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .idle:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .syncing:
+            writeInt(&buf, Int32(2))
+        
+        
+        case let .offline(until):
+            writeInt(&buf, Int32(3))
+            FfiConverterInt64.write(until, into: &buf)
+            
+        
+        case let .paused(until):
+            writeInt(&buf, Int32(4))
+            FfiConverterInt64.write(until, into: &buf)
+            
+        
+        case .needsToken:
+            writeInt(&buf, Int32(5))
+        
+        
+        case .needsSignIn:
+            writeInt(&buf, Int32(6))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncState_lift(_ buf: RustBuffer) throws -> SyncState {
+    return try FfiConverterTypeSyncState.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeSyncState_lower(_ value: SyncState) -> RustBuffer {
+    return FfiConverterTypeSyncState.lower(value)
+}
+
+
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
@@ -13722,6 +14916,30 @@ fileprivate struct FfiConverterOptionTypeSummary: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeAuthNeed: FfiConverterRustBuffer {
+    typealias SwiftType = AuthNeed?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeAuthNeed.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeAuthNeed.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeEvalSource: FfiConverterRustBuffer {
     typealias SwiftType = EvalSource?
 
@@ -13738,6 +14956,30 @@ fileprivate struct FfiConverterOptionTypeEvalSource: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeEvalSource.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeFileKind: FfiConverterRustBuffer {
+    typealias SwiftType = FileKind?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeFileKind.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeFileKind.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -14339,6 +15581,56 @@ fileprivate struct FfiConverterSequenceTypeHour: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeLocalFile: FfiConverterRustBuffer {
+    typealias SwiftType = [LocalFile]
+
+    public static func write(_ value: [LocalFile], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeLocalFile.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [LocalFile] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [LocalFile]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeLocalFile.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeLocalWrite: FfiConverterRustBuffer {
+    typealias SwiftType = [LocalWrite]
+
+    public static func write(_ value: [LocalWrite], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeLocalWrite.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [LocalWrite] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [LocalWrite]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeLocalWrite.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeNode: FfiConverterRustBuffer {
     typealias SwiftType = [Node]
 
@@ -14581,6 +15873,31 @@ fileprivate struct FfiConverterSequenceTypeStoredStats: FfiConverterRustBuffer {
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeStoredStats.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeSyncOp: FfiConverterRustBuffer {
+    typealias SwiftType = [SyncOp]
+
+    public static func write(_ value: [SyncOp], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeSyncOp.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [SyncOp] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [SyncOp]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeSyncOp.read(from: &buf))
         }
         return seq
     }
@@ -15198,6 +16515,17 @@ public func weakestMoves(cards: [Epd: Card], nowSecs: Double, limit: UInt32) -> 
     )
 })
 }
+/**
+ * The kind of a file the sync handles, or None for any other file.
+ */
+public func syncFileKind(name: String) -> FileKind?  {
+    return try!  FfiConverterOptionTypeFileKind.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_sync_file_kind(
+        FfiConverterString.lower(name),uniffiCallStatus
+    )
+})
+}
 public func ankiPreset() -> PresetInfo  {
     return try!  FfiConverterTypePresetInfo_lift(try! rustCall() {
         uniffiCallStatus in
@@ -15608,6 +16936,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_weakest_moves() != 51550) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_sync_file_kind() != 2482) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_anki_preset() != 41548) {
@@ -16435,6 +17766,45 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_librarysidecar_target_games() != 30514) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_repertoiresync_local_changed() != 58105) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_on_response() != 38461) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_poll() != 42127) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_resume() != 41406) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_saved_state() != 22651) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_set_credentials() != 10) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_set_listener() != 12761) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_set_local_files() != 58242) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_set_watching() != 34597) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_state() != 26947) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_sync_now() != 26513) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_unsynced_files() != 44751) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_synclistener_wake() != 37328) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_constructor_analysissession_new() != 18417) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -16465,11 +17835,18 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_constructor_graphs_new() != 61351) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_constructor_repertoiresync_drive() != 34283) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_repertoiresync_dropbox() != 18654) {
+        return InitializationResult.apiChecksumMismatch
+    }
 
     uniffiCallbackInitDocumentListener()
     uniffiCallbackInitEngineListener()
     uniffiCallbackInitExplorerListener()
     uniffiCallbackInitStatsStore()
+    uniffiCallbackInitSyncListener()
     return InitializationResult.ok
 }()
 
