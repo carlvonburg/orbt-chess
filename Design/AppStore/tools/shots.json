@@ -1,0 +1,267 @@
+{
+ "iphone": [
+  {
+   "file": "gaps.png",
+   "color": "orange",
+   "title": "Find the gaps",
+   "subtitle": "Every opponent move you haven't prepared,\nand how often you'll meet it",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      -0.035,
+      0.7895
+     ],
+     "anchor": "left",
+     "html": "<div class='card' style='display:flex;align-items:center;gap:30px;padding:30px 34px 30px 44px;width:1110px;border-radius:30px'><div style='font-size:66px;font-weight:700;width:150px'>Bc4</div><div style='font-size:46px;color:#555;font-weight:500;flex:1;text-align:right'>1 in 67</div><div style='width:190px;height:16px;border-radius:8px;background:#d9d9de'></div><span class='pill' style='background:#ff9500;font-size:44px;padding:14px 34px'>Gap</span></div>"
+    }
+   ]
+  },
+  {
+   "file": "gap-candidates.png",
+   "color": "blue",
+   "title": "Pick your move",
+   "subtitle": "How often each answer is played,\nhow it scores, and the engine's eval",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      1.06,
+      0.694
+     ],
+     "anchor": "right",
+     "html": "<div class='card' style='padding:34px 40px 30px;width:1010px;border-radius:34px'><div style='display:flex;align-items:baseline;gap:22px;margin-bottom:22px'><span style='font-size:70px;font-weight:700'>6\u2026e6</span><span style='font-size:44px;font-weight:600;color:#333'>+0.0</span><span style='flex:1'></span><span style='font-size:40px;color:#8a8a8e;font-weight:500'>21k games</span></div><div style='display:flex;height:74px;border-radius:14px;overflow:hidden;font-size:38px;font-weight:600;box-shadow:inset 0 0 0 2px #e2e2e6'><div style='width:45%;background:#f2f2f4;color:#222;display:flex;align-items:center;justify-content:center'>45%</div><div style='width:3%;background:#9a9aa0'></div><div style='width:52%;background:#262628;color:white;display:flex;align-items:center;justify-content:center'>52%</div></div></div>"
+    }
+   ]
+  },
+  {
+   "file": "study-correct.png",
+   "color": "green",
+   "title": "Learn it",
+   "subtitle": "Spaced repetition with Anki's scheduler,\none move at a time",
+   "overlays": [
+    {
+     "kind": "tile",
+     "box": [
+      495,
+      1338,
+      660,
+      1503
+     ],
+     "zoom": 2.3,
+     "check": true
+    },
+    {
+     "kind": "html",
+     "screen": [
+      -0.07,
+      0.3
+     ],
+     "anchor": "left",
+     "html": "<div class='card' style='display:flex;align-items:center;gap:30px;padding:36px 56px 36px 38px;white-space:nowrap;zoom:1.12'><div style='flex:none;width:104px;height:104px;border-radius:50%;background:#34c759;display:flex;align-items:center;justify-content:center'><svg viewBox='0 0 24 24' width='66' height='66'><path d='M5 12.5l4.2 4.2L19 7' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/></svg></div><div><div style='font-size:68px;font-weight:700;color:#28a745;line-height:1.05'>Correct</div><div style='font-size:44px;color:#8a8a8e;font-weight:500'>4\u2026Be7</div></div></div>"
+    },
+    {
+     "kind": "html",
+     "screen": [
+      0.5,
+      0.79
+     ],
+     "anchor": "center",
+     "html": "<div class='card' style='padding:36px 54px 36px 40px;display:flex;flex-direction:column;gap:22px;white-space:nowrap;zoom:1.3'><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#007aff;width:100px;text-align:center'>8</span><div><div style='font-size:46px;font-weight:700'>New</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Moves you haven't studied yet</div></div></div><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#ff3b30;width:100px;text-align:center'>0</span><div><div style='font-size:46px;font-weight:700'>Learning</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Moves you're learning, shown again within minutes</div></div></div><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#34c759;width:100px;text-align:center'>15</span><div><div style='font-size:46px;font-weight:700'>To Review</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Learned moves due today</div></div></div></div>"
+    }
+   ]
+  },
+  {
+   "file": "analysis.png",
+   "color": "indigo",
+   "title": "Analyse it",
+   "subtitle": "One tap from any position: Lichess cloud evals,\nor Stockfish on your iPhone",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      -0.04,
+      0.171
+     ],
+     "anchor": "left",
+     "html": "<div class='card' style='padding:34px 40px 40px 36px;width:1090px;border-radius:30px;white-space:nowrap'><div style='font-size:34px;color:#8a8a8e;font-weight:600;margin-bottom:14px'>Cloud \u00b7 depth 60</div><div style='display:flex;align-items:center;gap:26px'><span style='background:#e9e9ed;color:#111;font-weight:700;font-size:50px;border-radius:14px;padding:6px 18px'>+0.1</span><span style='font-size:50px;font-weight:500;color:#111;overflow:hidden'>5. e3 h6 6. Bh4 O-O 7. Nf3 b6</span></div></div>"
+    }
+   ]
+  },
+  {
+   "file": "library.png",
+   "color": "orange",
+   "title": "Keep it going",
+   "subtitle": "What's due today across your repertoires,\nand your study streak",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      1.07,
+      0.235
+     ],
+     "anchor": "right",
+     "html": "<div class='card' style='display:flex;align-items:center;gap:22px;padding:26px 50px 26px 38px;border-radius:999px;white-space:nowrap;zoom:1.4'><div style='flex:none;width:76px;height:96px;background-image:url({raw});background-size:2020px auto;background-position:-1415px -1076px'></div><div><div style='font-size:60px;font-weight:700;color:#ff9500;line-height:1'>25 days</div><div style='font-size:34px;color:#8a8a8e;font-weight:500'>study streak</div></div></div>"
+    }
+   ]
+  },
+  {
+   "file": "statistics.png",
+   "color": "green",
+   "title": "Make it stick",
+   "subtitle": "Watch every move go from new to mature",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      0.5,
+      0.435
+     ],
+     "anchor": "center",
+     "html": "<div class='card' style='padding:34px 40px 30px;width:1220px;border-radius:36px'><div style='display:flex;align-items:baseline;gap:18px;margin-bottom:18px'><span style='font-size:84px;font-weight:700'>634</span><span style='font-size:46px;color:#8a8a8e;font-weight:600'>learned</span><span style='flex:1'></span><span style='font-size:38px;color:#34c759;font-weight:600'>+155 mature this month</span></div><div style='height:430px;background-image:url({raw});background-repeat:no-repeat;background-size:1452px auto;background-position:-121px -1205px;border-radius:10px'></div></div>"
+    }
+   ]
+  },
+  {
+   "file": "overview.png",
+   "color": "indigo",
+   "title": "Free and open",
+   "subtitle": "No subscription, no ads, no account.\nYour repertoires are plain PGN files.",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      -0.08,
+      0.79
+     ],
+     "anchor": "left",
+     "html": "<div class='card' style='padding:30px 40px;width:900px;border-radius:34px;zoom:1.22'><div style='font-size:36px;color:#8a8a8e;font-weight:600;margin-bottom:14px'>iCloud Drive \u203a ORBT Chess</div><div style='display:flex;flex-direction:column;gap:14px;font-size:46px;font-weight:600'><div style='display:flex;align-items:center;gap:20px'><span style='font-size:26px;font-weight:800;color:white;background:#5856d6;border-radius:10px;padding:8px 12px'>PGN</span>Italian Game.pgn</div><div style='display:flex;align-items:center;gap:20px'><span style='font-size:26px;font-weight:800;color:white;background:#5856d6;border-radius:10px;padding:8px 12px'>PGN</span>Najdorf.pgn</div><div style='display:flex;align-items:center;gap:20px'><span style='font-size:26px;font-weight:800;color:white;background:#5856d6;border-radius:10px;padding:8px 12px'>PGN</span>Queen's Gambit Declined.pgn</div></div><div style='display:flex;align-items:center;gap:18px;margin-top:22px;padding-top:20px;border-top:2px solid #ececf0'><svg viewBox='0 0 24 24' width='58' height='58' style='flex:none'><rect x='1' y='1' width='22' height='22' rx='6' fill='#5856d6'/><path d='M9 8l-4 4 4 4M15 8l4 4-4 4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg><div style='font-size:42px;font-weight:700'>Open source</div><div style='font-size:36px;color:#8a8a8e;font-weight:500'>AGPL-3.0</div></div></div>"
+    }
+   ]
+  }
+ ],
+ "ipad": [
+  {
+   "file": "gaps.png",
+   "color": "orange",
+   "title": "Find the gaps",
+   "subtitle": "Every opponent move you haven't prepared,\nand how often you'll meet it",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      0.19,
+      0.242
+     ],
+     "anchor": "left",
+     "html": "<div class='card' style='display:flex;align-items:center;gap:30px;padding:30px 34px 30px 44px;width:1000px;border-radius:30px'><div style='font-size:66px;font-weight:700;width:150px'>Bc4</div><div style='font-size:46px;color:#555;font-weight:500;flex:1;text-align:right'>1 in 67</div><div style='width:190px;height:16px;border-radius:8px;background:#d9d9de'></div><span class='pill' style='background:#ff9500;font-size:44px;padding:14px 34px'>Gap</span></div>"
+    }
+   ]
+  },
+  {
+   "file": "gap-candidates.png",
+   "color": "blue",
+   "title": "Pick your move",
+   "subtitle": "How often each answer is played,\nhow it scores, and the engine's eval",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      0.19,
+      0.154
+     ],
+     "anchor": "left",
+     "html": "<div class='card' style='padding:34px 40px 30px;width:1010px;border-radius:34px'><div style='display:flex;align-items:baseline;gap:22px;margin-bottom:22px'><span style='font-size:70px;font-weight:700'>6\u2026e6</span><span style='font-size:44px;font-weight:600;color:#333'>+0.0</span><span style='flex:1'></span><span style='font-size:40px;color:#8a8a8e;font-weight:500'>21k games</span></div><div style='display:flex;height:74px;border-radius:14px;overflow:hidden;font-size:38px;font-weight:600;box-shadow:inset 0 0 0 2px #e2e2e6'><div style='width:45%;background:#f2f2f4;color:#222;display:flex;align-items:center;justify-content:center'>45%</div><div style='width:3%;background:#9a9aa0'></div><div style='width:52%;background:#262628;color:white;display:flex;align-items:center;justify-content:center'>52%</div></div></div>"
+    }
+   ]
+  },
+  {
+   "file": "study-correct.png",
+   "color": "green",
+   "title": "Learn it",
+   "subtitle": "Spaced repetition with Anki's scheduler,\none move at a time",
+   "overlays": [
+    {
+     "kind": "tile",
+     "box": [
+      1845,
+      1459,
+      2027,
+      1640
+     ],
+     "zoom": 2.5,
+     "check": true
+    },
+    {
+     "kind": "html",
+     "screen": [
+      0.215,
+      0.47
+     ],
+     "anchor": "left",
+     "html": "<div class='card' style='display:flex;align-items:center;gap:30px;padding:36px 56px 36px 38px;white-space:nowrap;zoom:1.12'><div style='flex:none;width:104px;height:104px;border-radius:50%;background:#34c759;display:flex;align-items:center;justify-content:center'><svg viewBox='0 0 24 24' width='66' height='66'><path d='M5 12.5l4.2 4.2L19 7' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/></svg></div><div><div style='font-size:68px;font-weight:700;color:#28a745;line-height:1.05'>Correct</div><div style='font-size:44px;color:#8a8a8e;font-weight:500'>4\u2026Be7</div></div></div>"
+    },
+    {
+     "kind": "html",
+     "screen": [
+      0.195,
+      0.14
+     ],
+     "anchor": "left",
+     "html": "<div class='card' style='padding:36px 54px 36px 40px;display:flex;flex-direction:column;gap:22px;white-space:nowrap;zoom:0.95'><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#007aff;width:100px;text-align:center'>8</span><div><div style='font-size:46px;font-weight:700'>New</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Moves you haven't studied yet</div></div></div><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#ff3b30;width:100px;text-align:center'>0</span><div><div style='font-size:46px;font-weight:700'>Learning</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Moves you're learning, shown again within minutes</div></div></div><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#34c759;width:100px;text-align:center'>15</span><div><div style='font-size:46px;font-weight:700'>To Review</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Learned moves due today</div></div></div></div>"
+    }
+   ]
+  },
+  {
+   "file": "analysis.png",
+   "color": "indigo",
+   "title": "Analyse it",
+   "subtitle": "One tap from any position: Lichess cloud evals,\nor Stockfish on your iPad",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      1.04,
+      0.142
+     ],
+     "anchor": "right",
+     "html": "<div class='card' style='padding:30px 40px 34px 40px;width:1200px;border-radius:30px;white-space:nowrap'><div style='font-size:34px;color:#8a8a8e;font-weight:600;margin-bottom:14px'>Cloud \u00b7 depth 54</div><div style='display:flex;align-items:center;gap:26px'><span style='background:#e9e9ed;color:#111;font-weight:700;font-size:50px;border-radius:14px;padding:6px 18px'>+0.3</span><span style='font-size:50px;font-weight:500;color:#111;overflow:hidden'>6. h3 e6 7. g4 d5 8. exd5 Nxd5</span></div></div>"
+    }
+   ]
+  },
+  {
+   "file": "today.png",
+   "color": "orange",
+   "title": "Keep it going",
+   "subtitle": "Your repertoires, what's due today and your statistics,\nall on one screen",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      0.3,
+      0.44
+     ],
+     "anchor": "center",
+     "html": "<div class='card' style='display:flex;align-items:center;gap:22px;padding:26px 50px 26px 38px;border-radius:999px;white-space:nowrap;zoom:1.4'><div style='flex:none;width:76px;height:96px;background-image:url({raw});background-size:6605px auto;background-position:-2597px -770px'></div><div><div style='font-size:60px;font-weight:700;color:#ff9500;line-height:1'>25 days</div><div style='font-size:34px;color:#8a8a8e;font-weight:500'>study streak</div></div></div>"
+    }
+   ]
+  },
+  {
+   "file": "overview.png",
+   "color": "indigo",
+   "title": "Free and open",
+   "subtitle": "No subscription, no ads, no account.\nYour repertoires are plain PGN files.",
+   "overlays": [
+    {
+     "kind": "html",
+     "screen": [
+      0.03,
+      0.8
+     ],
+     "anchor": "left",
+     "html": "<div class='card' style='padding:30px 40px;width:900px;border-radius:34px;zoom:1.22'><div style='font-size:36px;color:#8a8a8e;font-weight:600;margin-bottom:14px'>iCloud Drive \u203a ORBT Chess</div><div style='display:flex;flex-direction:column;gap:14px;font-size:46px;font-weight:600'><div style='display:flex;align-items:center;gap:20px'><span style='font-size:26px;font-weight:800;color:white;background:#5856d6;border-radius:10px;padding:8px 12px'>PGN</span>Italian Game.pgn</div><div style='display:flex;align-items:center;gap:20px'><span style='font-size:26px;font-weight:800;color:white;background:#5856d6;border-radius:10px;padding:8px 12px'>PGN</span>Najdorf.pgn</div><div style='display:flex;align-items:center;gap:20px'><span style='font-size:26px;font-weight:800;color:white;background:#5856d6;border-radius:10px;padding:8px 12px'>PGN</span>Queen's Gambit Declined.pgn</div></div><div style='display:flex;align-items:center;gap:18px;margin-top:22px;padding-top:20px;border-top:2px solid #ececf0'><svg viewBox='0 0 24 24' width='58' height='58' style='flex:none'><rect x='1' y='1' width='22' height='22' rx='6' fill='#5856d6'/><path d='M9 8l-4 4 4 4M15 8l4 4-4 4' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/></svg><div style='font-size:42px;font-weight:700'>Open source</div><div style='font-size:36px;color:#8a8a8e;font-weight:500'>AGPL-3.0</div></div></div>"
+    }
+   ]
+  }
+ ]
+}
