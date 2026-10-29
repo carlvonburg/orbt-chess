@@ -83,10 +83,39 @@ android {
     }
 }
 
+// The core's library for this computer, which core/scripts/build-android.sh builds into
+// core/build/host: the desktop app's resources for its OS and architecture (Compose's
+// `appResourcesRootDir` layout, e.g. macos-arm64/, linux-x64/, windows-x64/). `run` and the
+// packaged app both get them in `compose.application.resources.dir`; Main.kt points JNA there.
+val hostResourcesDir = layout.buildDirectory.dir("hostResources")
+val hostPlatform: String = run {
+    val os = System.getProperty("os.name").lowercase()
+    val arch = System.getProperty("os.arch").lowercase()
+    val osId = when {
+        os.contains("mac") -> "macos"
+        os.contains("win") -> "windows"
+        else -> "linux"
+    }
+    val archId = if (arch == "aarch64" || arch == "arm64") "arm64" else "x64"
+    "$osId-$archId"
+}
+val copyHostLibrary by tasks.registering(Sync::class) {
+    from(project(":core").layout.buildDirectory.dir("host"))
+    into(hostResourcesDir.map { it.dir(hostPlatform) })
+    doFirst {
+        val host = project(":core").layout.buildDirectory.dir("host").get().asFile
+        if (host.listFiles().isNullOrEmpty()) {
+            throw GradleException("No core library in $host: run core/scripts/build-android.sh first.")
+        }
+    }
+}
+tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(copyHostLibrary) }
+
 compose.desktop {
     application {
         mainClass = "org.orbtchess.orbt.MainKt"
         nativeDistributions {
+            appResourcesRootDir.set(hostResourcesDir)
             targetFormats(TargetFormat.Msi, TargetFormat.Deb)
             // The loopback redirect of the Lichess sign-in.
             modules("jdk.httpserver")

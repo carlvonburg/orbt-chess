@@ -1,8 +1,15 @@
 #!/bin/zsh
 # Builds the Rust core for Android and the desktop JVM and refreshes the Kotlin bindings:
 #   android/core/src/androidMain/jniLibs/<abi>/            (libopening_core.so + libc++_shared.so, not committed)
-#   android/core/build/host/                               (the host's library for JVM tests, not committed)
+#   android/core/build/host/                               (the host's library, not committed)
 #   android/core/src/commonMain/kotlin/.../opening_core.kt (generated Kotlin bindings, committed)
+#   android/app/src/commonMain/composeResources/files/Acknowledgements.json
+#                                                          (the licenses Settings shows, committed)
+# The host's library serves the JVM tests (jna.library.path) and the desktop app: Gradle copies it
+# into the app's resources for this OS and architecture (app/build.gradle.kts, `copyHostLibrary`,
+# Compose's appResourcesRootDir: macos-arm64/, linux-x64/, windows-x64/), so `./gradlew :app:run`
+# and the packaged app (`:app:packageDistributionForCurrentOS`) find it; Main.kt points JNA there.
+# A package for Windows or Linux is built on that system, after this script.
 # Usage: core/scripts/build-android.sh [--debug]
 # Needs the Android NDK: $ANDROID_NDK_HOME, or the newest one in the Android SDK
 # ($ANDROID_HOME, else ~/Library/Android/sdk).
@@ -57,7 +64,7 @@ for entry in $abis; do
   cp "$toolchain/sysroot/usr/lib/$triple/libc++_shared.so" "$out/"
 done
 
-# The host's library: JVM unit tests and, later, the desktop app.
+# The host's library: the JVM tests and the desktop app.
 echo "building the host library ($profile)"
 cargo build -q -p orbt-ffi $cargo_flags
 host="$module_dir/build/host"
@@ -76,3 +83,6 @@ rm -f "$sources/org/orbtchess/orbt/core/opening_core.kt"
 mkdir -p "$sources"
 cp -R "$generated/" "$sources/"
 echo "updated $module_dir"
+
+# The licenses of what the Android and desktop app ships.
+python3 "$core_dir/scripts/acknowledgements.py" --android

@@ -125,7 +125,7 @@ private fun LinkRow(title: String, onClick: () -> Unit) {
 
 /**
  * Every license the app ships under, one row each (Flutter's license page, which the Lichess
- * app shows): ORBT Chess first, then the components and crates by name.
+ * app shows): ORBT Chess first, then the components, crates and libraries by name.
  */
 @Composable
 private fun LicensesPage(acknowledgements: Acknowledgements, onBack: () -> Unit, modifier: Modifier, open: (LicenseEntry) -> Unit) {
@@ -134,8 +134,8 @@ private fun LicensesPage(acknowledgements: Acknowledgements, onBack: () -> Unit,
         val components = Component.all.map {
             LicenseEntry(it.name, it.name, acknowledgements.licenses[it.text] ?: "", it.attribution)
         }
-        val crates = acknowledgements.crates.map {
-            LicenseEntry("${it.name} ${it.version}", it.name, acknowledgements.text(it))
+        val crates = (acknowledgements.crates + acknowledgements.libraries).map {
+            LicenseEntry("${it.name} ${it.version}".trim(), it.name, acknowledgements.text(it))
         }
         val collator = Collator.getInstance()
         (components + crates).sortedWith { a, b -> collator.compare(a.name, b.name) }

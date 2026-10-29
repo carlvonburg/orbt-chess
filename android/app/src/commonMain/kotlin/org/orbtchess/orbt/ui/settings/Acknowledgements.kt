@@ -8,7 +8,7 @@ internal object AppLinks {
     const val SOURCE = "https://github.com/carlvonburg/orbt-chess"
 }
 
-/** What the app ships besides the Rust crates (those are in Acknowledgements.json). */
+/** What the app ships besides the crates and libraries (those are in Acknowledgements.json). */
 internal class Component(
     val name: String,
     /** The license's text: a key of Acknowledgements.json's `licenses`. */
@@ -21,8 +21,6 @@ internal class Component(
             Component("Stockfish", "GPL-3.0"),
             Component("multistockfish", "GPL-3.0"),
             Component("Anki", "AGPL-3.0"),
-            // GPL-2.0-or-later, so GPL-3.0's text applies.
-            Component("cburnett pieces", "GPL-3.0"),
             // CC BY-NC 4.0 §3(a): the creator, a link to the work, and that it was changed.
             Component(
                 "Lumbra's Gigabase", "CC-BY-NC-4.0",
@@ -34,10 +32,11 @@ internal class Component(
 }
 
 /**
- * `files/Acknowledgements.json`, the format `core/scripts/acknowledgements.py` writes for the
- * Apple app: the license texts the app bundles and every crate linked into it.
+ * `files/Acknowledgements.json`, which `core/scripts/acknowledgements.py --android` writes: the
+ * license texts the app bundles, every crate linked into it and the Kotlin and Java libraries it
+ * ships (`libraries`, the same fields).
  */
-internal class Acknowledgements(val licenses: Map<String, String>, val crates: List<Crate>) {
+internal class Acknowledgements(val licenses: Map<String, String>, val crates: List<Crate>, val libraries: List<Crate> = emptyList()) {
     class Crate(
         val name: String,
         val version: String,
@@ -53,20 +52,22 @@ internal class Acknowledgements(val licenses: Map<String, String>, val crates: L
         val empty = Acknowledgements(emptyMap(), emptyList())
 
         @Suppress("UNCHECKED_CAST")
+        private fun crates(list: Any?): List<Crate> = (list as? List<Map<String, Any?>>).orEmpty().map {
+            Crate(
+                name = it["name"] as String,
+                version = it["version"] as? String ?: "",
+                license = it["license"] as? String ?: "",
+                repository = it["repository"] as? String ?: "",
+                text = it["text"] as? String,
+                shared = it["shared"] as? String,
+            )
+        }
+
+        @Suppress("UNCHECKED_CAST")
         fun decode(bytes: ByteArray): Acknowledgements = runCatching {
             val root = Json(bytes.toString(Charsets.UTF_8)).value() as Map<String, Any?>
             val licenses = (root["licenses"] as Map<String, Any?>).mapValues { it.value as String }
-            val crates = (root["crates"] as List<Map<String, Any?>>).map {
-                Crate(
-                    name = it["name"] as String,
-                    version = it["version"] as? String ?: "",
-                    license = it["license"] as? String ?: "",
-                    repository = it["repository"] as? String ?: "",
-                    text = it["text"] as? String,
-                    shared = it["shared"] as? String,
-                )
-            }
-            Acknowledgements(licenses, crates)
+            Acknowledgements(licenses, crates(root["crates"]), crates(root["libraries"]))
         }.getOrDefault(empty)
     }
 }

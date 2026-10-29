@@ -242,7 +242,9 @@ in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palett
      Mac development profile for the iCloud entitlement, or `CODE_SIGNING_ALLOWED=NO` to compile
      only).
   4. `core/scripts/build-android.sh [--debug]` after changing the FFI (needs the Android NDK from
-     Android Studio's SDK Manager), then `./gradlew :core:jvmTest` in `android/`.
+     Android Studio's SDK Manager), then `./gradlew :core:jvmTest` in `android/`. It also builds
+     the host's library, which `:app:run` and the packaged desktop app load from the app's
+     resources (`copyHostLibrary`), and writes Android's `Acknowledgements.json`.
   A Claude Code hook (`.claude/hooks/check-before-commit.sh`) runs the ones a commit needs before
   every `git commit` and blocks it on failure: check.sh for `core/`, build-apple.sh for
   `core/orbt-ffi/` or Cargo.lock (the committed bindings must be up to date), the simulator build
