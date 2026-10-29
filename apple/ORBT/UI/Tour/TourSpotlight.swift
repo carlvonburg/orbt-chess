@@ -67,9 +67,10 @@ struct TourSpotlight: View {
         }
     }
 
-    /// Buttons (short holes) are capsules, as the buttons are; larger areas rounded rectangles.
+    /// Buttons (short holes) are capsules, as the buttons are; larger areas (a heading and its
+    /// row or more) rounded rectangles.
     private static func radius(_ hole: CGRect) -> CGFloat {
-        hole.height < 90 ? min(hole.width, hole.height) / 2 : 16
+        hole.height < 64 ? min(hole.width, hole.height) / 2 : 16
     }
 
     /// The step's instruction as a callout, on the side of the target with more room, its
@@ -79,7 +80,9 @@ struct TourSpotlight: View {
         let target = target ?? CGRect(x: 0, y: 0, width: size.width, height: Self.barHeight)
         let below = target.midY < size.height / 2
         let width = min(size.width - 32, 480)
-        let minX = (size.width - width) / 2
+        // Centered on the target where the window has room (the split view's columns), so the
+        // pointer stays near the card's middle.
+        let minX = min(max(target.midX - width / 2, 16), size.width - width - 16)
         let pointerX = min(max(target.midX - minX, 30), width - 30)
         let shape = Callout(pointerX: pointerX, pointsUp: below, hasPointer: target.width < size.width)
         return VStack(spacing: 0) {
@@ -103,6 +106,7 @@ struct TourSpotlight: View {
             // Opaque: glass would take on the shade's gray.
             .background(.cardBackground, in: shape)
             .shadow(color: .black.opacity(0.2), radius: 12, y: 4)
+            .offset(x: minX - (size.width - width) / 2)
             if below {
                 Spacer(minLength: 0)
             } else {
