@@ -1,6 +1,6 @@
 # storeshots.py <raw_dir> <out_dir> <device> [name ...]
-# device: iphone (1206 x 2622, the 6.3" slot App Store Connect asks for), iphone-6.9 (1320 x 2868),
-# ipad (2752 x 2064) or mac (2880 x 1800). A shot is laid out at its family's design width and drawn
+# device: iphone (1206 x 2622, the 6.3" slot App Store Connect asks for), ipad (2752 x 2064) or
+# mac (2880 x 1800). A shot is laid out at its device's design width and drawn
 # at the output size with CSS zoom, so each size is rendered, never scaled afterwards.
 # App Store screenshots as HTML, rendered by headless Chrome: a feature glow, a short headline,
 # the real screen in a device frame, and one overlay per shot redrawn from that screen.
@@ -9,13 +9,11 @@ import json, os, subprocess, sys, tempfile
 raw, out, device = sys.argv[1], sys.argv[2], sys.argv[3]
 only = set(sys.argv[4:])
 here = os.path.dirname(os.path.abspath(__file__))
-family = device.split("-")[0]
-spec = json.load(open(os.path.join(here, "shots.json")))[family]
+spec = json.load(open(os.path.join(here, "shots.json")))[device]
 os.makedirs(out, exist_ok=True)
 
-OUT_W, OUT_H = {"iphone": (1206, 2622), "iphone-6.9": (1320, 2868),
-                "ipad": (2752, 2064), "mac": (2880, 1800)}[device]
-W = {"iphone": 1320, "ipad": 2752, "mac": 2880}[family]  # design width: the layout below is in these px
+OUT_W, OUT_H = {"iphone": (1206, 2622), "ipad": (2752, 2064), "mac": (2880, 1800)}[device]
+W = {"iphone": 1320, "ipad": 2752, "mac": 2880}[device]  # design width: the layout below is in these px
 ZOOM = OUT_W / W
 H = round(OUT_H / ZOOM)
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -26,7 +24,7 @@ COLORS = {"orange": "255,149,0", "blue": "0,122,255", "green": "52,199,89",
 # Layout: headline block, then the device scaled to fit with a bottom margin.
 L = {"iphone": dict(head=128, sub=50, top=150, gap=70, bottom=120, bezel=26, radius=150, max_w=0.80),
      "ipad": dict(head=120, sub=52, top=110, gap=60, bottom=90, bezel=30, radius=64, max_w=0.80),
-     "mac": dict(head=110, sub=50, top=90, gap=56, bottom=80, bezel=0, radius=0, max_w=0.86)}[family]
+     "mac": dict(head=110, sub=50, top=90, gap=56, bottom=80, bezel=0, radius=0, max_w=0.86)}[device]
 
 CSS = """
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -63,10 +61,10 @@ def render(shot, idx):
     lines = shot["title"].split("\n")
     html.append(f'<h1 style="top:{y}px;font-size:{head}px">{"<br>".join(lines)}</h1>')
     y += round(head * 1.02 * len(lines)) + 28
-    subtitle = shot["subtitle"].replace("\n", " ") if family != "iphone" else shot["subtitle"]
+    subtitle = shot["subtitle"].replace("\n", " ") if device != "iphone" else shot["subtitle"]
     sublines = subtitle.split("\n")
     html.append(f'<p class="sub" style="top:{y}px;font-size:{sub}px">{"<br>".join(sublines)}</p>')
-    y += round(sub * 1.25 * max(1 if family != "iphone" else 2, len(sublines))) + L["gap"]
+    y += round(sub * 1.25 * max(1 if device != "iphone" else 2, len(sublines))) + L["gap"]
 
     bezel = L["bezel"]
     avail_h = H - y - L["bottom"] - 2 * bezel
@@ -76,7 +74,7 @@ def render(shot, idx):
     fx = (W - sw - 2 * bezel) / 2
     fy = y
     r = L["radius"] * s / 0.72
-    if family == "mac":  # the window itself: its own corners (transparent in the capture) and shadow
+    if device == "mac":  # the window itself: its own corners (transparent in the capture) and shadow
         html.append(f'<img src="file://{os.path.join(raw, shot["file"])}" style="position:absolute;left:{fx}px;top:{fy}px;'
                     f'width:{sw}px;height:{sh}px;filter:drop-shadow(0 40px 60px rgba(0,0,0,.55)) drop-shadow(0 0 1.5px rgba(255,255,255,.35))">')
     else:
