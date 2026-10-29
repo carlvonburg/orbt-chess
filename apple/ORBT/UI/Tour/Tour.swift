@@ -225,7 +225,7 @@ extension Tour.Target {
 
 /// Where a toolbar button is, in window coordinates. SwiftUI hands bar buttons to the system's
 /// bars, which have no SwiftUI geometry; the button is found by its accessibility label (the one
-/// VoiceOver reads), as UI tests find it. Nil where it isn't on screen (and on the Mac).
+/// VoiceOver reads), as UI tests find it. Nil where it isn't on screen.
 enum BarButtonLocator {
     static func frame(label: String) -> CGRect? {
         #if os(iOS)
@@ -233,8 +233,25 @@ enum BarButtonLocator {
         for window in windows where window.isKeyWindow {
             if let view = find(label, in: window) { return view.convert(view.bounds, to: nil) }
         }
-        #endif
         return nil
+        #elseif os(macOS)
+        // The toolbar is AppKit's, beside the window's content view; its SwiftUI buttons aren't
+        // views but accessibility elements of the item's hosting view.
+        guard let window = NSApp.keyWindow ?? NSApp.mainWindow, let content = window.contentView,
+              let screen = find(label, in: content.superview?.subviews.filter { $0 !== content } ?? [])
+        else { return nil }
+        var frame = content.convert(window.convertFromScreen(screen), from: nil)
+        if !content.isFlipped { frame.origin.y = content.bounds.height - frame.maxY }
+        return frame
+        #else
+        return nil
+        #endif
+    }
+
+    /// "Save" or "Save 2" (the number of moves in the draft).
+    private static func matches(_ text: String?, _ label: String) -> Bool {
+        guard let text else { return false }
+        return text == label || text.hasPrefix(label + " ")
     }
 
     #if os(iOS)
@@ -243,12 +260,27 @@ enum BarButtonLocator {
         var stack: [UIView] = [root]
         while let view = stack.popLast() {
             if view.isHidden || view.alpha == 0 { continue }
-            // "Save" or "Save 2" (the number of moves in the draft).
-            if let text = view.accessibilityLabel, text == label || text.hasPrefix(label + " "),
-               view.bounds.width > 0 {
+            if matches(view.accessibilityLabel, label), view.bounds.width > 0 {
                 return view
             }
             stack.append(contentsOf: view.subviews)
+        }
+        return nil
+    }
+    #elseif os(macOS)
+    /// The element's frame on screen: views and the elements they vend, depth-first, with a work
+    /// stack; each view once (a view's accessibility children include some of its subviews).
+    private static func find(_ label: String, in roots: [NSView]) -> CGRect? {
+        var stack: [Any] = roots
+        while let element = stack.popLast() {
+            if let view = element as? NSView, view.isHidden { continue }
+            guard let node = element as? NSAccessibilityProtocol else { continue }
+            if matches(node.accessibilityLabel(), label) || matches(node.accessibilityTitle(), label) {
+                let frame = node.accessibilityFrame()
+                if frame.width > 0 { return frame }
+            }
+            if let view = element as? NSView { stack.append(contentsOf: view.subviews) }
+            stack.append(contentsOf: (node.accessibilityChildren() ?? []).filter { !($0 is NSView) })
         }
         return nil
     }

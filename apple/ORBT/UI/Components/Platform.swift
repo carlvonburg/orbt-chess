@@ -22,6 +22,16 @@ extension View {
         #endif
     }
 
+    /// A button that is a whole form row: the row is the button on iPhone and iPad; macOS
+    /// would draw a bordered button inside the row, so it's plain there.
+    func formRowButton() -> some View {
+        #if os(macOS)
+        buttonStyle(.plain)
+        #else
+        self
+        #endif
+    }
+
     /// The outline a long-press lifts above the context menu (iPhone and iPad; a macOS context
     /// menu has no preview).
     func contextMenuPreviewShape(_ shape: some Shape) -> some View {
@@ -70,3 +80,4 @@ extension ToolbarItemPlacement {
         #endif
     }
 }
+

@@ -10,3 +10,7 @@ xcuserdata/
 /.claude/worktrees/
 .claude/settings.local.json
 .wrangler/
+/Design/AppStore/raw/
+/Design/AppStore/screenshots/
+/Design/AppStore/tools/target/
+/Design/AppStore/*-overview.jpg

@@ -49,17 +49,18 @@ One folder per platform around a shared core (Android, Windows and Linux would b
     (Anki's graphs, scoping, chess stats), `formats` (sidecar and revlog), `document` (the open repertoire: edits, undo, save hints, remote merges,
     outline/search), `builder`, `drill` (state machines behind the two main screens), `lichess`
     (PKCE, analysis URL, cloud evals), `engine` (UCI, which evaluation to show), `analysis`
-    (the analysis board's tree).
+    (the analysis board's tree), `sync` (the folder synced with Dropbox or Google Drive: a
+    sans-IO loop like the explorer queue, each provider a small `Provider` of requests and answers).
   - `orbt-engine/` — native only (never wasm): Stockfish 19 vendored from lichess's
     dart-multistockfish (`vendor/PATCHES.md`), built with `cc`, run on a thread over pipes
     behind `EngineBackend` (Leela would be another backend). CPU flags per target in `build.rs`:
     dotprod and AVX2 on Apple, Stockfish's armv8 and x86-64-sse41-popcnt elsewhere.
   - `orbt-ffi/` — the UniFFI 0.32 bindings: objects (`RepertoireDoc`, `BuilderSession`,
     `DrillSession`, `Explorer`, `Engine`, `AnalysisSession`, `Position`, `Graphs`,
-    `LibrarySidecar`) and the core's records and enums as remote types. Thin: conversions and
-    locking only. Swift through `uniffi-bindgen-swift/`, Kotlin through `uniffi-bindgen/` and
-    `orbt-ffi/uniffi.toml` (package `org.orbtchess.orbt.core`); an error field is never named
-    `message` (Kotlin exceptions have their own).
+    `LibrarySidecar`, `RepertoireSync`) and the core's records and enums as remote types. Thin:
+    conversions and locking only. Swift through `uniffi-bindgen-swift/`, Kotlin through
+    `uniffi-bindgen/` and `orbt-ffi/uniffi.toml` (package `org.orbtchess.orbt.core`); an error
+    field is never named `message` (Kotlin exceptions have their own).
   - Tests: `orbt-core/tests/*.rs` state the rules; `orbt-core/tests/snapshot_*.rs` are insta
     snapshot tests over the inputs in `orbt-core/tests/data/`, including every line of lichess's
     opening names as one large repertoire (`data/repertoires/`, CC0) (snapshots in
@@ -77,7 +78,7 @@ One folder per platform around a shared core (Android, Windows and Linux would b
     matches the one `build-apple.sh` recorded, instead of building), `scripts/build-android.sh`
     (Android's `.so`s with the NDK, the host library for JVM tests, the Kotlin bindings).
   - `fuzz/` — cargo-fuzz targets for what the app reads (PGN, sidecar, review log, explorer
-    answers, engine output), outside the workspace; `fuzz/run.sh [seconds]` runs them all (nightly).
+    answers, engine output, storage provider answers), outside the workspace; `fuzz/run.sh [seconds]` runs them all (nightly).
     The core must not panic or recurse per ply on any input: the app calls it on small
     stacks, and a panic or overflow in a non-throwing call crashes it on every launch.
 - `apple/` — the iPhone, iPad and Mac app (one multiplatform target, not Catalyst):

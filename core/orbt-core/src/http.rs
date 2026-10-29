@@ -19,6 +19,7 @@ pub fn query_encode(value: &str) -> String {
 pub enum HttpMethod {
     Get,
     Post,
+    Patch,
     Delete,
 }
 

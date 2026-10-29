@@ -11,6 +11,7 @@ mod explorer;
 mod position;
 mod sessions;
 mod stats;
+mod sync;
 mod types;
 
 pub use analysis::*;
@@ -20,6 +21,7 @@ pub use explorer::*;
 pub use position::*;
 pub use sessions::*;
 pub use stats::*;
+pub use sync::*;
 pub use types::*;
 
 #[uniffi::export]

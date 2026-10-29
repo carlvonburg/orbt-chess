@@ -665,6 +665,9 @@ internal interface UniffiCallbackInterfaceStatsStoreMethod0 : com.sun.jna.Callba
 internal interface UniffiCallbackInterfaceStatsStoreMethod1 : com.sun.jna.Callback {
     fun callback(`uniffiHandle`: Long,`databaseKey`: RustBuffer.ByValue,`epd`: RustBuffer.ByValue,`json`: RustBuffer.ByValue,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
 }
+internal interface UniffiCallbackInterfaceSyncListenerMethod0 : com.sun.jna.Callback {
+    fun callback(`uniffiHandle`: Long,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,)
+}
 @Structure.FieldOrder("uniffiFree", "uniffiClone", "changed")
 internal open class UniffiVTableCallbackInterfaceDocumentListener(
     @JvmField internal var `uniffiFree`: UniffiCallbackInterfaceFree? = null,
@@ -744,6 +747,25 @@ internal open class UniffiVTableCallbackInterfaceStatsStore(
     }
 
 }
+@Structure.FieldOrder("uniffiFree", "uniffiClone", "wake")
+internal open class UniffiVTableCallbackInterfaceSyncListener(
+    @JvmField internal var `uniffiFree`: UniffiCallbackInterfaceFree? = null,
+    @JvmField internal var `uniffiClone`: UniffiCallbackInterfaceClone? = null,
+    @JvmField internal var `wake`: UniffiCallbackInterfaceSyncListenerMethod0? = null,
+) : Structure() {
+    class UniffiByValue(
+        `uniffiFree`: UniffiCallbackInterfaceFree? = null,
+        `uniffiClone`: UniffiCallbackInterfaceClone? = null,
+        `wake`: UniffiCallbackInterfaceSyncListenerMethod0? = null,
+    ): UniffiVTableCallbackInterfaceSyncListener(`uniffiFree`,`uniffiClone`,`wake`,), Structure.ByValue
+
+   internal fun uniffiSetValue(other: UniffiVTableCallbackInterfaceSyncListener) {
+        `uniffiFree` = other.`uniffiFree`
+        `uniffiClone` = other.`uniffiClone`
+        `wake` = other.`wake`
+    }
+
+}
 
 // A JNA Library to expose the extern-C FFI definitions.
 // This is an implementation detail which will be called internally by the public API.
@@ -816,6 +838,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_opening_core_checksum_func_sidecar_extension(
     ): Int
     external fun uniffi_opening_core_checksum_func_weakest_moves(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_sync_file_kind(
     ): Int
     external fun uniffi_opening_core_checksum_func_anki_preset(
     ): Int
@@ -1367,6 +1391,32 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_method_librarysidecar_target_games(
     ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_local_changed(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_on_response(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_poll(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_resume(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_saved_state(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_set_credentials(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_set_listener(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_set_local_files(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_set_watching(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_state(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_sync_now(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_unsynced_files(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_synclistener_wake(
+    ): Int
     external fun uniffi_opening_core_checksum_constructor_analysissession_new(
     ): Int
     external fun uniffi_opening_core_checksum_constructor_engine_new(
@@ -1386,6 +1436,10 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_opening_core_checksum_constructor_graphs_from_parts(
     ): Int
     external fun uniffi_opening_core_checksum_constructor_graphs_new(
+    ): Int
+    external fun uniffi_opening_core_checksum_constructor_repertoiresync_drive(
+    ): Int
+    external fun uniffi_opening_core_checksum_constructor_repertoiresync_dropbox(
     ): Int
     external fun ffi_opening_core_uniffi_contract_version(
     ): Int
@@ -1407,6 +1461,7 @@ internal object UniffiLib {
         uniffiCallbackInterfaceEngineListener.register(this)
         uniffiCallbackInterfaceExplorerListener.register(this)
         uniffiCallbackInterfaceStatsStore.register(this)
+        uniffiCallbackInterfaceSyncListener.register(this)
         
     }
 
@@ -1975,6 +2030,46 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_librarysidecar_target_games(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
+    external fun uniffi_opening_core_fn_clone_repertoiresync(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_opening_core_fn_free_repertoiresync(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_opening_core_fn_constructor_repertoiresync_drive(`savedState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_opening_core_fn_constructor_repertoiresync_dropbox(`appKey`: RustBuffer.ByValue,`savedState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_opening_core_fn_method_repertoiresync_local_changed(`ptr`: Long,`name`: RustBuffer.ByValue,`data`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_opening_core_fn_method_repertoiresync_on_response(`ptr`: Long,`op`: RustBuffer.ByValue,`response`: RustBuffer.ByValue,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_method_repertoiresync_poll(`ptr`: Long,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_method_repertoiresync_resume(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_opening_core_fn_method_repertoiresync_saved_state(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_method_repertoiresync_set_credentials(`ptr`: Long,`accessToken`: RustBuffer.ByValue,`expiresAt`: RustBuffer.ByValue,`refreshToken`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_opening_core_fn_method_repertoiresync_set_listener(`ptr`: Long,`listener`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_opening_core_fn_method_repertoiresync_set_local_files(`ptr`: Long,`files`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_opening_core_fn_method_repertoiresync_set_watching(`ptr`: Long,`watching`: Byte,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_opening_core_fn_method_repertoiresync_state(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_method_repertoiresync_sync_now(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_opening_core_fn_method_repertoiresync_unsynced_files(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_clone_synclistener(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
+    external fun uniffi_opening_core_fn_free_synclistener(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
+    external fun uniffi_opening_core_fn_init_callback_vtable_synclistener(`vtable`: UniffiVTableCallbackInterfaceSyncListener,
+    ): Unit
+    external fun uniffi_opening_core_fn_method_synclistener_wake(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_opening_core_fn_func_core_version(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_open_repertoire(`pgnText`: RustBuffer.ByValue,`sidecar`: RustBuffer.ByValue,`defaults`: RustBuffer.ByValue,`explorer`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -2022,6 +2117,8 @@ internal object UniffiLib {
     external fun uniffi_opening_core_fn_func_sidecar_extension(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_weakest_moves(`cards`: RustBuffer.ByValue,`nowSecs`: Double,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_sync_file_kind(`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_anki_preset(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -2286,6 +2383,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_weakest_moves() and 0xFFFF) != 51550) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_sync_file_kind() and 0xFFFF) != 2482) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_anki_preset() and 0xFFFF) != 41548) {
@@ -3113,6 +3213,45 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_method_librarysidecar_target_games() and 0xFFFF) != 30514) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_local_changed() and 0xFFFF) != 58105) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_on_response() and 0xFFFF) != 38461) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_poll() and 0xFFFF) != 42127) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_resume() and 0xFFFF) != 41406) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_saved_state() and 0xFFFF) != 22651) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_set_credentials() and 0xFFFF) != 10) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_set_listener() and 0xFFFF) != 12761) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_set_local_files() and 0xFFFF) != 58242) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_set_watching() and 0xFFFF) != 34597) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_state() and 0xFFFF) != 26947) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_sync_now() and 0xFFFF) != 26513) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_unsynced_files() and 0xFFFF) != 44751) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_synclistener_wake() and 0xFFFF) != 37328) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if ((lib.uniffi_opening_core_checksum_constructor_analysissession_new() and 0xFFFF) != 18417) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -3141,6 +3280,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_constructor_graphs_new() and 0xFFFF) != 61351) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_constructor_repertoiresync_drive() and 0xFFFF) != 34283) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_constructor_repertoiresync_dropbox() and 0xFFFF) != 18654) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
 }
@@ -11464,6 +11609,537 @@ public object FfiConverterTypeRepertoireDoc: FfiConverter<RepertoireDoc, Long> {
 
 
 /**
+ * The repertoire folder synced with Dropbox or Google Drive: the platform sends the requests
+ * `poll` hands out, passes the answers to `on_response` and applies the outcome to its files
+ * (see `orbt_core::sync`).
+ */
+public interface RepertoireSyncInterface {
+    
+    /**
+     * A local file was written (`data`) or deleted (None), saves of open repertoires included.
+     */
+    fun `localChanged`(`name`: kotlin.String, `data`: kotlin.ByteArray?)
+    
+    /**
+     * The answer to an op (`response` None: no answer, e.g. offline). Apply the outcome:
+     * write and delete the local files (an open repertoire's through its document:
+     * `remote_pgn`, `remote_sidecar`), persist the state when asked.
+     */
+    fun `onResponse`(`op`: SyncOp, `response`: HttpResponse?, `nowMs`: kotlin.Long): SyncOutcome
+    
+    /**
+     * The requests to send now, and when to poll again.
+     */
+    fun `poll`(`nowMs`: kotlin.Long): SyncPoll
+    
+    /**
+     * The network is back.
+     */
+    fun `resume`()
+    
+    /**
+     * Persist this when an outcome says `save_state` (no secrets in it).
+     */
+    fun `savedState`(): kotlin.ByteArray
+    
+    /**
+     * After signing in, or a fresh token (`expires_at` in unix ms). Dropbox: pass the refresh
+     * token, the core refreshes the access token itself.
+     */
+    fun `setCredentials`(`accessToken`: kotlin.String?, `expiresAt`: kotlin.Long?, `refreshToken`: kotlin.String?)
+    
+    fun `setListener`(`listener`: SyncListener)
+    
+    /**
+     * Every file of the local folder, once at start.
+     */
+    fun `setLocalFiles`(`files`: List<LocalFile>)
+    
+    /**
+     * Long-poll for changes (Dropbox) while the app is in front.
+     */
+    fun `setWatching`(`watching`: kotlin.Boolean)
+    
+    fun `state`(): SyncState
+    
+    /**
+     * On open and on focus: look for changes from other devices.
+     */
+    fun `syncNow`()
+    
+    /**
+     * Files whose local version is not uploaded yet.
+     */
+    fun `unsyncedFiles`(): List<kotlin.String>
+    
+    companion object
+}
+
+/**
+ * The repertoire folder synced with Dropbox or Google Drive: the platform sends the requests
+ * `poll` hands out, passes the answers to `on_response` and applies the outcome to its files
+ * (see `orbt_core::sync`).
+ */
+open class RepertoireSync: Disposable, AutoCloseable, RepertoireSyncInterface
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_opening_core_fn_free_repertoiresync(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_opening_core_fn_clone_repertoiresync(handle, status)
+        }
+    }
+
+    
+    /**
+     * A local file was written (`data`) or deleted (None), saves of open repertoires included.
+     */override fun `localChanged`(`name`: kotlin.String, `data`: kotlin.ByteArray?)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_local_changed(
+        it,
+        
+        FfiConverterString.lower(`name`),
+        FfiConverterOptionalByteArray.lower(`data`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * The answer to an op (`response` None: no answer, e.g. offline). Apply the outcome:
+     * write and delete the local files (an open repertoire's through its document:
+     * `remote_pgn`, `remote_sidecar`), persist the state when asked.
+     */override fun `onResponse`(`op`: SyncOp, `response`: HttpResponse?, `nowMs`: kotlin.Long): SyncOutcome {
+            return FfiConverterTypeSyncOutcome.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_on_response(
+        it,
+        
+        FfiConverterTypeSyncOp.lower(`op`),
+        FfiConverterOptionalTypeHttpResponse.lower(`response`),
+        FfiConverterLong.lower(`nowMs`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * The requests to send now, and when to poll again.
+     */override fun `poll`(`nowMs`: kotlin.Long): SyncPoll {
+            return FfiConverterTypeSyncPoll.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_poll(
+        it,
+        
+        FfiConverterLong.lower(`nowMs`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * The network is back.
+     */override fun `resume`()
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_resume(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Persist this when an outcome says `save_state` (no secrets in it).
+     */override fun `savedState`(): kotlin.ByteArray {
+            return FfiConverterByteArray.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_saved_state(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * After signing in, or a fresh token (`expires_at` in unix ms). Dropbox: pass the refresh
+     * token, the core refreshes the access token itself.
+     */override fun `setCredentials`(`accessToken`: kotlin.String?, `expiresAt`: kotlin.Long?, `refreshToken`: kotlin.String?)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_set_credentials(
+        it,
+        
+        FfiConverterOptionalString.lower(`accessToken`),
+        FfiConverterOptionalLong.lower(`expiresAt`),
+        FfiConverterOptionalString.lower(`refreshToken`),_status)
+}
+    }
+    
+    
+
+    override fun `setListener`(`listener`: SyncListener)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_set_listener(
+        it,
+        
+        FfiConverterTypeSyncListener.lower(`listener`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Every file of the local folder, once at start.
+     */override fun `setLocalFiles`(`files`: List<LocalFile>)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_set_local_files(
+        it,
+        
+        FfiConverterSequenceTypeLocalFile.lower(`files`),_status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Long-poll for changes (Dropbox) while the app is in front.
+     */override fun `setWatching`(`watching`: kotlin.Boolean)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_set_watching(
+        it,
+        
+        FfiConverterBoolean.lower(`watching`),_status)
+}
+    }
+    
+    
+
+    override fun `state`(): SyncState {
+            return FfiConverterTypeSyncState.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_state(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * On open and on focus: look for changes from other devices.
+     */override fun `syncNow`()
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_sync_now(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+    /**
+     * Files whose local version is not uploaded yet.
+     */override fun `unsyncedFiles`(): List<kotlin.String> {
+            return FfiConverterSequenceString.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_unsynced_files(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    
+
+    
+
+
+    
+    companion object {
+        
+    /**
+     * The "ORBT Chess" folder in Google Drive (`drive.file` scope).
+     */ fun `drive`(`savedState`: kotlin.ByteArray): RepertoireSync {
+            return FfiConverterTypeRepertoireSync.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_constructor_repertoiresync_drive(
+    
+        
+        FfiConverterByteArray.lower(`savedState`),_status)
+}
+    )
+    }
+    
+
+        
+    /**
+     * Dropbox's App folder; `app_key` is the OAuth client id. `saved_state`: what
+     * `saved_state` returned last time (empty to start over).
+     */ fun `dropbox`(`appKey`: kotlin.String, `savedState`: kotlin.ByteArray): RepertoireSync {
+            return FfiConverterTypeRepertoireSync.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_constructor_repertoiresync_dropbox(
+    
+        
+        FfiConverterString.lower(`appKey`),
+        FfiConverterByteArray.lower(`savedState`),_status)
+}
+    )
+    }
+    
+
+        
+    }
+    
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeRepertoireSync: FfiConverter<RepertoireSync, Long> {
+    override fun lower(value: RepertoireSync): Long {
+        return value.uniffiCloneHandle()
+    }
+
+    override fun lift(value: Long): RepertoireSync {
+        return RepertoireSync(UniffiWithHandle, value)
+    }
+
+    override fun read(buf: ByteBuffer): RepertoireSync {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: RepertoireSync) = 8UL
+
+    override fun write(value: RepertoireSync, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+/**
  * Where the platform keeps explorer stats between launches (a local, unsynced cache).
  */
 public interface StatsStore {
@@ -11719,6 +12395,321 @@ public object FfiConverterTypeStatsStore: FfiConverter<StatsStore, Long> {
     override fun allocationSize(value: StatsStore) = 8UL
 
     override fun write(value: StatsStore, buf: ByteBuffer) {
+        buf.putLong(lower(value))
+    }
+}
+
+
+// This template implements a class for working with a Rust struct via a handle
+// to the live Rust struct on the other side of the FFI.
+//
+// There's some subtlety here, because we have to be careful not to operate on a Rust
+// struct after it has been dropped, and because we must expose a public API for freeing
+// theq Kotlin wrapper object in lieu of reliable finalizers. The core requirements are:
+//
+//   * Each instance holds an opaque handle to the underlying Rust struct.
+//     Method calls need to read this handle from the object's state and pass it in to
+//     the Rust FFI.
+//
+//   * When an instance is no longer needed, its handle should be passed to a
+//     special destructor function provided by the Rust FFI, which will drop the
+//     underlying Rust struct.
+//
+//   * Given an instance, calling code is expected to call the special
+//     `destroy` method in order to free it after use, either by calling it explicitly
+//     or by using a higher-level helper like the `use` method. Failing to do so risks
+//     leaking the underlying Rust struct.
+//
+//   * We can't assume that calling code will do the right thing, and must be prepared
+//     to handle Kotlin method calls executing concurrently with or even after a call to
+//     `destroy`, and to handle multiple (possibly concurrent!) calls to `destroy`.
+//
+//   * We must never allow Rust code to operate on the underlying Rust struct after
+//     the destructor has been called, and must never call the destructor more than once.
+//     Doing so may trigger memory unsafety.
+//
+//   * To mitigate many of the risks of leaking memory and use-after-free unsafety, a `Cleaner`
+//     is implemented to call the destructor when the Kotlin object becomes unreachable.
+//     This is done in a background thread. This is not a panacea, and client code should be aware that
+//      1. the thread may starve if some there are objects that have poorly performing
+//     `drop` methods or do significant work in their `drop` methods.
+//      2. the thread is shared across the whole library. This can be tuned by using `android_cleaner = true`,
+//         or `android = true` in the [`kotlin` section of the `uniffi.toml` file](https://mozilla.github.io/uniffi-rs/kotlin/configuration.html).
+//
+// If we try to implement this with mutual exclusion on access to the handle, there is the
+// possibility of a race between a method call and a concurrent call to `destroy`:
+//
+//    * Thread A starts a method call, reads the value of the handle, but is interrupted
+//      before it can pass the handle over the FFI to Rust.
+//    * Thread B calls `destroy` and frees the underlying Rust struct.
+//    * Thread A resumes, passing the already-read handle value to Rust and triggering
+//      a use-after-free.
+//
+// One possible solution would be to use a `ReadWriteLock`, with each method call taking
+// a read lock (and thus allowed to run concurrently) and the special `destroy` method
+// taking a write lock (and thus blocking on live method calls). However, we aim not to
+// generate methods with any hidden blocking semantics, and a `destroy` method that might
+// block if called incorrectly seems to meet that bar.
+//
+// So, we achieve our goals by giving each instance an associated `AtomicLong` counter to track
+// the number of in-flight method calls, and an `AtomicBoolean` flag to indicate whether `destroy`
+// has been called. These are updated according to the following rules:
+//
+//    * The initial value of the counter is 1, indicating a live object with no in-flight calls.
+//      The initial value for the flag is false.
+//
+//    * At the start of each method call, we atomically check the counter.
+//      If it is 0 then the underlying Rust struct has already been destroyed and the call is aborted.
+//      If it is nonzero them we atomically increment it by 1 and proceed with the method call.
+//
+//    * At the end of each method call, we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+//    * When `destroy` is called, we atomically flip the flag from false to true.
+//      If the flag was already true we silently fail.
+//      Otherwise we atomically decrement and check the counter.
+//      If it has reached zero then we destroy the underlying Rust struct.
+//
+// Astute readers may observe that this all sounds very similar to the way that Rust's `Arc<T>` works,
+// and indeed it is, with the addition of a flag to guard against multiple calls to `destroy`.
+//
+// The overall effect is that the underlying Rust struct is destroyed only when `destroy` has been
+// called *and* all in-flight method calls have completed, avoiding violating any of the expectations
+// of the underlying Rust code.
+//
+// This makes a cleaner a better alternative to _not_ calling `destroy()` as
+// and when the object is finished with, but the abstraction is not perfect: if the Rust object's `drop`
+// method is slow, and/or there are many objects to cleanup, and it's on a low end Android device, then the cleaner
+// thread may be starved, and the app will leak memory.
+//
+// In this case, `destroy`ing manually may be a better solution.
+//
+// The cleaner can live side by side with the manual calling of `destroy`. In the order of responsiveness, uniffi objects
+// with Rust peers are reclaimed:
+//
+// 1. By calling the `destroy` method of the object, which calls `rustObject.free()`. If that doesn't happen:
+// 2. When the object becomes unreachable, AND the Cleaner thread gets to call `rustObject.free()`. If the thread is starved then:
+// 3. The memory is reclaimed when the process terminates.
+//
+// [1] https://stackoverflow.com/questions/24376768/can-java-finalize-an-object-when-it-is-still-in-scope/24380219
+//
+
+
+/**
+ * Told when there is syncing to do: call `RepertoireSync::poll`.
+ */
+public interface SyncListener {
+    
+    fun `wake`()
+    
+    companion object
+}
+
+/**
+ * Told when there is syncing to do: call `RepertoireSync::poll`.
+ */
+open class SyncListenerImpl: Disposable, AutoCloseable, SyncListener
+{
+
+    @Suppress("UNUSED_PARAMETER")
+    /**
+     * @suppress
+     */
+    constructor(withHandle: UniffiWithHandle, handle: Long) {
+        this.handle = handle
+        this.cleanable = UniffiLib.CLEANER.register(this, UniffiCleanAction(handle))
+    }
+
+    /**
+     * @suppress
+     *
+     * This constructor can be used to instantiate a fake object. Only used for tests. Any
+     * attempt to actually use an object constructed this way will fail as there is no
+     * connected Rust object.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    constructor(noHandle: NoHandle) {
+        this.handle = 0
+        this.cleanable = null
+    }
+
+    protected val handle: Long
+    protected val cleanable: UniffiCleaner.Cleanable?
+
+    private val wasDestroyed = AtomicBoolean(false)
+    private val callCounter = AtomicLong(1)
+
+    /**
+     * Whether the current object has been destroyed and its reference is gone in the Rust side.
+     */
+    val uniffiIsDestroyed: Boolean get() = wasDestroyed.get()
+
+    override fun destroy() {
+        // Only allow a single call to this method.
+        // TODO: maybe we should log a warning if called more than once?
+        if (this.wasDestroyed.compareAndSet(false, true)) {
+            // This decrement always matches the initial count of 1 given at creation time.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    @Synchronized
+    override fun close() {
+        this.destroy()
+    }
+
+    internal inline fun <R> callWithHandle(block: (handle: Long) -> R): R {
+        // Check and increment the call counter, to keep the object alive.
+        // This needs a compare-and-set retry loop in case of concurrent updates.
+        do {
+            val c = this.callCounter.get()
+            if (c == 0L) {
+                throw IllegalStateException("${this.javaClass.simpleName} object has already been destroyed")
+            }
+            if (c == Long.MAX_VALUE) {
+                throw IllegalStateException("${this.javaClass.simpleName} call counter would overflow")
+            }
+        } while (! this.callCounter.compareAndSet(c, c + 1L))
+        // Now we can safely do the method call without the handle being freed concurrently.
+        try {
+            return block(this.uniffiCloneHandle())
+        } finally {
+            // This decrement always matches the increment we performed above.
+            if (this.callCounter.decrementAndGet() == 0L) {
+                cleanable?.clean()
+            }
+        }
+    }
+
+    // Use a static inner class instead of a closure so as not to accidentally
+    // capture `this` as part of the cleanable's action.
+    private class UniffiCleanAction(private val handle: Long) : Runnable {
+        override fun run() {
+            if (handle == 0.toLong()) {
+                // Fake object created with `NoHandle`, don't try to free.
+                return;
+            }
+            uniffiRustCall { status ->
+                UniffiLib.uniffi_opening_core_fn_free_synclistener(handle, status)
+            }
+        }
+    }
+
+    /**
+     * @suppress
+     */
+    fun uniffiCloneHandle(): Long {
+        if (handle == 0.toLong()) {
+            throw InternalException("uniffiCloneHandle() called on NoHandle object");
+        }
+        return uniffiRustCall() { status ->
+            UniffiLib.uniffi_opening_core_fn_clone_synclistener(handle, status)
+        }
+    }
+
+    override fun `wake`()
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_synclistener_wake(
+        it,
+        _status)
+}
+    }
+    
+    
+
+    
+
+    
+
+
+    
+    
+    /**
+     * @suppress
+     */
+    companion object
+    
+}
+
+
+
+// Put the implementation in an object so we don't pollute the top-level namespace
+internal object uniffiCallbackInterfaceSyncListener {
+    internal object `wake`: UniffiCallbackInterfaceSyncListenerMethod0 {
+        override fun callback(`uniffiHandle`: Long,`uniffiOutReturn`: Pointer,uniffiCallStatus: UniffiRustCallStatus,) {
+            val uniffiObj = FfiConverterTypeSyncListener.handleMap.get(uniffiHandle)
+            val makeCall = { ->
+                uniffiObj.`wake`(
+                )
+            }
+            val writeReturn = { _: Unit -> Unit }
+            uniffiTraitInterfaceCall(uniffiCallStatus, makeCall, writeReturn)
+        }
+    }
+
+    internal object uniffiFree: UniffiCallbackInterfaceFree {
+        override fun callback(handle: Long) {
+            FfiConverterTypeSyncListener.handleMap.remove(handle)
+        }
+    }
+
+    internal object uniffiClone: UniffiCallbackInterfaceClone {
+        override fun callback(handle: Long): Long {
+            return FfiConverterTypeSyncListener.handleMap.clone(handle)
+        }
+    }
+
+    internal var vtable = UniffiVTableCallbackInterfaceSyncListener.UniffiByValue(
+        uniffiFree,
+        uniffiClone,
+        `wake`,
+    )
+
+    // Registers the foreign callback with the Rust side.
+    // This method is generated for each callback interface.
+    internal fun register(lib: UniffiLib) {
+        lib.uniffi_opening_core_fn_init_callback_vtable_synclistener(vtable)
+    }
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeSyncListener: FfiConverter<SyncListener, Long> {
+    internal val handleMap = UniffiHandleMap<SyncListener>()
+
+    override fun lower(value: SyncListener): Long {
+        if (value is SyncListenerImpl) {
+             // Rust-implemented object.  Clone the handle and return it
+            return value.uniffiCloneHandle()
+         } else {
+            // Kotlin object, generate a new vtable handle and return that.
+            return handleMap.insert(value)
+         }
+    }
+
+    override fun lift(value: Long): SyncListener {
+        if ((value and 1.toLong()) == 0.toLong()) {
+            // Rust-generated handle, construct a new class that uses the handle to implement the
+            // interface
+            return SyncListenerImpl(UniffiWithHandle, value)
+        } else {
+            // Kotlin-generated handle, get the object from the handle map
+            return handleMap.remove(value)
+        }
+    }
+
+    override fun read(buf: ByteBuffer): SyncListener {
+        return lift(buf.getLong())
+    }
+
+    override fun allocationSize(value: SyncListener) = 8UL
+
+    override fun write(value: SyncListener, buf: ByteBuffer) {
         buf.putLong(lower(value))
     }
 }
@@ -13295,6 +14286,87 @@ public object FfiConverterTypeHttpResponse: FfiConverterRustBuffer<HttpResponse>
             FfiConverterUShort.write(value.`status`, buf)
             FfiConverterSequenceTypeHeader.write(value.`headers`, buf)
             FfiConverterByteArray.write(value.`body`, buf)
+    }
+}
+
+
+
+data class LocalFile (
+    var `name`: kotlin.String
+    , 
+    var `data`: kotlin.ByteArray
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeLocalFile: FfiConverterRustBuffer<LocalFile> {
+    override fun read(buf: ByteBuffer): LocalFile {
+        return LocalFile(
+            FfiConverterString.read(buf),
+            FfiConverterByteArray.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: LocalFile) = (
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterByteArray.allocationSize(value.`data`)
+    )
+
+    override fun write(value: LocalFile, buf: ByteBuffer) {
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterByteArray.write(value.`data`, buf)
+    }
+}
+
+
+
+data class LocalWrite (
+    var `name`: kotlin.String
+    , 
+    var `data`: kotlin.ByteArray
+    , 
+    var `created`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeLocalWrite: FfiConverterRustBuffer<LocalWrite> {
+    override fun read(buf: ByteBuffer): LocalWrite {
+        return LocalWrite(
+            FfiConverterString.read(buf),
+            FfiConverterByteArray.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: LocalWrite) = (
+            FfiConverterString.allocationSize(value.`name`) +
+            FfiConverterByteArray.allocationSize(value.`data`) +
+            FfiConverterBoolean.allocationSize(value.`created`)
+    )
+
+    override fun write(value: LocalWrite, buf: ByteBuffer) {
+            FfiConverterString.write(value.`name`, buf)
+            FfiConverterByteArray.write(value.`data`, buf)
+            FfiConverterBoolean.write(value.`created`, buf)
     }
 }
 
@@ -14899,6 +15971,145 @@ public object FfiConverterTypeSummary: FfiConverterRustBuffer<Summary> {
 
 
 
+data class SyncOp (
+    var `id`: kotlin.ULong
+    , 
+    var `kind`: SyncOpKind
+    , 
+    var `file`: kotlin.String?
+    , 
+    var `request`: HttpRequest
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeSyncOp: FfiConverterRustBuffer<SyncOp> {
+    override fun read(buf: ByteBuffer): SyncOp {
+        return SyncOp(
+            FfiConverterULong.read(buf),
+            FfiConverterTypeSyncOpKind.read(buf),
+            FfiConverterOptionalString.read(buf),
+            FfiConverterTypeHttpRequest.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: SyncOp) = (
+            FfiConverterULong.allocationSize(value.`id`) +
+            FfiConverterTypeSyncOpKind.allocationSize(value.`kind`) +
+            FfiConverterOptionalString.allocationSize(value.`file`) +
+            FfiConverterTypeHttpRequest.allocationSize(value.`request`)
+    )
+
+    override fun write(value: SyncOp, buf: ByteBuffer) {
+            FfiConverterULong.write(value.`id`, buf)
+            FfiConverterTypeSyncOpKind.write(value.`kind`, buf)
+            FfiConverterOptionalString.write(value.`file`, buf)
+            FfiConverterTypeHttpRequest.write(value.`request`, buf)
+    }
+}
+
+
+
+data class SyncOutcome (
+    var `writes`: List<LocalWrite>
+    , 
+    var `deletes`: List<kotlin.String>
+    , 
+    var `needs`: AuthNeed?
+    , 
+    var `saveState`: kotlin.Boolean
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeSyncOutcome: FfiConverterRustBuffer<SyncOutcome> {
+    override fun read(buf: ByteBuffer): SyncOutcome {
+        return SyncOutcome(
+            FfiConverterSequenceTypeLocalWrite.read(buf),
+            FfiConverterSequenceString.read(buf),
+            FfiConverterOptionalTypeAuthNeed.read(buf),
+            FfiConverterBoolean.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: SyncOutcome) = (
+            FfiConverterSequenceTypeLocalWrite.allocationSize(value.`writes`) +
+            FfiConverterSequenceString.allocationSize(value.`deletes`) +
+            FfiConverterOptionalTypeAuthNeed.allocationSize(value.`needs`) +
+            FfiConverterBoolean.allocationSize(value.`saveState`)
+    )
+
+    override fun write(value: SyncOutcome, buf: ByteBuffer) {
+            FfiConverterSequenceTypeLocalWrite.write(value.`writes`, buf)
+            FfiConverterSequenceString.write(value.`deletes`, buf)
+            FfiConverterOptionalTypeAuthNeed.write(value.`needs`, buf)
+            FfiConverterBoolean.write(value.`saveState`, buf)
+    }
+}
+
+
+
+data class SyncPoll (
+    var `ops`: List<SyncOp>
+    , 
+    var `wakeAt`: kotlin.Long?
+    , 
+    var `needs`: AuthNeed?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeSyncPoll: FfiConverterRustBuffer<SyncPoll> {
+    override fun read(buf: ByteBuffer): SyncPoll {
+        return SyncPoll(
+            FfiConverterSequenceTypeSyncOp.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterOptionalTypeAuthNeed.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: SyncPoll) = (
+            FfiConverterSequenceTypeSyncOp.allocationSize(value.`ops`) +
+            FfiConverterOptionalLong.allocationSize(value.`wakeAt`) +
+            FfiConverterOptionalTypeAuthNeed.allocationSize(value.`needs`)
+    )
+
+    override fun write(value: SyncPoll, buf: ByteBuffer) {
+            FfiConverterSequenceTypeSyncOp.write(value.`ops`, buf)
+            FfiConverterOptionalLong.write(value.`wakeAt`, buf)
+            FfiConverterOptionalTypeAuthNeed.write(value.`needs`, buf)
+    }
+}
+
+
+
 data class Today (
     var `answerCount`: kotlin.Long
     , 
@@ -15215,6 +16426,40 @@ public object FfiConverterTypeArrowStyle: FfiConverterRustBuffer<ArrowStyle> {
     override fun allocationSize(value: ArrowStyle) = 4UL
 
     override fun write(value: ArrowStyle, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+
+enum class AuthNeed {
+    
+    TOKEN,
+    SIGN_IN;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeAuthNeed: FfiConverterRustBuffer<AuthNeed> {
+    override fun read(buf: ByteBuffer) = try {
+        AuthNeed.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: AuthNeed) = 4UL
+
+    override fun write(value: AuthNeed, buf: ByteBuffer) {
         buf.putInt(value.ordinal + 1)
     }
 }
@@ -15970,6 +17215,41 @@ public object FfiConverterTypeFeedback : FfiConverterRustBuffer<Feedback>{
 
 
 
+
+enum class FileKind {
+    
+    PGN,
+    SIDECAR,
+    REVLOG;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeFileKind: FfiConverterRustBuffer<FileKind> {
+    override fun read(buf: ByteBuffer) = try {
+        FileKind.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: FileKind) = 4UL
+
+    override fun write(value: FileKind, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
 sealed class GapKind {
     
     object MissingMove : GapKind()
@@ -16089,6 +17369,7 @@ enum class HttpMethod {
     
     GET,
     POST,
+    PATCH,
     DELETE;
 
     
@@ -17203,6 +18484,185 @@ public object FfiConverterTypeStatus : FfiConverterRustBuffer<Status>{
 
 
 
+enum class SyncOpKind {
+    
+    REFRESH,
+    FIND_FOLDER,
+    CREATE_FOLDER,
+    LIST,
+    DOWNLOAD,
+    UPLOAD,
+    DELETE,
+    WATCH;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeSyncOpKind: FfiConverterRustBuffer<SyncOpKind> {
+    override fun read(buf: ByteBuffer) = try {
+        SyncOpKind.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: SyncOpKind) = 4UL
+
+    override fun write(value: SyncOpKind, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
+    }
+}
+
+
+
+
+
+sealed class SyncState {
+    
+    object Idle : SyncState()
+    
+    
+    object Syncing : SyncState()
+    
+    
+    data class Offline(
+        val `until`: kotlin.Long) : SyncState()
+        
+    {
+        
+
+        companion object
+    }
+    
+    data class Paused(
+        val `until`: kotlin.Long) : SyncState()
+        
+    {
+        
+
+        companion object
+    }
+    
+    object NeedsToken : SyncState()
+    
+    
+    object NeedsSignIn : SyncState()
+    
+    
+
+    
+
+    
+    
+
+
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeSyncState : FfiConverterRustBuffer<SyncState>{
+    override fun read(buf: ByteBuffer): SyncState {
+        return when(buf.getInt()) {
+            1 -> SyncState.Idle
+            2 -> SyncState.Syncing
+            3 -> SyncState.Offline(
+                FfiConverterLong.read(buf),
+                )
+            4 -> SyncState.Paused(
+                FfiConverterLong.read(buf),
+                )
+            5 -> SyncState.NeedsToken
+            6 -> SyncState.NeedsSignIn
+            else -> throw RuntimeException("invalid enum value, something is very wrong!!")
+        }
+    }
+
+    override fun allocationSize(value: SyncState): ULong = when(value) {
+        is SyncState.Idle -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
+        is SyncState.Syncing -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
+        is SyncState.Offline -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterLong.allocationSize(value.`until`)
+            )
+        }
+        is SyncState.Paused -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterLong.allocationSize(value.`until`)
+            )
+        }
+        is SyncState.NeedsToken -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
+        is SyncState.NeedsSignIn -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+            )
+        }
+    }
+
+    override fun write(value: SyncState, buf: ByteBuffer) {
+        when(value) {
+            is SyncState.Idle -> {
+                buf.putInt(1)
+                Unit
+            }
+            is SyncState.Syncing -> {
+                buf.putInt(2)
+                Unit
+            }
+            is SyncState.Offline -> {
+                buf.putInt(3)
+                FfiConverterLong.write(value.`until`, buf)
+                Unit
+            }
+            is SyncState.Paused -> {
+                buf.putInt(4)
+                FfiConverterLong.write(value.`until`, buf)
+                Unit
+            }
+            is SyncState.NeedsToken -> {
+                buf.putInt(5)
+                Unit
+            }
+            is SyncState.NeedsSignIn -> {
+                buf.putInt(6)
+                Unit
+            }
+        }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
+
 /**
  * @suppress
  */
@@ -18134,6 +19594,38 @@ public object FfiConverterOptionalTypeSummary: FfiConverterRustBuffer<Summary?> 
 /**
  * @suppress
  */
+public object FfiConverterOptionalTypeAuthNeed: FfiConverterRustBuffer<AuthNeed?> {
+    override fun read(buf: ByteBuffer): AuthNeed? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeAuthNeed.read(buf)
+    }
+
+    override fun allocationSize(value: AuthNeed?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeAuthNeed.allocationSize(value)
+        }
+    }
+
+    override fun write(value: AuthNeed?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeAuthNeed.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterOptionalTypeEvalSource: FfiConverterRustBuffer<EvalSource?> {
     override fun read(buf: ByteBuffer): EvalSource? {
         if (buf.get().toInt() == 0) {
@@ -18156,6 +19648,38 @@ public object FfiConverterOptionalTypeEvalSource: FfiConverterRustBuffer<EvalSou
         } else {
             buf.put(1)
             FfiConverterTypeEvalSource.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeFileKind: FfiConverterRustBuffer<FileKind?> {
+    override fun read(buf: ByteBuffer): FileKind? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeFileKind.read(buf)
+    }
+
+    override fun allocationSize(value: FileKind?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeFileKind.allocationSize(value)
+        }
+    }
+
+    override fun write(value: FileKind?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeFileKind.write(value, buf)
         }
     }
 }
@@ -18866,6 +20390,62 @@ public object FfiConverterSequenceTypeHour: FfiConverterRustBuffer<List<Hour>> {
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeLocalFile: FfiConverterRustBuffer<List<LocalFile>> {
+    override fun read(buf: ByteBuffer): List<LocalFile> {
+        val len = buf.getInt()
+        return List<LocalFile>(len) {
+            FfiConverterTypeLocalFile.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<LocalFile>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeLocalFile.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<LocalFile>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeLocalFile.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeLocalWrite: FfiConverterRustBuffer<List<LocalWrite>> {
+    override fun read(buf: ByteBuffer): List<LocalWrite> {
+        val len = buf.getInt()
+        return List<LocalWrite>(len) {
+            FfiConverterTypeLocalWrite.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<LocalWrite>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeLocalWrite.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<LocalWrite>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeLocalWrite.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeNode: FfiConverterRustBuffer<List<Node>> {
     override fun read(buf: ByteBuffer): List<Node> {
         val len = buf.getInt()
@@ -19136,6 +20716,34 @@ public object FfiConverterSequenceTypeStoredStats: FfiConverterRustBuffer<List<S
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeStoredStats.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeSyncOp: FfiConverterRustBuffer<List<SyncOp>> {
+    override fun read(buf: ByteBuffer): List<SyncOp> {
+        val len = buf.getInt()
+        return List<SyncOp>(len) {
+            FfiConverterTypeSyncOp.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<SyncOp>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeSyncOp.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<SyncOp>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeSyncOp.write(it, buf)
         }
     }
 }
@@ -19845,6 +21453,20 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
         FfiConverterMapTypeEpdTypeCard.lower(`cards`),
         FfiConverterDouble.lower(`nowSecs`),
         FfiConverterUInt.lower(`limit`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * The kind of a file the sync handles, or None for any other file.
+         */ fun `syncFileKind`(`name`: kotlin.String): FileKind? {
+            return FfiConverterOptionalTypeFileKind.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_sync_file_kind(
+    
+        
+        FfiConverterString.lower(`name`),_status)
 }
     )
     }

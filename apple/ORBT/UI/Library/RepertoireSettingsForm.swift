@@ -227,6 +227,7 @@ struct DepthSection: View {
                              selected: !customTarget && targetGames == depth.games)
                 }
                 .tint(.primary)
+                .formRowButton()
             }
             Button {
                 customTarget = true
@@ -483,6 +484,7 @@ struct PracticeModePicker: View {
                         }
                     }
                     .tint(.primary)
+                .formRowButton()
                     .accessibilityAddTraits(option == mode ? .isSelected : [])
                 }
             }

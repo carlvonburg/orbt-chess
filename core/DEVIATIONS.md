@@ -26,3 +26,12 @@ crates). Each entry says why.
   before ply 15), and skips the local engine where the cloud eval is depth 30 or more with
   every line asked for: opening positions are what this app analyses, and the owner wants no
   engine time spent where Lichess already has a deep answer.
+- **Sync merges unions, not three-way.** `sync` keeps the last remote version each device took
+  in and merges only when both sides changed since, with the merges iCloud conflict versions
+  already use (the PGN's tree union, `Sidecar::merged`, the review log by id). A line deleted
+  on one device while the other also edited the file therefore comes back, as with an iCloud
+  conflict; a deletion alone carries over. An edit wins over a deletion of the whole file on
+  another device. Drive's changes are detected by `md5Checksum` (its v3 files have no
+  `etag` field) and the upload is conditional on the download's `ETag` header with
+  `If-Match`, which Google documents for v2 only: check the 412 on the live API before
+  shipping.
