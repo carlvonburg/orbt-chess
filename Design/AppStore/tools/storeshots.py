@@ -9,8 +9,7 @@ here = os.path.dirname(os.path.abspath(__file__))
 spec = json.load(open(os.path.join(here, "shots.json")))[device]
 os.makedirs(out, exist_ok=True)
 
-W, H = {"iphone": (1320, 2868), "ipad": (2752, 2064)}[device]
-RAW_W, RAW_H = {"iphone": (1320, 2868), "ipad": (2752, 2064)}[device]
+W, H = {"iphone": (1320, 2868), "ipad": (2752, 2064), "mac": (2880, 1800)}[device]
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 COLORS = {"orange": "255,149,0", "blue": "0,122,255", "green": "52,199,89",
@@ -18,7 +17,8 @@ COLORS = {"orange": "255,149,0", "blue": "0,122,255", "green": "52,199,89",
 
 # Layout: headline block, then the device scaled to fit with a bottom margin.
 L = {"iphone": dict(head=128, sub=50, top=150, gap=70, bottom=120, bezel=26, radius=150, max_w=0.80),
-     "ipad": dict(head=120, sub=52, top=110, gap=60, bottom=90, bezel=30, radius=64, max_w=0.80)}[device]
+     "ipad": dict(head=120, sub=52, top=110, gap=60, bottom=90, bezel=30, radius=64, max_w=0.80),
+     "mac": dict(head=110, sub=50, top=90, gap=56, bottom=80, bezel=0, radius=0, max_w=0.86)}[device]
 
 CSS = """
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -45,16 +45,19 @@ p.sub { position: absolute; left: 6%%; right: 6%%; text-align: center; font-weig
 """
 
 def render(shot, idx):
+    from PIL import Image
+    global RAW_W, RAW_H
+    RAW_W, RAW_H = Image.open(os.path.join(raw, shot["file"])).size
     head, sub = L["head"], L["sub"]
     y = L["top"]
     html = []
     lines = shot["title"].split("\n")
     html.append(f'<h1 style="top:{y}px;font-size:{head}px">{"<br>".join(lines)}</h1>')
     y += round(head * 1.02 * len(lines)) + 28
-    subtitle = shot["subtitle"].replace("\n", " ") if device == "ipad" else shot["subtitle"]
+    subtitle = shot["subtitle"].replace("\n", " ") if device != "iphone" else shot["subtitle"]
     sublines = subtitle.split("\n")
     html.append(f'<p class="sub" style="top:{y}px;font-size:{sub}px">{"<br>".join(sublines)}</p>')
-    y += round(sub * 1.25 * max(1 if device == "ipad" else 2, len(sublines))) + L["gap"]
+    y += round(sub * 1.25 * max(1 if device != "iphone" else 2, len(sublines))) + L["gap"]
 
     bezel = L["bezel"]
     avail_h = H - y - L["bottom"] - 2 * bezel
@@ -64,7 +67,11 @@ def render(shot, idx):
     fx = (W - sw - 2 * bezel) / 2
     fy = y
     r = L["radius"] * s / 0.72
-    html.append(f'<div class="device" style="left:{fx}px;top:{fy}px;width:{sw + 2 * bezel}px;'
+    if device == "mac":  # the window itself: its own corners (transparent in the capture) and shadow
+        html.append(f'<img src="file://{os.path.join(raw, shot["file"])}" style="position:absolute;left:{fx}px;top:{fy}px;'
+                    f'width:{sw}px;height:{sh}px;filter:drop-shadow(0 40px 60px rgba(0,0,0,.55)) drop-shadow(0 0 1.5px rgba(255,255,255,.35))">')
+    else:
+      html.append(f'<div class="device" style="left:{fx}px;top:{fy}px;width:{sw + 2 * bezel}px;'
                 f'height:{sh + 2 * bezel}px;border-radius:{r + bezel}px">'
                 f'<img src="file://{os.path.join(raw, shot["file"])}" style="left:{bezel}px;top:{bezel}px;'
                 f'width:{sw}px;height:{sh}px;border-radius:{r}px"></div>')
@@ -84,10 +91,15 @@ def render(shot, idx):
         f.write(page)
         path = f.name
     png = os.path.join(out, f"{idx:02d}-{os.path.splitext(shot['file'])[0]}.png")
-    subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
-                    "--force-device-scale-factor=1", f"--window-size={W},{H}",
-                    "--allow-file-access-from-files", f"--screenshot={png}", f"file://{path}"],
-                   check=True, capture_output=True)
+    for attempt in range(4):  # headless Chrome now and then exits early; try again
+        r = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+                            "--force-device-scale-factor=1", f"--window-size={W},{H}",
+                            "--allow-file-access-from-files", f"--screenshot={png}", f"file://{path}"],
+                           capture_output=True)
+        if r.returncode == 0:
+            break
+    else:
+        raise RuntimeError(r.stderr.decode()[-500:])
     os.unlink(path)
     print(png)
 
@@ -128,7 +140,7 @@ def html_block(o, e):
     anchor = o.get("anchor", "center")
     tx = {"left": "0", "center": "-50%", "right": "-100%"}[anchor]
     return (f'<div class="ov" style="left:{x}px;top:{y}px;transform:translate({tx},-50%);'
-            f'{o.get("style", "")}">{o["html"].replace("{raw}", "file://" + e["raw"])}</div>')
+            f'{o.get("style", "")}">{o["html"].replace("{raw}", "file://" + e["raw"]).replace("{raw_iphone_library}", "file://" + os.path.join(os.path.dirname(raw), "iphone", "library.png"))}</div>')
 
 
 OVERLAYS = {"tile": tile, "html": html_block}
