@@ -28,7 +28,7 @@ cached locally by position (FEN without move counters), so each position is fetc
 - `core/`: the Rust core shared by every platform (chess, PGN, repertoire, coverage,
   training). No IO or platform APIs.
 - `apple/`: the iPhone, iPad and Mac app (SwiftUI) and its Swift package over the core.
-- `FUTURE.md`: what could come next (web, Android, sync).
+- `FUTURE.md`: what could come next (Android, Windows and Linux; Google Drive and Dropbox).
 - `Design/`: app icon sources.
 
 ## Building

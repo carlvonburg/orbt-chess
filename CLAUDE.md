@@ -39,7 +39,7 @@ Non-goals for now: auto gap filling, online game review, daily tasks, plans in a
 position, model games.
 
 ## Layout
-One folder per platform around a shared core (Android and web would be `android/`, `web/`).
+One folder per platform around a shared core (Android, Windows and Linux would be one Compose app in `android/`).
 - `core/` — the Rust core (Cargo workspace), the only place for domain rules:
   - `orbt-core/` — pure Rust, no IO, no async, no OS APIs; must keep building for wasm32. Modules:
     `chess` (shakmaty), `pgn` (our parser and byte-exact writer), `repertoire` (tree,
@@ -109,7 +109,7 @@ One folder per platform around a shared core (Android and web would be `android/
   `Design/` references and the App icon section of `COLORS.md`.
 - `testData/` — ignored by git: personal repertoires for testing by hand and timing
   (`ORBT_LARGE_PGN`). Never committed.
-- `FUTURE.md` — web, Android, other storage providers.
+- `FUTURE.md` — native only: Compose for Android, Windows and Linux; Google Drive and Dropbox; why no web app.
 
 ## Transpositions (see `repertoire::tree`, `RepertoireTree::merge`)
 Each position's lines are stored once. When a PGN move order reaches a position whose
