@@ -616,10 +616,12 @@ struct RepliesPanel: View {
                 let matters = { (r: ReplyInfo) in r.child != nil || r.transposesTo != nil || r.required || r.excluded }
                 let ordered = replies.filter(matters).sorted { $0.share > $1.share }
                     + replies.filter { !matters($0) }.sorted { $0.share > $1.share }
+                // The tour asks for a reply that needs an answer: the first few of those (they
+                // come first), so the highlight ends above the bottom bar.
+                let needed = min(4, ordered.prefix { $0.required && !$0.excluded }.count)
                 ForEach(Array(ordered.enumerated()), id: \.element.uci) { index, reply in
                     ReplyRow(reply: reply, node: saved?.id, model: model, eval: eval?.text(for: reply.uci))
-                        // The first few, so the highlight ends above the bottom bar.
-                        .tourTarget(.replies, part: index < 4 ? index : nil)
+                        .tourTarget(.replies, part: index < max(needed, 1) ? index : nil)
                         .builderRow()
                 }
             } else {
@@ -799,12 +801,13 @@ struct CandidatesSection: View {
                 Text(title).font(.headline).padding(.top, 8)
                     .builderRow(separator: false)
             }
+            let tourRows = tourRows(otherRows.map(\.uci))
             ForEach(Array(otherRows.enumerated()), id: \.element.uci) { index, move in
                 row(uci: move.uci, san: move.san, move: move, total: stats?.total ?? 0)
                     // The tour's answer step points at the candidates: the first few, so the
                     // highlight ends above the bottom bar. Inside the row's own modifiers:
                     // after them, the List sizes the row as a new one.
-                    .tourTarget(.candidates, part: index < 4 ? index : nil)
+                    .tourTarget(.candidates, part: index < tourRows ? index : nil)
                     .builderRow()
             }
             if loading {
@@ -822,6 +825,18 @@ struct CandidatesSection: View {
                     .builderRow(separator: false)
             }
         }
+    }
+
+    /// How many of the first candidates the tour's answer step offers: up to four, and on the
+    /// sample only those whose replies have stats (from the coverage table, so offline too),
+    /// so the line can go on until coverage is reached instead of stopping at no replies.
+    private func tourRows(_ moves: [String]) -> Int {
+        guard Tour.current == .answer, RepertoireLibrary.isSample(model.document.pgnURL) else { return 4 }
+        let position = model.position
+        let known = moves.prefix(4).prefix { uci in
+            position.playUci(uci: uci).map { model.document.stats($0.position.epd()) != nil } ?? false
+        }.count
+        return max(known, 1)
     }
 
     private var savedChildren: [PlayedMove] {
