@@ -328,14 +328,15 @@ pub fn revlog_extension() -> String {
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum SignInError {
-    #[error("{message}")]
-    Failed { message: String },
+    // `reason`, not `message`: Kotlin exceptions have their own.
+    #[error("{reason}")]
+    Failed { reason: String },
 }
 
 impl From<orbt_core::lichess::AuthError> for SignInError {
     fn from(e: orbt_core::lichess::AuthError) -> SignInError {
         SignInError::Failed {
-            message: e.to_string(),
+            reason: e.to_string(),
         }
     }
 }

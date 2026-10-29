@@ -52,11 +52,14 @@ One folder per platform around a shared core (Android, Windows and Linux would b
     (the analysis board's tree).
   - `orbt-engine/` — native only (never wasm): Stockfish 19 vendored from lichess's
     dart-multistockfish (`vendor/PATCHES.md`), built with `cc`, run on a thread over pipes
-    behind `EngineBackend` (Leela would be another backend).
+    behind `EngineBackend` (Leela would be another backend). CPU flags per target in `build.rs`:
+    dotprod and AVX2 on Apple, Stockfish's armv8 and x86-64-sse41-popcnt elsewhere.
   - `orbt-ffi/` — the UniFFI 0.32 bindings: objects (`RepertoireDoc`, `BuilderSession`,
     `DrillSession`, `Explorer`, `Engine`, `AnalysisSession`, `Position`, `Graphs`,
     `LibrarySidecar`) and the core's records and enums as remote types. Thin: conversions and
-    locking only.
+    locking only. Swift through `uniffi-bindgen-swift/`, Kotlin through `uniffi-bindgen/` and
+    `orbt-ffi/uniffi.toml` (package `org.orbtchess.orbt.core`); an error field is never named
+    `message` (Kotlin exceptions have their own).
   - Tests: `orbt-core/tests/*.rs` state the rules; `orbt-core/tests/snapshot_*.rs` are insta
     snapshot tests over the inputs in `orbt-core/tests/data/`, including every line of lichess's
     opening names as one large repertoire (`data/repertoires/`, CC0) (snapshots in
@@ -71,7 +74,8 @@ One folder per platform around a shared core (Android, Windows and Linux would b
     `git config core.hooksPath core/scripts/git-hooks`: rebuild the xcframework when a merge,
     pull, rebase or branch switch changes the core, so it never lags the committed bindings;
     a new worktree copies another worktree's xcframework when `scripts/core-fingerprint.sh`
-    matches the one `build-apple.sh` recorded, instead of building).
+    matches the one `build-apple.sh` recorded, instead of building), `scripts/build-android.sh`
+    (Android's `.so`s with the NDK, the host library for JVM tests, the Kotlin bindings).
   - `fuzz/` — cargo-fuzz targets for what the app reads (PGN, sidecar, review log, explorer
     answers, engine output), outside the workspace; `fuzz/run.sh [seconds]` runs them all (nightly).
     The core must not panic or recurse per ply on any input: the app calls it on small
@@ -95,6 +99,10 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   - `OpeningCoreRust/` — Swift package over the Rust core: the xcframework (built, not
     committed), the generated `opening_core.swift` (never edit by hand) and `Additions.swift`
     (hand-written conveniences: names, conformances; no rules).
+- `android/` — Gradle project for Android, Windows and Linux (Compose Multiplatform; the app
+  itself comes in step 3 of `FUTURE.md`). `core/` holds the generated
+  `opening_core.kt` (committed, never edited by hand), the `.so`s in `src/androidMain/jniLibs/`
+  (built, not committed) and `jvmTest/SmokeTest.kt`, the parallel of the Swift smoke test.
 - `Design/` — `AppIcon-*.svg`, flat references of the app icon; `COLORS.md`, how the app uses
   color (read before any color change).
 - The app icon is the Icon Composer document `apple/ORBT/AppIcon.icon` (one for every platform):
@@ -226,7 +234,10 @@ in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palett
      (iPad: `name=iPad Pro 13-inch (M5)`; Mac: `-destination 'platform=macOS'`, which needs a
      Mac development profile for the iCloud entitlement, or `CODE_SIGNING_ALLOWED=NO` to compile
      only).
+  4. `core/scripts/build-android.sh [--debug]` after changing the FFI (needs the Android NDK from
+     Android Studio's SDK Manager), then `./gradlew :core:jvmTest` in `android/`.
   A Claude Code hook (`.claude/hooks/check-before-commit.sh`) runs the ones a commit needs before
   every `git commit` and blocks it on failure: check.sh for `core/`, build-apple.sh for
   `core/orbt-ffi/` or Cargo.lock (the committed bindings must be up to date), the simulator build
-  for `apple/` or the FFI. A blocked commit is fixed, not bypassed.
+  for `apple/` or the FFI, build-android.sh for the FFI (the Kotlin bindings too) and the JVM
+  tests for `android/` or the FFI. A blocked commit is fixed, not bypassed.

@@ -10728,7 +10728,7 @@ enum CoverageTableError: Swift.Error, Equatable, Hashable, Foundation.LocalizedE
 
     
     
-    case Unreadable(message: String
+    case Unreadable(reason: String
     )
 
     
@@ -10760,7 +10760,7 @@ public struct FfiConverterTypeCoverageTableError: FfiConverterRustBuffer {
 
         
         case 1: return .Unreadable(
-            message: try FfiConverterString.read(from: &buf)
+            reason: try FfiConverterString.read(from: &buf)
             )
 
          default: throw UniffiInternalError.unexpectedEnumCase
@@ -10774,9 +10774,9 @@ public struct FfiConverterTypeCoverageTableError: FfiConverterRustBuffer {
 
         
         
-        case let .Unreadable(message):
+        case let .Unreadable(reason):
             writeInt(&buf, Int32(1))
-            FfiConverterString.write(message, into: &buf)
+            FfiConverterString.write(reason, into: &buf)
             
         }
     }
@@ -10803,7 +10803,7 @@ enum DocumentError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError 
 
     
     
-    case Unreadable(message: String
+    case Unreadable(reason: String
     )
 
     
@@ -10835,7 +10835,7 @@ public struct FfiConverterTypeDocumentError: FfiConverterRustBuffer {
 
         
         case 1: return .Unreadable(
-            message: try FfiConverterString.read(from: &buf)
+            reason: try FfiConverterString.read(from: &buf)
             )
 
          default: throw UniffiInternalError.unexpectedEnumCase
@@ -10849,9 +10849,9 @@ public struct FfiConverterTypeDocumentError: FfiConverterRustBuffer {
 
         
         
-        case let .Unreadable(message):
+        case let .Unreadable(reason):
             writeInt(&buf, Int32(1))
-            FfiConverterString.write(message, into: &buf)
+            FfiConverterString.write(reason, into: &buf)
             
         }
     }
@@ -12850,7 +12850,7 @@ enum SignInError: Swift.Error, Equatable, Hashable, Foundation.LocalizedError {
 
     
     
-    case Failed(message: String
+    case Failed(reason: String
     )
 
     
@@ -12882,7 +12882,7 @@ public struct FfiConverterTypeSignInError: FfiConverterRustBuffer {
 
         
         case 1: return .Failed(
-            message: try FfiConverterString.read(from: &buf)
+            reason: try FfiConverterString.read(from: &buf)
             )
 
          default: throw UniffiInternalError.unexpectedEnumCase
@@ -12896,9 +12896,9 @@ public struct FfiConverterTypeSignInError: FfiConverterRustBuffer {
 
         
         
-        case let .Failed(message):
+        case let .Failed(reason):
             writeInt(&buf, Int32(1))
-            FfiConverterString.write(message, into: &buf)
+            FfiConverterString.write(reason, into: &buf)
             
         }
     }

@@ -50,16 +50,21 @@ fn flavour(name: &str, dir: &str, function: &str, embedded_net: bool) {
     } else {
         build.define("NNUE_EMBEDDING_OFF", None);
     }
+    let apple = std::env::var("CARGO_CFG_TARGET_VENDOR").is_ok_and(|v| v == "apple");
     match std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() {
         // Every device iOS 26 and macOS 26 run on (A13, M1 and later) has the dot product.
-        Ok("aarch64") => {
+        Ok("aarch64") if apple => {
             build
                 .define("USE_NEON", "8")
                 .define("USE_NEON_DOTPROD", None)
                 .flag("-march=armv8.2-a+dotprod");
         }
+        // Android phones before ARMv8.2 lack it: Stockfish's armv8.
+        Ok("aarch64") => {
+            build.define("USE_NEON", "8").flag("-march=armv8-a");
+        }
         // The Intel Macs macOS 26 supports all have AVX2 (Stockfish's x86-64-avx2).
-        Ok("x86_64") => {
+        Ok("x86_64") if apple => {
             build
                 .define("USE_AVX2", None)
                 .define("USE_SSE41", None)
@@ -67,6 +72,18 @@ fn flavour(name: &str, dir: &str, function: &str, embedded_net: bool) {
                 .define("USE_SSE2", None)
                 .flag("-mavx2")
                 .flag("-mbmi")
+                .flag("-msse4.1")
+                .flag("-mssse3")
+                .flag("-msse2")
+                .flag("-mpopcnt");
+        }
+        // Android's x86_64 ABI guarantees SSE4.2 and POPCNT, and every PC since 2008 has them:
+        // Stockfish's x86-64-sse41-popcnt.
+        Ok("x86_64") => {
+            build
+                .define("USE_SSE41", None)
+                .define("USE_SSSE3", None)
+                .define("USE_SSE2", None)
                 .flag("-msse4.1")
                 .flag("-mssse3")
                 .flag("-msse2")

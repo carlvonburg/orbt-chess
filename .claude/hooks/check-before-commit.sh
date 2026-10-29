@@ -5,6 +5,9 @@
 #   core/orbt-ffi/ or Cargo.lock changed -> core/scripts/build-apple.sh; the committed Swift
 #                               bindings must already be up to date
 #   apple/ or the FFI changed -> the iOS simulator build
+#   core/orbt-ffi/ or Cargo.lock changed -> core/scripts/build-android.sh; the committed Kotlin
+#                               bindings must already be up to date
+#   android/ or the FFI changed -> the Kotlin bindings' JVM tests
 #   apple/ORBT/UI/ changed -> no colors by name outside Palette.swift
 # Other commands pass through untouched.
 set -uo pipefail
@@ -56,6 +59,19 @@ if touches '^core/(orbt-ffi/|Cargo\.lock)'; then
   fi
 fi
 
+android_needed=false
+touches '^android/' && android_needed=true
+if touches '^core/(orbt-ffi/|Cargo\.lock)'; then
+  android_needed=true
+  kotlin=android/core/src/commonMain/kotlin/org/orbtchess/orbt/core/opening_core.kt
+  before=$(shasum "$kotlin" 2>/dev/null)
+  core/scripts/build-android.sh --debug >>"$log" 2>&1 || fail "core/scripts/build-android.sh"
+  if [[ "$(shasum "$kotlin" 2>/dev/null)" != "$before" ]]; then
+    echo "Commit blocked: the Kotlin bindings were out of date. build-android.sh has regenerated $kotlin; review and stage it, then commit again." >&2
+    exit 2
+  fi
+fi
+
 if touches '^apple/ORBT/UI/'; then
   # Colors come from the roles in Palette.swift (Design/COLORS.md), never a hue by name.
   hues=$(grep -rnE '\.(red|green|blue|orange|yellow|purple|teal|mint|cyan|indigo|pink|brown)\b|Color\(red:|UIColor\(red:|NSColor\(red:' \
@@ -74,6 +90,13 @@ if $app_needed; then
   xcodebuild -project "$project" -scheme "${project:t:r}" \
     -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' -quiet build \
     >>"$log" 2>&1 || fail "the iOS simulator build"
+fi
+
+if $android_needed; then
+  # Needs the host library from build-android.sh (android/core/build/host).
+  [[ -d android/core/build/host ]] || core/scripts/build-android.sh --debug >>"$log" 2>&1 \
+    || fail "core/scripts/build-android.sh"
+  (cd android && ./gradlew -q :core:jvmTest) >>"$log" 2>&1 || fail "the Kotlin bindings' JVM tests"
 fi
 
 rm -f "$log"

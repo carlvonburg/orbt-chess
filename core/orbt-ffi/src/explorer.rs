@@ -81,8 +81,9 @@ pub struct FetchOutcome {
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum CoverageTableError {
-    #[error("{message}")]
-    Unreadable { message: String },
+    // `reason`, not `message`: Kotlin exceptions have their own.
+    #[error("{reason}")]
+    Unreadable { reason: String },
 }
 
 /// An offline coverage table read from its file, ready to add to the explorer. Reading
@@ -109,7 +110,7 @@ impl CoverageTableFile {
     pub fn new(bytes: Vec<u8>) -> Result<Arc<CoverageTableFile>, CoverageTableError> {
         let table =
             CoverageTable::from_bytes(bytes).map_err(|e| CoverageTableError::Unreadable {
-                message: e.to_string(),
+                reason: e.to_string(),
             })?;
         let info = CoverageTableInfo {
             database: table.database().clone(),

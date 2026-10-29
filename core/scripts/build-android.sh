@@ -1,0 +1,77 @@
+#!/bin/zsh
+# Builds the Rust core for Android and the desktop JVM and refreshes the Kotlin bindings:
+#   android/core/src/androidMain/jniLibs/<abi>/            (libopening_core.so + libc++_shared.so, not committed)
+#   android/core/build/host/                               (the host's library for JVM tests, not committed)
+#   android/core/src/commonMain/kotlin/.../opening_core.kt (generated Kotlin bindings, committed)
+# Usage: core/scripts/build-android.sh [--debug]
+# Needs the Android NDK: $ANDROID_NDK_HOME, or the newest one in the Android SDK
+# ($ANDROID_HOME, else ~/Library/Android/sdk).
+set -euo pipefail
+
+export PATH="/opt/homebrew/opt/rustup/bin:$HOME/.cargo/bin:$PATH"
+
+core_dir="${0:A:h:h}"
+repo_dir="${core_dir:h}"
+module_dir="$repo_dir/android/core"
+lib_name="libopening_core.so"
+# The app's minSdk.
+api=29
+
+profile="release"
+cargo_flags=(--release)
+if [[ "${1:-}" == "--debug" ]]; then
+  profile="debug"
+  cargo_flags=()
+fi
+
+sdk="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+ndk="${ANDROID_NDK_HOME:-}"
+if [[ -z "$ndk" ]]; then
+  ndk="$(ls -d "$sdk"/ndk/*(N) | sort -V | tail -1)"
+fi
+[[ -d "$ndk" ]] || { echo "no Android NDK found (set ANDROID_NDK_HOME)" >&2; exit 1; }
+toolchain="$ndk/toolchains/llvm/prebuilt/darwin-x86_64"
+
+# Rust target, Android ABI, clang's target triple.
+abis=(
+  "aarch64-linux-android arm64-v8a aarch64-linux-android"
+  "x86_64-linux-android x86_64 x86_64-linux-android"
+)
+
+cd "$core_dir"
+for entry in $abis; do
+  read target abi triple <<< "$entry"
+  echo "building $target ($profile)"
+  env_target="${target//-/_}"
+  upper="${(U)env_target}"
+  export "CC_$env_target=$toolchain/bin/$triple$api-clang"
+  export "CXX_$env_target=$toolchain/bin/$triple$api-clang++"
+  export "AR_$env_target=$toolchain/bin/llvm-ar"
+  export "CARGO_TARGET_${upper}_LINKER=$toolchain/bin/$triple$api-clang"
+  # Stockfish is C++: link the NDK's shared libc++, shipped next to the core.
+  CXXSTDLIB=c++_shared cargo build -q -p orbt-ffi --target "$target" $cargo_flags
+  out="$module_dir/src/androidMain/jniLibs/$abi"
+  rm -rf "$out"
+  mkdir -p "$out"
+  cp "target/$target/$profile/$lib_name" "$out/"
+  cp "$toolchain/sysroot/usr/lib/$triple/libc++_shared.so" "$out/"
+done
+
+# The host's library: JVM unit tests and, later, the desktop app.
+echo "building the host library ($profile)"
+cargo build -q -p orbt-ffi $cargo_flags
+host="$module_dir/build/host"
+rm -rf "$host"
+mkdir -p "$host"
+cp target/$profile/libopening_core.(dylib|so)(N) "$host/"
+
+# Bindings come from a library's metadata; they are the same for every target.
+generated="$core_dir/target/kotlin"
+rm -rf "$generated"
+cargo run -q -p uniffi-bindgen -- generate --library --language kotlin --no-format \
+  --out-dir "$generated" "target/aarch64-linux-android/$profile/$lib_name"
+sources="$module_dir/src/commonMain/kotlin"
+rm -rf "$sources/org/orbtchess/orbt/core"
+mkdir -p "$sources"
+cp -R "$generated/" "$sources/"
+echo "updated $module_dir"

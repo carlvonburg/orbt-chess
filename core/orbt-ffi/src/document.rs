@@ -19,8 +19,9 @@ use crate::types::Node;
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum DocumentError {
-    #[error("{message}")]
-    Unreadable { message: String },
+    // `reason`, not `message`: Kotlin exceptions have their own.
+    #[error("{reason}")]
+    Unreadable { reason: String },
 }
 
 /// Told about changes the core made by itself (stats arriving for this repertoire).
@@ -118,7 +119,7 @@ pub fn open_repertoire(
 ) -> Result<Opened, DocumentError> {
     let database = orbt_core::formats::Sidecar::decode(&sidecar)
         .map_err(|e| DocumentError::Unreadable {
-            message: e.to_string(),
+            reason: e.to_string(),
         })?
         .database;
     let (doc, changes) = explorer
@@ -126,7 +127,7 @@ pub fn open_repertoire(
             Repertoire::open(&pgn_text, &sidecar, defaults, stats)
         })
         .map_err(|e| DocumentError::Unreadable {
-            message: e.to_string(),
+            reason: e.to_string(),
         })?;
     let document = Arc::new(RepertoireDoc {
         inner: Mutex::new(doc),

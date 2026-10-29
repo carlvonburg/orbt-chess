@@ -1,0 +1,4 @@
+# Kotlin bindings (Android and the desktop JVM); Swift takes its names from build-apple.sh.
+[bindings.kotlin]
+package_name = "org.orbtchess.orbt.core"
+cdylib_name = "opening_core"

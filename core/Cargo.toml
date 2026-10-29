@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["orbt-core", "orbt-engine", "orbt-ffi", "uniffi-bindgen-swift"]
+members = ["orbt-core", "orbt-engine", "orbt-ffi", "uniffi-bindgen", "uniffi-bindgen-swift"]
 
 [workspace.package]
 version = "0.1.0"

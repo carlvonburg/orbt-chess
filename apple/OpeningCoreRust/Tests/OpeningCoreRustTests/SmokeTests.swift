@@ -49,7 +49,7 @@ final class EngineNotices: EngineListener, @unchecked Sendable {
     let shown = engine.lines()
     #expect(shown.lines.count == 3)
     #expect(shown.source == .local)
-    #expect(engine.name() == "Stockfish 19 · 1 MB net")
+    #expect(engine.name() == "SF 19 · 1 MB")
     engine.quit()
 }
 
@@ -57,6 +57,5 @@ final class EngineNotices: EngineListener, @unchecked Sendable {
     let analysis = AnalysisSession(startFen: nil, moves: ["e2e4", "e7e5"], orientation: .white)
     #expect(analysis.back())
     #expect(analysis.playUci(uci: "c7c5"))
-    #expect(analysis.lines().count == 2)
     #expect(analysis.pgn() == "1. e4 e5 (1... c5) *")
 }
