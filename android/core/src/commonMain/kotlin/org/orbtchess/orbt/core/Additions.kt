@@ -42,3 +42,30 @@ val SchedTiming.dayStart: Long get() = nextDayAt - 86_400
 
 /** Milliseconds since 1970, the core's timestamps. */
 fun nowTimestamp(): Timestamp = System.currentTimeMillis()
+
+// MARK: Chess
+
+/** Square from file and rank (0-based), as `BoardSquare(file:rank:)` in Swift. */
+fun boardSquare(file: Int, rank: Int): BoardSquare = BoardSquare((rank * 8 + file).toUByte())
+
+val BoardSquare.file: Int get() = index.toInt() % 8
+val BoardSquare.rank: Int get() = index.toInt() / 8
+val BoardSquare.isLight: Boolean get() = (file + rank) % 2 == 1
+
+/** Algebraic notation, e.g. "e4". */
+val BoardSquare.notation: String get() = "${'a' + file}${rank + 1}"
+
+val PlayedMove.from: BoardSquare get() = boardSquare(uci[0] - 'a', uci[1] - '1')
+val PlayedMove.to: BoardSquare get() = boardSquare(uci[2] - 'a', uci[3] - '1')
+
+val Side.opposite: Side get() = if (this == Side.WHITE) Side.BLACK else Side.WHITE
+val Side.title: String get() = if (this == Side.WHITE) "White" else "Black"
+
+// MARK: Training
+
+/** Every due move: new, learning and to review. */
+val Counts.total: Long get() = new + learning + review
+
+/** Moves studied at least once (Anki's learning, young and mature). */
+val Progress.studied: Long get() = learning + young + mature
+val Progress.notStudied: Long get() = cards - studied

@@ -18,10 +18,21 @@ kotlin {
             implementation(project(":core"))
             implementation(compose.runtime)
             implementation(compose.foundation)
-            implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.materialIconsExtended)
             implementation(compose.components.resources)
+            // The navigation shell: bottom bar on phones, list-detail panes on wide windows,
+            // window size classes, back handling, the shell's state kept across rotation.
+            implementation("org.jetbrains.compose.material3:material3:1.9.0")
+            implementation("org.jetbrains.compose.material3:material3-adaptive-navigation-suite:1.9.0")
+            implementation("org.jetbrains.compose.material3.adaptive:adaptive:1.2.0")
+            implementation("org.jetbrains.compose.material3.adaptive:adaptive-layout:1.2.0")
+            implementation("org.jetbrains.compose.material3.adaptive:adaptive-navigation:1.2.0")
+            implementation("org.jetbrains.compose.ui:ui-backhandler:1.9.0")
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.9.5")
+            // Material color schemes from a seed (the app colors other than Multicolor) and
+            // custom colors harmonized with them, as Android's own dynamic color makes them.
+            implementation("com.materialkolor:material-kolor:4.0.5")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
             implementation("com.squareup.okhttp3:okhttp:4.12.0")
             // The stats cache: SQLite with its own build of the library on every platform.

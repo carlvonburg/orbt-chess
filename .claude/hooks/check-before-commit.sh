@@ -9,6 +9,7 @@
 #                               bindings must already be up to date
 #   android/ or the FFI changed -> the JVM tests (bindings, app)
 #   apple/ORBT/UI/ changed -> no colors by name outside Palette.swift
+#   android/app/src/*/ui/ changed -> no colors by name outside ui/theme
 # Other commands pass through untouched.
 set -uo pipefail
 
@@ -78,6 +79,17 @@ if touches '^apple/ORBT/UI/'; then
     apple/ORBT/UI --include='*.swift' | grep -v '/Palette.swift:')
   if [[ -n "$hues" ]]; then
     echo "Commit blocked: colors by name in the UI. Use a role from apple/ORBT/UI/Components/Palette.swift (see Design/COLORS.md):" >&2
+    echo "$hues" >&2
+    exit 2
+  fi
+fi
+
+if touches '^android/app/src/.*/ui/'; then
+  # The same rule on Android and the desktop: hues only in ui/theme (Design/COLORS.md).
+  hues=$(grep -rnE 'Color\(0x|Color\((red|green|blue) *=|Color\.(Red|Green|Blue|Yellow|Cyan|Magenta|Gray|LightGray|DarkGray|Black|White)\b|Hues\.' \
+    android/app/src --include='*.kt' | grep '/ui/' | grep -v '/ui/theme/')
+  if [[ -n "$hues" ]]; then
+    echo "Commit blocked: colors by name in the UI. Use a ThemeColor role or MaterialTheme.colorScheme (android/app/src/commonMain/kotlin/org/orbtchess/orbt/ui/theme, Design/COLORS.md):" >&2
     echo "$hues" >&2
     exit 2
   fi
