@@ -38,7 +38,7 @@
    "file": "study-correct.png",
    "color": "green",
    "title": "Learn it",
-   "subtitle": "Spaced repetition with Anki's scheduler,\none move at a time",
+   "subtitle": "Spaced repetition with FSRS,\none move at a time",
    "overlays": [
     {
      "kind": "tile",
@@ -75,7 +75,7 @@
    "file": "analysis.png",
    "color": "indigo",
    "title": "Analyse it",
-   "subtitle": "One tap from any position: Lichess cloud evals,\nor Stockfish on your iPhone",
+   "subtitle": "One tap from any position: cloud evals,\nor the engine on your iPhone",
    "overlays": [
     {
      "kind": "html",
@@ -179,7 +179,7 @@
    "file": "study-correct.png",
    "color": "green",
    "title": "Learn it",
-   "subtitle": "Spaced repetition with Anki's scheduler,\none move at a time",
+   "subtitle": "Spaced repetition with FSRS,\none move at a time",
    "overlays": [
     {
      "kind": "tile",
@@ -216,7 +216,7 @@
    "file": "analysis.png",
    "color": "indigo",
    "title": "Analyse it",
-   "subtitle": "One tap from any position: Lichess cloud evals,\nor Stockfish on your iPad",
+   "subtitle": "One tap from any position: cloud evals,\nor the engine on your iPad",
    "overlays": [
     {
      "kind": "html",
@@ -303,7 +303,7 @@
    "file": "study-correct.png",
    "color": "green",
    "title": "Learn it",
-   "subtitle": "Spaced repetition with Anki's scheduler,\none move at a time",
+   "subtitle": "Spaced repetition with FSRS,\none move at a time",
    "overlays": [
     {
      "kind": "tile",
@@ -335,7 +335,7 @@
    "file": "analysis.png",
    "color": "indigo",
    "title": "Analyse it",
-   "subtitle": "One tap from any position: Lichess cloud evals, or Stockfish on your Mac",
+   "subtitle": "One tap from any position: cloud evals, or the engine on your Mac",
    "overlays": [
     {
      "kind": "html",
