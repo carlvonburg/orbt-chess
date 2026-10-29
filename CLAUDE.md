@@ -34,7 +34,6 @@ Requirements:
   (append-only, one Anki revlog entry per line).
 - Each repertoire chooses its coverage database (masters, or Lichess speeds + rating
   buckets) and its coverage target ("cover moves seen once in N games").
-- Chessbook screenshots only show how that app works; its layout is not a template.
 
 Non-goals for now: auto gap filling, online game review, daily tasks, plans in a
 position, model games.

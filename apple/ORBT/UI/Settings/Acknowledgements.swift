@@ -5,7 +5,7 @@ enum AppLinks {
     static let website = URL(string: "https://orbtchess.org")!
     static let privacy = URL(string: "https://orbtchess.org/privacy")!
     static let support = URL(string: "https://orbtchess.org/support")!
-    static let source = URL(string: "https://github.com/GimliTheWise/chess-opening-trainer")!
+    static let source = URL(string: "https://github.com/carlvonburg/orbt-chess")!
 
     static var version: String {
         let info = Bundle.main.infoDictionary
