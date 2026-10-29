@@ -289,7 +289,7 @@ p { margin: 0 0 1em; }
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 32px;
 }
 .tile h3 { margin-bottom: 8px; }
-.tile > .group, .tile > .import-race { margin-top: auto; }
+.tile > .group { margin-top: auto; }
 .tile-text p:not(.kicker) { color: var(--text-2); margin: 0; max-width: 52ch; }
 .crop-phone { width: min(300px, 80%); margin: auto auto -32px; height: 420px; overflow: hidden; }
 .crop-phone img { border: 7px solid var(--frame); border-bottom: 0; border-radius: 38px 38px 0 0; box-shadow: var(--shadow); }
@@ -302,26 +302,10 @@ p { margin: 0 0 1em; }
 }
 @media (max-width: 560px) { .tile { padding: 24px; border-radius: 22px; } .crop-phone { margin-bottom: -24px; height: 360px; } }
 
-/* Offline coverage: the same import with and without the tables */
-.import-race { display: grid; gap: 22px; margin-top: auto; background: var(--surface-2); border-radius: 22px; padding: 22px; }
-.race-file { display: flex; align-items: center; gap: 14px; }
-.race-file b { display: block; }
-.race-file span:not(.doc) { font-size: 14px; color: var(--text-2); }
-.race-row { display: grid; gap: 8px; }
-.race-label { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; font-weight: 600; }
-.race-time { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.race-time.slow { color: var(--text-2); }
-.race-time.fast { color: var(--orange); }
-.race-bar { display: block; height: 10px; border-radius: 5px; background: var(--track); overflow: hidden; }
-.race-bar s { display: block; height: 100%; border-radius: 5px; transform-origin: 0 50%; }
-.race-bar s.slow { width: 6%; background: var(--text-3); }
-.race-bar s.fast { width: 100%; background: var(--orange); }
-.race-note { font-size: 13px; color: var(--text-3); }
-.race-dbs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.race-dbs li { background: var(--surface); border-radius: 14px; padding: 10px 12px; display: grid; gap: 2px; }
-.race-dbs b { font-size: 15px; }
-.race-dbs span { font-size: 12px; color: var(--text-3); line-height: 1.3; }
-@media (max-width: 480px) { .race-dbs { grid-template-columns: 1fr; } .race-label { flex-direction: column; gap: 2px; } }
+/* Coverage databases: the progress card's style, one band per rating range, one picked */
+.db-bands { display: flex; gap: 3px; }
+.db-bands i { flex: 1; height: 6px; border-radius: 3px; background: var(--track); }
+.db-bands i.on { background: var(--orange); }
 
 /* Grouped lists: the app's inset grouped style */
 .group { width: 100%; font-variant-numeric: tabular-nums; }
@@ -410,6 +394,5 @@ details p:last-child { margin-bottom: 0; }
     @keyframes rise { from { transform: translateY(48px) scale(0.98); } to { transform: none; } }
     .bar s { animation: grow linear both; animation-timeline: view(); animation-range: entry 30% cover 45%; }
     @keyframes grow { from { transform: scaleX(0.15); } to { transform: none; } }
-    .race-bar s.fast { animation: grow linear both; animation-timeline: view(); animation-range: entry 40% cover 40%; }
   }
 }

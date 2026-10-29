@@ -68,10 +68,10 @@
     <section class="marquee" aria-label="At a glance">
       <div class="marquee-track">
         <ul>
-          <li>Lichess opening explorer</li><li>Stockfish on your device</li><li>Anki's FSRS scheduler</li><li>Offline coverage tables</li><li>PGN files in iCloud Drive</li><li>No account needed</li><li>AGPL-3.0</li>
+          <li>Lichess opening explorer</li><li>Stockfish on your device</li><li>Anki's FSRS scheduler</li><li>Coverage by rating, offline</li><li>PGN files in iCloud Drive</li><li>No account needed</li><li>AGPL-3.0</li>
         </ul>
         <ul aria-hidden="true">
-          <li>Lichess opening explorer</li><li>Stockfish on your device</li><li>Anki's FSRS scheduler</li><li>Offline coverage tables</li><li>PGN files in iCloud Drive</li><li>No account needed</li><li>AGPL-3.0</li>
+          <li>Lichess opening explorer</li><li>Stockfish on your device</li><li>Anki's FSRS scheduler</li><li>Coverage by rating, offline</li><li>PGN files in iCloud Drive</li><li>No account needed</li><li>AGPL-3.0</li>
         </ul>
       </div>
     </section>
@@ -190,28 +190,24 @@
 
         <article class="tile t-offline">
           <div class="tile-text">
-            <p class="kicker todo">Offline coverage</p>
-            <h3>Coverage the moment you import</h3>
-            <p>Statistics for the common lines are a small one-time download: Lichess Blitz or Rapid games by rating, or over-the-board Classical games since 2000. No waiting on Lichess, even for a repertoire with thousands of moves.</p>
+            <p class="kicker todo">Coverage databases</p>
+            <h3>Statistics from players at your level</h3>
+            <p>Pick a time control and rating range. Its statistics download once, then coverage works instantly and offline.</p>
           </div>
-          <div class="import-race" role="img" aria-label="Importing a repertoire of 3,800 moves. Asking Lichess one position at a time takes 136 requests, about 8 minutes. With the offline tables the gaps show right away.">
-            <div class="race-file"><span class="doc">PGN</span><div><b>Imported repertoire</b><span>3,800 moves · target 1 in 400</span></div></div>
-            <div class="race-row">
-              <div class="race-label"><span>Asking Lichess, one position at a time</span><span class="race-time slow">≈ 8 min</span></div>
-              <i class="race-bar"><s class="slow"></s></i>
-              <span class="race-note">136 requests, paced to Lichess's limit</span>
-            </div>
-            <div class="race-row">
-              <div class="race-label"><span>With the offline tables</span><span class="race-time fast">Right away</span></div>
-              <i class="race-bar"><s class="fast"></s></i>
-              <span class="race-note">Answered on your device</span>
-            </div>
-            <ul class="race-dbs" aria-label="Offline tables">
-              <li><b>Blitz</b><span>Lichess · by rating</span></li>
-              <li><b>Rapid</b><span>Lichess · by rating</span></li>
-              <li><b>Classical</b><span>Over the board · FIDE</span></li>
-            </ul>
-          </div>
+          <div class="focus"><div class="app-card progress" role="img" aria-label="Coverage databases. Lichess games, by Lichess rating: Blitz and Rapid, 11 ranges each from under 600 to 2500 and up; Blitz 1600 to 1799 picked. Over-the-board games, by FIDE rating: Classical, 6 ranges from 1400 to 2500 and up.">
+  <div class="pg-label">Lichess games</div>
+  <div class="pg-card">
+    <div class="pg-top"><b>Blitz</b><span class="gap">1600–1799</span></div>
+    <div class="db-bands"><i></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+    <div class="pg-row"><b>Rapid</b><span class="muted">&lt;600 – 2500+</span></div>
+    <div class="db-bands"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="pg-label">Over-the-board games</div>
+  <div class="pg-card">
+    <div class="pg-top"><b>Classical</b><span class="muted">1400 – 2500+</span></div>
+    <div class="db-bands"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+</div></div>
         </article>
 
         <article class="tile t-ipad">
