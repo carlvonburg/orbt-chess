@@ -138,7 +138,8 @@ struct LibraryView: View {
                     show(entry.id, then: [])
                 }
             }
-            .presentationSizing(.form)
+            // The form size, as tall as each page's content (the window permitting).
+            .presentationSizing(.form.fitted(horizontal: false, vertical: true))
         }
         .fileImporter(isPresented: $showImport, allowedContentTypes: [.pgn, .plainText]) { result in
             do {
@@ -1200,6 +1201,7 @@ struct RepertoireSettingsSheet: View {
             Form {
                 Section("Name") {
                     TextField("Name", text: $name)
+                        .labelsHidden()
                         .wordsAutocapitalization()
                         .onChange(of: name) { name = name.safeRepertoireName }
                 }
@@ -1214,6 +1216,7 @@ struct RepertoireSettingsSheet: View {
                     }
                 }
             }
+            .formStyle(.grouped)
             .navigationTitle("Repertoire Settings")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1260,6 +1263,7 @@ struct StudyOptionsSheet: View {
             Form {
                 DailyPracticeSection(draft: $practice)
             }
+            .formStyle(.grouped)
             .navigationTitle("\(document.name) Options")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
