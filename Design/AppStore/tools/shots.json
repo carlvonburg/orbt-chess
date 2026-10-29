@@ -308,31 +308,26 @@
     {
      "kind": "tile",
      "box": [
-      1850,
-      1217,
-      2035,
-      1402
+      1858,
+      1224,
+      2045,
+      1411
      ],
      "zoom": 2.3,
-     "check": true
+     "check": true,
+     "check_at": [
+      0.8,
+      0.2
+     ]
     },
     {
      "kind": "html",
      "screen": [
-      0.19,
-      0.143
+      0.175,
+      0.175
      ],
      "anchor": "left",
-     "html": "<div class='card' style='padding:36px 54px 36px 40px;display:flex;flex-direction:column;gap:22px;white-space:nowrap;zoom:0.95'><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#007aff;width:100px;text-align:center'>8</span><div><div style='font-size:46px;font-weight:700'>New</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Moves you haven't studied yet</div></div></div><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#ff3b30;width:100px;text-align:center'>0</span><div><div style='font-size:46px;font-weight:700'>Learning</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Moves you're learning, shown again within minutes</div></div></div><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#34c759;width:100px;text-align:center'>15</span><div><div style='font-size:46px;font-weight:700'>To Review</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Learned moves due today</div></div></div></div>"
-    },
-    {
-     "kind": "html",
-     "screen": [
-      0.21,
-      0.38
-     ],
-     "anchor": "left",
-     "html": "<div class='card' style='display:flex;align-items:center;gap:30px;padding:36px 56px 36px 38px;white-space:nowrap;zoom:1.12'><div style='flex:none;width:104px;height:104px;border-radius:50%;background:#34c759;display:flex;align-items:center;justify-content:center'><svg viewBox='0 0 24 24' width='66' height='66'><path d='M5 12.5l4.2 4.2L19 7' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/></svg></div><div><div style='font-size:68px;font-weight:700;color:#28a745;line-height:1.05'>Correct</div><div style='font-size:44px;color:#8a8a8e;font-weight:500'>4\u2026Be7</div></div></div>"
+     "html": "<div class='card' style='padding:36px 54px 36px 40px;display:flex;flex-direction:column;gap:22px;white-space:nowrap;zoom:0.78'><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#007aff;width:100px;text-align:center'>8</span><div><div style='font-size:46px;font-weight:700'>New</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Moves you haven't studied yet</div></div></div><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#ff3b30;width:100px;text-align:center'>0</span><div><div style='font-size:46px;font-weight:700'>Learning</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Moves you're learning, shown again within minutes</div></div></div><div style='display:flex;align-items:center;gap:30px'><span style='font-size:84px;font-weight:700;color:#34c759;width:100px;text-align:center'>15</span><div><div style='font-size:46px;font-weight:700'>To Review</div><div style='font-size:32px;color:#8a8a8e;font-weight:500'>Learned moves due today</div></div></div><div style='display:flex;align-items:center;gap:22px;margin-top:6px;padding-top:24px;border-top:2px solid #ececf0'><div style='flex:none;width:80px;height:80px;border-radius:50%;background:#34c759;display:flex;align-items:center;justify-content:center'><svg viewBox='0 0 24 24' width='52' height='52'><path d='M5 12.5l4.2 4.2L19 7' fill='none' stroke='white' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'/></svg></div><span style='font-size:56px;font-weight:700;color:#28a745'>Correct</span><span style='font-size:42px;color:#8a8a8e;font-weight:500'>4\u2026Be7</span></div></div>"
     }
    ]
   },
