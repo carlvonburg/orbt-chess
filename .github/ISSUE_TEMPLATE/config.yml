@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security problem
+    url: https://github.com/carlvonburg/orbt-chess/security/advisories/new
+    about: Report it privately, not as an issue (see SECURITY.md).
+  - name: Support
+    url: https://orbtchess.org/support/
+    about: Questions about using the app.
