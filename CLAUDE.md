@@ -42,7 +42,7 @@ position, model games.
 ## Layout
 One folder per platform around a shared core (Android and web would be `android/`, `web/`).
 - `core/` — the Rust core (Cargo workspace), the only place for domain rules:
-  - `ot-core/` — pure Rust, no IO, no async, no OS APIs; must keep building for wasm32. Modules:
+  - `orbt-core/` — pure Rust, no IO, no async, no OS APIs; must keep building for wasm32. Modules:
     `chess` (shakmaty), `pgn` (our parser and byte-exact writer), `repertoire` (tree,
     transpositions, merge), `explorer` (stats, sans-IO request queue, cache, offline coverage tables and their
     manifest), `coverage`,
@@ -51,17 +51,18 @@ One folder per platform around a shared core (Android and web would be `android/
     outline/search), `builder`, `drill` (state machines behind the two main screens), `lichess`
     (PKCE, analysis URL, cloud evals), `engine` (UCI, which evaluation to show), `analysis`
     (the analysis board's tree).
-  - `ot-engine/` — native only (never wasm): Stockfish 19 vendored from lichess's
+  - `orbt-engine/` — native only (never wasm): Stockfish 19 vendored from lichess's
     dart-multistockfish (`vendor/PATCHES.md`), built with `cc`, run on a thread over pipes
     behind `EngineBackend` (Leela would be another backend).
-  - `ot-ffi/` — the UniFFI 0.32 bindings: objects (`RepertoireDoc`, `BuilderSession`,
+  - `orbt-ffi/` — the UniFFI 0.32 bindings: objects (`RepertoireDoc`, `BuilderSession`,
     `DrillSession`, `Explorer`, `Engine`, `AnalysisSession`, `Position`, `Graphs`,
     `LibrarySidecar`) and the core's records and enums as remote types. Thin: conversions and
     locking only.
-  - Tests: `ot-core/tests/*.rs` state the rules; `ot-core/tests/snapshot_*.rs` are insta
-    snapshot tests over the inputs in `ot-core/tests/data/` and `testData/` (snapshots in
+  - Tests: `orbt-core/tests/*.rs` state the rules; `orbt-core/tests/snapshot_*.rs` are insta
+    snapshot tests over the inputs in `orbt-core/tests/data/`, including every line of lichess's
+    opening names as one large repertoire (`data/repertoires/`, CC0) (snapshots in
     `tests/snapshots/`; after an intended change, `cargo insta review` or
-    `INSTA_UPDATE=always cargo test`, then read the diff). `DEVIATIONS.md` lists where the core
+    `INSTA_UPDATE=always cargo test`, then read the diff). Never commit a personal repertoire. `DEVIATIONS.md` lists where the core
     differs from Anki/lichess.
   - `rust-toolchain.toml` pins the Rust version, components and targets; `deny.toml` configures
     cargo-deny (licenses compatible with AGPL-3.0-or-later, RustSec advisories, bans, sources).
@@ -107,8 +108,8 @@ One folder per platform around a shared core (Android and web would be `android/
   `"/Applications/Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool" apple/ORBT/AppIcon.icon --export-image --output-file out.png --platform iOS --rendition Default --width 1024 --height 1024 --scale 1`
   (renditions Default, Dark, TintedLight, TintedDark, ClearLight, ClearDark), then update the
   `Design/` references and the App icon section of `COLORS.md`.
-- `testData/` — real repertoires for testing by hand and timing (`OT_LARGE_PGN`): a 3.8k-move
-  Berlin and a 1.2 MB Chessbook Semi-Slav export.
+- `testData/` — ignored by git: personal repertoires for testing by hand and timing
+  (`ORBT_LARGE_PGN`). Never committed.
 - `FUTURE.md` — web, Android, other storage providers.
 
 ## Transpositions (see `repertoire::tree`, `RepertoireTree::merge`)
@@ -123,7 +124,7 @@ A repertoire is one game: when a PGN holds several games, those from the standar
 are merged into one tree (the first game's tags kept, the others' dropped) and saved as one
 game; games from another position (SetUp/FEN) are kept verbatim and written back unchanged.
 
-## Coverage model (see `core/ot-core/src/coverage`)
+## Coverage model (see `core/orbt-core/src/coverage`)
 Reach probability p: root 1; own moves keep p; opponent move multiplies by its share at
 the parent (move games / position games). Opponent reply required when p·f ≥ 1/N and the
 position has ≥ minGames games (fixed by the database, what its tables are built for: 10 for
@@ -134,7 +135,7 @@ the EPD before the move, so they apply at every transposition) are never require
 saved anyway is covered as usual. Values are cached per node and updated incrementally: an edit
 recomputes only the edited subtree and its ancestors.
 
-## Training (see `core/ot-core/src/training/anki`, ported from Anki's rslib scheduler)
+## Training (see `core/orbt-core/src/training/anki`, ported from Anki's rslib scheduler)
 Follow Anki's code, not invented rules. A card is a position where it's your move (one per
 EPD). States, learning steps (1m 10m, relearn 10m), FSRS-6, fuzz, day rollover at 4 AM,
 learn-ahead 20 min, queue order and daily limits are Anki's. The defaults (Anki's preset) are
@@ -152,7 +153,7 @@ The UI follows Anki's deck list → deck overview → deck options, and says "mo
 "cards". Progress uses Anki's card-count groups (learning, young, mature), not a percentage.
 Study All runs repertoires one after another (Anki would mix a parent deck's reviews).
 
-## Analysis board and engine (see `core/ot-core/src/engine`, `analysis`; `core/ot-engine`)
+## Analysis board and engine (see `core/orbt-core/src/engine`, `analysis`; `core/orbt-engine`)
 Analysis opens from Build and Study on the position on the board, with its move history. Its
 tree is never saved: leaving it for Build puts the path to the selected move on the builder as
 its draft (saved moves followed, nothing written, `Builder::set_line`); leaving it for Study
@@ -185,9 +186,9 @@ theme (slate tinted toward the app color); its arrows, hint and ✓ (Multicolor:
 in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palette.swift`.
 
 ## Conventions
-- Rules belong in `ot-core`, with Rust tests; Swift never re-implements them. When the app
-  needs a new rule or query, add it to the core and expose it through `ot-ffi`.
-- `ot-core` takes time as arguments (`SchedTiming`, unix ms) and returns what to do
+- Rules belong in `orbt-core`, with Rust tests; Swift never re-implements them. When the app
+  needs a new rule or query, add it to the core and expose it through `orbt-ffi`.
+- `orbt-core` takes time as arguments (`SchedTiming`, unix ms) and returns what to do
   (`Changes` with save delays, explorer `Fetch`es); the platform runs the IO and timers.
 - App code is MainActor by default (`SWIFT_DEFAULT_ACTOR_ISOLATION`). Core objects are called
   from the main actor; foreign callbacks (`DocumentListener`, `ExplorerListener`) hop to it.
@@ -228,5 +229,5 @@ in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palett
      only).
   A Claude Code hook (`.claude/hooks/check-before-commit.sh`) runs the ones a commit needs before
   every `git commit` and blocks it on failure: check.sh for `core/`, build-apple.sh for
-  `core/ot-ffi/` or Cargo.lock (the committed bindings must be up to date), the simulator build
+  `core/orbt-ffi/` or Cargo.lock (the committed bindings must be up to date), the simulator build
   for `apple/` or the FFI. A blocked commit is fixed, not bypassed.

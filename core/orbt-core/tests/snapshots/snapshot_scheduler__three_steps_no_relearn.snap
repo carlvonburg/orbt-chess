@@ -1,0 +1,32 @@
+---
+source: orbt-core/tests/snapshot_scheduler.rs
+expression: out
+---
+0: day 100 +28800s Good from New
+   next: again learning 1m | hard learning 330s | good learning 10m | easy review 9d
+   card: Learn/Learn due 1708669495 ivl 0 ease 0 reps 1 lapses 0 left 2 s 2.3065 d 2.1181
+   revlog: Learning ease 3 ivl -600 last 0 factor 224 time 4000
+1: day 100 +29495s Good from Learn
+   next: again learning 1m | hard learning 10m | good learning 100m | easy review 5d
+   card: Learn/Learn due 1708675718 ivl 0 ease 0 reps 2 lapses 0 left 1 s 2.3065 d 2.1112
+   revlog: Learning ease 3 ivl -6000 last -600 factor 223 time 5000
+2: day 100 +35718s Good from Learn
+   next: again learning 1m | hard learning 100m | good review 2d | easy review 4d
+   card: Review/Review due 102 ivl 2 ease 2500 reps 3 lapses 0 left 0 s 2.3065 d 2.1043
+   revlog: Learning ease 3 ivl 2 last -6000 factor 223 time 6000
+3: day 102 +28922s Good from Review
+   next: again review 1d | hard review 8d | good review 11d | easy review 19d
+   card: Review/Review due 113 ivl 11 ease 2500 reps 4 lapses 0 left 0 s 10.9778 d 2.0975
+   revlog: Review ease 3 ivl 11 last 2 factor 222 time 60000
+4: day 113 +28983s Again from Review
+   next: again review 2d | hard review 36d | good review 51d | easy review 83d
+   card: Review/Review due 115 ivl 2 ease 2300 reps 5 lapses 1 left 0 s 1.5397 d 7.3877
+   revlog: Review ease 1 ivl 2 last 11 factor 810 time 8000
+5: day 115 +29044s Good from Review
+   next: again relearning 38295s | hard review 5d | good review 8d | easy review 11d
+   card: Review/Review due 123 ivl 8 ease 2300 reps 6 lapses 1 left 0 s 4.8823 d 7.3756
+   revlog: Review ease 3 ivl 8 last 2 factor 808 time 9000
+6: day 123 +29105s Good from Review
+   next: again review 1d | hard review 10d | good review 14d | easy review 22d
+   card: Review/Review due 137 ivl 14 ease 2300 reps 7 lapses 1 left 0 s 15.0879 d 7.3634
+   revlog: Review ease 3 ivl 14 last 8 factor 807 time 10000

@@ -2,14 +2,14 @@
 
 use std::collections::HashMap;
 
-use ot_core::chess::{Epd, Side};
-use ot_core::coverage::{CoverageEngine, CoverageSettings};
-use ot_core::document::{Repertoire, StudyDefaults, outline_children, search};
-use ot_core::drill::{Drill, DrillMode};
-use ot_core::explorer::{ExplorerMove, ExplorerStats};
-use ot_core::formats::{Sidecar, Timestamp};
-use ot_core::repertoire::RepertoireTree;
-use ot_core::training::anki::SchedTiming;
+use orbt_core::chess::{Epd, Side};
+use orbt_core::coverage::{CoverageEngine, CoverageSettings};
+use orbt_core::document::{Repertoire, StudyDefaults, outline_children, search};
+use orbt_core::drill::{Drill, DrillMode};
+use orbt_core::explorer::{ExplorerMove, ExplorerStats};
+use orbt_core::formats::{Sidecar, Timestamp};
+use orbt_core::repertoire::RepertoireTree;
+use orbt_core::training::anki::SchedTiming;
 
 /// A small repertoire with variations and a transposition.
 pub const PGN: &str = "[Event \"Fuzz\"]\n\n1. e4 e5 (1... c5 2. Nf3 d6 (2... Nc6 3. d4) 3. d4) 2. Nf3 Nc6 3. Bb5 a6 (3... Nf6 4. O-O) 4. Ba4 Nf6 5. O-O *\n\n[Event \"Two\"]\n\n1. Nf3 Nc6 2. e4 e5 3. Bb5 *\n";

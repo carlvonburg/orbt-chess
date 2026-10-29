@@ -2,8 +2,8 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use ot_core::chess::ChessPosition;
-use ot_core::engine::{EngineKind, EngineSearch, EngineSettings};
+use orbt_core::chess::ChessPosition;
+use orbt_core::engine::{EngineKind, EngineSearch, EngineSettings};
 
 fuzz_target!(|data: &[u8]| {
     let text = String::from_utf8_lossy(data);

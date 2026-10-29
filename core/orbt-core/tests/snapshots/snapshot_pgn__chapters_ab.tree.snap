@@ -1,0 +1,11 @@
+---
+source: orbt-core/tests/snapshot_pgn.rs
+expression: tree_text(&tree)
+---
+5 nodes, 0 merged transpositions
+header: Event=A
+0 root ply 0 -> [1, 3] | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -
+1 e4 ply 1 <- 0 -> [2] | rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -
+2 e5 ply 2 <- 1 | rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -
+3 d4 ply 1 <- 0 -> [4] | rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -
+4 d5 ply 2 <- 3 | rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -

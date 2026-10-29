@@ -1,7 +1,0 @@
----
-source: ot-core/tests/snapshot_pgn.rs
-expression: "format!(\"added {added}\\n{}\", edit_text(&local))"
----
-added 2
-  1:e4 2:e5 3:Nf3 4:c5 5:Nf3 6:e6 7:d4
-  1. e4 e5 (1... c5 2. Nf3) (1... e6 2. d4) 2. Nf3 *

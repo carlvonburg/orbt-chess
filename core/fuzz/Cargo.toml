@@ -2,7 +2,7 @@
 #   cargo +nightly fuzz run pgn
 # Kept outside the core's workspace, so `cargo build`/`check.sh` never build them.
 [package]
-name = "ot-fuzz"
+name = "orbt-fuzz"
 version = "0.0.0"
 edition = "2024"
 license = "AGPL-3.0-or-later"
@@ -15,7 +15,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-ot-core = { path = "../ot-core" }
+orbt-core = { path = "../orbt-core" }
 
 [profile.release]
 debug = 1

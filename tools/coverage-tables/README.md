@@ -1,7 +1,7 @@
 # Coverage tables: Classical (over-the-board) builder
 
 Builds the app's Classical offline coverage tables (OTCB v2, read by
-`core/ot-core/src/explorer/table.rs`) from Lumbra's Gigabase OTB, a PGN of ~12M games licensed
+`core/orbt-core/src/explorer/table.rs`) from Lumbra's Gigabase OTB, a PGN of ~12M games licensed
 CC BY-NC 4.0: credit "Lumbra's Gigabase", no commercial use without a licence
 (business@lumbrasgigabase.com). The Blitz and Rapid tables come from Lichess games; both kinds
 share the format in `src/otcb.rs`.

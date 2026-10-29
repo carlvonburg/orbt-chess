@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["ot-core", "ot-engine", "ot-ffi", "uniffi-bindgen-swift"]
+members = ["orbt-core", "orbt-engine", "orbt-ffi", "uniffi-bindgen-swift"]
 
 [workspace.package]
 version = "0.1.0"
@@ -10,8 +10,8 @@ license = "AGPL-3.0-or-later"
 publish = false
 
 [workspace.dependencies]
-ot-core = { path = "ot-core" }
-ot-engine = { path = "ot-engine" }
+orbt-core = { path = "orbt-core" }
+orbt-engine = { path = "orbt-engine" }
 shakmaty = "0.30.2"
 fsrs = "6.6.2"
 rand = { version = "0.10.3", default-features = false, features = ["std_rng"] }
@@ -32,6 +32,6 @@ codegen-units = 1
 opt-level = 3
 strip = "debuginfo"
 
-# The snapshot tests run the real repertoires in testData/; unoptimized that is slow.
+# The snapshot tests run large repertoires; unoptimized that is slow.
 [profile.test]
 opt-level = 2

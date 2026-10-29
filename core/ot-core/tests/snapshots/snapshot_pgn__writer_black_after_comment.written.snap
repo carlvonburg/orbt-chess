@@ -1,5 +1,0 @@
----
-source: ot-core/tests/snapshot_pgn.rs
-expression: "pgn::write_games(&games)"
----
-1. e4 { best } 1... e5 *

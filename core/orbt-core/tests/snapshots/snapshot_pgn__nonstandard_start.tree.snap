@@ -1,0 +1,7 @@
+---
+source: orbt-core/tests/snapshot_pgn.rs
+expression: tree_text(&tree)
+---
+1 nodes, 0 merged transpositions
+other game: "Endgame"
+0 root ply 0 | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -

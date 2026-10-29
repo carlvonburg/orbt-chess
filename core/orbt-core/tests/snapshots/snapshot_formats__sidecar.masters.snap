@@ -1,0 +1,23 @@
+---
+source: orbt-core/tests/snapshot_formats.rs
+expression: text(&s)
+---
+{
+  "color": "white",
+  "database": {
+    "masters": {}
+  },
+  "id": "6F9619FF-8B86-D011-B42D-00C04FC964FF",
+  "settingsModified": "2026-09-21T14:13:20.250Z",
+  "studyCards": {},
+  "summary": {
+    "cardCount": 0,
+    "completion": 1.0,
+    "configKey": "masters|1000|5|white",
+    "dueCount": 0,
+    "gapCount": 0,
+    "matureCount": 0
+  },
+  "targetGames": 1000,
+  "version": 2
+}

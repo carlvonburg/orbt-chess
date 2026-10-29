@@ -2,7 +2,7 @@
 # Claude Code PreToolUse hook (Bash): before a `git commit`, runs the checks for what the
 # commit changes, and blocks the commit (exit 2) if one fails.
 #   core/ changed            -> core/scripts/check.sh
-#   core/ot-ffi/ or Cargo.lock changed -> core/scripts/build-apple.sh; the committed Swift
+#   core/orbt-ffi/ or Cargo.lock changed -> core/scripts/build-apple.sh; the committed Swift
 #                               bindings must already be up to date
 #   apple/ or the FFI changed -> the iOS simulator build
 #   apple/ORBT/UI/ changed -> no colors by name outside Palette.swift
@@ -44,7 +44,7 @@ fi
 
 app_needed=false
 touches '^apple/' && app_needed=true
-if touches '^core/(ot-ffi/|Cargo\.lock)'; then
+if touches '^core/(orbt-ffi/|Cargo\.lock)'; then
   app_needed=true
   bindings=apple/OpeningCoreRust/Sources/OpeningCoreRust/opening_core.swift
   acknowledgements=apple/ORBT/UI/Settings/Acknowledgements.json

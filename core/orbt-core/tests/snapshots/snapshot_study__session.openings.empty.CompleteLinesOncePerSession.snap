@@ -1,0 +1,43 @@
+---
+source: orbt-core/tests/snapshot_study.rs
+expression: text
+---
+daily:
++0s Counts { new: 5, learning: 0, review: 0 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3
+  roles: 1 introduce, 3 introduce, 5 introduce, 7 introduce, 9 introduce
+  1 Good: Learn/Learn due +755s ivl 0
+  3 Good: Learn/Learn due +744s ivl 0
+  5 Good: Learn/Learn due +714s ivl 0
+  7 Again: Learn/Learn due +88s ivl 0
+  9 Good: Learn/Learn due +782s ivl 0
++35s Counts { new: 0, learning: 5, review: 0 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3
+  roles: 1 queued, 3 queued, 5 queued, 7 queued, 9 queued
+  1 Good: Review/Review due 102 ivl 2
+  3 Good: Review/Review due 102 ivl 2
+  5 Good: Review/Review due 102 ivl 2
+  7 Good: Learn/Learn due +666s ivl 0
+  9 Good: Review/Review due 102 ivl 2
++70s Counts { new: 0, learning: 1, review: 0 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 (from 7)
+  roles: 1 auto, 3 auto, 5 auto, 7 queued
+  7 Good: Review/Review due 101 ivl 1
+11 answers, 5 positions answered, 5 played; counts Counts { new: 0, learning: 0, review: 0 }
+
+branch [Nh3]:
++0s Counts { new: 5, learning: 0, review: 0 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3
+  roles: 1 introduce, 3 introduce, 5 introduce, 7 introduce, 9 introduce
+  1 Good filtered: Learn/Learn due +755s ivl 0
+  3 Good filtered: Learn/Learn due +744s ivl 0
+  5 Good filtered: Learn/Learn due +714s ivl 0
+  7 Again filtered: Learn/Learn due +88s ivl 0
+  9 Good filtered: Learn/Learn due +782s ivl 0
++35s Counts { new: 0, learning: 5, review: 0 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3
+  roles: 1 queued, 3 queued, 5 queued, 7 queued, 9 queued
+  1 Good filtered: Review/Review due 102 ivl 2
+  3 Good filtered: Review/Review due 102 ivl 2
+  5 Good filtered: Review/Review due 102 ivl 2
+  7 Good filtered: Learn/Learn due +666s ivl 0
+  9 Good filtered: Review/Review due 102 ivl 2
++70s Counts { new: 0, learning: 1, review: 0 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 (from 7)
+  roles: 1 auto, 3 auto, 5 auto, 7 queued
+  7 Good filtered: Review/Review due 101 ivl 1
+11 answers, 5 positions answered, 5 played; counts Counts { new: 0, learning: 0, review: 0 }

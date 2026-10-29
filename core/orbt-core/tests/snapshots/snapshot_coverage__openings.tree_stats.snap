@@ -1,0 +1,33 @@
+---
+source: orbt-core/tests/snapshot_coverage.rs
+expression: "summary(&tree, &e)"
+---
+root: completion 0.160786 gaps 15 (mass 0.247714) pending 11
+nodes by status: {"alternative": 7940, "belowtarget": 69, "gap": 15, "pending": 11, "required": 80, "unknown": 78}
+15 gaps, the biggest:
+  your move after [a3 a5 b4] mass 0.073219 seen every 14
+  your move after [h3 h5 g4] mass 0.043975 seen every 23
+  your move after [c3] mass 0.023747 seen every 42
+  your move after [h4 d5 Rh3] mass 0.019401 seen every 52
+  your move after [f3 e5 Kf2] mass 0.016223 seen every 62
+  your move after [b3 d5 Ba3] mass 0.014512 seen every 69
+  your move after [b4 d5 Bb2 Nf6 Nf3] mass 0.012934 seen every 77
+  your move after [f4 Nf6 Nf3 g6 b4] mass 0.008019 seen every 125
+  your move after [b4 d5 Nf3] mass 0.00776 seen every 129
+  your move after [c4 e6 Nf3] mass 0.006749 seen every 148
+  your move after [f3 e5 e4 Nf6 Bc4] mass 0.006356 seen every 157
+  your move after [f4 Nf6 c4] mass 0.004811 seen every 208
+  your move after [d4 Nf6 c4] mass 0.003908 seen every 256
+  your move after [f3 e5 e4 Nf6 Nc3] mass 0.003178 seen every 315
+  your move after [e4 d5 b3] mass 0.002922 seen every 342
+11 pending positions, the most reached:
+  0.183231 rn1qkbnr/ppp2ppp/8/3pp3/5P2/6Pb/PPPPP2P/RNBQKB1R w KQkq -
+  0.064892 rnbqkbnr/ppp2ppp/3p4/4p3/2P5/4P3/PP1P1PPP/RNBQKBNR w KQkq -
+  0.032446 rnbqkbnr/p1pp1ppp/8/1p2p3/2B5/4P3/PPPP1PPP/RNBQK1NR w KQkq -
+  0.029288 rnbqkbnr/pppppp1p/6p1/8/8/3P4/PPP1PPPP/RNBQKBNR w KQkq -
+  0.021609 rnbqkb1r/pppp1ppp/5n2/4p3/8/2N1P3/PPPP1PPP/R1BQKBNR w KQkq -
+  0.020053 rnbqkbnr/pppp1ppp/8/4p3/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -
+  0.012882 rnbqk1nr/pppp1ppp/8/4p3/8/b2P4/PPP1PPPP/R1BQKBNR w KQkq -
+  0.0097 rnbqkbnr/pp2pppp/8/2pp4/3P3P/8/PPP1PPP1/RNBQKBNR w KQkq -
+  0.007528 rnbqkbnr/pp1ppp1p/6p1/2p5/8/4PN2/PPPP1PPP/RNBQKB1R w KQkq -
+  0.00487 rnbqkb1r/ppp1pppp/5n2/6N1/4p3/8/PPPP1PPP/RNBQKB1R w KQkq -

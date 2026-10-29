@@ -2,7 +2,7 @@
 """Writes the app's Acknowledgements.json: every crate linked into the app with its license text.
 
 Usage: acknowledgements.py [--check]
-Run by build-apple.sh. Lists the crates `ot-ffi` links on the Apple targets (normal
+Run by build-apple.sh. Lists the crates `orbt-ffi` links on the Apple targets (normal
 dependencies, no proc macros or build scripts) with the license file each one ships. Shared
 texts: the repo's LICENSE (AGPL-3.0), Stockfish's GPL-3.0 and scripts/licenses/ (MPL-2.0,
 CC BY-NC 4.0); a crate that ships no license file names one of them (`shared`). --check exits 1 when the file
@@ -16,7 +16,7 @@ OUT = os.path.join(REPO, "apple/ORBT/UI/Settings/Acknowledgements.json")
 TARGETS = ["aarch64-apple-ios", "aarch64-apple-darwin"]
 # For "A OR B", the license whose text we show, first match wins.
 PREFERRED = ["MIT", "BSD-3-Clause", "BSD-2-Clause", "ISC", "Zlib", "Apache-2.0", "MPL-2.0", "Unlicense"]
-SHARED = {"AGPL-3.0": "LICENSE", "GPL-3.0": "core/ot-engine/vendor/stockfish/Copying.txt",
+SHARED = {"AGPL-3.0": "LICENSE", "GPL-3.0": "core/orbt-engine/vendor/stockfish/Copying.txt",
           "MPL-2.0": "core/scripts/licenses/MPL-2.0.txt",
           # Lumbra's Gigabase, the source of the Classical coverage tables (not a crate).
           "CC-BY-NC-4.0": "core/scripts/licenses/CC-BY-NC-4.0.txt"}
@@ -29,7 +29,7 @@ def cargo(*args):
 def linked_packages():
     ids = set()
     for target in TARGETS:
-        tree = cargo("tree", "-p", "ot-ffi", "-e", "normal,no-proc-macro", "--target", target,
+        tree = cargo("tree", "-p", "orbt-ffi", "-e", "normal,no-proc-macro", "--target", target,
                      "--prefix", "none", "--format", "{p}", "--locked")
         for line in tree.splitlines():
             name, version = line.split()[:2]

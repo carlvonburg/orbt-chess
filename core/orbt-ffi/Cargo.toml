@@ -1,0 +1,20 @@
+[package]
+name = "orbt-ffi"
+description = "UniFFI bindings for orbt-core (Swift now, Kotlin later)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "opening_core"
+# staticlib for the xcframework, cdylib so uniffi-bindgen can read the metadata.
+crate-type = ["lib", "staticlib", "cdylib"]
+
+[dependencies]
+orbt-core.workspace = true
+orbt-engine.workspace = true
+thiserror.workspace = true
+serde_json.workspace = true
+uniffi.workspace = true

@@ -1,0 +1,43 @@
+---
+source: orbt-core/tests/snapshot_coverage.rs
+expression: text
+---
+root: completion 0.545554 gaps 2 (mass 0.256076) pending 0
+nodes by status: {"alternative": 2, "gap": 2, "required": 17}
+2 gaps, the biggest:
+  your move after [e4 c5 c3 d5 exd5 Qxd5 d4] mass 0.142328 seen every 7
+  your move after [e4 c5 d4 cxd4 c3] mass 0.113748 seen every 9
+0 pending positions, the most reached:
+
+0 root: required reach 1 completion 0.545554 gaps 2 (mass 0.256076) pending 0 seen every 1
+    e4 share 0.833333 reach 0.833333 completion 0.545554 games 1000 required, child 1
+1 e4: required reach 0.833333 completion 0.545554 gaps 2 (mass 0.256076) pending 0 seen every 1
+2 c5: required reach 0.833333 completion 0.545554 gaps 2 (mass 0.256076) pending 0 seen every 1
+    Nf3 share 0.491884 reach 0.409903 completion 1 games 1000 required, child 3
+    c3 share 0.245942 reach 0.204952 completion 0 games 500 required, child 11
+    d4 share 0.163797 reach 0.136498 completion 0 games 333 required, child 16
+3 Nf3: required reach 0.409903 completion 1 gaps 0 (mass 0) pending 0 seen every 2
+4 d6: required reach 0.409903 completion 1 gaps 0 (mass 0) pending 0 seen every 2
+    d4 share 0.833333 reach 0.341586 completion 1 games 1000 required, child 5
+5 d4: required reach 0.341586 completion 1 gaps 0 (mass 0) pending 0 seen every 3
+6 cxd4: required reach 0.341586 completion 1 gaps 0 (mass 0) pending 0 seen every 3
+    Nxd4 share 0.833333 reach 0.284655 completion 1 games 1000 required, child 7
+7 Nxd4: required reach 0.284655 completion 1 gaps 0 (mass 0) pending 0 seen every 4
+8 Nf6: required reach 0.284655 completion 1 gaps 0 (mass 0) pending 0 seen every 4
+    Nc3 share 0.833333 reach 0.237213 completion 1 games 1000 required, child 9
+9 Nc3: required reach 0.237213 completion 1 gaps 0 (mass 0) pending 0 seen every 4
+10 a6: required reach 0.237213 completion 1 gaps 0 (mass 0) pending 0 seen every 4
+11 c3: required reach 0.204952 completion 0 gaps 1 (mass 0.142328) pending 0 seen every 5
+12 d5: required reach 0.204952 completion 0 gaps 1 (mass 0.142328) pending 0 seen every 5
+    exd5 share 0.833333 reach 0.170793 completion 0 games 1000 required, child 13
+13 exd5: required reach 0.170793 completion 0 gaps 1 (mass 0.142328) pending 0 seen every 6
+14 Qxd5: required reach 0.170793 completion 0 gaps 1 (mass 0.142328) pending 0 seen every 6
+    d4 share 0.833333 reach 0.142328 completion 0 games 1000 required, child 15
+15 d4: gap reach 0.142328 completion 0 gaps 1 (mass 0.142328) pending 0 seen every 7
+16 d4: required reach 0.136498 completion 0 gaps 1 (mass 0.113748) pending 0 seen every 7
+17 cxd4: required reach 0.136498 completion 0 gaps 1 (mass 0.113748) pending 0 seen every 7
+    c3 share 0.833333 reach 0.113748 completion 0 games 1000 required, child 18
+18 c3: gap reach 0.113748 completion 0 gaps 1 (mass 0.113748) pending 0 seen every 9
+19 Nc6: alternative reach 0.409903 completion 0 gaps 0 (mass 0) pending 0 seen every 2 (not counted)
+    Bb5 share 0.833333 reach 0.341586 completion 0 games 1000 required, child 20
+20 Bb5: alternative reach 0.341586 completion 0 gaps 0 (mass 0) pending 0 seen every 3 (not counted)

@@ -2,8 +2,8 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use ot_core::formats::revlog;
-use ot_core::statistics::{GraphRange, GraphsContext};
+use orbt_core::formats::revlog;
+use orbt_core::statistics::{GraphRange, GraphsContext};
 
 fuzz_target!(|data: &[u8]| {
     let entries = revlog::decode(data);
@@ -11,7 +11,7 @@ fuzz_target!(|data: &[u8]| {
     assert_eq!(revlog::decode(&encoded), entries, "encode round trips");
     let merged = revlog::merged(&entries, &entries);
     let offset = i64::from(data.first().copied().unwrap_or(0)) * 900 - 12 * 3600;
-    let graphs = GraphsContext::new(Vec::new(), 3, 1, merged, ot_fuzz::timing(), offset);
+    let graphs = GraphsContext::new(Vec::new(), 3, 1, merged, orbt_fuzz::timing(), offset);
     let _ = graphs.today();
     let _ = graphs.card_counts();
     let _ = graphs.future_due();

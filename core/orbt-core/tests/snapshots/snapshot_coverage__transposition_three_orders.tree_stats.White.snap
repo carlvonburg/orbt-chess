@@ -1,0 +1,33 @@
+---
+source: orbt-core/tests/snapshot_coverage.rs
+expression: text
+---
+root: completion 1 gaps 0 (mass 0) pending 0
+nodes by status: {"alternative": 9, "required": 8}
+0 gaps, the biggest:
+0 pending positions, the most reached:
+
+0 root: required reach 1 completion 1 gaps 0 (mass 0) pending 0 seen every 1
+1 d4: required reach 1 completion 1 gaps 0 (mass 0) pending 0 seen every 1
+    d5 share 0.833333 reach 0.833333 completion 1 games 1000 required, child 2
+2 d5: required reach 0.833333 completion 1 gaps 0 (mass 0) pending 0 seen every 1
+3 c4: required reach 0.833333 completion 1 gaps 0 (mass 0) pending 0 seen every 1
+    c6 share 0.833333 reach 0.694444 completion 1 games 1000 required, child 4
+4 c6: required reach 0.694444 completion 1 gaps 0 (mass 0) pending 0 seen every 1
+5 Nf3: required reach 0.694444 completion 1 gaps 0 (mass 0) pending 0 seen every 1
+    Nf6 share 0.833333 reach 0.578704 completion 1 games 1000 required, child 6
+6 Nf6: required reach 0.578704 completion 1 gaps 0 (mass 0) pending 0 seen every 2
+7 Nc3: required reach 0.578704 completion 1 gaps 0 (mass 0) pending 0 seen every 2
+8 Nf3: alternative reach 0.833333 completion 0 gaps 0 (mass 0) pending 0 seen every 1 (not counted)
+    Nf6 share 0.833333 reach 0.694444 completion 0 games 1000 required, child 9
+9 Nf6: alternative reach 0.694444 completion 0 gaps 0 (mass 0) pending 0 seen every 1 (not counted)
+10 c4: alternative reach 0.694444 completion 0 gaps 0 (mass 0) pending 0 seen every 1 (not counted)
+    c6 share 0.833333 reach 0.578704 completion 0 games 1000 required, child 11
+11 c6: alternative reach 0.578704 completion 0 gaps 0 (mass 0) pending 0 seen every 2 (not counted)
+12 Bf4: alternative reach 0.833333 completion 0 gaps 0 (mass 0) pending 0 seen every 1 (not counted)
+    Nf6 share 0.833333 reach 0.694444 completion 0 games 1000 required, child 13
+13 Nf6: alternative reach 0.694444 completion 0 gaps 0 (mass 0) pending 0 seen every 1 (not counted)
+14 Nf3: alternative reach 0.694444 completion 0 gaps 0 (mass 0) pending 0 seen every 1 (not counted)
+    c6 share 0.833333 reach 0.578704 completion 0 games 1000 required, child 15
+15 c6: alternative reach 0.578704 completion 0 gaps 0 (mass 0) pending 0 seen every 2 (not counted)
+16 c4: alternative reach 0.578704 completion 0 gaps 0 (mass 0) pending 0 seen every 2 (not counted)

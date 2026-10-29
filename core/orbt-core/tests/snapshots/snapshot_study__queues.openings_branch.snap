@@ -1,0 +1,17 @@
+---
+source: orbt-core/tests/snapshot_study.rs
+expression: out
+---
+branch [Nh3 d5], 4 cards
+day 100: counts Counts { new: 2, learning: 1, review: 0 }
+    learning [Nh3 d5 g3]
+    new [Nh3 d5 g3 e5 f4]
+    new [Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O]
+day 101: counts Counts { new: 2, learning: 1, review: 0 }
+    learning [Nh3 d5 g3]
+    new [Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O]
+    new [Nh3 d5 g3 e5 f4]
+day 5000: counts Counts { new: 2, learning: 1, review: 0 }
+    learning [Nh3 d5 g3]
+    new [Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O]
+    new [Nh3 d5 g3 e5 f4]

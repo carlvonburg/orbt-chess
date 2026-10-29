@@ -33,7 +33,7 @@ cd "$core_dir"
 for target in $targets; do
   echo "building $target ($profile)"
   IPHONEOS_DEPLOYMENT_TARGET=26.0 MACOSX_DEPLOYMENT_TARGET=26.0 \
-    cargo build -q -p ot-ffi --target "$target" $cargo_flags
+    cargo build -q -p orbt-ffi --target "$target" $cargo_flags
 done
 
 work="$core_dir/target/apple"

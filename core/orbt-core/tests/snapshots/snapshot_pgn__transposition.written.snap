@@ -1,0 +1,6 @@
+---
+source: orbt-core/tests/snapshot_pgn.rs
+expression: "pgn::write_games(&games)"
+---
+1. d4 d5 2. c4 (2. Nf3 Nf6 3. c4 c6 4. Nc3 (4. e3 Bf5) 4... e6) 2... c6 3. Nf3
+Nf6 4. Nc3 e6 *
