@@ -1,0 +1,264 @@
+---
+source: orbt-core/tests/snapshot_coverage.rs
+expression: text
+---
+root: completion 0 gaps 4 (mass 1.) pending 0
+nodes by status: {"alternative": 32, "belowtarget": 22, "required": 1, "unknown": 35}
+4 gaps, the biggest:
+  reply Nc3 after [] mass 0.299598 seen every 3
+  reply Na3 after [] mass 0.298257 seen every 3
+  reply Nf3 after [] mass 0.208445 seen every 5
+  reply Nh3 after [] mass 0.1937 seen every 5
+0 pending positions, the most reached:
+
+0 root: required reach 1 completion 0 gaps 4 (mass 1.) pending 0 seen every 1
+    Na3 share 0.298257 reach 0.298257 completion 0 games 445 required
+    Nc3 share 0.299598 reach 0.299598 completion 0 games 447 required
+    Nf3 share 0.208445 reach 0.208445 completion 0 games 311 required
+    Nh3 share 0.1937 reach 0.1937 completion 0 games 289 required
+    e4 share 0 reach 0 completion 1 games 0 child 1
+    d4 share 0 reach 0 completion 1 games 0 child 39
+1 e4: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+2 e5: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+    h4 share 0.34332 reach 0 completion 0 games 424 
+    h3 share 0.266397 reach 0 completion 0 games 329 
+    Be2 share 0.242915 reach 0 completion 0 games 300 
+    Bd3 share 0.147368 reach 0 completion 0 games 182 
+    Nf3 share 0 reach 0 completion 1 games 0 child 3
+3 Nf3: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+4 Nc6: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+    d4 share 0.349462 reach 0 completion 0 games 520 
+    d3 share 0.280242 reach 0 completion 0 games 417 
+    Qe2 share 0.245968 reach 0 completion 0 games 366 
+    Nc3 share 0.124328 reach 0 completion 0 games 185 
+    Bb5 share 0 reach 0 completion 1 games 0 child 5
+5 Bb5: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+6 a6: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+    a3 share 0.28318 reach 0 completion 0 games 431 
+    a4 share 0.31406 reach 0 completion 0 games 478 
+    g3 share 0.246386 reach 0 completion 0 games 375 
+    g4 share 0.156373 reach 0 completion 0 games 238 
+    Ba4 share 0 reach 0 completion 1 games 0 child 7
+7 Ba4: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+8 Nf6: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+    d3 share 0.422918 reach 0 completion 0 games 513 
+    d4 share 0.265458 reach 0 completion 0 games 322 
+    a3 share 0.182193 reach 0 completion 0 games 221 
+    Ng5 share 0.129431 reach 0 completion 0 games 157 
+    O-O share 0 reach 0 completion 1 games 0 child 9
+9 O-O: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+10 Be7: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+    Bxc6 share 0.352941 reach 0 completion 0 games 468 
+    Bb3 share 0.324284 reach 0 completion 0 games 430 
+    Bb5 share 0.223228 reach 0 completion 0 games 296 
+    Qe2 share 0.099548 reach 0 completion 0 games 132 
+    Re1 share 0 reach 0 completion 1 games 0 child 11
+11 Re1: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+12 b5: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+    Qe2 share 0.39607 reach 0 completion 0 games 524 
+    Nh4 share 0.298564 reach 0 completion 0 games 395 
+    Ng5 share 0.204837 reach 0 completion 0 games 271 
+    Nxe5 share 0.100529 reach 0 completion 0 games 133 
+    Bb3 share 0 reach 0 completion 1 games 0 child 13
+13 Bb3: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+14 d6: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+    Nxe5 share 0.362839 reach 0 completion 0 games 455 
+    Nd4 share 0.377193 reach 0 completion 0 games 473 
+    Ng5 share 0.160287 reach 0 completion 0 games 201 
+    Nh4 share 0.099681 reach 0 completion 0 games 125 
+    c3 share 0 reach 0 completion 1 games 0 child 15
+15 c3: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+16 O-O: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+    c4 share 0.327345 reach 0 completion 0 games 492 
+    Qc2 share 0.264138 reach 0 completion 0 games 397 
+    Qe2 share 0.214904 reach 0 completion 0 games 323 
+    Bd5 share 0.193613 reach 0 completion 0 games 291 
+    h3 share 0 reach 0 completion 1 games 0 child 17
+17 h3: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+18 Nb8: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+19 d4: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+20 Nbd7: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    dxe5 share 0.431767 reach 0 completion 0 games 579 
+    d5 share 0.314691 reach 0 completion 0 games 422 
+    Bh6 share 0.169277 reach 0 completion 0 games 227 
+    Be3 share 0.084265 reach 0 completion 0 games 113 
+    Nbd2 share 0 reach 0 completion 0 games 0 child 21
+21 Nbd2: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+22 Bb7: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    g4 share 0.393274 reach 0 completion 0 games 573 
+    g3 share 0.266301 reach 0 completion 0 games 388 
+    Qe2 share 0.19698 reach 0 completion 0 games 287 
+    Qc2 share 0.143445 reach 0 completion 0 games 209 
+    Bc2 share 0 reach 0 completion 0 games 0 child 23
+23 Bc2: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+24 Re8: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    Qe2 share 0.449025 reach 0 completion 0 games 599 
+    Kf1 share 0.290855 reach 0 completion 0 games 388 
+    Kh1 share 0.175412 reach 0 completion 0 games 234 
+    Kh2 share 0.084708 reach 0 completion 0 games 113 
+    Nf1 share 0 reach 0 completion 0 games 0 child 25
+25 Nf1: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+26 Bf8: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+27 Ng3: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+28 g6: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    Kh1 share 0.323446 reach 0 completion 0 games 458 
+    Kh2 share 0.286017 reach 0 completion 0 games 405 
+    Kf1 share 0.20339 reach 0 completion 0 games 288 
+    b4 share 0.187147 reach 0 completion 0 games 265 
+    a4 share 0 reach 0 completion 0 games 0 child 29
+29 a4: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+30 c5: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    Rb1 share 0.308127 reach 0 completion 0 games 436 
+    Ra2 share 0.250177 reach 0 completion 0 games 354 
+    Ra3 share 0.233922 reach 0 completion 0 games 331 
+    Qd2 share 0.207774 reach 0 completion 0 games 294 
+    d5 share 0 reach 0 completion 0 games 0 child 31
+31 d5: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+32 c4: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+33 Bg5: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+34 h6: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+35 Be3: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+36 Nc5: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    Nh5 share 0.412181 reach 0 completion 0 games 582 
+    Nh1 share 0.332861 reach 0 completion 0 games 470 
+    Nf1 share 0.144476 reach 0 completion 0 games 204 
+    Nf5 share 0.110482 reach 0 completion 0 games 156 
+    Qd2 share 0 reach 0 completion 0 games 0 child 37
+37 Qd2: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+38 h5: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    Bb1 share 0.367331 reach 0 completion 0 games 479 
+    Bb3 share 0.310583 reach 0 completion 0 games 405 
+    Bd3 share 0.183282 reach 0 completion 0 games 239 
+    Bd1 share 0.138804 reach 0 completion 0 games 181 
+39 d4: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+40 d5: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+    Nd2 share 0.330872 reach 0 completion 0 games 493 
+    Nc3 share 0.320134 reach 0 completion 0 games 477 
+    Na3 share 0.222148 reach 0 completion 0 games 331 
+    b3 share 0.126846 reach 0 completion 0 games 189 
+    c4 share 0 reach 0 completion 1 games 0 child 41
+41 c4: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+42 Nf6: alternative reach 0 completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    a3 share 0.354565 reach 0 completion 0 games 501 
+    a4 share 0.23213 reach 0 completion 0 games 328 
+    Nc3 share 0.27247 reach 0 completion 0 games 385 
+    Na3 share 0.140835 reach 0 completion 0 games 199 
+    c4 share 0 reach 0 completion 0 games 0 child 43
+43 c4: alternative reach 0 completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+44 g6: alternative reach 0 completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    d5 share 0.322161 reach 0 completion 0 games 471 
+    Nc3 share 0.286594 reach 0 completion 0 games 419 
+    Na3 share 0.260602 reach 0 completion 0 games 381 
+    Nd2 share 0.130643 reach 0 completion 0 games 191 
+45 dxc4: belowtarget reach 0 completion 1 gaps 0 (mass 0) pending 0 seen every -
+46 e4: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+47 b5: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    Nd2 share 0.429963 reach 0 completion 0 games 574 
+    Na3 share 0.281648 reach 0 completion 0 games 376 
+    Nc3 share 0.211236 reach 0 completion 0 games 282 
+    b4 share 0.077154 reach 0 completion 0 games 103 
+    a4 share 0 reach 0 completion 0 games 0 child 48
+48 a4: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+49 c6: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    Ra2 share 0.322481 reach 0 completion 0 games 416 
+    Ra3 share 0.310853 reach 0 completion 0 games 401 
+    axb5 share 0.188372 reach 0 completion 0 games 243 child 50
+    a5 share 0.178295 reach 0 completion 0 games 230 
+50 axb5: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+51 cxb5: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+52 Qf3: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+53 Nc6: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+54 Qxf7+: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+55 Kd7: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+56 Qf5+: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+57 Ke8: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    Bh6 share 0.348808 reach 0 completion 0 games 556 
+    Bf4 share 0.248432 reach 0 completion 0 games 396 
+    Bg5 share 0.242158 reach 0 completion 0 games 386 
+    Bd2 share 0.160602 reach 0 completion 0 games 256 
+    Qh5+ share 0 reach 0 completion 0 games 0 child 58
+58 Qh5+: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+59 g6: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+    Ra5 share 0.391785 reach 0 completion 0 games 496 
+    Ra4 share 0.302528 reach 0 completion 0 games 383 
+    Rxa7 share 0.222749 reach 0 completion 0 games 282 
+    Ra6 share 0.082938 reach 0 completion 0 games 105 
+    Qxb5 share 0 reach 0 completion 0 games 0 child 60
+60 Qxb5: unknown reach - completion 0 gaps 0 (mass 0) pending 0 seen every -
+61 d5: alternative reach 0 completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    h3 share 0.39078 reach 0 completion 0 games 551 
+    h4 share 0.29078 reach 0 completion 0 games 410 
+    b3 share 0.20922 reach 0 completion 0 games 295 
+    b4 share 0.10922 reach 0 completion 0 games 154 
+    exd5 share 0 reach 0 completion 0 games 0 child 62
+62 exd5: alternative reach 0 completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+63 Qxd5: alternative reach 0 completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+64 Nc3: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+65 Qa5: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    Nh3 share 0.328435 reach 0 completion 0 games 447 
+    Nge2 share 0.31227 reach 0 completion 0 games 425 
+    Nf3 share 0.191771 reach 0 completion 0 games 261 
+    Qg4 share 0.167524 reach 0 completion 0 games 228 
+    d4 share 0 reach 0 completion 0 games 0 child 66
+66 d4: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+67 c6: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+68 Nf3: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+69 Bf5: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    b4 share 0.325282 reach 0 completion 0 games 404 
+    b3 share 0.271337 reach 0 completion 0 games 337 
+    g3 share 0.226248 reach 0 completion 0 games 281 
+    g4 share 0.177134 reach 0 completion 0 games 220 
+    Bc4 share 0 reach 0 completion 0 games 0 child 70
+70 Bc4: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+71 e6: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    h3 share 0.361492 reach 0 completion 0 games 475 
+    h4 share 0.292237 reach 0 completion 0 games 384 
+    Rg1 share 0.172755 reach 0 completion 0 games 227 
+    Rf1 share 0.173516 reach 0 completion 0 games 228 
+    Bd2 share 0 reach 0 completion 0 games 0 child 72
+72 Bd2: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+73 Nd7: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    g4 share 0.305304 reach 0 completion 0 games 472 
+    g3 share 0.290427 reach 0 completion 0 games 449 
+    h3 share 0.254204 reach 0 completion 0 games 393 
+    h4 share 0.150065 reach 0 completion 0 games 232 
+    Qe2 share 0 reach 0 completion 0 games 0 child 74
+74 Qe2: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+75 Bb4: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+76 O-O-O: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+77 Ngf6: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    Kb1 share 0.407648 reach 0 completion 0 games 501 child 78
+    Qf1 share 0.284784 reach 0 completion 0 games 350 
+    Qxe6+ share 0.195281 reach 0 completion 0 games 240 
+    Qe4 share 0.112286 reach 0 completion 0 games 138 
+78 Kb1: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+79 Nf6: alternative reach 0 completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    h4 share 0.374514 reach 0 completion 0 games 482 
+    h3 share 0.381507 reach 0 completion 0 games 491 
+    Ke2 share 0.165501 reach 0 completion 0 games 213 
+    Nh3 share 0.078477 reach 0 completion 0 games 101 
+    e5 share 0 reach 0 completion 0 games 0 child 80
+80 e5: alternative reach 0 completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+81 d5: alternative reach 0 completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+82 exd6: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+83 cxd6: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+84 d4: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+85 Qa5+: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    c3 share 0.327647 reach 0 completion 0 games 461 
+    b4 share 0.260128 reach 0 completion 0 games 366 
+    Ke2 share 0.263682 reach 0 completion 0 games 371 
+    Nd2 share 0.148543 reach 0 completion 0 games 209 
+    Bd2 share 0 reach 0 completion 0 games 0 child 86
+86 Bd2: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+87 Qb6: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    Ke2 share 0.461078 reach 0 completion 0 games 539 
+    h4 share 0.265184 reach 0 completion 0 games 310 
+    h3 share 0.182207 reach 0 completion 0 games 213 
+    Nh3 share 0.091531 reach 0 completion 0 games 107 
+88 Qd5: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)
+    h4 share 0.319026 reach 0 completion 0 games 498 
+    h3 share 0.313261 reach 0 completion 0 games 489 
+    Ke2 share 0.212044 reach 0 completion 0 games 331 
+    Nh3 share 0.155669 reach 0 completion 0 games 243 
+    Nf3 share 0 reach 0 completion 0 games 0 child 89
+89 Nf3: alternative reach - completion 0 gaps 0 (mass 0) pending 0 seen every - (not counted)

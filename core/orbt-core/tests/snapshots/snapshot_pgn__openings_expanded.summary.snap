@@ -1,0 +1,6 @@
+---
+source: orbt-core/tests/snapshot_pgn.rs
+expression: summary
+---
+8193 nodes, 7983 positions, 2614 leaves, 795 merged transpositions, 1 games
+warnings: []

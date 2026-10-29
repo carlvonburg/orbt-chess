@@ -1,0 +1,33 @@
+---
+source: orbt-core/tests/snapshot_pgn.rs
+expression: games_json(&games)
+---
+[
+  {
+    "comments": [],
+    "moves": [
+      {
+        "children": [],
+        "comments": [],
+        "nags": [],
+        "preComments": [],
+        "san": "Kd2"
+      }
+    ],
+    "result": "*",
+    "tags": [
+      [
+        "Event",
+        "Endgame"
+      ],
+      [
+        "SetUp",
+        "1"
+      ],
+      [
+        "FEN",
+        "8/8/8/4k3/8/8/4P3/4K3 w - - 0 1"
+      ]
+    ]
+  }
+]

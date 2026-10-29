@@ -1,0 +1,9 @@
+---
+source: orbt-core/tests/snapshot_pgn.rs
+expression: "pgn::write_games(&games)"
+---
+[Event "Endgame"]
+[SetUp "1"]
+[FEN "8/8/8/4k3/8/8/4P3/4K3 w - - 0 1"]
+
+1. Kd2 *

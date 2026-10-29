@@ -1,0 +1,21 @@
+[package]
+name = "orbt-engine"
+description = "Chess engines run inside the app (Stockfish 19, later Leela): native code, never built for the web."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+# Stockfish (GPL-3.0-or-later) is vendored under vendor/; the combined work is AGPL-3.0-or-later.
+build = "build.rs"
+
+[dependencies]
+libc.workspace = true
+sha2.workspace = true
+thiserror.workspace = true
+
+[build-dependencies]
+cc.workspace = true
+
+[dev-dependencies]
+orbt-core.workspace = true

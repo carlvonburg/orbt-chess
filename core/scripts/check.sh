@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Every check for the Rust core: formatting, lints, tests, that ot-core still builds for the
+# Every check for the Rust core: formatting, lints, tests, that orbt-core still builds for the
 # web (wasm32), so a web shell stays possible, and cargo-deny (licenses, advisories, bans).
 # The toolchain comes from rust-toolchain.toml.
 set -euo pipefail
@@ -16,6 +16,6 @@ fi
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-cargo check -p ot-core --target wasm32-unknown-unknown
+cargo check -p orbt-core --target wasm32-unknown-unknown
 cargo deny --log-level warn check
 echo "core checks passed"

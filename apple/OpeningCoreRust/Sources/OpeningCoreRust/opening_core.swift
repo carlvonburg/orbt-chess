@@ -2057,7 +2057,7 @@ public func FfiConverterTypeDocumentListener_lower(_ value: DocumentListener) ->
 
 
 /**
- * A study session played line by line. See ot_core::drill for the timing.
+ * A study session played line by line. See orbt_core::drill for the timing.
  */
 public protocol DrillSessionProtocol: AnyObject, Sendable {
     
@@ -2126,7 +2126,7 @@ public protocol DrillSessionProtocol: AnyObject, Sendable {
     
 }
 /**
- * A study session played line by line. See ot_core::drill for the timing.
+ * A study session played line by line. See orbt_core::drill for the timing.
  */
 open class DrillSession: DrillSessionProtocol, @unchecked Sendable {
     fileprivate let handle: UInt64

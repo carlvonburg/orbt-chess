@@ -1,0 +1,29 @@
+---
+source: orbt-core/tests/snapshot_study.rs
+expression: out
+---
+10 trainable nodes, 5 card nodes, 5 card positions, 0 suspended, 3 lines
+progress with mixed cards: 5 cards: 1 learning, 4 young, 0 mature; 0 suspended
+progress without cards: 5 cards: 0 learning, 0 young, 0 mature; 0 suspended
+trainable: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+suspended: []
+cards and their expected moves:
+  0 [] -> e4; line through it: e4 c5 Nf3 d6 d4
+  2 [e4 c5] -> Nf3; line through it: e4 c5 Nf3 d6 d4
+  4 [e4 c5 Nf3 d6] -> d4; line through it: e4 c5 Nf3 d6 d4
+  6 [e4 c5 Nf3 Nc6] -> d4; line through it: e4 c5 Nf3 Nc6 d4
+  8 [e4 e5] -> Nf3; line through it: e4 e5 Nf3
+new cards in tree order: ["[]", "[e4 c5]", "[e4 c5 Nf3 d6]", "[e4 c5 Nf3 Nc6]", "[e4 e5]"]
+branch [e4]: 3 lines, cards [2, 4, 6, 8], new by reach ["[e4 c5]", "[e4 c5 Nf3 d6]", "[e4 c5 Nf3 Nc6]", "[e4 e5]"]
+branch [e4 c5]: 2 lines, cards [2, 4, 6], new by reach ["[e4 c5]", "[e4 c5 Nf3 d6]", "[e4 c5 Nf3 Nc6]"]
+branch [e4 e5]: 1 lines, cards [8], new by reach ["[e4 e5]"]
+new cards by reach:
+  []
+  [e4 c5]
+  [e4 c5 Nf3 d6]
+  [e4 c5 Nf3 Nc6]
+  [e4 e5]
+lines:
+  e4 c5 Nf3 d6 d4
+  e4 c5 Nf3 Nc6 d4
+  e4 e5 Nf3

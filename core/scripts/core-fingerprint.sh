@@ -6,5 +6,5 @@ set -euo pipefail
 
 cd "${0:A:h:h:h}"
 git ls-files -z -co --exclude-standard -- \
-  core/ot-core/src core/ot-engine core/ot-ffi core/Cargo.toml core/Cargo.lock core/rust-toolchain.toml \
+  core/orbt-core/src core/orbt-engine core/orbt-ffi core/Cargo.toml core/Cargo.lock core/rust-toolchain.toml \
   | sort -z | xargs -0 shasum | shasum | cut -d' ' -f1

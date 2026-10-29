@@ -1,0 +1,11 @@
+---
+source: orbt-core/tests/snapshot_coverage.rs
+expression: text
+---
+root: completion 0 gaps 1 (mass 1) pending 0
+nodes by status: {"gap": 1}
+1 gaps, the biggest:
+  your move after [] mass 1 seen every 1
+0 pending positions, the most reached:
+
+0 root: gap reach 1 completion 0 gaps 1 (mass 1) pending 0 seen every 1

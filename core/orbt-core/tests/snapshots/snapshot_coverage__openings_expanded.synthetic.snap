@@ -1,0 +1,21 @@
+---
+source: orbt-core/tests/snapshot_coverage.rs
+expression: "summary(&tree, &e)"
+---
+root: completion 0 gaps 12 (mass 0.700402) pending 1
+nodes by status: {"alternative": 7936, "belowtarget": 170, "pending": 1, "required": 8, "unknown": 78}
+12 gaps, the biggest:
+  reply g4 after [Na3 e5] mass 0.110088 seen every 9
+  reply Rg1 after [Nf3 c5] mass 0.086712 seen every 12
+  reply g3 after [Na3 e5] mass 0.069926 seen every 14
+  reply c3 after [Nh3 d5] mass 0.067501 seen every 15
+  reply h3 after [Nf3 c5] mass 0.061631 seen every 16
+  reply Nh3 after [Na3 e5] mass 0.061364 seen every 16
+  reply c4 after [Nh3 d5] mass 0.058952 seen every 17
+  reply Nf3 after [Na3 e5] mass 0.056879 seen every 18
+  reply e3 after [Nh3 d5] mass 0.045043 seen every 22
+  reply h4 after [Nf3 c5] mass 0.037621 seen every 27
+  reply b3 after [Nf3 c5] mass 0.022481 seen every 44
+  reply e4 after [Nh3 d5] mass 0.022203 seen every 45
+1 pending positions, the most reached:
+  0.299598 rnbqkbnr/pppp1ppp/8/4p3/8/2N5/PPPPPPPP/R1BQKBNR w KQkq -

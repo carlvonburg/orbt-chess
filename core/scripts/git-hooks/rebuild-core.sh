@@ -5,11 +5,11 @@
 # these sources, its xcframework is copied (a second); otherwise it is rebuilt (minutes).
 # A new clone or worktree only copies; it is never built from here.
 # Usage: rebuild-core.sh <old commit> <new commit>  (called by the hooks in this folder)
-# Set OT_SKIP_CORE_REBUILD=1 to skip it once.
+# Set ORBT_SKIP_CORE_REBUILD=1 to skip it once.
 set -euo pipefail
 
 old="$1" new="$2"
-[[ -n "${OT_SKIP_CORE_REBUILD:-}" ]] && exit 0
+[[ -n "${ORBT_SKIP_CORE_REBUILD:-}" ]] && exit 0
 
 repo_dir="$(git rev-parse --show-toplevel)"
 package="apple/OpeningCoreRust"
@@ -42,12 +42,12 @@ if [[ "$old" == 0000000000000000000000000000000000000000 ]]; then
 fi
 [[ "$old" == "$new" ]] && exit 0
 if git diff --quiet "$old" "$new" -- \
-  core/ot-core/src core/ot-engine core/ot-ffi core/Cargo.toml core/Cargo.lock core/rust-toolchain.toml; then
+  core/orbt-core/src core/orbt-engine core/orbt-ffi core/Cargo.toml core/Cargo.lock core/rust-toolchain.toml; then
   exit 0
 fi
 
 copy_from_other_worktree && exit 0
-echo "Rust core changed: rebuilding the xcframework (OT_SKIP_CORE_REBUILD=1 skips this)"
+echo "Rust core changed: rebuilding the xcframework (ORBT_SKIP_CORE_REBUILD=1 skips this)"
 if ! "$repo_dir/core/scripts/build-apple.sh"; then
   echo "core/scripts/build-apple.sh failed; run it again before building in Xcode" >&2
 fi

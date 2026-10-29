@@ -1,0 +1,18 @@
+---
+source: orbt-core/tests/snapshot_coverage.rs
+expression: text
+---
+root: completion 0 gaps 1 (mass 0.294118) pending 1
+nodes by status: {"gap": 1, "pending": 1, "required": 3}
+1 gaps, the biggest:
+  your move after [e4 c5] mass 0.294118 seen every 3
+1 pending positions, the most reached:
+  0.588235 rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -
+
+0 root: required reach 1 completion 0 gaps 1 (mass 0.294118) pending 1 seen every 1
+1 e4: required reach 1 completion 0 gaps 1 (mass 0.294118) pending 1 seen every 1
+    e5 share 0.588235 reach 0.588235 completion 0 games 1000 required, child 2
+    c5 share 0.294118 reach 0.294118 completion 0 games 500 required, child 4
+2 e5: required reach 0.588235 completion 0 gaps 0 (mass 0) pending 1 seen every 2
+3 Nf3: pending reach 0.588235 completion 0 gaps 0 (mass 0) pending 1 seen every 2
+4 c5: gap reach 0.294118 completion 0 gaps 1 (mass 0.294118) pending 0 seen every 3

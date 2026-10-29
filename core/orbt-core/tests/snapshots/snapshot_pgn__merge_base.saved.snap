@@ -1,0 +1,5 @@
+---
+source: orbt-core/tests/snapshot_pgn.rs
+expression: tree.pgn_text()
+---
+1. e4 e5 2. Nf3 *

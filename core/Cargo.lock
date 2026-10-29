@@ -572,7 +572,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
-name = "ot-core"
+name = "orbt-core"
 version = "0.1.0"
 dependencies = [
  "fsrs",
@@ -589,22 +589,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "ot-engine"
+name = "orbt-engine"
 version = "0.1.0"
 dependencies = [
  "cc",
  "libc",
- "ot-core",
+ "orbt-core",
  "sha2",
  "thiserror",
 ]
 
 [[package]]
-name = "ot-ffi"
+name = "orbt-ffi"
 version = "0.1.0"
 dependencies = [
- "ot-core",
- "ot-engine",
+ "orbt-core",
+ "orbt-engine",
  "serde_json",
  "thiserror",
  "uniffi",

@@ -6,3 +6,4 @@ xcuserdata/
 .swiftpm/
 /data/
 /tools/coverage-tables/target/
+/testData/

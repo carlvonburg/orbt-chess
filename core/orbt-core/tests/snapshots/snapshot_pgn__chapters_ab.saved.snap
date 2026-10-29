@@ -1,0 +1,7 @@
+---
+source: orbt-core/tests/snapshot_pgn.rs
+expression: tree.pgn_text()
+---
+[Event "A"]
+
+1. e4 (1. d4 d5) 1... e5 *

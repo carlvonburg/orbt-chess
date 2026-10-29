@@ -1,0 +1,49 @@
+---
+source: orbt-core/tests/snapshot_study.rs
+expression: out
+---
+316 trainable nodes, 129 card nodes, 129 card positions, 2656 suspended, 69 lines
+progress with mixed cards: 129 cards: 39 learning, 21 young, 7 mature; 2656 suspended
+progress without cards: 129 cards: 0 learning, 0 young, 0 mature; 2656 suspended
+new cards by reach:
+  [Nh3]
+  [Nh3 d5 g3]
+  [Nh3 d5 g3 e5 f4]
+  [Nh3 d5 g3 e5 f4 Bxh3 Bxh3]
+  [Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O]
+  [e3]
+  [e3 e5 c4]
+  [e3 e5 c4 d6 Nc3]
+  [e3 e5 c4 d6 Nc3 Nc6 b3]
+  [e3 e5 Bc4]
+  [e3 e5 Nc3]
+  [e3 e5 Nc3 Nf6 f4]
+  [a3]
+  [f3]
+  [f3 e5 g4]
+  [f3 e5 e4]
+  [f3 e5 e4 Nf6 Bc4]
+  [e4 e5 Bc4 Nf6 f3 Bc5 Ne2]
+  [h3]
+  [g4]
+lines:
+  Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3 hxg3
+  e3 e5 c4 d6 Nc3 Nc6 b3 Nf6
+  e3 e5 Bc4 b5 Bb3
+  e3 e5 Nc3 Nf6 f4 exf4 Nf3
+  a3 a5 b4
+  f3 e5 g4 Qh4#
+  f3 e5 Kf2
+  f3 e5 e4 Nf6 Bc4
+  f3 e5 e4 Nf6 Nc3
+  h3 h5 g4
+  g4 f5
+  g3 Nc6 Nc3 d5 d4 e5 dxe5 d4 Ne4 f5
+  h4 d5 Rh3
+  h4 d5 d4 c5 Nf3 cxd4 c3
+  h4 d5 d4 c5 e4
+  d3 g6 g4
+  b4 d5 Bb2 Nf6 Nf3
+  b4 d5 Nf3
+  c3
+  Na3 e5 d3 Bxa3 bxa3 d5 e3 c5 Rb1

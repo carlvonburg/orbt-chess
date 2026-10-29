@@ -6,7 +6,7 @@ set -u
 export PATH="/opt/homebrew/opt/rustup/bin:$HOME/.cargo/bin:$PATH"
 cd "${0:A:h}"
 secs=${1:-180}
-data=../ot-core/tests/data
+data=../orbt-core/tests/data
 mkdir -p corpus/{pgn,sidecar,revlog,explorer,uci} logs
 cp -n $data/pgn/* corpus/pgn/ 2>/dev/null
 cp -n $data/sidecars/* corpus/sidecar/ 2>/dev/null
