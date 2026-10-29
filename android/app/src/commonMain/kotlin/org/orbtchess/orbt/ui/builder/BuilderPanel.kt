@@ -52,6 +52,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
+import org.orbtchess.orbt.ui.tour.TourGuide
+import org.orbtchess.orbt.ui.tour.tourTarget
 import org.orbtchess.orbt.core.CloudEval
 import org.orbtchess.orbt.core.Epd
 import org.orbtchess.orbt.core.ExplorerMove
@@ -373,7 +375,9 @@ private fun LazyListScope.replies(
     val saved = content.savedAt
     item("repliesHeading") {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = RowInset).padding(top = 12.dp, bottom = 4.dp),
+            // The tour's replies step shows the heading row with the replies.
+            Modifier.fillMaxWidth().tourTarget(TourGuide.Target.Replies, part = -1)
+                .padding(horizontal = RowInset).padding(top = 12.dp, bottom = 4.dp),
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -390,9 +394,12 @@ private fun LazyListScope.replies(
         val matters = { r: ReplyInfo -> r.child != null || r.transposesTo != null || r.required || r.excluded }
         val ordered = replies.filter(matters).sortedByDescending { it.share } +
             replies.filterNot(matters).sortedByDescending { it.share }
-        for (reply in ordered) {
+        for ((index, reply) in ordered.withIndex()) {
             item("reply-${reply.uci}") {
-                ReplyRow(model, reply, saved?.id, eval?.let { cloudEvalText(it, reply.uci) })
+                // The first few, so the highlight ends above the bottom bar.
+                Box(Modifier.tourTarget(TourGuide.Target.Replies, part = index.takeIf { it < 4 })) {
+                    ReplyRow(model, reply, saved?.id, eval?.let { cloudEvalText(it, reply.uci) })
+                }
             }
         }
         return
@@ -561,7 +568,12 @@ private fun LazyListScope.candidates(
     val loading = stats == null && loadingStats
     val title = "Candidates"
 
-    item("candidatesHeading") { Heading(if (saved.isEmpty()) title else "Your Moves") }
+    item("candidatesHeading") {
+        // The tour's answer step shows the heading with the candidates under it.
+        Box(Modifier.fillMaxWidth().tourTarget(TourGuide.Target.Candidates, part = -1)) {
+            Heading(if (saved.isEmpty()) title else "Your Moves")
+        }
+    }
     for ((move, explorerMove) in savedRows) {
         item("saved-${move.move.uci}") {
             val promote = if (move.index > 0) ({ model.document.promote(move.id) }) else null
@@ -583,9 +595,13 @@ private fun LazyListScope.candidates(
         return
     }
     if (saved.isNotEmpty()) item("candidatesHeading2") { Heading(title) }
-    for (move in otherRows) {
+    for ((index, move) in otherRows.withIndex()) {
         item("candidate-${move.uci}") {
-            CandidateRow(model, move.san, move.uci, move, total, eval, loading = false, saved = null, onClick = { content.select(move.uci) }, menu = null)
+            // The tour's answer step points at the candidates: the first few, so the highlight
+            // ends above the bottom bar.
+            Box(Modifier.tourTarget(TourGuide.Target.Candidates, part = index.takeIf { it < 4 })) {
+                CandidateRow(model, move.san, move.uci, move, total, eval, loading = false, saved = null, onClick = { content.select(move.uci) }, menu = null)
+            }
         }
     }
     when {

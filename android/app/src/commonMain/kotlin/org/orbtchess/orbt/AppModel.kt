@@ -14,6 +14,7 @@ import org.orbtchess.orbt.platform.PlatformServices
 import org.orbtchess.orbt.storage.Documents
 import org.orbtchess.orbt.storage.RepertoireLibrary
 import org.orbtchess.orbt.storage.TrainingDefaults
+import org.orbtchess.orbt.ui.tour.TourGuide
 import java.io.File
 
 /**
@@ -31,6 +32,7 @@ class AppModel(val platform: PlatformServices, private val scope: CoroutineScope
     val engineDefaults = EngineDefaults(platform.settings, platform.processors)
     val engineNetwork = EngineNetwork(platform.folders, scope)
     val engine = EngineService(engineNetwork, engineDefaults, scope)
+    val tour = TourGuide(platform.settings)
 
     init {
         documents.onOpened = { coverage.want(it.sidecar.database) }

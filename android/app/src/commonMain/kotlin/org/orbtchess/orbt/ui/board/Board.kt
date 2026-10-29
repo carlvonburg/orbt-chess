@@ -492,12 +492,6 @@ private fun BadgeLayer(badge: BoardBadge?, g: BoardGeometry, theme: BoardTheme, 
     }
 }
 
-/**
- * The badge's glyph: white on its disc, as SF Symbols' palette rendering in Swift. `BoardTheme`
- * has no role for it yet; the result bar's text on black is that white.
- */
-private val BoardTheme.badgeGlyph: Color get() = resultText(blackResult)
-
 /** The four pieces to promote to, in a column from the promotion square into the board, over a scrim. */
 @Composable
 private fun PromotionPicker(

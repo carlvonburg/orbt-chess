@@ -17,7 +17,8 @@ import org.orbtchess.orbt.ui.settings.EngineSettingsSection
 
 /**
  * The engine's settings over the analysis board, the same as in Settings (`EngineSettingsSheet`
- * in AnalysisView.swift): Settings' own section in a full sheet. Dismissing it analyses again.
+ * in AnalysisView.swift): Settings' own section in a full sheet, under the sheet's title only.
+ * Dismissing it analyses again.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,7 +30,8 @@ internal fun EngineSettingsSheet(app: AppModel, onDismiss: () -> Unit) {
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
-            EngineSettingsSection(app)
+            // The sheet's title names it: no section heading under it.
+            EngineSettingsSection(app, heading = null)
         }
     }
 }

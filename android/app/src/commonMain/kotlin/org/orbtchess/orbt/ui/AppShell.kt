@@ -24,6 +24,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
@@ -52,6 +53,9 @@ import org.orbtchess.orbt.ui.statistics.CardInfoSheet
 import org.orbtchess.orbt.ui.statistics.StatisticsScreen
 import org.orbtchess.orbt.ui.training.DrillScreen
 import org.orbtchess.orbt.ui.training.StudyAllScreen
+import org.orbtchess.orbt.ui.tour.LocalTourGuide
+import org.orbtchess.orbt.ui.tour.TourGuide
+import org.orbtchess.orbt.ui.tour.TourSpotlight
 
 // The navigation shell (RootView.swift and LibraryView.swift's navigation): Material's
 // navigation suite (the bottom bar on a phone: Repertoires, Statistics) around Material's
@@ -85,56 +89,83 @@ fun AppShell(app: AppModel) {
 
     BackHandler(enabled = shell.canGoBack && shell.sheet == null) { shell.back() }
 
-    Box(Modifier.fillMaxSize()) {
-        NavigationSuiteScaffold(
-            navigationSuiteItems = {
-                item(
-                    selected = shell.tab == Tab.Repertoires,
-                    onClick = { shell.tab = Tab.Repertoires },
-                    icon = { Icon(Symbols.repertoires, contentDescription = null) },
-                    label = { Text("Repertoires") },
-                )
-                item(
-                    selected = shell.tab == Tab.Statistics,
-                    onClick = { shell.tab = Tab.Statistics },
-                    icon = { Icon(Symbols.statistics, contentDescription = null) },
-                    label = { Text("Statistics") },
-                )
-            },
-            layoutType = if (showBar) NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo) else NavigationSuiteType.None,
-        ) {
-            if (shell.tab == Tab.Statistics && !wide) {
-                StatisticsScreen(app, StatisticsScope.All, inline = false, navigate = shell::navigate)
-            } else {
-                LibraryPanes(app, shell, directive)
+    // The tour's turns that change screens: started (Settings › Show Tour), its card is in
+    // Today's place, so show Today; its end, from Study's: back to the library, at New Repertoire.
+    val tourStep = app.tour.step
+    LaunchedEffect(tourStep) {
+        when (tourStep) {
+            TourGuide.Step.Ready -> if (wide) shell.navigate(Destination.Library)
+            TourGuide.Step.Finish -> {
+                shell.navigate(Destination.Library)
+                app.tour.skip()
+                shell.navigate(Destination.Setup(SetupMode.New()))
             }
-        }
-
-        // Full-window screens over everything (Android's settings screens, the setup flow).
-        shell.overlays.lastOrNull()?.let { overlay ->
-            Surface(Modifier.fillMaxSize()) { Overlay(app, shell, overlay) }
+            else -> Unit
         }
     }
 
-    shell.sheet?.let { sheet ->
-        ModalBottomSheet(onDismissRequest = { shell.sheet = null }) {
-            when (sheet) {
-                is Destination.CardInfo -> OpenDocument(app, sheet.entryId) { CardInfoSheet(app, it, sheet.node) }
-                is Destination.StudyOptions -> OpenDocument(app, sheet.entryId) {
-                    StudyOptionsSheet(app, it, onDone = { shell.sheet = null })
+    CompositionLocalProvider(LocalTourGuide provides app.tour) {
+        Box(Modifier.fillMaxSize()) {
+            NavigationSuiteScaffold(
+                navigationSuiteItems = {
+                    item(
+                        selected = shell.tab == Tab.Repertoires,
+                        onClick = { shell.tab = Tab.Repertoires },
+                        icon = { Icon(Symbols.repertoires, contentDescription = null) },
+                        label = { Text("Repertoires") },
+                    )
+                    item(
+                        selected = shell.tab == Tab.Statistics,
+                        onClick = { shell.tab = Tab.Statistics },
+                        icon = { Icon(Symbols.statistics, contentDescription = null) },
+                        label = { Text("Statistics") },
+                    )
+                },
+                layoutType = if (showBar) NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo) else NavigationSuiteType.None,
+            ) {
+                if (shell.tab == Tab.Statistics && !wide) {
+                    StatisticsScreen(
+                        app,
+                        shell.statisticsScope,
+                        inline = false,
+                        navigate = shell::navigate,
+                        onScopeChange = { shell.statisticsScope = it },
+                    )
+                } else {
+                    LibraryPanes(app, shell, directive)
                 }
-                else -> Unit
+            }
+
+            // Full-window screens over everything (Android's settings screens, the setup flow).
+            shell.overlays.lastOrNull()?.let { overlay ->
+                Surface(Modifier.fillMaxSize()) { Overlay(app, shell, overlay) }
+            }
+
+            // The tour's spotlight over the tour's screens, bars included; not over a screen or
+            // sheet that covers them.
+            if (shell.overlays.isEmpty() && shell.sheet == null) TourSpotlight(app.tour)
+        }
+
+        shell.sheet?.let { sheet ->
+            ModalBottomSheet(onDismissRequest = { shell.sheet = null }) {
+                when (sheet) {
+                    is Destination.CardInfo -> OpenDocument(app, sheet.entryId) { CardInfoSheet(app, it, sheet.node) }
+                    is Destination.StudyOptions -> OpenDocument(app, sheet.entryId) {
+                        StudyOptionsSheet(app, it, onDone = { shell.sheet = null })
+                    }
+                    else -> Unit
+                }
             }
         }
-    }
 
-    shell.error?.let { message ->
-        AlertDialog(
-            onDismissRequest = { shell.error = null },
-            confirmButton = { TextButton(onClick = { shell.error = null }) { Text("OK") } },
-            title = { Text("Something went wrong") },
-            text = { Text(message) },
-        )
+        shell.error?.let { message ->
+            AlertDialog(
+                onDismissRequest = { shell.error = null },
+                confirmButton = { TextButton(onClick = { shell.error = null }) { Text("OK") } },
+                title = { Text("Something went wrong") },
+                text = { Text(message) },
+            )
+        }
     }
 }
 
@@ -194,12 +225,13 @@ private fun LibraryPanes(
             extraPane = {
                 AnimatedPane(Modifier.preferredWidth(extraWidth.coerceAtLeast(ListPaneWidth))) {
                     when {
-                        top == null -> StatisticsScreen(app, StatisticsScope.All, inline = true, navigate = navigate)
+                        top == null -> StatisticsScreen(app, StatisticsScope.All, inline = true, navigate = navigate, paneTitle = true)
                         top.role == ListDetailPaneScaffoldRole.Detail -> StatisticsScreen(
                             app,
                             top.screen.entryId?.let { StatisticsScope.Repertoire(it) } ?: StatisticsScope.All,
                             inline = true,
                             navigate = navigate,
+                            paneTitle = true,
                         )
                         detailShown -> Screen(app, top, BoardPane.Board, navigate, onBack = null)
                         else -> Screen(app, top, BoardPane.Whole, navigate, back)

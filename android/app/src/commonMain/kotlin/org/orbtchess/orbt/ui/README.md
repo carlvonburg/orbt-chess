@@ -43,6 +43,7 @@ follows its Swift counterpart; the Swift file is named in each stub's doc commen
 | `ui.statistics` | `StatisticsScreen`, `CardInfoSheet` | Statistics |
 | `ui.settings` | `SettingsScreen`, `AcknowledgementsScreen` | Settings |
 | `ui.board` | `Board`, `BoardArrow`, `BoardBadge` | board |
+| `ui.tour` | `TourGuide` (steps, targets, `tourTarget`, `TourScreen`), `TourSpotlight` (scrim with cut-outs and a coach-mark card), `TourStudyCard`, `SkipTourButton`; the Tour section is `library/TourSection.kt` | tour |
 
 A screen's agent owns its package; the model constructors and screen signatures are the shell's
 contract (add optional parameters freely; change required ones together with the shell).

@@ -31,6 +31,9 @@ class BoardTheme internal constructor(private val theme: Theme) {
     /** The cross badge. */
     val wrong: Color = theme.color(ThemeColor.Role.Wrong)
 
+    /** The badges' glyph: white on its disc (SF Symbols' palette rendering in Swift). */
+    val badgeGlyph: Color = Hues.White
+
     /** The last move: the app color over the square (the ink for graphite, whose gray the board doesn't show). */
     val lastMove: Color = if (graphite) ink.copy(alpha = 0.25f) else tint.copy(alpha = 0.5f)
 

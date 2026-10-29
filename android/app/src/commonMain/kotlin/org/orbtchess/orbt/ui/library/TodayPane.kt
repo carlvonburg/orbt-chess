@@ -74,7 +74,8 @@ fun TodayPane(
 ) {
     Scaffold(modifier = modifier, topBar = { TopAppBar(title = { Text("Today") }) }) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-            item { TodayCard(app, navigate) }
+            // While the tour runs, its card instead.
+            item { if (tourRunning(app)) TourSection(app, navigate) else TodayCard(app, navigate) }
             if (statisticsInline) {
                 item { HorizontalDivider(Modifier.padding(top = 8.dp)) }
                 // A pane of its own height, scrolled within (the statistics are a screen).

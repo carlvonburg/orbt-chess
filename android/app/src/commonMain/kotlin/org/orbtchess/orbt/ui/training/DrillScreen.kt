@@ -65,6 +65,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
+import org.orbtchess.orbt.ui.tour.TourGuide
+import org.orbtchess.orbt.ui.tour.TourStudyCard
 import org.orbtchess.orbt.core.Counts
 import org.orbtchess.orbt.core.Feedback
 import org.orbtchess.orbt.core.Phase
@@ -204,7 +206,7 @@ private fun PhoneLayout(
 ) {
     if (model.finished) {
         Scaffold(modifier, topBar = { DrillTopBar(model, onBack) }) { padding ->
-            StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding))
+            StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding), tourEnd = inTour(app, model))
         }
         return
     }
@@ -244,6 +246,7 @@ private fun PhoneLayout(
                     StudyCounts(model.counts, model.askedKind)
                 }
             }
+            if (inTour(app, model)) TourStudyCard(Modifier.widthIn(max = 680.dp).padding(horizontal = 16.dp))
         }
     }
 }
@@ -272,7 +275,7 @@ private fun PanelLayout(
         },
     ) { padding ->
         if (finished) {
-            StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding))
+            StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding), tourEnd = inTour(app, model))
         } else {
             Column(
                 Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()),
@@ -283,10 +286,15 @@ private fun PanelLayout(
                     OpeningName(model)
                     Status(model)
                 }
+                if (inTour(app, model)) TourStudyCard(Modifier.padding(horizontal = 16.dp))
             }
         }
     }
 }
+
+/** The tour's Study step: on the sample, with its card (it doesn't block). */
+private fun inTour(app: AppModel, model: DrillModel): Boolean =
+    app.tour.step == TourGuide.Step.Studying && TourGuide.isSample(model.document.pgnFile)
 
 /** The extra pane: the board, the moves played, Analysis and Next Line in the bottom app bar. */
 @Composable

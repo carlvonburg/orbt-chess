@@ -47,6 +47,9 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
+import org.orbtchess.orbt.ui.tour.TourGuide
+import org.orbtchess.orbt.ui.tour.TourScreen
+import org.orbtchess.orbt.ui.tour.tourTarget
 import org.orbtchess.orbt.storage.ROOT_NODE
 import org.orbtchess.orbt.ui.AnalysisOrigin
 import org.orbtchess.orbt.ui.Destination
@@ -81,7 +84,7 @@ fun BuilderScreen(
     onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val actions = BuilderActions(model, navigate)
+    val actions = BuilderActions(model, navigate, app.tour)
     when (pane) {
         BoardPane.Whole -> WholeScreen(app, model, actions, onBack, modifier)
         BoardPane.Panel -> PanelScreen(app, model, actions, onBack, modifier)
@@ -89,21 +92,47 @@ fun BuilderScreen(
     }
     if (pane != BoardPane.Board) {
         BuilderEffects(model)
+        TourEffects(model, app.tour, actions.inTour)
         BuilderSheets(model, onStudyBranch = { actions.studyBranch(it) })
         SaveErrorDialog(model)
     }
 }
 
 /** What the bars and menus do, the same in every pane. */
-private class BuilderActions(val model: BuilderModel, val navigate: (Destination) -> Unit) {
+private class BuilderActions(val model: BuilderModel, val navigate: (Destination) -> Unit, val tour: TourGuide) {
     private val document get() = model.document
+
+    /** The bundled sample, where the tour's tips show. */
+    val inTour: Boolean get() = TourGuide.isSample(document.pgnFile)
+
+    fun biggestGap() {
+        model.goToBiggestGap()
+        if (inTour) tour.advance(from = TourGuide.Step.BiggestGap, to = TourGuide.Step.Answer)
+    }
+
+    fun save() {
+        // Where the draft starts, and its first move (Biggest Gap's reply).
+        val start = model.current
+        val first = model.draft.firstOrNull()?.uci
+        model.saveDraft()
+        if (inTour && tour.step == TourGuide.Step.Save) {
+            tour.saved()
+            // To the first new move, so Study Branch trains only the line just added (from
+            // `start`, it would also train the rest of the repertoire).
+            model.go(first?.let { model.tree.childByUci(start, it) } ?: start)
+        }
+    }
 
     /** The analysis board on the position on the board; going back puts its line here as a draft. */
     fun analysis() = navigate(
         Destination.Analysis(document.entryId, null, model.movesToBoard, model.orientation, AnalysisOrigin.Build),
     )
 
-    fun studyBranch(node: UInt = model.current) = navigate(Destination.Drill(document.entryId, DrillKind.Branch(node)))
+    fun studyBranch(node: UInt = model.current) {
+        // The tour's last step.
+        if (inTour) tour.advance(from = TourGuide.Step.Study, to = TourGuide.Step.Studying)
+        navigate(Destination.Drill(document.entryId, DrillKind.Branch(node)))
+    }
 
     fun moveInfo() = navigate(Destination.CardInfo(document.entryId, model.current))
 
@@ -134,6 +163,33 @@ private fun BuilderEffects(model: BuilderModel) {
     LaunchedEffect(epd) { document.requestStats(epd) }
 }
 
+/**
+ * The tour on the sample: Build is its next step; it builds the line until coverage is reached
+ * (your answer, then a reply that needs one, and so on; Save only once every reply is below the
+ * target).
+ */
+@Composable
+private fun TourEffects(model: BuilderModel, tour: TourGuide, inTour: Boolean) {
+    TourScreen(running = inTour)
+    LaunchedEffect(inTour) {
+        if (!inTour) return@LaunchedEffect
+        tour.advance(from = TourGuide.Step.Browse, to = TourGuide.Step.BiggestGap)
+        // A line being built is gone (the app was closed): find the gap again.
+        if (!model.hasDraft) {
+            for (step in listOf(TourGuide.Step.Answer, TourGuide.Step.Extend, TourGuide.Step.Save)) {
+                tour.advance(from = step, to = TourGuide.Step.BiggestGap)
+            }
+        }
+    }
+    val draftStep = when {
+        !inTour || tour.step !in listOf(TourGuide.Step.Answer, TourGuide.Step.Extend, TourGuide.Step.Save) || !model.hasDraft -> null
+        model.isUserTurnOnBoard -> TourGuide.Step.Answer
+        model.draftReachedTarget -> TourGuide.Step.Save
+        else -> TourGuide.Step.Extend
+    }
+    LaunchedEffect(draftStep) { draftStep?.let { tour.draftChanged(to = it) } }
+}
+
 // MARK: Panes
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -153,7 +209,9 @@ private fun WholeScreen(app: AppModel, model: BuilderModel, actions: BuilderActi
                 actions = {
                     NavigationButtons(model)
                     if (model.hasDraft) {
-                        IconButton(onClick = actions::analysis) { Icon(Symbols.analysis, contentDescription = "Analysis") }
+                        IconButton(onClick = actions::analysis, modifier = Modifier.tourTarget(TourGuide.Target.Analysis)) {
+                            Icon(Symbols.analysis, contentDescription = "Analysis")
+                        }
                         IconButton(onClick = model::discardDraft) { Icon(Symbols.wrong, contentDescription = "Discard") }
                     } else {
                         GapAndStudyButtons(actions)
@@ -164,7 +222,8 @@ private fun WholeScreen(app: AppModel, model: BuilderModel, actions: BuilderActi
                     // While a new line is on the board: keep it (or drop it, beside).
                     if (model.hasDraft) {
                         ExtendedFloatingActionButton(
-                            onClick = model::saveDraft,
+                            onClick = actions::save,
+                            modifier = Modifier.tourTarget(TourGuide.Target.Save),
                             icon = { Icon(Symbols.correct, contentDescription = null) },
                             text = { Text(actions.saveTitle) },
                             elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
@@ -206,7 +265,10 @@ private fun PanelScreen(app: AppModel, model: BuilderModel, actions: BuilderActi
                 actions = {
                     if (model.hasDraft) {
                         IconButton(onClick = model::discardDraft) { Icon(Symbols.wrong, contentDescription = "Discard") }
-                        Button(onClick = model::saveDraft, modifier = Modifier.padding(end = 8.dp)) { Text(actions.saveTitle) }
+                        Button(
+                            onClick = actions::save,
+                            modifier = Modifier.padding(end = 8.dp).tourTarget(TourGuide.Target.Save),
+                        ) { Text(actions.saveTitle) }
                     } else {
                         GapAndStudyButtons(actions)
                     }
@@ -228,7 +290,10 @@ private fun BoardScreen(model: BuilderModel, actions: BuilderActions, onBack: ((
                 title = {},
                 navigationIcon = { BackButton(onBack) },
                 actions = {
-                    IconButton(onClick = actions::analysis) { Icon(Symbols.analysis, contentDescription = "Analysis") }
+                    IconButton(
+                        onClick = actions::analysis,
+                        modifier = if (model.hasDraft) Modifier.tourTarget(TourGuide.Target.Analysis) else Modifier,
+                    ) { Icon(Symbols.analysis, contentDescription = "Analysis") }
                     BuilderMoreMenu(model, actions)
                 },
             )
@@ -291,10 +356,18 @@ private fun NavigationButtons(model: BuilderModel) {
 
 @Composable
 private fun GapAndStudyButtons(actions: BuilderActions) {
-    IconButton(onClick = actions.model::goToBiggestGap, enabled = actions.canBiggestGap) {
+    IconButton(
+        onClick = actions::biggestGap,
+        enabled = actions.canBiggestGap,
+        modifier = Modifier.tourTarget(TourGuide.Target.BiggestGap),
+    ) {
         Icon(BuilderSymbols.biggestGap, contentDescription = "Biggest Gap")
     }
-    IconButton(onClick = { actions.studyBranch() }, enabled = actions.canStudyBranch) {
+    IconButton(
+        onClick = { actions.studyBranch() },
+        enabled = actions.canStudyBranch,
+        modifier = Modifier.tourTarget(TourGuide.Target.StudyBranch),
+    ) {
         Icon(Symbols.study, contentDescription = "Study Branch")
     }
 }

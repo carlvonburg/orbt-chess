@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -103,14 +106,11 @@ fun LibraryScreen(
     val export = rememberPgnExport(app) { errorMessage = it }
     RefreshOnReturn(app)
 
-    /** Adds the bundled sample and shows it. */
-    fun addSample() {
+    /** Adds the sample and offers the tour on it. */
+    fun takeTour() {
         scope.launch {
             try {
-                val bytes = Res.readBytes("files/sample.pgn")
-                val sample = library.addSample { bytes }
-                // Opened now, so its row and Today show its moves and gaps from the start.
-                app.documents.open(sample)
+                startTour(app)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -119,16 +119,15 @@ fun LibraryScreen(
         }
     }
 
-    // The first launch on this device starts with the sample (the Swift app's tour offer);
-    // repertoires from the start mean no sample later, even if they are all deleted.
-    val settings = app.platform.settings
-    var sampleOffered by remember { mutableStateOf(settings.getBoolean(SAMPLE_OFFERED_KEY) == true) }
+    // The first launch on this device starts with the sample and its tour; repertoires from
+    // the start mean no sample later, even if they are all deleted.
+    var sampleOffered by remember { mutableStateOf(app.tour.wasOffered) }
     LaunchedEffect(library.isLoaded, sampleOffered) {
         if (!library.isLoaded || sampleOffered) return@LaunchedEffect
-        settings.putBoolean(SAMPLE_OFFERED_KEY, true)
-        if (library.entries.isEmpty()) addSample()
+        if (library.entries.isEmpty()) takeTour() else app.tour.markOffered()
         sampleOffered = true
     }
+    val tourRunning = tourRunning(app)
 
     Scaffold(
         modifier = modifier,
@@ -173,7 +172,7 @@ fun LibraryScreen(
             library.entries.isEmpty() -> EmptyLibrary(
                 newRepertoire = { navigate(Destination.Setup(SetupMode.New(it))) },
                 importPgn = importPgn,
-                addSample = ::addSample,
+                takeTour = ::takeTour,
                 modifier = content,
             )
             else -> PullToRefreshBox(
@@ -188,7 +187,11 @@ fun LibraryScreen(
                 modifier = content,
             ) {
                 LazyColumn(Modifier.fillMaxSize()) {
-                    if (showToday) {
+                    if (showToday && tourRunning) {
+                        // Studying moves you haven't built yet isn't the next step.
+                        item { SectionHeader("Tour") }
+                        item { TourSection(app, navigate) }
+                    } else if (showToday) {
                         item { SectionHeader("Today") }
                         item { TodayCard(app, navigate) }
                     } else {
@@ -235,9 +238,6 @@ fun LibraryScreen(
         )
     }
 }
-
-/** Set once this device's first launch has offered the sample (the Swift app's `Tour.offeredKey`). */
-private const val SAMPLE_OFFERED_KEY = "tourOffered"
 
 @Composable
 private fun SectionHeader(title: String) {
@@ -431,10 +431,10 @@ private fun RowProgress(stats: EntryStats) {
 
 /**
  * The repertoire list with no repertoire (`EmptyLibraryView.swift`): start one by choosing a
- * side (the setup flow opens with it), import a PGN, or try the sample.
+ * side (the setup flow opens with it), import a PGN, or take the tour with the sample.
  */
 @Composable
-private fun EmptyLibrary(newRepertoire: (Side) -> Unit, importPgn: () -> Unit, addSample: () -> Unit, modifier: Modifier) {
+private fun EmptyLibrary(newRepertoire: (Side) -> Unit, importPgn: () -> Unit, takeTour: () -> Unit, modifier: Modifier) {
     EmptyState(
         "Start a Repertoire",
         vectorResource(Res.drawable.piece_wn),
@@ -446,6 +446,10 @@ private fun EmptyLibrary(newRepertoire: (Side) -> Unit, importPgn: () -> Unit, a
             SideCard(Side.BLACK, "Black", selected = false, Modifier.weight(1f)) { newRepertoire(Side.BLACK) }
         }
         TextButton(onClick = importPgn) { Text("Import a PGN…") }
-        TextButton(onClick = addSample) { Text("Try a Sample Repertoire") }
+        TextButton(onClick = takeTour, modifier = Modifier.padding(top = 8.dp)) {
+            Icon(Symbols.tour, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+            Text("Take the Tour with a Sample")
+        }
     }
 }

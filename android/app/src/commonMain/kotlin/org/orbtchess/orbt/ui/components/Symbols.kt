@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.Route
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Share
@@ -57,6 +58,8 @@ object Symbols {
     val practice: ImageVector get() = Icons.Outlined.Repeat
     /** "cpu": Analysis, the engine. */
     val analysis: ImageVector get() = Icons.Outlined.Memory
+    /** "point.topleft.down.to.point.bottomright.curvepath": the tour (Take the Tour, Show Tour). */
+    val tour: ImageVector get() = Icons.Outlined.Route
     /** "lightbulb": Hint. */
     val hint: ImageVector get() = Icons.Outlined.Lightbulb
     /** "arrow.up.arrow.down": Flip Board. */

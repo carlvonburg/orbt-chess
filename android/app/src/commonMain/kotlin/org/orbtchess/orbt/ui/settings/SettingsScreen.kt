@@ -41,6 +41,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import kotlinx.coroutines.CancellationException
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -61,6 +62,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.orbtchess.orbt.AppModel
+import org.orbtchess.orbt.ui.library.startTour
 import org.orbtchess.orbt.core.PracticeMode
 import org.orbtchess.orbt.core.ROLLOVER_HOUR
 import org.orbtchess.orbt.core.practiceModeTitle
@@ -119,6 +121,10 @@ fun SettingsScreen(
             Section("Appearance", footer = "Buttons, selection and the board.") { AppColorRow() }
             EngineSettingsSection(app)
             DataSection(app)
+            TourSection(app, onShown = {
+                onBack()
+                navigate(Destination.Library)
+            })
             Section(null) {
                 ListItem(
                     headlineContent = { Text("About ORBT Chess") },
@@ -131,6 +137,32 @@ fun SettingsScreen(
 }
 
 // MARK: Sections
+
+/** Show Tour: adds the sample again if it was deleted, and offers the tour in the library. */
+@Composable
+private fun TourSection(app: AppModel, onShown: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    var error by remember { mutableStateOf<String?>(null) }
+    Section(null, footer = "Fills the gaps of a sample repertoire, adding it again if you deleted it.") {
+        ListItem(
+            headlineContent = { Text("Show Tour") },
+            leadingContent = { Icon(Symbols.tour, contentDescription = null) },
+            supportingContent = error?.let { { Text(it, color = ThemeColor.failure.color) } },
+            modifier = Modifier.clickable {
+                scope.launch {
+                    try {
+                        startTour(app)
+                        onShown()
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        error = e.message ?: e.toString()
+                    }
+                }
+            },
+        )
+    }
+}
 
 /** A group of settings: its header, its rows and a line of explanation under them. */
 @Composable
@@ -290,14 +322,14 @@ private fun DataSection(app: AppModel) {
 
 /** The analysis engine's settings (`EngineSettingsSection` in Swift; also for the analysis board). */
 @Composable
-fun EngineSettingsSection(app: AppModel) {
+fun EngineSettingsSection(app: AppModel, heading: String? = "Analysis engine") {
     val defaults = app.engineDefaults
     var searchTime by remember { mutableIntStateOf(defaults.searchTime) }
     var lines by remember { mutableIntStateOf(defaults.lines) }
     var cloud by remember { mutableStateOf(defaults.cloud) }
     var fullNetwork by remember { mutableStateOf(defaults.fullNetwork) }
     Section(
-        "Analysis engine",
+        heading,
         footer = "Stockfish 19 runs on this device, with its 1 MB network built in; the full network is stronger. " +
             "Where Lichess has a deep cloud evaluation of a position, it is shown and the engine does not run.",
     ) {

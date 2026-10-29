@@ -40,8 +40,8 @@ enum class BoardPane { Whole, Panel, Board }
 
 /**
  * The board column (`BoardColumnLayout` in Swift): what belongs above the board, the board as
- * large as the column allows (square, the full width, or the height in a wide pane), then what
- * belongs under it.
+ * large as the column allows (square, the full width, or the height in a wide pane, centred in
+ * the space left beside it), then what belongs under it.
  */
 @Composable
 fun BoardColumn(
@@ -52,7 +52,7 @@ fun BoardColumn(
 ) {
     Column(modifier) {
         above()
-        BoxWithConstraints(Modifier.weight(1f, fill = false).fillMaxWidth()) {
+        BoxWithConstraints(Modifier.weight(1f, fill = false).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
             val side = minOf(maxWidth, maxHeight)
             Box(Modifier.size(side).aspectRatio(1f)) { board() }
         }

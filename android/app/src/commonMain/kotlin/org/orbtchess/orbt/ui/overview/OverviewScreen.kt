@@ -38,6 +38,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
+import org.orbtchess.orbt.ui.tour.TourGuide
+import org.orbtchess.orbt.ui.tour.TourScreen
+import org.orbtchess.orbt.ui.tour.tourTarget
 import org.orbtchess.orbt.core.Counts
 import org.orbtchess.orbt.core.QueueState
 import org.orbtchess.orbt.core.notStudied
@@ -106,6 +110,10 @@ fun OverviewScreen(
     }
     val stats = EntryStats.of(document)
     var menu by remember { mutableStateOf(false) }
+    // The tour on the sample begins here, at Browse / Edit.
+    val isSample = TourGuide.isSample(document.pgnFile)
+    TourScreen(running = isSample)
+    LaunchedEffect(isSample) { if (isSample) app.tour.advance(from = TourGuide.Step.Ready, to = TourGuide.Step.Browse) }
 
     Scaffold(
         modifier = modifier,
@@ -198,7 +206,10 @@ private fun LazyListScope.coverageSection(app: AppModel, document: RepertoireDoc
         )
     }
     item {
-        ActionButton("Browse / Edit", prominent = buildFirst(stats), onClick = browse, modifier = Modifier.padding(horizontal = 16.dp))
+        ActionButton(
+            "Browse / Edit", prominent = buildFirst(stats), onClick = browse,
+            modifier = Modifier.padding(horizontal = 16.dp).tourTarget(TourGuide.Target.BrowseButton),
+        )
     }
 }
 

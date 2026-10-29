@@ -62,6 +62,9 @@ import org.orbtchess.orbt.ui.components.Symbols
  *   overview): no top app bar, the scope fixed. False for the Statistics tab on a phone, whose
  *   app bar has the repertoire filter.
  * @param navigate [Destination.Builder] (a weakest move, with its start node), [Destination.CardInfo].
+ * @param onScopeChange the tab's filter chose another scope (the shell keeps it, as Swift's
+ *   `AppModel.statisticsScope`); null keeps the choice in this screen.
+ * @param paneTitle inline in a pane of its own (the extra pane): a top app bar titled Statistics.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,13 +74,26 @@ fun StatisticsScreen(
     inline: Boolean,
     navigate: (Destination) -> Unit,
     modifier: Modifier = Modifier,
+    onScopeChange: ((StatisticsScope) -> Unit)? = null,
+    paneTitle: Boolean = false,
 ) {
     val model = remember { StatisticsModel() }
     // The tab's filter starts at the scope it was given; inline, the scope is the shell's.
-    var chosenId by rememberSaveable(scope) { mutableStateOf((scope as? StatisticsScope.Repertoire)?.entryId) }
+    var localId by rememberSaveable(scope) { mutableStateOf((scope as? StatisticsScope.Repertoire)?.entryId) }
+    val chosenId = if (onScopeChange != null) (scope as? StatisticsScope.Repertoire)?.entryId else localId
+    val choose: (String?) -> Unit = { id ->
+        if (onScopeChange != null) onScopeChange(id?.let { StatisticsScope.Repertoire(it) } ?: StatisticsScope.All) else localId = id
+    }
     val current = if (inline) scope else chosenId?.let { StatisticsScope.Repertoire(it) } ?: StatisticsScope.All
     LaunchedEffect(current, app.library.entries.size) { model.load(app, current) }
 
+    if (inline && paneTitle) {
+        // A pane of its own beside the overview or Today: titled, as the Swift board column is.
+        Scaffold(modifier = modifier, topBar = { TopAppBar(title = { Text("Statistics") }) }) { padding ->
+            StatisticsSummary(app, model, current, navigate, Modifier.padding(padding))
+        }
+        return
+    }
     if (inline) {
         StatisticsSummary(app, model, current, navigate, modifier)
         return
@@ -96,7 +112,7 @@ fun StatisticsScreen(
                         )
                     }
                 },
-                actions = { FilterMenu(app, chosenId) { chosenId = it } },
+                actions = { FilterMenu(app, chosenId, choose) },
             )
         },
     ) { padding ->

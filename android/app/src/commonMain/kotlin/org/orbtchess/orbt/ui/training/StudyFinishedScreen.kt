@@ -49,16 +49,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
-import org.orbtchess.orbt.core.Graphs
-import org.orbtchess.orbt.core.RevlogEntry
+import org.orbtchess.orbt.ui.tour.TourGuide
 import org.orbtchess.orbt.core.SchedTiming
 import org.orbtchess.orbt.core.Streak
 import org.orbtchess.orbt.core.notStudied
 import org.orbtchess.orbt.core.studied
 import org.orbtchess.orbt.core.schedTiming
-import org.orbtchess.orbt.storage.StudyLog
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.components.Format
+import org.orbtchess.orbt.ui.library.TodaySummary
 import org.orbtchess.orbt.ui.components.StudiedBar
 import org.orbtchess.orbt.ui.components.SymbolLabel
 import org.orbtchess.orbt.ui.components.tabularDigits
@@ -67,7 +66,6 @@ import org.orbtchess.orbt.ui.theme.color
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
@@ -83,6 +81,7 @@ import kotlin.math.roundToInt
  * @param next the next repertoire when studying all of them.
  * @param navigate unused for now: Study More Today extends this session in place, as in Swift.
  * @param onDone back to where Study was opened from.
+ * @param tourEnd the tour's Study step is done: its next step is the user's own repertoire.
  */
 @Composable
 fun StudyFinishedScreen(
@@ -92,12 +91,14 @@ fun StudyFinishedScreen(
     navigate: (Destination) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
+    tourEnd: Boolean = false,
 ) {
     val document = model.document
     val studied = model.answeredCount > 0
     val timing = schedTiming()
     val laterToday = document.sidecar.laterLearningDues(timing).filter { isToday(it) }
-    val streak by produceState(Streak(0, 0, false), app) { value = loadStreak(app) }
+    // The core's streak over every repertoire's review log, as the library's Today card shows it.
+    val streak by produceState(TodaySummary.empty.streak, app) { value = TodaySummary.load(app).streak }
 
     Column(modifier.fillMaxSize()) {
         Column(
@@ -111,7 +112,7 @@ fun StudyFinishedScreen(
                 NextCard(model, laterToday, timing)
             }
         }
-        Actions(model, next)
+        if (tourEnd) TourEndActions(app) else Actions(model, next)
     }
 }
 
@@ -262,6 +263,27 @@ private fun NextCard(model: DrillModel, laterToday: List<Long>, timing: SchedTim
 
 // MARK: Actions
 
+/** The tour's end: on to the user's own repertoire. */
+@Composable
+private fun TourEndActions(app: AppModel) {
+    Column(
+        Modifier.fillMaxWidth().padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            "You've filled a gap and learned the move. Now make a repertoire for the opening you play.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Button(
+            onClick = { app.tour.advance(from = TourGuide.Step.Studying, to = TourGuide.Step.Finish) },
+            modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
+        ) { Text("Create Your Own Repertoire") }
+    }
+}
+
 /** Main button first: the next repertoire during Study All, else studying more today. */
 @Composable
 private fun Actions(model: DrillModel, next: NextRepertoire?) {
@@ -324,16 +346,6 @@ private fun Actions(model: DrillModel, next: NextRepertoire?) {
 }
 
 // MARK: Helpers
-
-/** The study streak across all repertoires, from their review logs (`LibraryTodayModel`). */
-private suspend fun loadStreak(app: AppModel): Streak {
-    val revlog = mutableListOf<RevlogEntry>()
-    for (entry in app.library.entries) {
-        if (!entry.needsSetup) revlog += StudyLog.revlog(entry, app.documents)
-    }
-    val offset = ZonedDateTime.now().offset.totalSeconds.toLong()
-    return Graphs(emptyList(), 0, 0, revlog, schedTiming(), offset).use { it.streak() }
-}
 
 private fun localDate(unixSeconds: Long): LocalDate = Instant.ofEpochSecond(unixSeconds).atZone(ZoneId.systemDefault()).toLocalDate()
 

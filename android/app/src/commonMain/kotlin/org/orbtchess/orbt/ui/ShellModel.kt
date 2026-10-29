@@ -75,6 +75,9 @@ class ShellModel(private val app: AppModel) : ViewModel() {
 
     var tab: Tab by mutableStateOf(Tab.Repertoires)
 
+    /** The Statistics tab's scope (`AppModel.statisticsScope`): an overview's Statistics row sets it. */
+    var statisticsScope: StatisticsScope by mutableStateOf(StatisticsScope.All)
+
     /** An error to show in a dialog. */
     var error: String? by mutableStateOf(null)
 
@@ -102,10 +105,15 @@ class ShellModel(private val app: AppModel) : ViewModel() {
                 if (selectedEntryId == id && stack.size == 1) return
                 replaceStack(listOf(entry(Destination.Overview(id), Screen.Overview(id))))
             }
-            is Destination.Statistics -> when (val scope = destination.scope) {
-                // Wide windows show every repertoire's statistics beside Today.
-                StatisticsScope.All -> if (wide) navigate(Destination.Library) else tab = Tab.Statistics
-                is StatisticsScope.Repertoire -> navigate(Destination.Overview(scope.entryId))
+            // Wide windows show the statistics beside Today or the overview; a phone switches to
+            // the Statistics tab with that scope, as the overview's Statistics row does in Swift.
+            is Destination.Statistics -> when {
+                !wide -> {
+                    statisticsScope = destination.scope
+                    tab = Tab.Statistics
+                }
+                destination.scope is StatisticsScope.Repertoire -> navigate(Destination.Overview(destination.scope.entryId))
+                else -> navigate(Destination.Library)
             }
             Destination.Settings, Destination.Acknowledgements,
             is Destination.RepertoireSettings, is Destination.Setup -> overlays.add(destination)
