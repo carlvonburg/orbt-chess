@@ -1,16 +1,45 @@
 package org.orbtchess.orbt.ui.overview
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
+import org.orbtchess.orbt.core.DeckLimits
+import org.orbtchess.orbt.core.PracticeMode
+import org.orbtchess.orbt.core.practiceModeTitle
 import org.orbtchess.orbt.storage.RepertoireDocument
 
 /**
  * A repertoire's study options (`StudyOptionsSheet` in LibraryView.swift, Anki's deck options):
- * daily limits, practice mode. The content of a Material bottom sheet the shell shows.
+ * the default daily limits or its own, and its practice mode. One-day changes are custom study,
+ * from the overview. The content of a Material bottom sheet the shell shows.
  *
  * @param onDone closes the sheet.
  */
@@ -21,6 +50,119 @@ fun StudyOptionsSheet(
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // STUB
-    Text("Study Options (not ported yet)", modifier.padding(24.dp))
+    val preset = app.training
+    var draft by remember(document) { mutableStateOf(DailyPracticeDraft.of(document.sidecar)) }
+    val useDefaults = draft.useDefaultLimits
+    // Rows on the sheet's own surface.
+    val rowColors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f))
+
+    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("${document.name} Options", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            TextButton(onClick = onDone) { Text("Cancel") }
+            Button(onClick = {
+                document.updateStudySettings(draft.limits, draft.practiceMode)
+                onDone()
+            }) { Text("Save") }
+        }
+
+        FormSection(
+            "Daily limits",
+            footer = if (useDefaults) {
+                "From Settings. Turn off to set limits for this repertoire."
+            } else {
+                "Every day, for this repertoire only. To study more just today, use Study More Today in the overview."
+            },
+        ) {
+            ListItem(
+                headlineContent = { Text("Use Default Limits") },
+                trailingContent = { Switch(checked = useDefaults, onCheckedChange = null) },
+                colors = rowColors,
+                modifier = Modifier.toggleable(useDefaults, role = Role.Switch) { on ->
+                    draft = draft.useDefaults(on, preset.newPerDay, preset.reviewsPerDay)
+                },
+            )
+            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LimitField("New moves/day", draft.limits.newLimit?.toInt() ?: preset.newPerDay, !useDefaults) {
+                    draft = draft.copy(limits = draft.limits.copy(newLimit = it.toLong()))
+                }
+                LimitField("Maximum reviews/day", draft.limits.reviewLimit?.toInt() ?: preset.reviewsPerDay, !useDefaults) {
+                    draft = draft.copy(limits = draft.limits.copy(reviewLimit = it.toLong()))
+                }
+            }
+        }
+
+        val mode = draft.practiceMode ?: preset.practiceMode
+        FormSection(
+            "Practice",
+            footer = if (draft.practiceMode == null) "The default, set in Settings." else "Only for this repertoire.",
+        ) {
+            Column(Modifier.selectableGroup()) {
+                for (option in PracticeMode.entries) {
+                    ListItem(
+                        headlineContent = { Text(practiceModeTitle(option)) },
+                        supportingContent = { Text(option.detail) },
+                        leadingContent = { RadioButton(selected = option == mode, onClick = null) },
+                        colors = rowColors,
+                        modifier = Modifier.selectable(option == mode, role = Role.RadioButton) {
+                            draft = draft.copy(practiceMode = option)
+                        },
+                    )
+                }
+            }
+            if (draft.practiceMode != null) {
+                TextButton(onClick = { draft = draft.copy(practiceMode = null) }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                    Text("Use Default (${practiceModeTitle(preset.practiceMode)})")
+                }
+            }
+        }
+    }
 }
+
+/** A daily limit, typed (Material has no stepper): 0 to 9999. */
+@Composable
+private fun LimitField(label: String, value: Int, enabled: Boolean, onChange: (Int) -> Unit) {
+    // Keyed by the value shown, so turning the defaults on or off shows the right number.
+    var text by remember(value, enabled) { mutableStateOf(value.toString()) }
+    OutlinedTextField(
+        value = text,
+        onValueChange = { new ->
+            text = new.filter(Char::isDigit).take(4)
+            text.toIntOrNull()?.let(onChange)
+        },
+        label = { Text(label) },
+        enabled = enabled,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+/**
+ * A repertoire's daily limits and practice mode (`DailyPracticeDraft`): the defaults from
+ * Settings, or its own (Anki's "This deck" limits). [practiceMode] null uses the default.
+ */
+private data class DailyPracticeDraft(val limits: DeckLimits, val practiceMode: PracticeMode?) {
+    /** On: no limits of its own. Off: this repertoire's own limits, starting from the defaults. */
+    val useDefaultLimits: Boolean get() = limits.newLimit == null && limits.reviewLimit == null
+
+    fun useDefaults(on: Boolean, newPerDay: Int, reviewsPerDay: Int): DailyPracticeDraft = copy(
+        limits = if (on) DeckLimits(null, null, null, null) else limits.copy(newLimit = newPerDay.toLong(), reviewLimit = reviewsPerDay.toLong()),
+    )
+
+    companion object {
+        fun of(sidecar: RepertoireDocument.SidecarValues): DailyPracticeDraft {
+            // Limits for one day only are no longer offered; drop any left over.
+            val limits = (sidecar.limits ?: DeckLimits(null, null, null, null)).copy(newLimitToday = null, reviewLimitToday = null)
+            return DailyPracticeDraft(limits, sidecar.practiceMode)
+        }
+    }
+}
+
+/** Who plays your moves on the way to the ones you're asked. */
+internal val PracticeMode.detail: String
+    get() = when (this) {
+        PracticeMode.INDIVIDUAL_MOVES -> "The app plays the moves leading up to the ones you're asked."
+        PracticeMode.COMPLETE_LINES_EVERY_TIME -> "You play all your moves on every line."
+        PracticeMode.COMPLETE_LINES_ONCE_PER_SESSION -> "You play your moves the first time they come up; after that the app does."
+    }

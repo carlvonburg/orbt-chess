@@ -69,3 +69,29 @@ val Counts.total: Long get() = new + learning + review
 /** Moves studied at least once (Anki's learning, young and mature). */
 val Progress.studied: Long get() = learning + young + mature
 val Progress.notStudied: Long get() = cards - studied
+
+// MARK: Statistics (statistics and settings screens)
+
+/** True retention by period, of the cards in [positions] if given (`retentionTable` in Swift). */
+fun Graphs.retentionTable(positions: List<Epd>? = null): Map<RetentionPeriod, TrueRetention> =
+    trueRetention(positions).associate { it.period to it.retention }
+
+/** No reviews. */
+fun emptyTrueRetention() = TrueRetention(0, 0, 0, 0)
+
+val TrueRetention.young: Double? get() = retentionRateYoung(this)
+val TrueRetention.mature: Double? get() = retentionRateMature(this)
+val TrueRetention.total: Double? get() = retentionRateTotal(this)
+val TrueRetention.count: Long get() = youngPassed + youngFailed + maturePassed + matureFailed
+
+val ReviewCounts.total: Long get() = learn + relearn + young + mature + filtered
+
+val CardCounts.total: Long get() = new + learn + relearn + young + mature + suspended
+
+/** The range's name, from the core. */
+val GraphRange.title: String get() = rangeTitle(this)
+
+/** Days the range covers; 0 for all time. */
+val GraphRange.days: Int get() = rangeDays(this).toInt()
+
+val RetentionPeriod.title: String get() = retentionPeriodTitle(this)
