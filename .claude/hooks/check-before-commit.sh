@@ -7,7 +7,7 @@
 #   apple/ or the FFI changed -> the iOS simulator build
 #   core/orbt-ffi/ or Cargo.lock changed -> core/scripts/build-android.sh; the committed Kotlin
 #                               bindings must already be up to date
-#   android/ or the FFI changed -> the Kotlin bindings' JVM tests
+#   android/ or the FFI changed -> the JVM tests (bindings, app)
 #   apple/ORBT/UI/ changed -> no colors by name outside Palette.swift
 # Other commands pass through untouched.
 set -uo pipefail
@@ -96,7 +96,7 @@ if $android_needed; then
   # Needs the host library from build-android.sh (android/core/build/host).
   [[ -d android/core/build/host ]] || core/scripts/build-android.sh --debug >>"$log" 2>&1 \
     || fail "core/scripts/build-android.sh"
-  (cd android && ./gradlew -q :core:jvmTest) >>"$log" 2>&1 || fail "the Kotlin bindings' JVM tests"
+  (cd android && ./gradlew -q :core:jvmTest :app:desktopTest) >>"$log" 2>&1 || fail "the Android/desktop JVM tests"
 fi
 
 rm -f "$log"

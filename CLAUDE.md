@@ -104,6 +104,12 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   itself comes in step 3 of `FUTURE.md`). `core/` holds the generated
   `opening_core.kt` (committed, never edited by hand), the `.so`s in `src/androidMain/jniLibs/`
   (built, not committed) and `jvmTest/SmokeTest.kt`, the parallel of the Swift smoke test.
+  `app/` is the app (`androidTarget`, `jvm("desktop")`): `commonMain` holds the UI and the
+  platform layer ported from the Swift side, by package — `platform` (HTTP for the core's
+  requests, `AppFolders`, `Settings`, `SecretStore`), `storage` (library, documents, saves),
+  `explorer` (queue, SQLite stats cache, coverage tables), `engine`, `lichess` (PKCE: Custom
+  Tabs on Android, a loopback redirect on the desktop) — wired by `AppModel.kt`; Android's
+  and the desktop's own code in `androidMain`/`desktopMain`; tests in `desktopTest`.
 - `Design/` — `AppIcon-*.svg`, flat references of the app icon; `COLORS.md`, how the app uses
   color (read before any color change).
 - The app icon is the Icon Composer document `apple/ORBT/AppIcon.icon` (one for every platform):
@@ -241,4 +247,4 @@ in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palett
   every `git commit` and blocks it on failure: check.sh for `core/`, build-apple.sh for
   `core/orbt-ffi/` or Cargo.lock (the committed bindings must be up to date), the simulator build
   for `apple/` or the FFI, build-android.sh for the FFI (the Kotlin bindings too) and the JVM
-  tests for `android/` or the FFI. A blocked commit is fixed, not bypassed.
+  tests (`:core:jvmTest`, `:app:desktopTest`) for `android/` or the FFI. A blocked commit is fixed, not bypassed.

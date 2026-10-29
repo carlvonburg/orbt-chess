@@ -20,13 +20,29 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
+            implementation(compose.materialIconsExtended)
+            implementation(compose.components.resources)
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+            implementation("com.squareup.okhttp3:okhttp:4.12.0")
+            // The stats cache: SQLite with its own build of the library on every platform.
+            implementation("androidx.sqlite:sqlite-bundled:2.6.1")
         }
         androidMain.dependencies {
             implementation("androidx.activity:activity-compose:1.10.1")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+            // Lichess sign-in and Analyse on Lichess (Custom Tabs).
+            implementation("androidx.browser:browser:1.8.0")
         }
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
+            }
+        }
+        val desktopTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
             }
         }
     }
@@ -61,8 +77,15 @@ compose.desktop {
         mainClass = "org.orbtchess.orbt.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Deb)
+            // The loopback redirect of the Lichess sign-in.
+            modules("jdk.httpserver")
             packageName = "ORBT Chess"
             packageVersion = "0.1.0"
         }
     }
+}
+
+// Desktop tests load the host's library that core/scripts/build-android.sh puts in core/build/host.
+tasks.withType<Test>().configureEach {
+    systemProperty("jna.library.path", project(":core").layout.buildDirectory.dir("host").get().asFile.path)
 }

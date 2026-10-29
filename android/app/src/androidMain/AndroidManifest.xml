@@ -3,6 +3,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".OrbtApplication"
         android:label="ORBT Chess"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
         <activity
@@ -11,6 +12,24 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- Lichess sign-in (org.orbtchess.orbt.lichess): opens the Custom Tab and waits. -->
+        <activity
+            android:name=".lichess.LichessSignInActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <!-- Lichess's redirect, the core's REDIRECT_URI (the Apple app's too). -->
+        <activity
+            android:name=".lichess.LichessRedirectActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="org.orbtchess.orbt" android:host="oauth-callback" />
             </intent-filter>
         </activity>
     </application>

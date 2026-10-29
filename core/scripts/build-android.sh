@@ -71,7 +71,8 @@ rm -rf "$generated"
 cargo run -q -p uniffi-bindgen -- generate --library --language kotlin --no-format \
   --out-dir "$generated" "target/aarch64-linux-android/$profile/$lib_name"
 sources="$module_dir/src/commonMain/kotlin"
-rm -rf "$sources/org/orbtchess/orbt/core"
+# Only the generated file: Additions.kt next to it is hand-written.
+rm -f "$sources/org/orbtchess/orbt/core/opening_core.kt"
 mkdir -p "$sources"
 cp -R "$generated/" "$sources/"
 echo "updated $module_dir"
