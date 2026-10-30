@@ -1,7 +1,6 @@
 package org.orbtchess.orbt.ui.builder
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,13 +14,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
-import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,10 +31,13 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
+import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -96,46 +99,44 @@ private fun SheetTitle(title: String, actions: @Composable () -> Unit = {}) {
 @Composable
 private fun OutlineSheet(model: BuilderModel, onStudyBranch: (NodeId) -> Unit, dismiss: () -> Unit) {
     val document = model.document
-    var search by remember { mutableStateOf("") }
+    val searchField = rememberTextFieldState()
+    val search = searchField.text.toString()
     // Rows whose children are shown; children are read from the core only when shown.
     val expanded = remember { mutableStateListOf<NodeId>() }
     val open = { id: NodeId ->
         model.go(id)
         dismiss()
     }
-    ModalBottomSheet(onDismissRequest = dismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+    ModalBottomSheet(onDismissRequest = dismiss, sheetState = rememberBottomSheetState(SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))) {
         SheetTitle("Outline")
-        // Material's search bar (docked: the results are the list below it, not a view of its own).
-        DockedSearchBar(
+        // Material's search bar, collapsed: the results are the list below it, not a view of its own.
+        val searchBar = rememberSearchBarState()
+        SearchBar(
+            state = searchBar,
             inputField = {
                 SearchBarDefaults.InputField(
-                    query = search,
-                    onQueryChange = { search = it },
+                    textFieldState = searchField,
+                    searchBarState = searchBar,
                     onSearch = {},
-                    expanded = false,
-                    onExpandedChange = {},
                     placeholder = { Text("Find a move, e.g. Nf3") },
                     leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                     trailingIcon = {
                         if (search.isNotEmpty()) {
-                            IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Clear, contentDescription = "Clear") }
+                            IconButton(onClick = { searchField.clearText() }) { Icon(Icons.Filled.Clear, contentDescription = "Clear") }
                         }
                     },
                 )
             },
-            expanded = false,
-            onExpandedChange = {},
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        ) {}
+        )
         Spacer(Modifier.size(8.dp))
         if (search.isNotEmpty()) {
             val matches = remember(search, document.revision) { document.core.search(search, 100u) }
             LazyColumn {
                 items(matches, key = { it.toLong() }) { id ->
                     ListItem(
-                        headlineContent = { Text(model.tree.lineText(id), maxLines = 2, overflow = TextOverflow.Ellipsis) },
-                        modifier = Modifier.clickable { open(id) },
-                    )
+                        onClick = { open(id) },
+                    ) { Text(model.tree.lineText(id), maxLines = 2, overflow = TextOverflow.Ellipsis) }
                 }
             }
         } else {
@@ -275,10 +276,10 @@ private fun GapRow(model: BuilderModel, gap: CoverageGap, onOpen: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     Box {
         ListItem(
-            headlineContent = { Text(model.document.core.gapText(gap), maxLines = 2, overflow = TextOverflow.Ellipsis) },
+            onClick = onOpen,
+            onLongClick = reply?.let { { menu = true } },
             supportingContent = { Text(Format.seenGames(gap.mass), color = ThemeColor.todo.color) },
-            modifier = Modifier.combinedClickable(onClick = onOpen, onLongClick = reply?.let { { menu = true } }),
-        )
+        ) { Text(model.document.core.gapText(gap), maxLines = 2, overflow = TextOverflow.Ellipsis) }
         if (reply != null) {
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 DropdownMenuItem(

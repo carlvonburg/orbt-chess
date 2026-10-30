@@ -104,10 +104,9 @@ fun CardInfoSheet(
         }
         items(rows) { (label, value) ->
             ListItem(
-                headlineContent = { Text(label) },
                 trailingContent = { Text(value, style = tabularDigits(MaterialTheme.typography.bodyMedium)) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            )
+            ) { Text(label) }
         }
         item {
             HorizontalDivider(Modifier.padding(top = 8.dp))

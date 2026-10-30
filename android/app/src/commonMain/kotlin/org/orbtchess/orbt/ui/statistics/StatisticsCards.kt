@@ -1,6 +1,5 @@
 package org.orbtchess.orbt.ui.statistics
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -639,7 +638,7 @@ internal fun WeakestMovesCard(model: StatisticsModel, open: (WeakMove) -> Unit) 
 @Composable
 private fun WeakMoveRow(model: StatisticsModel, move: WeakMove, onClick: () -> Unit) {
     ListItem(
-        headlineContent = { Text(model.lineText(move.epd), maxLines = 2, overflow = TextOverflow.Ellipsis) },
+        onClick = onClick,
         supportingContent = {
             Text(
                 "${move.lapses} ${if (move.lapses == 1L) "lapse" else "lapses"} · recall ${percent(move.retrievability)}",
@@ -653,8 +652,7 @@ private fun WeakMoveRow(model: StatisticsModel, move: WeakMove, onClick: () -> U
             }
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.clickable(onClick = onClick),
-    )
+    ) { Text(model.lineText(move.epd), maxLines = 2, overflow = TextOverflow.Ellipsis) }
 }
 
 /** The icons of the per-opening and per-repertoire retention cards. */

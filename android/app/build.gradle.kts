@@ -29,7 +29,7 @@ kotlin {
             implementation("org.jetbrains.compose.material3.adaptive:adaptive:1.3.0")
             implementation("org.jetbrains.compose.material3.adaptive:adaptive-layout:1.3.0")
             implementation("org.jetbrains.compose.material3.adaptive:adaptive-navigation:1.3.0")
-            implementation("org.jetbrains.compose.ui:ui-backhandler:1.13.0-beta01")
+            implementation("org.jetbrains.androidx.navigationevent:navigationevent-compose:1.1.0")
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
             // Material color schemes from a seed (the app colors other than Multicolor) and
             // custom colors harmonized with them, as Android's own dynamic color makes them.
@@ -40,7 +40,7 @@ kotlin {
             implementation("androidx.sqlite:sqlite-bundled:2.6.1")
         }
         androidMain.dependencies {
-            implementation("androidx.activity:activity-compose:1.10.1")
+            implementation("androidx.activity:activity-compose:1.13.0")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
             // Lichess and Dropbox sign-ins, Analyse on Lichess (Custom Tabs).
             implementation("androidx.browser:browser:1.8.0")

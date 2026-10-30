@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
@@ -75,13 +74,12 @@ fun StudyOptionsSheet(
             },
         ) {
             ListItem(
-                headlineContent = { Text("Use Default Limits") },
                 trailingContent = { Switch(checked = useDefaults, onCheckedChange = null) },
                 colors = rowColors,
                 modifier = Modifier.toggleable(useDefaults, role = Role.Switch) { on ->
                     draft = draft.useDefaults(on, preset.newPerDay, preset.reviewsPerDay)
                 },
-            )
+            ) { Text("Use Default Limits") }
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 LimitField("New moves/day", draft.limits.newLimit?.toInt() ?: preset.newPerDay, !useDefaults) {
                     draft = draft.copy(limits = draft.limits.copy(newLimit = it.toLong()))
@@ -100,14 +98,12 @@ fun StudyOptionsSheet(
             Column(Modifier.selectableGroup()) {
                 for (option in PracticeMode.entries) {
                     ListItem(
-                        headlineContent = { Text(practiceModeTitle(option)) },
+                        selected = option == mode,
+                        onClick = { draft = draft.copy(practiceMode = option) },
                         supportingContent = { Text(option.detail) },
                         leadingContent = { RadioButton(selected = option == mode, onClick = null) },
                         colors = rowColors,
-                        modifier = Modifier.selectable(option == mode, role = Role.RadioButton) {
-                            draft = draft.copy(practiceMode = option)
-                        },
-                    )
+                    ) { Text(practiceModeTitle(option)) }
                 }
             }
             if (draft.practiceMode != null) {

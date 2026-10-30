@@ -1,7 +1,6 @@
 package org.orbtchess.orbt.ui.settings
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +24,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -38,10 +38,9 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
-import kotlinx.coroutines.CancellationException
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,9 +59,14 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import java.text.NumberFormat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.orbtchess.orbt.AppModel
-import org.orbtchess.orbt.ui.library.startTour
 import org.orbtchess.orbt.core.PracticeMode
 import org.orbtchess.orbt.core.ROLLOVER_HOUR
 import org.orbtchess.orbt.core.practiceModeTitle
@@ -73,6 +77,7 @@ import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.components.Format
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.tabularDigits
+import org.orbtchess.orbt.ui.library.startTour
 import org.orbtchess.orbt.ui.theme.AppColor
 import org.orbtchess.orbt.ui.theme.LocalAppColorSetting
 import org.orbtchess.orbt.ui.theme.OrbtTheme
@@ -80,11 +85,6 @@ import org.orbtchess.orbt.ui.theme.Theme
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
 import org.orbtchess.orbt.ui.theme.systemDynamicColorScheme
-import java.text.NumberFormat
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 
 /**
  * The app's settings (`SettingsView.swift`): Lichess account, sync, study defaults, scheduling, app
@@ -128,10 +128,9 @@ fun SettingsScreen(
             })
             Section(null) {
                 ListItem(
-                    headlineContent = { Text("About ORBT Chess") },
+                    onClick = { navigate(Destination.Acknowledgements) },
                     leadingContent = { Icon(Symbols.info, contentDescription = null) },
-                    modifier = Modifier.clickable { navigate(Destination.Acknowledgements) },
-                )
+                ) { Text("About ORBT Chess") }
             }
         }
     }
@@ -146,10 +145,7 @@ private fun TourSection(app: AppModel, onShown: () -> Unit) {
     var error by remember { mutableStateOf<String?>(null) }
     Section(null, footer = "Fills the gaps of a sample repertoire, adding it again if you deleted it.") {
         ListItem(
-            headlineContent = { Text("Show Tour") },
-            leadingContent = { Icon(Symbols.tour, contentDescription = null) },
-            supportingContent = error?.let { { Text(it, color = ThemeColor.failure.color) } },
-            modifier = Modifier.clickable {
+            onClick = {
                 scope.launch {
                     try {
                         startTour(app)
@@ -161,7 +157,9 @@ private fun TourSection(app: AppModel, onShown: () -> Unit) {
                     }
                 }
             },
-        )
+            leadingContent = { Icon(Symbols.tour, contentDescription = null) },
+            supportingContent = error?.let { { Text(it, color = ThemeColor.failure.color) } },
+        ) { Text("Show Tour") }
     }
 }
 
@@ -192,11 +190,12 @@ internal fun Section(title: String?, footer: String? = null, content: @Composabl
 /** A setting shown with its value (SwiftUI's `LabeledContent`), opening its choice when tapped. */
 @Composable
 internal fun ValueRow(title: String, value: String, onClick: (() -> Unit)? = null) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(value, style = tabularDigits(MaterialTheme.typography.bodyMedium)) },
-        modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
-    )
+    val supporting: @Composable () -> Unit = { Text(value, style = tabularDigits(MaterialTheme.typography.bodyMedium)) }
+    if (onClick != null) {
+        ListItem(onClick = onClick, supportingContent = supporting) { Text(title) }
+    } else {
+        ListItem(supportingContent = supporting) { Text(title) }
+    }
 }
 
 @Composable
@@ -215,17 +214,15 @@ private fun LichessSection(app: AppModel) {
                 )
             }
             ListItem(
-                headlineContent = { Text("Sign Out", color = ThemeColor.failure.color) },
-                modifier = Modifier.clickable { scope.launch { auth.signOut() } },
-            )
+                onClick = { scope.launch { auth.signOut() } },
+            ) { Text("Sign Out", color = ThemeColor.failure.color) }
         } else {
             ListItem(
-                headlineContent = { Text("Sign in with Lichess", color = MaterialTheme.colorScheme.primary) },
-                leadingContent = { Icon(Symbols.signIn, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                modifier = Modifier.clickable {
+                onClick = {
                     scope.launch { if (auth.signIn(browser)) app.explorer.resume() }
                 },
-            )
+                leadingContent = { Icon(Symbols.signIn, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            ) { Text("Sign in with Lichess", color = MaterialTheme.colorScheme.primary) }
             auth.lastError?.let { error ->
                 Text(
                     error,
@@ -312,12 +309,11 @@ private fun DataSection(app: AppModel) {
         ValueRow("Storage", if (provider == null) "On this device" else "On this device and in ${provider.title}")
         ValueRow("Cached positions", NumberFormat.getIntegerInstance().format(cacheCount))
         ListItem(
-            headlineContent = { Text("Clear Statistics Cache", color = ThemeColor.failure.color) },
-            modifier = Modifier.clickable {
+            onClick = {
                 app.stats.clear()
                 cacheCount = app.stats.entryCount
             },
-        )
+        ) { Text("Clear Statistics Cache", color = ThemeColor.failure.color) }
     }
 }
 
@@ -338,22 +334,21 @@ fun EngineSettingsSection(app: AppModel, heading: String? = "Analysis engine") {
     ) {
         val times = EngineDefaults.searchTimes
         ListItem(
-            headlineContent = { Text("Search time") },
             trailingContent = { Text("$searchTime s", style = tabularDigits(MaterialTheme.typography.bodyMedium)) },
             supportingContent = {
+                // Whole seconds, without a tick for each of the 30.
+                val slider = rememberSliderState(searchTime.toFloat(), trackRange = times.first.toFloat()..times.last.toFloat())
                 Slider(
-                    value = searchTime.toFloat(),
+                    state = slider,
                     onValueChange = {
+                        slider.value = it
                         searchTime = Math.round(it)
                         defaults.searchTime = searchTime
                     },
-                    // Whole seconds, without a tick for each of the 30.
-                    valueRange = times.first.toFloat()..times.last.toFloat(),
                 )
             },
-        )
+        ) { Text("Search time") }
         ListItem(
-            headlineContent = { Text("Lines") },
             supportingContent = {
                 val counts = EngineDefaults.lineCounts.toList()
                 SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(top = 8.dp)) {
@@ -371,7 +366,7 @@ fun EngineSettingsSection(app: AppModel, heading: String? = "Analysis engine") {
                     }
                 }
             },
-        )
+        ) { Text("Lines") }
         SwitchRow("Lichess cloud evaluations", cloud) {
             cloud = it
             defaults.cloud = it
@@ -386,10 +381,9 @@ fun EngineSettingsSection(app: AppModel, heading: String? = "Analysis engine") {
 @Composable
 private fun SwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     ListItem(
-        headlineContent = { Text(title) },
         trailingContent = { Switch(checked = checked, onCheckedChange = null) },
         modifier = Modifier.selectable(selected = checked, role = Role.Switch) { onChange(!checked) },
-    )
+    ) { Text(title) }
 }
 
 /** Stockfish's full network: download it, follow the download, use or remove it. */
@@ -399,7 +393,6 @@ private fun EngineNetworkRows(network: EngineNetwork, use: Boolean, onUse: (Bool
         EngineNetwork.State.Absent -> DownloadRow(network, null)
         is EngineNetwork.State.Failed -> DownloadRow(network, state.message)
         is EngineNetwork.State.Downloading -> ListItem(
-            headlineContent = { Text("Downloading full network") },
             supportingContent = {
                 LinearProgressIndicator(
                     progress = { state.fraction.toFloat() },
@@ -409,14 +402,13 @@ private fun EngineNetworkRows(network: EngineNetwork, use: Boolean, onUse: (Bool
             trailingContent = {
                 IconButton(onClick = { network.cancel() }) { Icon(Icons.Outlined.Close, contentDescription = "Cancel") }
             },
-        )
+        ) { Text("Downloading full network") }
         EngineNetwork.State.Ready -> {
             SwitchRow("Use full network", use, onUse)
             ListItem(
-                headlineContent = { Text("Remove Full Network", color = ThemeColor.failure.color) },
+                onClick = { network.remove() },
                 leadingContent = { Icon(Symbols.delete, contentDescription = null, tint = ThemeColor.failure.color) },
-                modifier = Modifier.clickable { network.remove() },
-            )
+            ) { Text("Remove Full Network", color = ThemeColor.failure.color) }
         }
     }
 }
@@ -424,11 +416,10 @@ private fun EngineNetworkRows(network: EngineNetwork, use: Boolean, onUse: (Bool
 @Composable
 private fun DownloadRow(network: EngineNetwork, error: String?) {
     ListItem(
-        headlineContent = { Text("Download Full Network (94 MB)", color = MaterialTheme.colorScheme.primary) },
+        onClick = { network.start() },
         leadingContent = { Icon(Icons.Outlined.Download, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
         supportingContent = error?.let { { Text(it, color = ThemeColor.failure.color) } },
-        modifier = Modifier.clickable { network.start() },
-    )
+    ) { Text("Download Full Network (94 MB)", color = MaterialTheme.colorScheme.primary) }
 }
 
 // MARK: App color
@@ -439,11 +430,10 @@ private fun AppColorRow() {
     val setting = LocalAppColorSetting.current
     var choosing by remember { mutableStateOf(false) }
     ListItem(
-        headlineContent = { Text("Color") },
+        onClick = { choosing = true },
         supportingContent = { Text(setting.appColor.title) },
         trailingContent = { BoardStrip(setting.appColor, squares = 2, Modifier.width(36.dp).height(18.dp)) },
-        modifier = Modifier.clickable { choosing = true },
-    )
+    ) { Text("Color") }
     if (choosing) {
         ChoiceDialog(
             title = "Color",

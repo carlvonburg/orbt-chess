@@ -230,7 +230,6 @@ private fun NextCard(model: DrillModel, laterToday: List<Long>, timing: SchedTim
         laterToday.firstOrNull()?.let { first ->
             val count = laterToday.size
             ListItem(
-                headlineContent = { Text("$count learning ${if (count == 1) "move" else "moves"}") },
                 leadingContent = { Icon(Icons.Outlined.Schedule, contentDescription = null) },
                 trailingContent = {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -240,23 +239,21 @@ private fun NextCard(model: DrillModel, laterToday: List<Long>, timing: SchedTim
                 },
                 colors = rowColors,
                 modifier = Modifier.clickable(onClickLabel = "Check again") { model.checkAgain() },
-            )
+            ) { Text("$count learning ${if (count == 1) "move" else "moves"}") }
             if (tomorrow > 0 || nextReview != null) HorizontalDivider(Modifier.padding(start = 56.dp))
         }
         if (tomorrow > 0) {
             ListItem(
-                headlineContent = { Text("Reviews") },
                 leadingContent = { Icon(Icons.Outlined.CalendarToday, contentDescription = null) },
                 trailingContent = { Text("$tomorrow tomorrow", style = tabularDigits()) },
                 colors = rowColors,
-            )
+            ) { Text("Reviews") }
         } else if (nextReview != null) {
             ListItem(
-                headlineContent = { Text("Next review") },
                 leadingContent = { Icon(Icons.Outlined.CalendarToday, contentDescription = null) },
                 trailingContent = { Text(nextStudyText(nextReview)) },
                 colors = rowColors,
-            )
+            ) { Text("Next review") }
         }
     }
 }

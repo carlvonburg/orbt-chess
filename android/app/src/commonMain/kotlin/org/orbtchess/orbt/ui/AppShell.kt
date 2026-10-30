@@ -16,10 +16,10 @@ import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldDefaults
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
-import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldDefaults
 import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.calculateThreePaneScaffoldValue
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
@@ -33,9 +33,11 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.ui.analysis.AnalysisScreen
 import org.orbtchess.orbt.ui.builder.BuilderScreen
@@ -52,11 +54,11 @@ import org.orbtchess.orbt.ui.settings.AcknowledgementsScreen
 import org.orbtchess.orbt.ui.settings.SettingsScreen
 import org.orbtchess.orbt.ui.statistics.CardInfoSheet
 import org.orbtchess.orbt.ui.statistics.StatisticsScreen
-import org.orbtchess.orbt.ui.training.DrillScreen
-import org.orbtchess.orbt.ui.training.StudyAllScreen
 import org.orbtchess.orbt.ui.tour.LocalTourGuide
 import org.orbtchess.orbt.ui.tour.TourGuide
 import org.orbtchess.orbt.ui.tour.TourSpotlight
+import org.orbtchess.orbt.ui.training.DrillScreen
+import org.orbtchess.orbt.ui.training.StudyAllScreen
 
 // The navigation shell (RootView.swift and LibraryView.swift's navigation): Material's
 // navigation suite (the bottom bar on a phone: Repertoires, Statistics) around Material's
@@ -85,7 +87,11 @@ fun AppShell(app: AppModel) {
     // The bottom bar on a phone's top-level screens; a pushed board screen has its own actions.
     val showBar = !wide && (shell.tab == Tab.Statistics || top == null || top.role == ListDetailPaneScaffoldRole.Detail)
 
-    BackHandler(enabled = shell.canGoBack && shell.sheet == null) { shell.back() }
+    NavigationBackHandler(
+        rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = shell.canGoBack && shell.sheet == null,
+        onBackCompleted = { shell.back() },
+    )
 
     // The tour's turns that change screens: started (Settings › Show Tour), its card is in
     // Today's place, so show Today; its end, from Study's: back to the library, at New Repertoire.

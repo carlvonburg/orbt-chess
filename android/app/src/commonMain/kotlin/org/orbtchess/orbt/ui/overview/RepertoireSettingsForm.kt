@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -42,7 +41,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
@@ -257,15 +255,11 @@ fun CoverageSourceSection(
             Column(Modifier.selectableGroup()) {
                 for (source in CoverageSource.entries) {
                     ListItem(
-                        headlineContent = { Text(source.title) },
+                        selected = draft.source == source,
+                        onClick = { onChange(draft.withSource(source, tables)) },
                         supportingContent = { Text(source.detail) },
                         leadingContent = { RadioButton(selected = draft.source == source, onClick = null) },
-                        modifier = Modifier.selectable(
-                            selected = draft.source == source,
-                            role = Role.RadioButton,
-                            onClick = { onChange(draft.withSource(source, tables)) },
-                        ),
-                    )
+                    ) { Text(source.title) }
                 }
             }
         }
@@ -433,7 +427,8 @@ fun DepthSection(targetGames: Int, onChange: (Int) -> Unit, inSetup: Boolean = f
 @Composable
 private fun DepthRow(name: String, games: Int?, selected: Boolean, onClick: () -> Unit) {
     ListItem(
-        headlineContent = { Text(name) },
+        selected = selected,
+        onClick = onClick,
         supportingContent = games?.let { { Text("1 in ${NumberFormat.getIntegerInstance().format(it)} games") } },
         leadingContent = { RadioButton(selected = selected, onClick = null) },
         trailingContent = games?.let {
@@ -451,8 +446,7 @@ private fun DepthRow(name: String, games: Int?, selected: Boolean, onClick: () -
                 )
             }
         },
-        modifier = Modifier.selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
-    )
+    ) { Text(name) }
 }
 
 /** A custom target, typed (Material has no stepper): 20 to 20,000 games. */
