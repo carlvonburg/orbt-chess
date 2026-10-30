@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The app's window: light or dark with the system, no action bar, the app's background
+         behind Compose (no white flash in dark mode); MainActivity draws edge to edge. -->
+    <style name="Theme.Orbt" parent="android:Theme.DeviceDefault.DayNight">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <!-- The splash (AndroidX core-splashscreen, MainActivity's installSplashScreen()): the app
+         icon on the app's background, then Theme.Orbt. -->
+    <style name="Theme.Orbt.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/window_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Orbt</item>
+    </style>
+</resources>

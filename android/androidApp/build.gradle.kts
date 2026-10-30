@@ -55,6 +55,8 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.13.0")
     // Lichess and Dropbox sign-ins, Analyse on Lichess (Custom Tabs).
     implementation("androidx.browser:browser:1.8.0")
+    // The splash screen (Theme.Orbt.Starting) on every Android version.
+    implementation("androidx.core:core-splashscreen:1.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     // Google Drive sign-in (Identity's AuthorizationClient, the drive.file scope).
     implementation("com.google.android.gms:play-services-auth:21.4.0")

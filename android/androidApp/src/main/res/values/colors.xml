@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The window and splash background: the Compose app's background (Theme.kt) before it draws. Without Material You the default app color's scheme (blue, neutral 98). -->
+    <color name="window_background">#F9F9FF</color>
+</resources>
