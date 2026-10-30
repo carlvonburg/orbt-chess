@@ -13,9 +13,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="ORBT"
             android:theme="@style/Theme.Orbt.Starting">
-            <!-- The launcher shows the short name; "ORBT Chess" doesn't fit under an icon. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
