@@ -36,6 +36,9 @@ final class SyncService {
     @ObservationIgnored private let documents: () -> [RepertoireDocument]
     @ObservationIgnored private let send: @Sendable (HttpRequest) async -> HttpResponse?
     @ObservationIgnored private let support: URL
+    @ObservationIgnored private let defaults: UserDefaults
+    /// The Keychain items' prefix, one item per provider.
+    @ObservationIgnored private let secretPrefix: String
     @ObservationIgnored private var core: RepertoireSync?
     @ObservationIgnored private var folder: SyncFolder?
     @ObservationIgnored private var presenter: FilePresenter?
@@ -53,11 +56,13 @@ final class SyncService {
     private static let maxSignOutRequests = 3
 
     init(library: RepertoireLibrary, documents: @escaping () -> [RepertoireDocument],
-         support: URL = .applicationSupportDirectory,
+         support: URL = .applicationSupportDirectory, defaults: UserDefaults = .standard, secretPrefix: String = "sync-",
          send: @escaping @Sendable (HttpRequest) async -> HttpResponse? = { await HTTP.send($0) }) {
         self.library = library
         self.documents = documents
         self.support = support
+        self.defaults = defaults
+        self.secretPrefix = secretPrefix
         self.send = send
     }
 
@@ -68,7 +73,7 @@ final class SyncService {
     /// provider's own app syncs that one).
     func start() {
         guard core == nil, starting == nil, library.folder != nil, !library.usesChosenFolder,
-              let chosen = UserDefaults.standard.string(forKey: Self.providerKey).flatMap(SyncProvider.init),
+              let chosen = defaults.string(forKey: Self.providerKey).flatMap(SyncProvider.init),
               SyncProvider.available.contains(chosen) else { return }
         let stored = storedCredentials(chosen)
         account = stored?.account
@@ -114,23 +119,28 @@ final class SyncService {
         defer { isSigningIn = false }
         do {
             guard let credentials = try await SyncAuth.signIn(provider, using: session) else { return false }
-            let previous = storedCredentials(provider)?.account
-            stop()
-            // Another account (or one we can't tell): what was synced says nothing about its
-            // files, so start over (both sides are merged once).
-            if credentials.account == nil || credentials.account != previous || self.provider != provider {
-                try? FileManager.default.removeItem(at: stateFile(provider))
-            }
-            storeCredentials(provider, credentials)
-            UserDefaults.standard.set(provider.rawValue, forKey: Self.providerKey)
-            self.provider = provider
-            account = credentials.account
-            if library.folder != nil, !library.usesChosenFolder { begin(provider, credentials) }
+            connect(provider, credentials)
             return true
         } catch {
             lastError = error.localizedDescription
             return false
         }
+    }
+
+    /// After signing in: keeps the sign-in and syncs with `provider`.
+    func connect(_ provider: SyncProvider, _ credentials: SyncCredentials) {
+        let previous = storedCredentials(provider)?.account
+        stop()
+        // Another account (or one we can't tell): what was synced says nothing about its
+        // files, so start over (both sides are merged once).
+        if credentials.account == nil || credentials.account != previous || self.provider != provider {
+            try? FileManager.default.removeItem(at: stateFile(provider))
+        }
+        storeCredentials(provider, credentials)
+        defaults.set(provider.rawValue, forKey: Self.providerKey)
+        self.provider = provider
+        account = credentials.account
+        if library.folder != nil, !library.usesChosenFolder { begin(provider, credentials) }
     }
 
     /// Stops syncing: the files stay on this device, the provider's stay there. The sign-in is
@@ -141,7 +151,7 @@ final class SyncService {
         stop()
         await revoke(sync)
         Keychain.delete(secretKey(provider))
-        UserDefaults.standard.removeObject(forKey: Self.providerKey)
+        defaults.removeObject(forKey: Self.providerKey)
         try? FileManager.default.removeItem(at: stateFile(provider))
         self.provider = nil
         account = nil
@@ -351,7 +361,15 @@ final class SyncService {
     private func refresh(_ sync: RepertoireSync) {
         guard core === sync else { return }
         let state = sync.state()
-        if state != self.state { self.state = state }
+        if state != self.state {
+            self.state = state
+            // The provider refused the refresh token for good: the core dropped it, so does
+            // the Keychain (the account stays, to tell whether the next sign-in is the same).
+            if state == .needsSignIn, let provider, var stored = storedCredentials(provider), stored.refreshToken != nil {
+                stored.refreshToken = nil
+                storeCredentials(provider, stored)
+            }
+        }
         let unsynced = sync.unsyncedFiles()
         if unsynced != self.unsynced { self.unsynced = unsynced }
     }
@@ -362,7 +380,7 @@ final class SyncService {
         support.appending(path: "Sync-\(provider.rawValue).json")
     }
 
-    private func secretKey(_ provider: SyncProvider) -> String { "sync-\(provider.rawValue)" }
+    private func secretKey(_ provider: SyncProvider) -> String { secretPrefix + provider.rawValue }
 
     /// The refresh token and the account (the access token is not kept: the core refreshes).
     private func storedCredentials(_ provider: SyncProvider) -> SyncCredentials? {

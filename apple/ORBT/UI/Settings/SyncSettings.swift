@@ -20,7 +20,7 @@ struct SyncSection: View {
                     LabeledContent("Syncing with", value: sync.account.map { "\(provider.title) (\($0))" } ?? provider.title)
                     SyncStatusRow(sync: sync)
                     if sync.needsSignIn {
-                        Button("Sign In to \(provider.title)", systemImage: "person.crop.circle.badge.exclamationmark") {
+                        Button("Sign In Again", systemImage: "person.crop.circle.badge.exclamationmark") {
                             Task { await sync.signIn(provider, using: webAuth) }
                         }
                         .disabled(sync.isSigningIn)
@@ -71,6 +71,12 @@ private struct SyncStatusRow: View {
         }
     }
 
+    /// The provider refused the sign-in (revoked, unused for months, or expired): nothing
+    /// syncs until the user signs in again; edits made meanwhile upload then.
+    private var signedOut: String {
+        "\(sync.provider?.title ?? "The provider") signed ORBT Chess out. Sign in again to keep syncing; your changes are kept."
+    }
+
     private var status: (text: String, symbol: String, color: ThemeColor?) {
         let pending = switch sync.unsynced.count {
         case 0: ""
@@ -81,7 +87,7 @@ private struct SyncStatusRow: View {
             Date(timeIntervalSince1970: TimeInterval(ms) / 1000).formatted(date: .omitted, time: .shortened)
         }
         if sync.isSigningIn { return ("Signing in…", "arrow.triangle.2.circlepath", nil) }
-        if sync.needsSignIn { return ("Sign in again to keep syncing.\(pending)", "exclamationmark.icloud", .todo) }
+        if sync.needsSignIn { return (signedOut + pending, "exclamationmark.icloud", .todo) }
         if sync.waitingForDownloads > 0 {
             return ("Waiting for iCloud Drive to download \(sync.waitingForDownloads == 1 ? "1 file" : "\(sync.waitingForDownloads) files").",
                     "icloud.and.arrow.down", nil)
@@ -89,7 +95,7 @@ private struct SyncStatusRow: View {
         return switch sync.state {
         case .syncing: ("Syncing…\(pending)", "arrow.triangle.2.circlepath", nil)
         case .needsToken: ("Signing in…", "arrow.triangle.2.circlepath", nil)
-        case .needsSignIn: ("Sign in again to keep syncing.\(pending)", "exclamationmark.icloud", .todo)
+        case .needsSignIn: (signedOut + pending, "exclamationmark.icloud", .todo)
         case .offline(let until): ("Offline. Trying again at \(time(until)).\(pending)", "icloud.slash", nil)
         case .paused(let until): ("Waiting for the provider until \(time(until)).\(pending)", "icloud.slash", nil)
         case .idle: sync.unsynced.isEmpty

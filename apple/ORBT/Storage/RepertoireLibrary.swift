@@ -48,9 +48,20 @@ final class RepertoireLibrary {
     /// repertoires merge theirs (`RepertoireDocument.resolveConflictCopies`).
     @ObservationIgnored var onConflictCopies: (() -> Void)?
 
+    /// The folder to use instead of looking for one (tests).
+    @ObservationIgnored private let fixedFolder: URL?
+
+    init(folder: URL? = nil) {
+        fixedFolder = folder
+    }
+
     func setUp() async {
         guard folder == nil else { return }
-        if let chosen = ChosenFolder.resolve(), chosen.startAccessingSecurityScopedResource() {
+        if let fixedFolder {
+            folder = fixedFolder
+            usesICloud = false
+            usesChosenFolder = false
+        } else if let chosen = ChosenFolder.resolve(), chosen.startAccessingSecurityScopedResource() {
             scopedFolder = chosen
             folder = chosen
             usesICloud = false
