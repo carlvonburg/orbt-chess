@@ -1,6 +1,9 @@
 package org.orbtchess.orbt
 
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.remember
@@ -17,14 +20,17 @@ import androidx.compose.ui.window.application
 import org.orbtchess.orbt.platform.Settings
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.compose.resources.decodeToImageBitmap
 import org.orbtchess.orbt.platform.desktopPlatform
 import org.orbtchess.orbt.storage.FolderWatcher
+import java.awt.Taskbar
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 
 fun main() {
+    // The macOS menu bar and Dock say the app's name, not "java" (`:app:run`; the packaged app's
+    // Info.plist says it too). Read when AWT starts, so before any window.
+    System.setProperty("apple.awt.application.name", "ORBT Chess")
     // The core's library is one of the app's resources (app/build.gradle.kts, `copyHostLibrary`),
     // for `run` and the packaged app alike; a path set on the command line wins.
     System.getProperty("compose.application.resources.dir")?.let { resources ->
@@ -39,15 +45,25 @@ fun main() {
             watcher.run()
         }
         // The app icon (app/build.gradle.kts says how it is made from Design/AppIcon-light.svg).
-        val icon = remember {
-            object {}.javaClass.getResourceAsStream("/orbt-icon.png")?.use { BitmapPainter(it.readBytes().decodeToImageBitmap()) }
-        }
+        val iconBytes = remember { object {}.javaClass.getResourceAsStream("/orbt-icon.png")?.use { it.readBytes() } }
+        val icon = remember { iconBytes?.let { BitmapPainter(it.decodeToImageBitmap()) } }
+        // The Dock's (macOS) and the taskbar's icon, which the window's icon does not set there.
+        LaunchedEffect(Unit) { iconBytes?.let(::setTaskbarIcon) }
+        val appScope = rememberCoroutineScope()
+        var closing by remember { mutableStateOf(false) }
         val windowState = remember { savedWindowState(model.platform.settings) }
         Window(
             onCloseRequest = {
-                windowState.save(model.platform.settings)
-                runBlocking { model.flush() }
-                exitApplication()
+                // The last saves need this (the main) thread, so they are waited for in a
+                // coroutine on it, not blocked on.
+                if (!closing) {
+                    closing = true
+                    windowState.save(model.platform.settings)
+                    appScope.launch {
+                        model.flush()
+                        exitApplication()
+                    }
+                }
             },
             state = windowState,
             title = "ORBT Chess",
@@ -103,3 +119,10 @@ private const val WINDOW_HEIGHT = "windowHeight"
 private const val WINDOW_X = "windowX"
 private const val WINDOW_Y = "windowY"
 private const val WINDOW_MAXIMIZED = "windowMaximized"
+
+private fun setTaskbarIcon(png: ByteArray) {
+    if (!Taskbar.isTaskbarSupported()) return
+    val taskbar = Taskbar.getTaskbar()
+    if (!taskbar.isSupported(Taskbar.Feature.ICON_IMAGE)) return
+    javax.imageio.ImageIO.read(png.inputStream())?.let { taskbar.iconImage = it }
+}
