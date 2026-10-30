@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -67,10 +67,11 @@ fun BoardDetailPane(
             Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp).padding(top = 16.dp),
             above = above,
             below = {
-                // Material's 16 dp around the floating toolbar; as tall with its FAB as without,
-                // so the board keeps its size when a main action comes.
+                // Material's 16 dp around the floating toolbar, at the toolbar's height (with its
+                // FAB, without one, or with none while a study session is finished), so the board
+                // keeps its size.
                 Box(
-                    Modifier.fillMaxWidth().padding(vertical = 16.dp).heightIn(min = 80.dp),
+                    Modifier.fillMaxWidth().padding(vertical = 16.dp).height(BoardToolbarHeight),
                     contentAlignment = Alignment.Center,
                 ) { toolbar() }
             },

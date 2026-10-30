@@ -54,6 +54,10 @@ fun BoardToolbar(
     }
 }
 
+/** The floating toolbar's height (Material's container size); its FAB is smaller. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+val BoardToolbarHeight = FloatingToolbarDefaults.ContainerSize
+
 /** The floating toolbar's FAB: the screen's main action (Save, Next Line), named by its tooltip. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
