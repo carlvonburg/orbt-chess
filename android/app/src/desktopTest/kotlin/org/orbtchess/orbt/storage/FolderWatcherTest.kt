@@ -91,13 +91,27 @@ class FolderWatcherTest {
     @Test
     fun conflictCopyNames() {
         assertEquals("Italian.pgn", conflictCopyOriginal("Italian (Carl's conflicted copy 2026-10-30).pgn"))
-        assertEquals("Italian.pgn", conflictCopyOriginal("Italian (conflicted copy 2026-10-30 (1)).pgn"))
         assertEquals("Italian.otrep.json", conflictCopyOriginal("Italian.otrep (Carl's conflicted copy 2026-10-30).json"))
-        assertEquals("Italian.otlog.jsonl", conflictCopyOriginal("Italian.otlog_conf(1).jsonl"))
-        assertEquals("Italian.pgn", conflictCopyOriginal("Italian_conf(2).pgn"))
+        assertEquals("Italian.pgn", conflictCopyOriginal("Italian (1).pgn"))
         assertNull(conflictCopyOriginal("Italian.pgn"))
-        assertNull(conflictCopyOriginal("Italian (1).pgn"))
         assertNull(conflictCopyOriginal("Ruy Lopez (Berlin).pgn"))
+        // Only with its original there.
+        assertEquals(
+            mapOf("Najdorf (2).pgn" to "Najdorf.pgn"),
+            conflictCopies(listOf("Najdorf.pgn", "Najdorf (2).pgn", "Dragon (2).pgn")),
+        )
+    }
+
+    @Test
+    fun aRepertoireNamedLikeACopyStaysWithoutItsOriginal(): Unit = runBlocking {
+        File(folder, "Dragon (2).pgn").writeText(E4)
+        File(folder, "Dragon (2).${RepertoireLibrary.SIDECAR_EXTENSION}").writeBytes(sidecar())
+        val (docs, watcher) = watched()
+        watcher.check()
+        remoteWrite("Dragon (2).pgn", D4)
+        watcher.check()
+        assertTrue(File(folder, "Dragon (2).pgn").exists())
+        assertEquals(listOf("Dragon (2)"), docs.library.entries.map { it.name })
     }
 
     @Test
@@ -202,11 +216,11 @@ class FolderWatcherTest {
         doc.addMove("e2e4", ROOT_NODE)
         docs.flushAll()
         watcher.check()
-        File(folder, "Italian_conf(1).pgn").writeText(D4)
+        File(folder, "Italian (1).pgn").writeText(D4)
         watcher.check()
         assertNotNull(doc.tree.childByUci(ROOT_NODE, "e2e4"))
         assertNotNull(doc.tree.childByUci(ROOT_NODE, "d2d4"))
-        assertFalse(File(folder, "Italian_conf(1).pgn").exists())
+        assertFalse(File(folder, "Italian (1).pgn").exists())
         docs.flushAll()
         val pgn = File(folder, "Italian.pgn").readText()
         assertTrue("e4" in pgn && "d4" in pgn, pgn)

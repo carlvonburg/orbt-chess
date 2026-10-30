@@ -36,7 +36,7 @@ import java.util.logging.Logger
  *   merges it into what is on screen; a review log is merged with the one we last knew (the
  *   union by id: answers are never lost when another device's version replaced ours).
  * - A deleted PGN closes its document.
- * - A conflict copy ([conflictCopyOriginal]) is merged into its original with the core's merges
+ * - A conflict copy ([conflictCopies]: the core's rule) is merged into its original with the core's merges
  *   (the PGN through its document, opened for the moment when needed; the sidecar with
  *   `mergeSidecarData`, the review log with `mergeRevlogData`), then removed. The library never
  *   lists them ([RepertoireLibrary.hidden]).
@@ -60,7 +60,8 @@ class FolderWatcher(
 
     /** A file changed by someone else; `previous` is what we knew of it. */
     internal sealed class Change(val name: String) {
-        class Changed(name: String, val data: ByteArray, val previous: ByteArray?) : Change(name)
+        /** `original`: set when this is a conflict copy of that file. */
+        class Changed(name: String, val data: ByteArray, val previous: ByteArray?, val original: String? = null) : Change(name)
         class Deleted(name: String) : Change(name)
     }
 
@@ -72,7 +73,7 @@ class FolderWatcher(
     private var watchService: WatchService? = null
 
     init {
-        library.hidden = { conflictCopyOriginal(it) != null }
+        library.hidden = { isConflictCopy(library.folder, it) }
     }
 
     /** Watches until cancelled. */
@@ -139,10 +140,13 @@ class FolderWatcher(
         pending.clear()
         this.folder = folder
         val copies = mutableListOf<Change>()
-        for (file in files(folder)) {
+        val files = files(folder)
+        val pairs = conflictCopies(files.map { it.name })
+        for (file in files) {
             val data = runCatching { FileAccess.read(file) }.getOrNull()
-            if (conflictCopyOriginal(file.name) != null) {
-                if (data != null) copies += Change.Changed(file.name, data, null)
+            val original = pairs[file.name]
+            if (original != null) {
+                if (data != null) copies += Change.Changed(file.name, data, null, original)
             } else {
                 known[file.name] = Known(file.length(), file.lastModified(), data)
             }
@@ -164,7 +168,9 @@ class FolderWatcher(
         val now = clock()
         val changes = mutableListOf<Change>()
         val present = HashSet<String>()
-        for (file in files(folder)) {
+        val files = files(folder)
+        val pairs = conflictCopies(files.map { it.name })
+        for (file in files) {
             val name = file.name
             present += name
             val size = file.length()
@@ -181,7 +187,7 @@ class FolderWatcher(
             val latest = known[name]
             known[name] = Known(size, modified, data)
             if (latest?.data != null && latest.data.contentEquals(data)) continue
-            changes += Change.Changed(name, data, latest?.data)
+            changes += Change.Changed(name, data, latest?.data, pairs[name])
         }
         for (name in known.keys.toList()) {
             if (name in present) continue
@@ -219,8 +225,8 @@ class FolderWatcher(
         val open = LinkedHashMap<RepertoireDocument, Remote>()
         val copies = mutableListOf<Change.Changed>()
         for (change in changes) {
-            if (conflictCopyOriginal(change.name) != null) {
-                if (change is Change.Changed) copies += change
+            if (change is Change.Changed && change.original != null) {
+                copies += change
                 continue
             }
             val document = documentOf(change.name)
@@ -256,7 +262,7 @@ class FolderWatcher(
 
     /** Merges a conflict copy into its original, then removes it. */
     private suspend fun mergeCopy(folder: File, copy: Change.Changed) {
-        val originalName = conflictCopyOriginal(copy.name) ?: return
+        val originalName = copy.original ?: return
         val original = File(folder, originalName)
         val copyFile = File(folder, copy.name)
         val kind = syncFileKind(originalName) ?: return
