@@ -19,6 +19,13 @@ final class CoverageTables {
     private(set) var downloads: [String: Double] = [:]
     /// Why the last download of a file failed, by file name.
     private(set) var failures: [String: String] = [:]
+    /// Whether the server's list is known (read now or saved by an earlier launch). Until then
+    /// no database has a file to download, though the server may well have one.
+    private(set) var manifestKnown = false
+    /// Whether the server's list is being read.
+    private(set) var readingManifest = false
+    /// Whether the last reading of the server's list failed (offline, or the server's error).
+    private(set) var manifestFailed = false
 
     private let explorer: ExplorerService
     @ObservationIgnored private var loadedFiles: Set<String> = []
@@ -60,9 +67,15 @@ final class CoverageTables {
         ensure(database)
     }
 
-    /// Starts downloading the database's table unless it is here or already downloading.
+    /// Starts downloading the database's table unless it is here or already downloading. Reads
+    /// the server's list first when it is not known yet (the device was offline so far).
     func ensure(_ database: ExplorerDatabase) {
-        guard !isReady(database), let file = file(for: database), downloads[file.file] == nil else { return }
+        guard !isReady(database) else { return }
+        guard manifestKnown else {
+            if !readingManifest { Task { await refreshManifest() } }
+            return
+        }
+        guard let file = file(for: database), downloads[file.file] == nil else { return }
         Task { await download(file) }
     }
 
@@ -76,8 +89,9 @@ final class CoverageTables {
     /// Loads local tables, then reads the server's list.
     func setUp(appFolder: URL?) async {
         try? FileManager.default.createDirectory(at: Self.directory, withIntermediateDirectories: true)
-        if let data = try? Data(contentsOf: Self.savedManifest) {
-            available = coverageManifestFiles(json: data) ?? []
+        if let data = try? Data(contentsOf: Self.savedManifest), let files = coverageManifestFiles(json: data) {
+            available = files
+            manifestKnown = true
         }
         await load(from: Self.directory)
         if let appFolder {
@@ -87,13 +101,19 @@ final class CoverageTables {
     }
 
     func refreshManifest() async {
+        guard !readingManifest else { return }
+        readingManifest = true
         do {
             let (data, response) = try await URLSession.shared.data(from: Self.server.appending(path: "manifest.json"))
+            readingManifest = false
             guard (response as? HTTPURLResponse)?.statusCode == 200, let files = coverageManifestFiles(json: data) else {
                 Self.log.error("coverage manifest: unexpected response")
+                manifestFailed = true
                 return
             }
             available = files
+            manifestKnown = true
+            manifestFailed = false
             try? data.write(to: Self.savedManifest, options: .atomic)
             let directory = Self.directory
             stale = await Task.detached {
@@ -104,6 +124,8 @@ final class CoverageTables {
             }.value
             for database in wanted { ensure(database) }
         } catch {
+            readingManifest = false
+            manifestFailed = true
             Self.log.error("coverage manifest: \(error.localizedDescription, privacy: .public)")
         }
     }

@@ -266,6 +266,15 @@ private struct TableDownloadRow: View {
             Button("Download Again", systemImage: "arrow.down.circle") {
                 Task { await coverage.retry(database) }
             }
+        } else if !coverage.manifestKnown {
+            // The server's list was never read (offline since installing): the table may exist.
+            Label("Downloads when you're online", systemImage: "icloud.and.arrow.down")
+                .foregroundStyle(.secondary)
+            if coverage.manifestFailed, !coverage.readingManifest {
+                Button("Try Again", systemImage: "arrow.clockwise") {
+                    Task { await coverage.retry(database) }
+                }
+            }
         } else {
             Label("Not available offline: coverage uses the Lichess explorer", systemImage: "icloud.slash")
                 .font(.footnote)
