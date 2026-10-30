@@ -15,7 +15,7 @@
   <meta name="theme-color" content="#0b0e14" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="/assets/site.css?v=12">
+  <link rel="stylesheet" href="/assets/site.css?v=18">
 </head>
 <body>
   <header class="site-header">
@@ -43,10 +43,11 @@
         <h1>Build an opening repertoire you actually know.</h1>
         <p class="lede">See every opponent move you haven't prepared, choose your answers with the explorer and the engine, and learn them with spaced repetition. On iPhone, iPad, Mac, Android, Windows and Linux.</p>
         <div class="cta">
-          <a class="app-store" href="https://apps.apple.com/app/id6828347828" aria-label="Download on the App Store"><img src="/assets/app-store-badge.svg" alt="Download on the App Store" width="150" height="50"></a>
-          <a class="store" href="https://play.google.com/store/apps/details?id=org.orbtchess.orbt"><small>Get it on</small><b>Google Play</b></a>
-          <a class="store" href="/download/#windows"><small>Download for</small><b>Windows &amp; Linux</b></a>
+          <a class="badge" href="https://apps.apple.com/app/id6828347828" aria-label="Download on the App Store"><img src="/assets/app-store-badge.svg" alt="Download on the App Store" width="150" height="50"></a>
+          <a class="badge" href="https://play.google.com/store/apps/details?id=org.orbtchess.orbt"><img src="/assets/google-play-badge.svg" alt="Get it on Google Play" width="175" height="52"></a>
+          <a class="badge" href="https://apps.microsoft.com/search?query=ORBT%20Chess"><img src="/assets/microsoft-store-badge.svg" alt="Get it from Microsoft" width="190" height="52"></a>
         </div>
+        <p class="more-downloads"><a href="/download/#linux">Linux and other downloads →</a></p>
       </div>
       <div class="wrap stage-wrap">
         <div class="stage">
@@ -139,7 +140,7 @@
     </section>
 
     <!-- Features bento -->
-    <section id="features" class="features wrap">
+    <section id="features" class="features band wrap">
       <header class="section-head">
         <p class="eyebrow">Features</p>
         <h2>What else is in the app</h2>
@@ -236,26 +237,6 @@
       </div>
     </section>
 
-    <!-- Platforms -->
-    <section id="platforms" class="platforms wrap">
-      <div class="platforms-card">
-        <div>
-          <p class="eyebrow">Every platform</p>
-          <h2>On your phone, tablet and computer</h2>
-          <p class="lede">One app everywhere, with the same chess, coverage and training underneath. Your repertoires follow you: through iCloud Drive between Apple devices, or Dropbox or Google Drive between all of them.</p>
-        </div>
-        <div class="platforms-side">
-          <ul class="roadmap" aria-label="Platforms">
-            <li class="done"><span class="mark" aria-hidden="true">✓</span><span>iPhone, iPad and Mac</span><a class="state" href="https://apps.apple.com/app/id6828347828">App Store</a></li>
-            <li class="done"><span class="mark" aria-hidden="true">✓</span><span>Android</span><a class="state" href="https://play.google.com/store/apps/details?id=org.orbtchess.orbt">Google Play</a></li>
-            <li class="done"><span class="mark" aria-hidden="true">✓</span><span>Windows</span><a class="state" href="/download/#windows">Microsoft Store</a></li>
-            <li class="done"><span class="mark" aria-hidden="true">✓</span><span>Linux</span><a class="state" href="/download/#linux">Download</a></li>
-          </ul>
-          <a class="button" href="/download/">All downloads</a>
-        </div>
-      </div>
-    </section>
-
     <!-- Open source -->
     <section id="open-source" class="open-source wrap">
       <header class="section-head">
@@ -286,6 +267,51 @@
         <a class="button ghost" href="https://github.com/carlvonburg/orbt-chess/issues">Report an issue</a>
       </div>
       <p class="credits">Built on <a href="https://apps.ankiweb.net">Anki</a>, <a href="https://lichess.org">Lichess</a>, <a href="https://stockfishchess.org">Stockfish</a>, <a href="https://github.com/niklasf/shakmaty">shakmaty</a> and <a href="https://lumbrasgigabase.com">Lumbra's Gigabase</a>. Pieces: cburnett (GPLv2+).</p>
+    </section>
+
+    <!-- Questions people ask before installing; the rest are on Support -->
+    <section id="faq" class="faq band wrap">
+      <header class="section-head">
+        <p class="eyebrow">Questions</p>
+        <h2>Before you start</h2>
+      </header>
+      <div class="faq-list">
+        <details>
+          <summary>Is it really free?</summary>
+          <p>Yes: no subscription, no in-app purchases, no ads and no account. It's open source under the AGPL-3.0.</p>
+        </details>
+        <details>
+          <summary>Do I need a Lichess account?</summary>
+          <p>No. The coverage tables for your chosen database download once and answer most positions. Signing in with a free Lichess account adds live statistics for positions the tables don't hold.</p>
+        </details>
+        <details>
+          <summary>Can I bring my existing repertoire?</summary>
+          <p>Yes. Import any PGN, Chessbook exports included. Several games from the starting position become one repertoire, and lines that reach the same position by another move order are kept once.</p>
+        </details>
+        <details>
+          <summary>Does it work offline?</summary>
+          <p>Studying, editing, Stockfish analysis and coverage from the downloaded tables all work offline. Only new statistics need the internet.</p>
+        </details>
+        <details>
+          <summary>Can I use it on an iPhone and an Android phone or a PC?</summary>
+          <p>Yes. Choose Dropbox or Google Drive in Settings › Sync on each device; iCloud Drive syncs between Apple devices only.</p>
+        </details>
+      </div>
+      <p class="faq-more">More answers on the <a href="/support/">Support page</a>.</p>
+    </section>
+
+    <!-- Closing: every platform and its download, framed like the hero -->
+    <section id="platforms" class="closing wrap">
+      <div class="closing-card">
+        <h2>Start building your repertoire.</h2>
+        <p class="lede">Free on every device, and your repertoires sync between them.</p>
+        <div class="cta">
+          <a class="badge" href="https://apps.apple.com/app/id6828347828" aria-label="Download on the App Store"><img src="/assets/app-store-badge.svg" alt="Download on the App Store" width="150" height="50"></a>
+          <a class="badge" href="https://play.google.com/store/apps/details?id=org.orbtchess.orbt"><img src="/assets/google-play-badge.svg" alt="Get it on Google Play" width="175" height="52"></a>
+          <a class="badge" href="https://apps.microsoft.com/search?query=ORBT%20Chess"><img src="/assets/microsoft-store-badge.svg" alt="Get it from Microsoft" width="190" height="52"></a>
+        </div>
+        <p class="more-downloads"><a href="/download/">Linux and all downloads →</a></p>
+      </div>
     </section>
   </main>
 

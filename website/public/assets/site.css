@@ -6,6 +6,8 @@
   --bg: #f7f8fb;
   --surface: #ffffff;
   --surface-2: #eef1f6;
+  --band: #eef1f6;                /* the Features band: one section set apart */
+  --hero: #e9edf9;                /* the hero and the closing card, behind the board pattern */
   --text: #0b0e14;
   --text-2: #4a5263;
   --text-3: #8a93a5;
@@ -34,6 +36,8 @@
     --bg: #0b0e14;
     --surface: #131823;
     --surface-2: #1b2130;
+    --band: #151a25;
+    --hero: #121729;
     --text: #f2f4f8;
     --text-2: #a5adbd;
     --text-3: #6c7588;
@@ -96,7 +100,11 @@ p { margin: 0 0 1em; }
 
 /* Buttons: capsules, as in the app */
 .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.app-store img { height: 52px; width: auto; }
+/* The stores' own badges, at one height (each store's guidelines: never redrawn) */
+.badge { display: inline-block; transition: transform 0.15s ease; }
+.badge:hover { transform: translateY(-1px); }
+.badge img { height: 52px; width: auto; }
+.more-downloads { margin: 18px 0 0; font-size: 15px; font-weight: 600; }
 .button {
   display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 52px;
   padding: 0 24px; border-radius: 999px; font-weight: 650; font-size: 16px;
@@ -105,19 +113,15 @@ p { margin: 0 0 1em; }
 }
 .button:hover { text-decoration: none; filter: brightness(1.08); transform: translateY(-1px); }
 .button.ghost { background: var(--surface); color: var(--text); border-color: var(--line); }
-/* Store buttons beside the App Store badge, in its shape: black, gray rim, two lines */
-.store {
-  display: inline-flex; flex-direction: column; justify-content: center; height: 52px; min-width: 156px;
-  padding: 0 18px; border-radius: 12px; background: #000; color: #fff; border: 1px solid #a6a6a6;
-  line-height: 1.1; text-align: left; transition: transform 0.15s ease;
-}
-.store:hover { text-decoration: none; transform: translateY(-1px); }
-.store small { font-size: 11px; font-weight: 500; }
-.store b { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; white-space: nowrap; }
 
 /* Hero: the app's board as a fading backdrop, two soft glows */
 .hero { position: relative; padding: 96px 0 0; isolation: isolate; }
-.hero-bg { position: absolute; inset: 0 0 30% 0; z-index: -1; overflow: hidden; }
+/* The hero's tint fades into the page behind the devices, no hard edge */
+.hero-bg {
+  position: absolute; inset: 0 0 12% 0; z-index: -1; overflow: hidden; background: var(--hero);
+  -webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+}
 .hero-bg::before {
   content: ""; position: absolute; inset: -10%;
   background: repeating-conic-gradient(var(--sq-dark) 0 25%, var(--sq-light) 0 50%) 50% 0 / 96px 96px;
@@ -143,6 +147,7 @@ p { margin: 0 0 1em; }
 .pill .sep { color: var(--text-3); }
 
 .stage-wrap { perspective: 1600px; margin-top: 64px; }
+
 .stage { position: relative; max-width: 1000px; margin: 0 auto; padding-bottom: 6%; transform-origin: 50% 0; }
 .device img { border: 10px solid var(--frame); box-shadow: var(--shadow); }
 .device.ipad { width: 86%; }
@@ -263,7 +268,14 @@ p { margin: 0 0 1em; }
 @media (max-width: 480px) { .ex-row { grid-template-columns: 2.8em 2.6em 1fr 4.6em; gap: 8px; padding: 9px 14px; } .wdl { font-size: 10px; } .line { font-size: 12.5px; } }
 
 /* Features bento */
-.features { padding-top: 140px; }
+/* Bands: a section set apart on a full-width tint (Features, Questions), between plain ones */
+.band { position: relative; isolation: isolate; padding-top: 120px; padding-bottom: 120px; }
+.band::before { content: ""; position: absolute; inset: 0 calc(50% - 50vw); z-index: -1; background: var(--band); border-block: 1px solid var(--line); }
+/* In dark mode the band is lighter than the page, so its cards and their panels step up one shade */
+@media (prefers-color-scheme: dark) { .band { --surface: #1d2331; --surface-2: #262d3d; } }
+@media (max-width: 560px) { .band { padding-top: 80px; padding-bottom: 80px; } }
+.features { margin-top: 140px; }
+@media (max-width: 560px) { .features { margin-top: 100px; } }
 .bento { display: grid; gap: 20px; grid-template-columns: 1fr; }
 @media (min-width: 900px) {
   .bento { grid-template-columns: repeat(6, 1fr); }
@@ -310,26 +322,33 @@ p { margin: 0 0 1em; }
 .doc { flex: none; font-size: 9px; font-weight: 750; letter-spacing: 0.04em; color: var(--blue); width: 30px; height: 38px; border-radius: 6px; display: grid; place-items: end center; padding-bottom: 5px; background: var(--tint-soft); }
 @media (max-width: 480px) { .cell { gap: 10px; padding: 10px 14px; } .cell .title { min-width: 3.4em; font-size: 15px; } .cell .value { font-size: 12.5px; } }
 
-/* Other platforms */
-.platforms { padding-top: 140px; }
-.platforms-card {
-  display: grid; gap: 28px; align-items: center; padding: 40px; border-radius: var(--radius);
-  background: var(--surface); border: 1px solid var(--line);
+/* Questions: the Support page's disclosure rows, a few of them */
+.faq .section-head { margin-bottom: 32px; }
+.faq-list, .faq-more { max-width: 760px; margin: 0 auto; }
+.faq-list details:first-child { border-top: 1px solid var(--line); }
+.faq-list p { color: var(--text-2); }
+.faq-more { margin-top: 24px; color: var(--text-2); }
+
+/* Closing: the downloads again, on the hero's board and glow */
+.closing { padding-top: 120px; padding-bottom: 120px; }
+.closing-card {
+  position: relative; overflow: hidden; isolation: isolate; text-align: center; padding: 80px 32px;
+  border-radius: var(--radius); background: var(--hero); border: 1px solid var(--line);
 }
-.platforms-card h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
-.platforms-card .lede { margin: 0; font-size: 1.1rem; }
-@media (min-width: 900px) { .platforms-card { grid-template-columns: 1.4fr 1fr; padding: 48px; } }
-.platforms-side { display: flex; flex-direction: column; gap: 20px; align-items: flex-start; }
-.roadmap { list-style: none; padding: 0; margin: 0; width: 100%; }
-.roadmap li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
-.roadmap li:first-child { padding-top: 0; }
-.roadmap .mark { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px dashed color-mix(in srgb, var(--text-3) 70%, transparent); display: grid; place-items: center; font-size: 12px; font-weight: 800; }
-.roadmap .done .mark { border: 0; background: var(--green); color: #fff; }
-.roadmap .state { margin-left: auto; font-size: 14px; color: var(--text-3); }
-.roadmap .done .state { color: var(--green); font-weight: 600; }
-.roadmap li:not(.done) > span:nth-child(2) { color: var(--text-2); }
-.roadmap .done a.state { color: var(--tint); font-weight: 600; }
-@media (max-width: 560px) { .platforms-card { padding: 28px 24px; } }
+.closing-card::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0.12;
+  background: repeating-conic-gradient(var(--sq-dark) 0 25%, var(--sq-light) 0 50%) 50% 50% / 96px 96px;
+  -webkit-mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, #000 0%, transparent 80%);
+  mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, #000 0%, transparent 80%);
+}
+.closing-card::after {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: radial-gradient(40% 60% at 30% 30%, var(--glow-1), transparent 70%),
+              radial-gradient(40% 60% at 75% 70%, var(--glow-2), transparent 70%);
+}
+.closing-card .lede { max-width: 640px; margin: 12px auto 32px; }
+.closing-card .cta { justify-content: center; }
+@media (max-width: 560px) { .closing-card { padding: 56px 20px; border-radius: 22px; } }
 
 /* Open source */
 .open-source { padding-top: 140px; padding-bottom: 120px; }
@@ -361,7 +380,10 @@ p { margin: 0 0 1em; }
 .callout { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px 24px; margin: 24px 0; }
 .callout p:last-child { margin: 0; }
 details { border-bottom: 1px solid var(--line); padding: 16px 0; }
-details summary { cursor: pointer; font-weight: 650; }
+details summary { cursor: pointer; font-weight: 650; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+details summary::-webkit-details-marker { display: none; }
+details summary::after { content: "+"; flex: none; font-size: 22px; font-weight: 400; line-height: 1; color: var(--text-3); transition: transform 0.2s ease; }
+details[open] summary::after { transform: rotate(45deg); }
 details[open] summary { margin-bottom: 8px; }
 details p:last-child { margin-bottom: 0; }
 
