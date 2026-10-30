@@ -68,8 +68,13 @@ struct SettingsView: View {
 
                 EngineSettingsSection()
 
+                #if os(macOS)
+                FolderSection()
+                #endif
+                SyncSection()
+
                 Section {
-                    LabeledContent("Storage", value: model.library.usesICloud ? "iCloud Drive › ORBT Chess" : "On this device")
+                    LabeledContent("Storage", value: storage)
                     LabeledContent("Cached positions", value: cacheCount.formatted())
                     Button("Clear Statistics Cache", role: .destructive) {
                         model.stats.clear()
@@ -78,7 +83,8 @@ struct SettingsView: View {
                 } header: {
                     Text("Data")
                 } footer: {
-                    Text((model.library.usesICloud ? "" : "iCloud Drive is off, so repertoires are stored on this device only. ")
+                    Text((model.library.usesICloud || model.library.usesChosenFolder || model.sync.provider != nil ? ""
+                          : "iCloud Drive is off, so repertoires are stored on this device only. ")
                          + "Repertoires are PGN files you can open in any chess program. Statistics are cached on this device and fetched again when needed.")
                 }
 
@@ -113,6 +119,12 @@ struct SettingsView: View {
             #endif
             .onAppear { cacheCount = model.stats.entryCount }
         }
+    }
+
+    private var storage: String {
+        if model.library.usesChosenFolder { return model.library.folder?.lastPathComponent ?? "Chosen folder" }
+        let base = model.library.usesICloud ? "iCloud Drive › ORBT Chess" : "On this device"
+        return model.sync.provider.map { "\(base), \($0.title)" } ?? base
     }
 
     private func steps(_ minutes: [Double]) -> String {

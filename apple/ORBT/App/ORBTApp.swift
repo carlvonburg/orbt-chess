@@ -23,7 +23,7 @@ struct ORBTApp: App {
                     #if os(macOS)
                     appDelegate.model = model
                     #endif
-                    await model.library.setUp()
+                    await model.setUpLibrary()
                     await model.setUpCoverageTables()
                 }
         }
@@ -31,8 +31,12 @@ struct ORBTApp: App {
         .defaultSize(width: 1400, height: 900)
         .commands { BuilderCommands() }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active { flushInBackground() }
+            if phase != .active {
+                flushInBackground()
+                model.sync.background()
+            }
             if phase == .active {
+                model.sync.resume()
                 Task {
                     await model.library.refresh()
                     await model.reloadCoverageTables()

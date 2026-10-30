@@ -32,6 +32,9 @@ final class RepertoireLibrary {
 
     private(set) var folder: URL?
     private(set) var usesICloud = false
+    /// A folder chosen on the Mac (inside Dropbox or Google Drive for desktop, which sync it)
+    /// instead of iCloud Drive's.
+    private(set) var usesChosenFolder = false
     private(set) var entries: [RepertoireEntry] = []
     private(set) var isLoaded = false
     var lastError: String?
@@ -39,18 +42,44 @@ final class RepertoireLibrary {
     @ObservationIgnored private var presenter: FilePresenter?
     @ObservationIgnored private var scheduledRefresh: Task<Void, Never>?
     @ObservationIgnored private var scanGeneration = 0
+    /// The chosen folder whose security scope is open.
+    @ObservationIgnored private var scopedFolder: URL?
+    /// Told when a scan finds a provider's conflict copies in the chosen folder: open
+    /// repertoires merge theirs (`RepertoireDocument.resolveConflictCopies`).
+    @ObservationIgnored var onConflictCopies: (() -> Void)?
+
+    /// The folder to use instead of looking for one (tests).
+    @ObservationIgnored private let fixedFolder: URL?
+
+    init(folder: URL? = nil) {
+        fixedFolder = folder
+    }
 
     func setUp() async {
         guard folder == nil else { return }
-        let ubiquity = await Task.detached {
-            FileManager.default.url(forUbiquityContainerIdentifier: Self.containerID)
-        }.value
-        if let ubiquity {
-            folder = ubiquity.appending(path: "Documents", directoryHint: .isDirectory)
-            usesICloud = true
-        } else {
-            folder = URL.documentsDirectory
+        if let fixedFolder {
+            folder = fixedFolder
             usesICloud = false
+            usesChosenFolder = false
+        } else if let chosen = ChosenFolder.resolve(), chosen.startAccessingSecurityScopedResource() {
+            scopedFolder = chosen
+            folder = chosen
+            usesICloud = false
+            usesChosenFolder = true
+            FileAccessHooks.shared.chosenFolder = chosen
+        } else {
+            let ubiquity = await Task.detached {
+                FileManager.default.url(forUbiquityContainerIdentifier: Self.containerID)
+            }.value
+            if let ubiquity {
+                folder = ubiquity.appending(path: "Documents", directoryHint: .isDirectory)
+                usesICloud = true
+            } else {
+                folder = URL.documentsDirectory
+                usesICloud = false
+            }
+            usesChosenFolder = false
+            FileAccessHooks.shared.chosenFolder = nil
         }
         if let folder {
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -60,6 +89,21 @@ final class RepertoireLibrary {
         }
         await refresh()
         isLoaded = true
+    }
+
+    /// Uses `url` as the repertoire folder from now on (a folder chosen on the Mac), or iCloud
+    /// Drive's again (nil). Close the open repertoires first.
+    func useFolder(_ url: URL?) async throws {
+        if let url { try ChosenFolder.store(url) } else { ChosenFolder.forget() }
+        presenter?.stop()
+        presenter = nil
+        scheduledRefresh?.cancel()
+        scopedFolder?.stopAccessingSecurityScopedResource()
+        scopedFolder = nil
+        folder = nil
+        entries = []
+        isLoaded = false
+        await setUp()
     }
 
     /// Rescans soon. The folder reports every save of an open repertoire, so bursts of
@@ -78,19 +122,43 @@ final class RepertoireLibrary {
         guard let folder else { return }
         scanGeneration += 1
         let generation = scanGeneration
-        let result = await Task.detached(priority: .userInitiated) { Self.scan(folder) }.value
+        let (result, copies) = await Task.detached(priority: .userInitiated) { () -> ([RepertoireEntry], Bool) in
+            let copies = ConflictCopies.all(in: folder)
+            if !copies.isEmpty { Self.resolveConflictCopies(in: folder) }
+            return (Self.scan(folder, skipping: ConflictCopies.all(in: folder)), !copies.isEmpty)
+        }.value
         // A later scan started meanwhile and has fresher results.
         guard generation == scanGeneration else { return }
         if result != entries { entries = result }
+        if copies { onConflictCopies?() }
     }
 
-    nonisolated private static func scan(_ folder: URL) -> [RepertoireEntry] {
+    /// The sidecars' and review logs' conflict copies, merged into their originals right away
+    /// (the library's rows read the sidecars); the PGNs' are merged when the repertoire opens.
+    nonisolated private static func resolveConflictCopies(in folder: URL) {
+        let originals = Set(ConflictCopies.pairs(((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []).sorted())
+            .map(\.original))
+        for name in originals {
+            let url = folder.appending(path: name)
+            switch syncFileKind(name: name) {
+            case .sidecar: try? FileAccess.resolveConflicts(at: url) { mergeSidecarData(a: $0, b: $1) }
+            case .revlog: try? FileAccess.resolveConflicts(at: url) { mergeRevlogData(a: $0, b: $1) }
+            case .pgn, nil: break
+            }
+        }
+    }
+
+    /// `skipping`: conflict copies, merged instead of listed.
+    nonisolated private static func scan(_ folder: URL, skipping: Set<String> = []) -> [RepertoireEntry] {
         let fm = FileManager.default
         let enumerator = fm.enumerator(at: folder, includingPropertiesForKeys: nil, options: [.skipsPackageDescendants])
         var pgns: [URL] = []
         var placeholders: [URL] = []
         while let url = enumerator?.nextObject() as? URL {
             let name = url.lastPathComponent
+            if skipping.contains(name), url.deletingLastPathComponent().standardizedFileURL == folder.standardizedFileURL {
+                continue
+            }
             if name.hasSuffix(".pgn") {
                 pgns.append(url)
             } else if name.hasPrefix("."), name.hasSuffix(".pgn.icloud") {
@@ -263,6 +331,42 @@ final class RepertoireLibrary {
         let words = name.safeRepertoireName.split(whereSeparator: \.isWhitespace).joined(separator: " ")
         return String(words.drop { $0 == "." || $0 == " " }.prefix(100))
             .trimmingCharacters(in: .whitespaces)
+    }
+}
+
+/// The folder chosen on the Mac instead of iCloud Drive's, kept across launches as a
+/// security-scoped bookmark (the app is sandboxed). Never set on iPhone and iPad.
+nonisolated enum ChosenFolder {
+    static let bookmarkKey = "repertoireFolderBookmark"
+
+    /// The chosen folder, or nil (none, or it is gone). A stale bookmark is renewed.
+    static func resolve() -> URL? {
+        #if os(macOS)
+        guard let data = UserDefaults.standard.data(forKey: bookmarkKey) else { return nil }
+        var stale = false
+        guard let url = try? URL(resolvingBookmarkData: data, options: .withSecurityScope, bookmarkDataIsStale: &stale) else {
+            return nil
+        }
+        if stale, url.startAccessingSecurityScopedResource() {
+            defer { url.stopAccessingSecurityScopedResource() }
+            try? store(url)
+        }
+        return url
+        #else
+        return nil
+        #endif
+    }
+
+    /// Keeps `url` (picked in an open panel, so in scope) as the repertoire folder.
+    static func store(_ url: URL) throws {
+        #if os(macOS)
+        let data = try url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
+        UserDefaults.standard.set(data, forKey: bookmarkKey)
+        #endif
+    }
+
+    static func forget() {
+        UserDefaults.standard.removeObject(forKey: bookmarkKey)
     }
 }
 

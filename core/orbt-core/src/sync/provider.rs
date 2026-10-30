@@ -93,7 +93,7 @@ pub trait Provider: Send + std::fmt::Debug {
     fn read_refresh(&self, r: &HttpResponse) -> Answer<(String, Option<i64>)>;
 
     /// Revokes the sign-in on the provider's side (signing out), or None when the platform does
-    /// (Drive: the system drops its token).
+    /// (Drive on Android: the system drops its token).
     fn revoke(&self, token: &str) -> Option<HttpRequest>;
 
     /// Looks the app's folder up, or None when the provider needs none (Dropbox's App folder).

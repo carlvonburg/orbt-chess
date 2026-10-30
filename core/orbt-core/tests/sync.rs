@@ -8,13 +8,16 @@ use orbt_core::chess::Side;
 use orbt_core::formats::{Sidecar, Timestamp, revlog};
 use orbt_core::http::{Header, HttpMethod, HttpRequest, HttpResponse};
 use orbt_core::repertoire::RepertoireTree;
+use orbt_core::sync::drive;
 use orbt_core::sync::{
-    AuthNeed, LocalWrite, SyncEngine, SyncOp, SyncOpKind, SyncOutcome, SyncState, content_hash,
+    AuthNeed, ConflictCopy, LocalWrite, SyncEngine, SyncOp, SyncOpKind, SyncOutcome, SyncState,
+    conflict_copies, conflict_original, content_hash,
 };
 use serde_json::{Value, json};
 
 const TOKEN: &str = "access-1";
 const REFRESH: &str = "refresh-1";
+const CLIENT_ID: &str = "123-abc.apps.googleusercontent.com";
 
 fn header<'a>(r: &'a HttpRequest, name: &str) -> Option<&'a str> {
     r.headers
@@ -198,6 +201,10 @@ struct Drive {
     files: BTreeMap<String, (String, Vec<u8>, String)>,
     next: u64,
     access: String,
+    /// The refresh token of the core's own sign-in.
+    refresh: String,
+    /// The secret a Desktop app client sends (Windows, Linux).
+    secret: Option<String>,
 }
 
 fn percent_decode(s: &str) -> String {
@@ -241,6 +248,40 @@ impl Drive {
 
 impl Server for Drive {
     fn handle(&mut self, r: &HttpRequest) -> HttpResponse {
+        if let Some(endpoint) = r.url.strip_prefix("https://oauth2.googleapis.com") {
+            assert_eq!(r.method, HttpMethod::Post);
+            assert!(header(r, "Authorization").is_none());
+            let form = query(&format!("?{}", String::from_utf8(r.body.clone()).unwrap()));
+            return match endpoint {
+                "/token" => {
+                    assert_eq!(form["grant_type"], "refresh_token");
+                    assert_eq!(form["client_id"], CLIENT_ID);
+                    assert_eq!(form.get("client_secret"), self.secret.as_ref());
+                    if form["refresh_token"] == self.refresh {
+                        let answer = json!({"access_token": self.access, "expires_in": 3599,
+                            "scope": "https://www.googleapis.com/auth/drive.file",
+                            "token_type": "Bearer"});
+                        respond(200, answer.to_string())
+                    } else {
+                        respond(
+                            400,
+                            r#"{"error": "invalid_grant", "error_description": "Bad Request"}"#,
+                        )
+                    }
+                }
+                "/revoke" => {
+                    // An access token takes its refresh token with it.
+                    if form["token"] == self.access || form["token"] == self.refresh {
+                        self.access = "revoked".into();
+                        self.refresh = "revoked".into();
+                        respond(200, "{}")
+                    } else {
+                        respond(400, r#"{"error": "invalid_token"}"#)
+                    }
+                }
+                other => panic!("unexpected endpoint {other}"),
+            };
+        }
         if header(r, "Authorization") != Some(&format!("Bearer {}", self.access)) {
             return respond(401, "{}");
         }
@@ -354,6 +395,17 @@ impl Device {
     fn drive() -> Device {
         let mut engine = SyncEngine::drive(b"");
         engine.set_credentials(Some(TOKEN.into()), Some(3_600_000), None);
+        Device::with(engine)
+    }
+
+    /// Drive signed in with the core's OAuth: an iOS client (`secret` None) or a Desktop app one.
+    fn drive_oauth(secret: Option<&str>) -> Device {
+        let client = drive::Client {
+            id: CLIENT_ID.into(),
+            secret: secret.map(str::to_owned),
+        };
+        let mut engine = SyncEngine::drive_oauth(client, b"");
+        engine.set_credentials(None, None, Some(REFRESH.into()));
         Device::with(engine)
     }
 
@@ -942,4 +994,315 @@ fn a_drive_token_of_unknown_lifetime_is_used_until_refused() {
     a.engine.set_credentials(Some("wrong".into()), None, None);
     a.sync(&mut server);
     assert_eq!(a.engine.state(), &SyncState::NeedsSignIn);
+}
+
+#[test]
+fn drive_signed_in_by_the_core_refreshes_and_revokes() {
+    let mut server = Drive {
+        access: TOKEN.into(),
+        refresh: REFRESH.into(),
+        ..Drive::default()
+    };
+    // Only a refresh token at first: refreshed before anything else.
+    let mut a = Device::drive_oauth(None);
+    a.edit("Najdorf.pgn", E4);
+    let sent = a.sync(&mut server);
+    assert_eq!(sent[0], SyncOpKind::Refresh);
+    assert_eq!(server.files.len(), 1);
+    assert_eq!(a.needs, None);
+
+    // The hour is up: refreshed again, never asking the platform for a token.
+    a.now += 3_600_000;
+    server.access = "access-2".into();
+    a.edit("Najdorf.otrep.json", sidecar("n"));
+    let sent = a.sync(&mut server);
+    assert!(sent.contains(&SyncOpKind::Refresh), "{sent:?}");
+    assert_eq!(server.files.len(), 2);
+    assert_eq!(a.needs, None);
+    // Refused before it expired (revoked elsewhere, then a new sign-in on the server): one
+    // refresh, then on.
+    server.access = "access-3".into();
+    a.edit(
+        "Najdorf.pgn",
+        "[Event \"Najdorf\"]\n\n1. e4 c5 2. Nf3 d6 3. d4 *\n",
+    );
+    let sent = a.sync(&mut server);
+    assert!(sent.contains(&SyncOpKind::Refresh), "{sent:?}");
+    assert_eq!(a.needs, None);
+    assert!(a.engine.unsynced_files().is_empty());
+
+    // The refresh token was revoked: sign in again (invalid_grant).
+    a.now += 3_600_000;
+    server.refresh = "refresh-2".into();
+    a.edit("Najdorf.pgn", E4);
+    a.sync(&mut server);
+    assert_eq!(a.needs, Some(AuthNeed::SignIn));
+    assert_eq!(a.engine.state(), &SyncState::NeedsSignIn);
+
+    // Signing out revokes it on Google's side.
+    a.needs = None;
+    a.engine.set_credentials(
+        Some("access-3".into()),
+        Some(a.now + 3_600_000),
+        Some("refresh-2".into()),
+    );
+    let request = a.engine.sign_out_request(a.now).expect("a revoke request");
+    assert_eq!(request.url, "https://oauth2.googleapis.com/revoke");
+    let response = server.handle(&request);
+    assert_eq!(response.status, 200);
+    a.engine.on_sign_out_response(Some(&response), a.now);
+    assert_eq!(a.engine.sign_out_request(a.now), None);
+    assert_eq!(server.refresh, "revoked");
+
+    // Expired at sign-out: refreshed first, then revoked.
+    let mut server = Drive {
+        access: TOKEN.into(),
+        refresh: REFRESH.into(),
+        ..Drive::default()
+    };
+    let mut b = Device::drive_oauth(None);
+    let request = b.engine.sign_out_request(b.now).unwrap();
+    assert_eq!(request.url, "https://oauth2.googleapis.com/token");
+    let response = server.handle(&request);
+    b.engine.on_sign_out_response(Some(&response), b.now);
+    let request = b.engine.sign_out_request(b.now).unwrap();
+    assert_eq!(request.url, "https://oauth2.googleapis.com/revoke");
+    let response = server.handle(&request);
+    b.engine.on_sign_out_response(Some(&response), b.now);
+    assert_eq!(server.access, "revoked");
+}
+
+#[test]
+fn drive_with_system_tokens_never_refreshes_itself() {
+    // Android: a refresh token passed by mistake is no reason to send one.
+    let mut server = Drive {
+        access: TOKEN.into(),
+        ..Drive::default()
+    };
+    let mut a = Device::drive();
+    a.engine.set_credentials(
+        Some(TOKEN.into()),
+        Some(a.now + 3_600_000),
+        Some(REFRESH.into()),
+    );
+    a.edit("Najdorf.pgn", E4);
+    a.sync(&mut server);
+    a.now += 2 * 3_600_000;
+    a.edit("Najdorf.pgn", "[Event \"Najdorf\"]\n\n1. e4 c5 *\n");
+    let sent = a.sync(&mut server);
+    assert!(!sent.contains(&SyncOpKind::Refresh), "{sent:?}");
+    assert_eq!(a.needs, Some(AuthNeed::Token));
+    assert_eq!(a.engine.sign_out_request(a.now), None);
+}
+
+#[test]
+fn conflict_copies_are_told_from_their_originals() {
+    let cases = [
+        // Dropbox, before the whole extension.
+        (
+            "Najdorf (Carl's conflicted copy 2026-10-30).pgn",
+            "Najdorf.pgn",
+        ),
+        (
+            "Najdorf (Carl's conflicted copy 2026-10-30).otrep.json",
+            "Najdorf.otrep.json",
+        ),
+        (
+            "Najdorf (Carl's conflicted copy 2026-10-30).otlog.jsonl",
+            "Najdorf.otlog.jsonl",
+        ),
+        (
+            "Najdorf (Carl's conflicted copy 2026-10-30 (1)).pgn",
+            "Najdorf.pgn",
+        ),
+        (
+            "Najdorf (Carl's conflicted copy 2026-10-30) (2).pgn",
+            "Najdorf.pgn",
+        ),
+        (
+            "Najdorf (Carl's iPhone (2)'s conflicted copy 2026-10-30).pgn",
+            "Najdorf.pgn",
+        ),
+        ("Najdorf (Conflicted copy 2026-10-30).pgn", "Najdorf.pgn"),
+        ("Najdorf (Case Conflict).pgn", "Najdorf.pgn"),
+        (
+            "Najdorf (Selective Sync Conflict).otrep.json",
+            "Najdorf.otrep.json",
+        ),
+        (
+            "Sicilian (Open) (Carl's conflicted copy 2026-10-30).pgn",
+            "Sicilian (Open).pgn",
+        ),
+        // Numbered copies (Google Drive for desktop).
+        ("Najdorf (1).pgn", "Najdorf.pgn"),
+        ("Najdorf (12).otlog.jsonl", "Najdorf.otlog.jsonl"),
+        ("Najdorf (1).otrep.json", "Najdorf.otrep.json"),
+        // Before the extension's last part.
+        ("Najdorf.otrep (1).json", "Najdorf.otrep.json"),
+        (
+            "Najdorf.otlog (Carl's conflicted copy 2026-10-30).jsonl",
+            "Najdorf.otlog.jsonl",
+        ),
+        ("Caro-Kann 1. e4 c6 (1).pgn", "Caro-Kann 1. e4 c6.pgn"),
+        // A copy of the user's own "Najdorf (1)".
+        ("Najdorf (1) (2).pgn", "Najdorf (1).pgn"),
+    ];
+    for (copy, original) in cases {
+        assert_eq!(conflict_original(copy).as_deref(), Some(original), "{copy}");
+    }
+    let not_copies = [
+        "Najdorf.pgn",
+        "Najdorf.otrep.json",
+        "Sicilian (Open).pgn",
+        "Najdorf (2026-10-30).pgn",
+        "Najdorf(1).pgn",
+        "(1).pgn",
+        " (1).pgn",
+        "Najdorf (1).txt",
+        "Najdorf (1)",
+        "Najdorf (12345).pgn",
+        "Najdorf ().pgn",
+        "Najdorf (1.pgn",
+        "Najdorf 1).pgn",
+        ".Najdorf (1).pgn",
+        "Openings/Najdorf (1).pgn",
+        "Najdorf 2.pgn",
+        "Najdorf.json (1)",
+        ".otrep (1).json",
+        "Najdorf (1).otrep",
+        "Najdorf (conflicted copy).png",
+    ];
+    for name in not_copies {
+        assert_eq!(conflict_original(name), None, "{name}");
+    }
+
+    // A folder: only copies whose original is there, the user's own "(2)" kept when alone.
+    let names: Vec<String> = [
+        "Najdorf.pgn",
+        "Najdorf.otrep.json",
+        "Najdorf (Carl's conflicted copy 2026-10-30).pgn",
+        "Najdorf (1).otrep.json",
+        "Dragon (2).pgn",
+        "Dragon (1).otlog.jsonl",
+        "notes.txt",
+    ]
+    .map(String::from)
+    .to_vec();
+    assert_eq!(
+        conflict_copies(&names),
+        vec![
+            ConflictCopy {
+                copy: "Najdorf (1).otrep.json".into(),
+                original: "Najdorf.otrep.json".into(),
+            },
+            ConflictCopy {
+                copy: "Najdorf (Carl's conflicted copy 2026-10-30).pgn".into(),
+                original: "Najdorf.pgn".into(),
+            },
+        ]
+    );
+}
+
+#[test]
+fn a_refused_refresh_token_signs_out_and_keeps_edits_for_the_next_sign_in() {
+    // Dropbox, and Drive with each kind of Google client (invalid_grant: revoked, unused for
+    // six months, or seven days old while the consent screen is in Testing).
+    let mut dropbox = Dropbox::new();
+    let mut drive_ios = Drive {
+        access: TOKEN.into(),
+        refresh: REFRESH.into(),
+        ..Drive::default()
+    };
+    let mut drive_desktop = Drive {
+        access: TOKEN.into(),
+        refresh: REFRESH.into(),
+        secret: Some("GOCSPX-shipped".into()),
+        ..Drive::default()
+    };
+    let servers: [(&mut dyn Refreshing, Device); 3] = [
+        (&mut dropbox, Device::dropbox()),
+        (&mut drive_ios, Device::drive_oauth(None)),
+        (
+            &mut drive_desktop,
+            Device::drive_oauth(Some("GOCSPX-shipped")),
+        ),
+    ];
+    for (server, mut a) in servers {
+        a.edit("Najdorf.pgn", E4);
+        a.sync(server.server());
+        assert!(a.engine.unsynced_files().is_empty());
+
+        // The refresh token dies while the access token expires.
+        a.now += 5 * 3_600_000;
+        server.set_tokens("access-2", "refresh-2");
+        let edit = "[Event \"Najdorf\"]\n\n1. e4 c5 2. Nf3 d6 3. d4 *\n";
+        a.edit("Najdorf.pgn", edit);
+        a.sync(server.server());
+        assert_eq!(a.needs, Some(AuthNeed::SignIn));
+        assert_eq!(a.engine.state(), &SyncState::NeedsSignIn);
+        assert_eq!(a.engine.unsynced_files(), vec!["Najdorf.pgn".to_owned()]);
+        // It stays so, sending nothing: not a token to ask for, nor a loop of refreshes.
+        a.now += 3_600_000;
+        a.engine.sync_now();
+        let poll = a.engine.poll(a.now);
+        assert!(poll.ops.is_empty());
+        assert_eq!(poll.needs, Some(AuthNeed::SignIn));
+        assert_eq!(a.engine.state(), &SyncState::NeedsSignIn);
+
+        // Signed in again: the edit kept meanwhile goes up.
+        a.needs = None;
+        a.engine.set_credentials(
+            Some("access-2".into()),
+            Some(a.now + 3_600_000),
+            Some("refresh-2".into()),
+        );
+        a.sync(server.server());
+        assert_eq!(a.needs, None);
+        assert_eq!(a.engine.state(), &SyncState::Idle);
+        assert!(a.engine.unsynced_files().is_empty());
+        assert_eq!(server.pgn(), edit.as_bytes());
+    }
+
+    // Signed out by the provider, then signed out here: no request left to send.
+    let mut server = Dropbox::new();
+    let mut a = Device::dropbox();
+    a.edit("Najdorf.pgn", E4);
+    server.refresh = "refresh-2".into();
+    a.sync(&mut server);
+    assert_eq!(a.engine.state(), &SyncState::NeedsSignIn);
+    assert_eq!(a.engine.sign_out_request(a.now), None);
+}
+
+/// A fake server whose sign-in can change.
+trait Refreshing {
+    fn server(&mut self) -> &mut dyn Server;
+    fn set_tokens(&mut self, access: &str, refresh: &str);
+    fn pgn(&self) -> Vec<u8>;
+}
+
+impl Refreshing for Dropbox {
+    fn server(&mut self) -> &mut dyn Server {
+        self
+    }
+    fn set_tokens(&mut self, access: &str, refresh: &str) {
+        self.access = access.into();
+        self.refresh = refresh.into();
+    }
+    fn pgn(&self) -> Vec<u8> {
+        self.files["Najdorf.pgn"].0.clone()
+    }
+}
+
+impl Refreshing for Drive {
+    fn server(&mut self) -> &mut dyn Server {
+        self
+    }
+    fn set_tokens(&mut self, access: &str, refresh: &str) {
+        self.access = access.into();
+        self.refresh = refresh.into();
+    }
+    fn pgn(&self) -> Vec<u8> {
+        let file = self.files.values().find(|f| f.0 == "Najdorf.pgn");
+        file.unwrap().1.clone()
+    }
 }

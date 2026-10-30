@@ -841,6 +841,18 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_func_weakest_moves(
     ): Int
+    external fun uniffi_opening_core_checksum_func_drive_account_request(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_drive_authorize_url(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_drive_parse_account(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_drive_parse_token(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_drive_redirect_uri(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_drive_token_request(
+    ): Int
     external fun uniffi_opening_core_checksum_func_dropbox_account_request(
     ): Int
     external fun uniffi_opening_core_checksum_func_dropbox_authorize_url(
@@ -852,6 +864,10 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_opening_core_checksum_func_dropbox_redirect_uri(
     ): Int
     external fun uniffi_opening_core_checksum_func_dropbox_token_request(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_sync_conflict_copies(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_sync_conflict_original(
     ): Int
     external fun uniffi_opening_core_checksum_func_sync_file_kind(
     ): Int
@@ -1457,6 +1473,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_constructor_repertoiresync_drive(
     ): Int
+    external fun uniffi_opening_core_checksum_constructor_repertoiresync_drive_oauth(
+    ): Int
     external fun uniffi_opening_core_checksum_constructor_repertoiresync_dropbox(
     ): Int
     external fun ffi_opening_core_uniffi_contract_version(
@@ -2054,6 +2072,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_opening_core_fn_constructor_repertoiresync_drive(`savedState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
+    external fun uniffi_opening_core_fn_constructor_repertoiresync_drive_oauth(`clientId`: RustBuffer.ByValue,`clientSecret`: RustBuffer.ByValue,`savedState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): Long
     external fun uniffi_opening_core_fn_constructor_repertoiresync_dropbox(`appKey`: RustBuffer.ByValue,`savedState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
     external fun uniffi_opening_core_fn_method_repertoiresync_local_changed(`ptr`: Long,`name`: RustBuffer.ByValue,`data`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -2142,6 +2162,18 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_weakest_moves(`cards`: RustBuffer.ByValue,`nowSecs`: Double,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_drive_account_request(`accessToken`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_drive_authorize_url(`clientId`: RustBuffer.ByValue,`verifier`: RustBuffer.ByValue,`state`: RustBuffer.ByValue,`redirectUri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_drive_parse_account(`response`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_drive_parse_token(`response`: RustBuffer.ByValue,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_drive_redirect_uri(`clientId`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_drive_token_request(`clientId`: RustBuffer.ByValue,`clientSecret`: RustBuffer.ByValue,`code`: RustBuffer.ByValue,`verifier`: RustBuffer.ByValue,`redirectUri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_dropbox_account_request(`accessToken`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_dropbox_authorize_url(`appKey`: RustBuffer.ByValue,`verifier`: RustBuffer.ByValue,`state`: RustBuffer.ByValue,`redirectUri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -2153,6 +2185,10 @@ internal object UniffiLib {
     external fun uniffi_opening_core_fn_func_dropbox_redirect_uri(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_dropbox_token_request(`appKey`: RustBuffer.ByValue,`code`: RustBuffer.ByValue,`verifier`: RustBuffer.ByValue,`redirectUri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_sync_conflict_copies(`names`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_sync_conflict_original(`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_sync_file_kind(`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -2424,6 +2460,24 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_func_weakest_moves() and 0xFFFF) != 51550) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if ((lib.uniffi_opening_core_checksum_func_drive_account_request() and 0xFFFF) != 55359) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_drive_authorize_url() and 0xFFFF) != 20656) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_drive_parse_account() and 0xFFFF) != 62163) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_drive_parse_token() and 0xFFFF) != 46936) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_drive_redirect_uri() and 0xFFFF) != 47269) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_drive_token_request() and 0xFFFF) != 62284) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if ((lib.uniffi_opening_core_checksum_func_dropbox_account_request() and 0xFFFF) != 30709) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2440,6 +2494,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_dropbox_token_request() and 0xFFFF) != 25595) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_sync_conflict_copies() and 0xFFFF) != 49393) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_sync_conflict_original() and 0xFFFF) != 5119) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_sync_file_kind() and 0xFFFF) != 2482) {
@@ -3345,7 +3405,10 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_constructor_graphs_new() and 0xFFFF) != 61351) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if ((lib.uniffi_opening_core_checksum_constructor_repertoiresync_drive() and 0xFFFF) != 34283) {
+    if ((lib.uniffi_opening_core_checksum_constructor_repertoiresync_drive() and 0xFFFF) != 51833) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_constructor_repertoiresync_drive_oauth() and 0xFFFF) != 19241) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_constructor_repertoiresync_dropbox() and 0xFFFF) != 18654) {
@@ -12097,13 +12160,34 @@ open class RepertoireSync: Disposable, AutoCloseable, RepertoireSyncInterface
     companion object {
         
     /**
-     * The "ORBT Chess" folder in Google Drive (`drive.file` scope).
+     * The "ORBT Chess" folder in Google Drive (`drive.file` scope), with tokens from the
+     * platform (Android's Play services): `AuthNeed::Token` asks for a new one.
      */ fun `drive`(`savedState`: kotlin.ByteArray): RepertoireSync {
             return FfiConverterTypeRepertoireSync.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_opening_core_fn_constructor_repertoiresync_drive(
     
         
+        FfiConverterByteArray.lower(`savedState`),_status)
+}
+    )
+    }
+    
+
+        
+    /**
+     * Google Drive signed in with the core's OAuth (`drive_authorize_url`; Apple's platforms,
+     * Windows, Linux): pass the refresh token to `set_credentials`, the core refreshes the
+     * access token itself and signing out revokes it. `client_secret`: as for
+     * `drive_token_request`.
+     */ fun `driveOauth`(`clientId`: kotlin.String, `clientSecret`: kotlin.String?, `savedState`: kotlin.ByteArray): RepertoireSync {
+            return FfiConverterTypeRepertoireSync.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_constructor_repertoiresync_drive_oauth(
+    
+        
+        FfiConverterString.lower(`clientId`),
+        FfiConverterOptionalString.lower(`clientSecret`),
         FfiConverterByteArray.lower(`savedState`),_status)
 }
     )
@@ -13443,6 +13527,44 @@ public object FfiConverterTypeCloudEval: FfiConverterRustBuffer<CloudEval> {
 
 
 
+data class ConflictCopy (
+    var `copy`: kotlin.String
+    , 
+    var `original`: kotlin.String
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeConflictCopy: FfiConverterRustBuffer<ConflictCopy> {
+    override fun read(buf: ByteBuffer): ConflictCopy {
+        return ConflictCopy(
+            FfiConverterString.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: ConflictCopy) = (
+            FfiConverterString.allocationSize(value.`copy`) +
+            FfiConverterString.allocationSize(value.`original`)
+    )
+
+    override fun write(value: ConflictCopy, buf: ByteBuffer) {
+            FfiConverterString.write(value.`copy`, buf)
+            FfiConverterString.write(value.`original`, buf)
+    }
+}
+
+
+
 data class Counts (
     var `new`: kotlin.Long
     , 
@@ -13760,6 +13882,56 @@ public object FfiConverterTypeDeckStudyStats: FfiConverterRustBuffer<DeckStudySt
             FfiConverterLong.write(value.`millisecondsStudied`, buf)
             FfiConverterLong.write(value.`newStudied`, buf)
             FfiConverterLong.write(value.`reviewStudied`, buf)
+    }
+}
+
+
+
+/**
+ * What signing in to Google Drive with the core's OAuth gives: keep the refresh
+ * token (the core refreshes with it).
+ */
+data class DriveSignIn (
+    var `accessToken`: kotlin.String
+    , 
+    /**
+     * Unix ms; None when Google did not say.
+     */
+    var `expiresAt`: kotlin.Long?
+    , 
+    var `refreshToken`: kotlin.String
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeDriveSignIn: FfiConverterRustBuffer<DriveSignIn> {
+    override fun read(buf: ByteBuffer): DriveSignIn {
+        return DriveSignIn(
+            FfiConverterString.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: DriveSignIn) = (
+            FfiConverterString.allocationSize(value.`accessToken`) +
+            FfiConverterOptionalLong.allocationSize(value.`expiresAt`) +
+            FfiConverterString.allocationSize(value.`refreshToken`)
+    )
+
+    override fun write(value: DriveSignIn, buf: ByteBuffer) {
+            FfiConverterString.write(value.`accessToken`, buf)
+            FfiConverterOptionalLong.write(value.`expiresAt`, buf)
+            FfiConverterString.write(value.`refreshToken`, buf)
     }
 }
 
@@ -20396,6 +20568,34 @@ public object FfiConverterSequenceTypeCard: FfiConverterRustBuffer<List<Card>> {
 /**
  * @suppress
  */
+public object FfiConverterSequenceTypeConflictCopy: FfiConverterRustBuffer<List<ConflictCopy>> {
+    override fun read(buf: ByteBuffer): List<ConflictCopy> {
+        val len = buf.getInt()
+        return List<ConflictCopy>(len) {
+            FfiConverterTypeConflictCopy.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<ConflictCopy>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeConflictCopy.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<ConflictCopy>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeConflictCopy.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterSequenceTypeCoverageFile: FfiConverterRustBuffer<List<CoverageFile>> {
     override fun read(buf: ByteBuffer): List<CoverageFile> {
         val len = buf.getInt()
@@ -21685,6 +21885,99 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
     
 
         /**
+         * The signed-in account, for its email (`drive_parse_account`).
+         */ fun `driveAccountRequest`(`accessToken`: kotlin.String): HttpRequest {
+            return FfiConverterTypeHttpRequest.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_drive_account_request(
+    
+        
+        FfiConverterString.lower(`accessToken`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Google's sign-in page (PKCE, `drive.file`, for a refresh token), redirecting to
+         * `redirect_uri`. Read the redirect with `oauth_parse_redirect`.
+         */ fun `driveAuthorizeUrl`(`clientId`: kotlin.String, `verifier`: kotlin.String, `state`: kotlin.String, `redirectUri`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_drive_authorize_url(
+    
+        
+        FfiConverterString.lower(`clientId`),
+        FfiConverterString.lower(`verifier`),
+        FfiConverterString.lower(`state`),
+        FfiConverterString.lower(`redirectUri`),_status)
+}
+    )
+    }
+    
+ fun `driveParseAccount`(`response`: HttpResponse): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_drive_parse_account(
+    
+        
+        FfiConverterTypeHttpResponse.lower(`response`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * The token request's answer (`now_ms`: unix ms). Fails when Drive access was not allowed.
+         */
+    @Throws(SignInException::class) fun `driveParseToken`(`response`: HttpResponse, `nowMs`: kotlin.Long): DriveSignIn {
+            return FfiConverterTypeDriveSignIn.lift(
+    uniffiRustCallWithError(SignInException) { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_drive_parse_token(
+    
+        
+        FfiConverterTypeHttpResponse.lower(`response`),
+        FfiConverterLong.lower(`nowMs`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * The redirect Google allows the iOS client `client_id`: its reversed id as the URL scheme
+         * (a Desktop app client uses the loopback server instead).
+         */ fun `driveRedirectUri`(`clientId`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_drive_redirect_uri(
+    
+        
+        FfiConverterString.lower(`clientId`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Exchanges the code from the redirect for the tokens (`redirect_uri`: the authorize URL's).
+         * `client_secret`: a Desktop app client's (Windows, Linux); None for an iOS client.
+         */ fun `driveTokenRequest`(`clientId`: kotlin.String, `clientSecret`: kotlin.String?, `code`: kotlin.String, `verifier`: kotlin.String, `redirectUri`: kotlin.String): HttpRequest {
+            return FfiConverterTypeHttpRequest.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_drive_token_request(
+    
+        
+        FfiConverterString.lower(`clientId`),
+        FfiConverterOptionalString.lower(`clientSecret`),
+        FfiConverterString.lower(`code`),
+        FfiConverterString.lower(`verifier`),
+        FfiConverterString.lower(`redirectUri`),_status)
+}
+    )
+    }
+    
+
+        /**
          * The signed-in account, for its email (`dropbox_parse_account`).
          */ fun `dropboxAccountRequest`(`accessToken`: kotlin.String): HttpRequest {
             return FfiConverterTypeHttpRequest.lift(
@@ -21768,6 +22061,36 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
         FfiConverterString.lower(`code`),
         FfiConverterString.lower(`verifier`),
         FfiConverterString.lower(`redirectUri`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * The conflict copies among a folder's file names whose original is there too: merge each
+         * into its original (as an iCloud conflict version), then remove it.
+         */ fun `syncConflictCopies`(`names`: List<kotlin.String>): List<ConflictCopy> {
+            return FfiConverterSequenceTypeConflictCopy.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_sync_conflict_copies(
+    
+        
+        FfiConverterSequenceString.lower(`names`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * The file a provider's conflict copy stands for (`Najdorf (Carl's conflicted copy
+         * 2026-10-30).pgn`, `Najdorf (1).otrep.json`), or None. Prefer `sync_conflict_copies`.
+         */ fun `syncConflictOriginal`(`name`: kotlin.String): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_sync_conflict_original(
+    
+        
+        FfiConverterString.lower(`name`),_status)
 }
     )
     }
