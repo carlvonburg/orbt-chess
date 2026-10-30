@@ -1,7 +1,11 @@
 package org.orbtchess.orbt.ui.builder
 
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,17 +14,14 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BottomAppBar
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -44,7 +46,6 @@ import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.ui.tour.TourGuide
@@ -57,7 +58,10 @@ import org.orbtchess.orbt.ui.DrillKind
 import org.orbtchess.orbt.ui.board.Board
 import org.orbtchess.orbt.ui.components.BoardColumn
 import org.orbtchess.orbt.ui.components.BoardPane
+import org.orbtchess.orbt.ui.components.DockedToolbar
 import org.orbtchess.orbt.ui.components.Symbols
+import org.orbtchess.orbt.ui.components.TitleWithSubtitle
+import org.orbtchess.orbt.ui.components.TooltipIconButton
 
 /**
  * Build (`BuilderView.swift`, `BuilderSheets.swift`): the board with your moves, replies and
@@ -199,38 +203,28 @@ private fun WholeScreen(app: AppModel, model: BuilderModel, actions: BuilderActi
         modifier = modifier.builderKeys(model),
         topBar = {
             TopAppBar(
-                title = { BuilderTitle(model) },
+                title = { TitleWithSubtitle("Browse", model.document.name) },
                 navigationIcon = { BackButton(onBack) },
                 actions = { BuilderMoreMenu(model, actions) },
             )
         },
         bottomBar = {
-            BottomAppBar(
-                actions = {
-                    NavigationButtons(model)
-                    if (model.hasDraft) {
-                        IconButton(onClick = actions::analysis, modifier = Modifier.tourTarget(TourGuide.Target.Analysis)) {
-                            Icon(Symbols.analysis, contentDescription = "Analysis")
-                        }
-                        IconButton(onClick = model::discardDraft) { Icon(Symbols.wrong, contentDescription = "Discard") }
-                    } else {
-                        GapAndStudyButtons(actions)
-                        IconButton(onClick = actions::analysis) { Icon(Symbols.analysis, contentDescription = "Analysis") }
-                    }
-                },
-                floatingActionButton = {
-                    // While a new line is on the board: keep it (or drop it, beside).
-                    if (model.hasDraft) {
-                        ExtendedFloatingActionButton(
-                            onClick = actions::save,
-                            modifier = Modifier.tourTarget(TourGuide.Target.Save),
-                            icon = { Icon(Symbols.correct, contentDescription = null) },
-                            text = { Text(actions.saveTitle) },
-                            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
-                        )
-                    }
-                },
-            )
+            // Material's docked toolbar: move navigation, then the actions spread evenly, each
+            // named by its tooltip; while a line is being built, Discard and Save, labelled
+            // (the docked toolbar's own primary action, in place of a FAB).
+            DockedToolbar {
+                NavigationButtons(model)
+                if (model.hasDraft) {
+                    TooltipIconButton(
+                        "Analysis", Symbols.analysis, actions::analysis,
+                        Modifier.tourTarget(TourGuide.Target.Analysis), above = true,
+                    )
+                    DraftButtons(model, actions)
+                } else {
+                    GapAndStudyButtons(actions, above = true)
+                    TooltipIconButton("Analysis", Symbols.analysis, actions::analysis, above = true)
+                }
+            }
         },
     ) { padding ->
         BuilderList(app, model, actions.navigate, Modifier.fillMaxSize().padding(padding)) {
@@ -260,15 +254,11 @@ private fun PanelScreen(app: AppModel, model: BuilderModel, actions: BuilderActi
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { BuilderTitle(model) },
+                title = { TitleWithSubtitle("Browse", model.document.name) },
                 navigationIcon = { BackButton(onBack) },
                 actions = {
                     if (model.hasDraft) {
-                        IconButton(onClick = model::discardDraft) { Icon(Symbols.wrong, contentDescription = "Discard") }
-                        Button(
-                            onClick = actions::save,
-                            modifier = Modifier.padding(end = 8.dp).tourTarget(TourGuide.Target.Save),
-                        ) { Text(actions.saveTitle) }
+                        DraftButtons(model, actions, Modifier.padding(end = 8.dp))
                     } else {
                         GapAndStudyButtons(actions)
                     }
@@ -290,23 +280,20 @@ private fun BoardScreen(model: BuilderModel, actions: BuilderActions, onBack: ((
                 title = {},
                 navigationIcon = { BackButton(onBack) },
                 actions = {
-                    IconButton(
-                        onClick = actions::analysis,
-                        modifier = if (model.hasDraft) Modifier.tourTarget(TourGuide.Target.Analysis) else Modifier,
-                    ) { Icon(Symbols.analysis, contentDescription = "Analysis") }
+                    TooltipIconButton(
+                        "Analysis", Symbols.analysis, actions::analysis,
+                        if (model.hasDraft) Modifier.tourTarget(TourGuide.Target.Analysis) else Modifier,
+                    )
                     BuilderMoreMenu(model, actions)
                 },
             )
         },
         bottomBar = {
-            BottomAppBar {
-                IconButton(onClick = model::back, enabled = model.canBack) {
-                    Icon(Symbols.previousMove, contentDescription = "Back")
-                }
+            // The docked toolbar under the board: back, the moves, forward.
+            DockedToolbar {
+                TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.canBack, above = true)
                 MovePathStrip(model, Modifier.weight(1f))
-                IconButton(onClick = model::forward, enabled = model.canForward) {
-                    Icon(Symbols.nextMove, contentDescription = "Forward")
-                }
+                TooltipIconButton("Forward", Symbols.nextMove, model::forward, enabled = model.canForward, above = true)
             }
         },
     ) { padding ->
@@ -325,21 +312,6 @@ private fun BoardScreen(model: BuilderModel, actions: BuilderActions, onBack: ((
 
 // MARK: Bars
 
-/** "Browse" over the repertoire's name (the Swift app's title and subtitle). */
-@Composable
-private fun BuilderTitle(model: BuilderModel) {
-    Column {
-        Text("Browse", maxLines = 1)
-        Text(
-            model.document.name,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
 @Composable
 private fun BackButton(onBack: (() -> Unit)?) {
     if (onBack != null) {
@@ -347,28 +319,40 @@ private fun BackButton(onBack: (() -> Unit)?) {
     }
 }
 
-/** Back and forward through the line (← and → on a keyboard). */
+/** Back and forward through the line (← and → on a keyboard), kept together as one group of the toolbar. */
 @Composable
 private fun NavigationButtons(model: BuilderModel) {
-    IconButton(onClick = model::back, enabled = model.canBack) { Icon(Symbols.previousMove, contentDescription = "Back") }
-    IconButton(onClick = model::forward, enabled = model.canForward) { Icon(Symbols.nextMove, contentDescription = "Forward") }
+    Row {
+        TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.canBack, above = true)
+        TooltipIconButton("Forward", Symbols.nextMove, model::forward, enabled = model.canForward, above = true)
+    }
 }
 
 @Composable
-private fun GapAndStudyButtons(actions: BuilderActions) {
-    IconButton(
-        onClick = actions::biggestGap,
-        enabled = actions.canBiggestGap,
-        modifier = Modifier.tourTarget(TourGuide.Target.BiggestGap),
-    ) {
-        Icon(BuilderSymbols.biggestGap, contentDescription = "Biggest Gap")
-    }
-    IconButton(
-        onClick = { actions.studyBranch() },
-        enabled = actions.canStudyBranch,
-        modifier = Modifier.tourTarget(TourGuide.Target.StudyBranch),
-    ) {
-        Icon(Symbols.study, contentDescription = "Study Branch")
+private fun GapAndStudyButtons(actions: BuilderActions, above: Boolean = false) {
+    TooltipIconButton(
+        "Biggest Gap", BuilderSymbols.biggestGap, actions::biggestGap,
+        Modifier.tourTarget(TourGuide.Target.BiggestGap), enabled = actions.canBiggestGap, above = above,
+    )
+    TooltipIconButton(
+        "Study Branch", Symbols.study, { actions.studyBranch() },
+        Modifier.tourTarget(TourGuide.Target.StudyBranch), enabled = actions.canStudyBranch, above = above,
+    )
+}
+
+/**
+ * While a new line is on the board: drop it or keep it, side by side and named (Material's
+ * text button beside the filled button for the main action, as in a dialog), Save the filled one.
+ */
+@Composable
+private fun DraftButtons(model: BuilderModel, actions: BuilderActions, modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        TextButton(onClick = model::discardDraft) { Text("Discard") }
+        Button(onClick = actions::save, modifier = Modifier.tourTarget(TourGuide.Target.Save)) {
+            Icon(Symbols.correct, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+            Text(actions.saveTitle)
+        }
     }
 }
 
@@ -376,7 +360,7 @@ private fun GapAndStudyButtons(actions: BuilderActions) {
 @Composable
 private fun BuilderMoreMenu(model: BuilderModel, actions: BuilderActions) {
     var open by remember { mutableStateOf(false) }
-    IconButton(onClick = { open = true }) { Icon(Symbols.more, contentDescription = "More") }
+    TooltipIconButton("More", Symbols.more, { open = true })
     DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
         fun pick(action: () -> Unit): () -> Unit = {
             open = false

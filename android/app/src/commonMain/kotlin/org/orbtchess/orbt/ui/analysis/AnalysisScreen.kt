@@ -3,7 +3,6 @@ package org.orbtchess.orbt.ui.analysis
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,12 +21,10 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -67,7 +63,11 @@ import org.orbtchess.orbt.ui.board.Board
 import org.orbtchess.orbt.ui.board.BoardArrow
 import org.orbtchess.orbt.ui.components.BoardColumn
 import org.orbtchess.orbt.ui.components.BoardPane
+import org.orbtchess.orbt.ui.components.DockedToolbar
 import org.orbtchess.orbt.ui.components.Symbols
+import org.orbtchess.orbt.ui.components.TitleWithSubtitle
+import org.orbtchess.orbt.ui.components.TooltipIconButton
+import org.orbtchess.orbt.ui.components.TooltipIconToggleButton
 import org.orbtchess.orbt.ui.components.tabularDigits
 
 /**
@@ -157,20 +157,8 @@ private fun WholeScreen(
         modifier = modifier.arrowKeys(model),
         topBar = {
             TopAppBar(
-                // The subtitle says where the lines come from (TopAppBar's own subtitle is not public yet).
-                title = {
-                    Column {
-                        Text("Analysis")
-                        if (status.isNotEmpty()) {
-                            Text(
-                                status,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                            )
-                        }
-                    }
-                },
+                // The subtitle says where the lines come from.
+                title = { TitleWithSubtitle("Analysis", status) },
                 navigationIcon = { BackButton(onBack) },
                 actions = {
                     EngineToggle(model)
@@ -178,25 +166,17 @@ private fun WholeScreen(
                 },
             )
         },
-        // Back and forward centred: nothing else is in the bottom bar.
-        bottomBar = {
-            BottomAppBar {
-                Spacer(Modifier.weight(1f))
-                NavigationButtons(model)
-                Spacer(Modifier.weight(1f))
-            }
-        },
+        // The docked toolbar under the board, as beside a board pane: back, the moves, forward.
+        bottomBar = { NavigationToolbar(model) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             AnalysisEngineLines(app, model, Modifier.padding(horizontal = 16.dp))
             AnalysisBoard(app, model, Modifier.fillMaxWidth())
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
-                PanelTab.entries.forEachIndexed { index, value ->
-                    SegmentedButton(
-                        selected = tab == value,
-                        onClick = { tab = value },
-                        shape = SegmentedButtonDefaults.itemShape(index, PanelTab.entries.size),
-                    ) { Text(value.name) }
+            // Two views of the panel's content: Material's secondary tabs (tabs switch between
+            // content; segmented buttons choose options).
+            SecondaryTabRow(selectedTabIndex = tab.ordinal) {
+                PanelTab.entries.forEach { value ->
+                    Tab(selected = tab == value, onClick = { tab = value }, text = { Text(value.name) })
                 }
             }
             when (tab) {
@@ -247,12 +227,7 @@ private fun BoardScreen(app: AppModel, model: AnalysisModel, modifier: Modifier)
                 },
             )
         },
-        bottomBar = {
-            BottomAppBar {
-                NavigationButtons(model)
-                PathStrip(model, Modifier.weight(1f))
-            }
-        },
+        bottomBar = { NavigationToolbar(model) },
     ) { padding ->
         BoardColumn(
             Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
@@ -307,14 +282,13 @@ private fun arrows(lines: List<PvLine>): List<BoardArrow> = lines.mapIndexedNotN
     )
 }
 
-/** Back and forward through the analysis (also ← and → on a keyboard). */
+/** Back, the moves (tap one to go to it) and forward through the analysis (also ← and → on a keyboard). */
 @Composable
-private fun NavigationButtons(model: AnalysisModel) {
-    IconButton(onClick = model::back, enabled = model.state.canBack) {
-        Icon(Symbols.previousMove, contentDescription = "Back")
-    }
-    IconButton(onClick = model::forward, enabled = model.state.canForward) {
-        Icon(Symbols.nextMove, contentDescription = "Forward")
+private fun NavigationToolbar(model: AnalysisModel) {
+    DockedToolbar {
+        TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.state.canBack, above = true)
+        PathStrip(model, Modifier.weight(1f))
+        TooltipIconButton("Forward", Symbols.nextMove, model::forward, enabled = model.state.canForward, above = true)
     }
 }
 
@@ -355,9 +329,7 @@ private fun PathStrip(model: AnalysisModel, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         item {
-            IconButton(onClick = { model.goToPly(0) }, enabled = path.isNotEmpty()) {
-                Icon(Icons.Outlined.Home, contentDescription = "Start position")
-            }
+            TooltipIconButton("Start position", Icons.Outlined.Home, { model.goToPly(0) }, enabled = path.isNotEmpty(), above = true)
         }
         itemsIndexed(line) { index, move ->
             val ply = firstPly + index
@@ -381,9 +353,7 @@ private fun PathStrip(model: AnalysisModel, modifier: Modifier = Modifier) {
 /** The engine on or off. */
 @Composable
 private fun EngineToggle(model: AnalysisModel) {
-    IconToggleButton(checked = model.engineOn, onCheckedChange = { model.engineOn = it }) {
-        Icon(Symbols.analysis, contentDescription = "Engine")
-    }
+    TooltipIconToggleButton("Engine", Symbols.analysis, checked = model.engineOn, onCheckedChange = { model.engineOn = it })
 }
 
 /** The analysis board's menu: Flip Board, Copy PGN, Open in Lichess, Engine Settings. */
@@ -393,7 +363,7 @@ private fun MoreMenu(app: AppModel, model: AnalysisModel) {
     var expanded by remember { mutableStateOf(false) }
     val clipboard = LocalClipboardManager.current
     val openPage = rememberOpenPage(app)
-    IconButton(onClick = { expanded = true }) { Icon(Symbols.more, contentDescription = "More") }
+    TooltipIconButton("More", Symbols.more, { expanded = true })
     DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
         DropdownMenuItem(
             text = { Text("Flip Board") },

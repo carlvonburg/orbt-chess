@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.orbtchess.orbt.ui.components.TooltipIconButton
 import org.orbtchess.orbt.storage.ROOT_NODE
 import org.orbtchess.orbt.ui.components.tabularDigits
 
@@ -72,7 +73,7 @@ internal fun MovePathStrip(model: BuilderModel, modifier: Modifier = Modifier) {
         // Only needed once you have left the start position.
         if (hasStart) {
             item("start") {
-                IconButton(onClick = { model.go(ROOT_NODE) }) { Icon(BuilderSymbols.start, contentDescription = "Start position") }
+                TooltipIconButton("Start position", BuilderSymbols.start, { model.go(ROOT_NODE) })
             }
         }
         line.forEachIndexed { index, id ->

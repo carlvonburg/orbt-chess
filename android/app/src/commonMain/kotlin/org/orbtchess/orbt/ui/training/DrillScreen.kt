@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -28,11 +29,10 @@ import androidx.compose.material.icons.automirrored.outlined.AltRoute
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.SportsScore
-import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -79,7 +79,10 @@ import org.orbtchess.orbt.ui.board.Board
 import org.orbtchess.orbt.ui.components.BoardColumn
 import org.orbtchess.orbt.ui.components.BoardPane
 import org.orbtchess.orbt.ui.components.SymbolLabel
+import org.orbtchess.orbt.ui.components.DockedToolbar
 import org.orbtchess.orbt.ui.components.Symbols
+import org.orbtchess.orbt.ui.components.TitleWithSubtitle
+import org.orbtchess.orbt.ui.components.TooltipIconButton
 import org.orbtchess.orbt.ui.components.tabularDigits
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
@@ -172,18 +175,7 @@ private fun Haptics(model: DrillModel) {
 @Composable
 private fun DrillTopBar(model: DrillModel, onBack: (() -> Unit)?, actions: @Composable () -> Unit = {}) {
     TopAppBar(
-        title = {
-            Column {
-                Text(model.mode.title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    model.document.name,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        },
+        title = { TitleWithSubtitle(model.mode.title, model.document.name) },
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
@@ -213,16 +205,16 @@ private fun PhoneLayout(
     Scaffold(
         modifier,
         topBar = { DrillTopBar(model, onBack) },
+        // Build's docked toolbar: the actions spread evenly, each named by its tooltip; Next
+        // Line, when a finished line waits, is the toolbar's labelled primary action.
         bottomBar = {
-            BottomAppBar(
-                actions = {
-                    // Disabled at a line's end (no move to ask about), in its place.
-                    HintButton(model)
-                    BrowseButton(actions)
-                    AnalysisButton(actions)
-                },
-                floatingActionButton = { NextLineButton(model) },
-            )
+            DockedToolbar {
+                // Disabled at a line's end (no move to ask about), in its place.
+                HintButton(model, above = true)
+                BrowseButton(actions, above = true)
+                AnalysisButton(actions)
+                NextLineButton(model)
+            }
         },
     ) { padding ->
         Column(
@@ -304,13 +296,11 @@ private fun BoardLayout(model: DrillModel, actions: DrillActions, modifier: Modi
         modifier,
         bottomBar = {
             if (!finished) {
-                BottomAppBar(
-                    actions = {
-                        LineHistory(model.document.tree, model.playedNodes, Modifier.weight(1f).padding(start = 8.dp))
-                        AnalysisButton(actions)
-                    },
-                    floatingActionButton = { NextLineButton(model) },
-                )
+                DockedToolbar {
+                    LineHistory(model.document.tree, model.playedNodes, Modifier.weight(1f).padding(start = 8.dp))
+                    AnalysisButton(actions)
+                    NextLineButton(model)
+                }
             }
         },
     ) { padding ->
@@ -323,32 +313,33 @@ private fun BoardLayout(model: DrillModel, actions: DrillActions, modifier: Modi
 // MARK: Bar items
 
 @Composable
-private fun HintButton(model: DrillModel) {
-    IconButton(onClick = model::hint, enabled = model.canMove) { Icon(Symbols.hint, contentDescription = "Hint") }
+private fun HintButton(model: DrillModel, above: Boolean = false) {
+    TooltipIconButton("Hint", Symbols.hint, model::hint, enabled = model.canMove, above = above)
 }
 
 @Composable
-private fun BrowseButton(actions: DrillActions) {
-    IconButton(onClick = actions::browse) {
-        Icon(Icons.AutoMirrored.Outlined.FormatIndentIncrease, contentDescription = "Browse Repertoire")
-    }
+private fun BrowseButton(actions: DrillActions, above: Boolean = false) {
+    TooltipIconButton("Browse Repertoire", Icons.AutoMirrored.Outlined.FormatIndentIncrease, actions::browse, above = above)
 }
 
+/** Only in bottom bars (the board's). */
 @Composable
 private fun AnalysisButton(actions: DrillActions) {
-    IconButton(onClick = actions::analyze) { Icon(Symbols.analysis, contentDescription = "Analysis") }
+    TooltipIconButton("Analysis", Symbols.analysis, actions::analyze, above = true)
 }
 
-/** Next, once a finished line waits (paused, or looked at): the one thing to do, so the FAB. */
+/**
+ * Next, once a finished line waits (paused, or looked at): the one thing to do, so the filled
+ * button, labelled, ending the toolbar (as Build's Save).
+ */
 @Composable
 private fun NextLineButton(model: DrillModel) {
     if (model.phase == Phase.LINE_DONE && model.nextLineAt == null) {
-        ExtendedFloatingActionButton(
-            onClick = model::nextLine,
-            icon = { Icon(Symbols.nextLine, contentDescription = null) },
-            text = { Text("Next Line") },
-            elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
-        )
+        Button(onClick = model::nextLine) {
+            Icon(Symbols.nextLine, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+            Text("Next Line")
+        }
     }
 }
 
