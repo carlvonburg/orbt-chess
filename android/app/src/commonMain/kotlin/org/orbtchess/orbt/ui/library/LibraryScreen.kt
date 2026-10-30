@@ -1,7 +1,5 @@
 package org.orbtchess.orbt.ui.library
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -213,6 +211,8 @@ fun LibraryScreen(
                     }
                     groups(
                         app, selectedEntryId, navigate,
+                        // The list pane beside a detail selects its rows; a phone's tab does not.
+                        inset = !showToday,
                         menu = { entry, close ->
                             EntryMenu(entry, navigate, close, export = { export(entry) }, delete = { deleteEntry = entry })
                         },
@@ -254,12 +254,13 @@ fun LibraryScreen(
 }
 
 @Composable
-private fun SectionHeader(title: String) {
+private fun SectionHeader(title: String, inset: Boolean = false) {
+    val start = if (inset) 16.dp + SelectableInset else 16.dp
     Text(
         title,
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+        modifier = Modifier.padding(start = start, end = 16.dp, top = 16.dp, bottom = 4.dp),
     )
 }
 
@@ -278,16 +279,18 @@ private fun LazyListScope.groups(
     app: AppModel,
     selectedEntryId: String?,
     navigate: (Destination) -> Unit,
+    inset: Boolean,
     menu: @Composable (RepertoireEntry, close: () -> Unit) -> Unit,
 ) {
     for (group in LibraryGroup.entries) {
         val entries = app.library.entries.filter(group::contains)
         if (entries.isEmpty()) continue
-        item(key = "group-${group.name}") { SectionHeader(group.title) }
+        item(key = "group-${group.name}") { SectionHeader(group.title, inset) }
         items(entries, key = { it.id }) { entry ->
             LibraryRow(
                 app, entry,
                 selected = selectedEntryId != null && app.documents.currentId(selectedEntryId) == entry.id,
+                inset = inset,
                 onClick = {
                     navigate(if (entry.needsSetup) Destination.Setup(SetupMode.SetUp(entry.id)) else Destination.Overview(entry.id))
                 },
@@ -301,8 +304,11 @@ private fun LazyListScope.groups(
 @Composable
 private fun TodayRow(app: AppModel, selected: Boolean, onClick: () -> Unit) {
     val due = app.library.entries.sumOf { EntryStats.of(it, app).counts.total }
-    SelectableRow(selected, onClick) {
+    CompositionLocalProvider(LocalSelectedRow provides selected) {
         ListItem(
+            selected = selected,
+            onClick = onClick,
+            modifier = Modifier.padding(horizontal = SelectableInset),
             leadingContent = { Icon(Icons.Outlined.CalendarToday, contentDescription = null) },
             trailingContent = { if (due > 0) Text("$due", style = MaterialTheme.typography.labelLarge) },
             colors = rowColors(selected),
@@ -310,14 +316,11 @@ private fun TodayRow(app: AppModel, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-/** A row the list selects: Material's secondary container, with meanings in its content color. */
-@Composable
-private fun SelectableRow(selected: Boolean, onClick: () -> Unit, onLongClick: (() -> Unit)? = null, content: @Composable () -> Unit) {
-    @OptIn(ExperimentalFoundationApi::class)
-    Box(Modifier.combinedClickable(onLongClick = onLongClick, onClick = onClick)) {
-        CompositionLocalProvider(LocalSelectedRow provides selected) { content() }
-    }
-}
+/**
+ * The list pane's rows are Material 3 Expressive's selectable list items, inset from the pane's
+ * edges so the selected one shows its rounded shape (as a navigation drawer's items).
+ */
+private val SelectableInset = 12.dp
 
 @Composable
 private fun rowColors(selected: Boolean) = if (selected) {
@@ -339,14 +342,20 @@ private fun LibraryRow(
     app: AppModel,
     entry: RepertoireEntry,
     selected: Boolean,
+    inset: Boolean,
     onClick: () -> Unit,
     menu: @Composable (close: () -> Unit) -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val stats = EntryStats.of(entry, app)
     Box {
-        SelectableRow(selected, onClick, onLongClick = { showMenu = true }) {
+        CompositionLocalProvider(LocalSelectedRow provides selected) {
             ListItem(
+                selected = selected,
+                onClick = onClick,
+                onLongClick = { showMenu = true },
+                onLongClickLabel = "Repertoire menu",
+                modifier = if (inset) Modifier.padding(horizontal = SelectableInset) else Modifier,
                 supportingContent = {
                     when {
                         entry.needsSetup -> Text("New PGN. Tap to set it up.")
