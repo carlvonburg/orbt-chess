@@ -21,6 +21,10 @@ kotlin {
     }
     jvm("desktop")
 
+    // The UI is Material 3 Expressive (button groups, shape morphing, loading indicators, flexible
+    // app bars): its experimental API everywhere, not opted into function by function.
+    sourceSets.all { languageSettings.optIn("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi") }
+
     sourceSets {
         commonMain.dependencies {
             implementation(project(":core"))
