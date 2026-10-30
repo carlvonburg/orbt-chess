@@ -119,7 +119,7 @@ class Theme internal constructor(
     val scheme: ColorScheme,
     /** The tinted themes' color: the app color (graphite's gray would read as learning: indigo). */
     private val tint: Color,
-    /** The board's tint: the app color itself (Material You's primary for Multicolor). */
+    /** The board's color: the scheme's primary, whose hue and chroma give the board's tonal palette (`BoardTheme`). */
     val boardTint: Color,
     /** Whether the scheme is Material You's (custom colors are then harmonized with it). */
     private val harmonize: Boolean,
@@ -176,7 +176,9 @@ class Theme internal constructor(
             val dynamic = if (appColor == AppColor.Multicolor) systemScheme else null
             val scheme = dynamic ?: seededScheme(appColor.seed, isDark, appColor == AppColor.Graphite)
             val tint = if (appColor == AppColor.Graphite) seededScheme(Hues.Indigo, isDark, false).primary else scheme.primary
-            val boardTint = if (dynamic != null) dynamic.primary.toHct().withTone(55.0).toColor() else appColor.seed
+            // The board's palette is the theme's primary palette: Material You's for Multicolor,
+            // the seeded scheme's otherwise (graphite's is neutral).
+            val boardTint = scheme.primary
             return Theme(appColor, isDark, scheme, tint, boardTint, harmonize = dynamic != null)
         }
 

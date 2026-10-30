@@ -148,10 +148,24 @@ let stock Material components color themselves.
   at 75% and learning at 55%, as they turn white on the Mac.
 - **Neutral** is Material's surfaces and `onSurfaceVariant`; bar tracks are
   `surfaceContainerHighest`.
-- **The board** is the table above: the same squares (dimmer in dark), mixed 14% / 28% toward
-  the app color (Multicolor with Material You: its primary at tone 55), the ink 55% toward black,
-  the same highlights, badges, engine graphite and dots. The explorer's result bar keeps its
-  fixed white, gray and black.
+- **The board** is the table above in Material's terms (`ui/theme/BoardTheme.kt`): every color is
+  a tone of the theme's primary tonal palette (HCT: the scheme primary's hue and chroma at another
+  tone), Material You's for Multicolor, the seeded scheme's for the other app colors, neutral for
+  graphite; one rule for all. iOS's formula (gray squares mixed toward the tint) needs the
+  system colors' high chroma: with Material's lower-chroma primaries it turned the board gray.
+
+  | Element | Light appearance | Dark appearance |
+  |---|---|---|
+  | light / dark squares | tone 90 / 68 | tone 80 / 55 |
+  | ink (your moves, covered replies, gaps dashed, hint; ✓ in tinted themes) | tone 28 | tone 28 |
+  | last move / selected square | tone 48 at 60% / 80% (graphite: the ink 25% / 40%) | tone 38 at 60% / 80% |
+  | coordinates | the opposite square's tone | same |
+
+  The tones were picked on screenshots (Multicolor on the emulator's default wallpaper, Blue,
+  Green): white and black pieces read on both squares, the squares part like the iPhone's board,
+  the ink and the highlights stand out on both. The OKLab measurements below are the iOS board's;
+  the Android tones are not measured that way yet. The badges, engine graphite, dots and the
+  explorer's fixed white, gray and black are the table's.
 
 ## What changes when you pick an app color in Settings (`Theme.color(_:)`)
 Every app color changes the tint (controls), tints the board's squares toward it and gives the
