@@ -276,7 +276,7 @@ private fun GapRow(model: BuilderModel, gap: CoverageGap, onOpen: () -> Unit) {
     Box {
         ListItem(
             headlineContent = { Text(model.document.core.gapText(gap), maxLines = 2, overflow = TextOverflow.Ellipsis) },
-            supportingContent = { Text("Seen ${Format.seenEvery(gap.mass)} games", color = ThemeColor.todo.color) },
+            supportingContent = { Text(Format.seenGames(gap.mass), color = ThemeColor.todo.color) },
             modifier = Modifier.combinedClickable(onClick = onOpen, onLongClick = reply?.let { { menu = true } }),
         )
         if (reply != null) {

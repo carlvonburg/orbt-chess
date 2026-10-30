@@ -193,7 +193,7 @@ private fun NodeHeader(app: AppModel, model: BuilderModel, node: Node) {
                 StatusChip(info?.status)
                 if (reach != null) {
                     Text(
-                        if (reach >= 0.67) "Seen in every game" else "Seen ${Format.seenEvery(reach)} games",
+                        Format.seenGames(reach),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -287,7 +287,7 @@ private fun DraftHeader(model: BuilderModel) {
             }
             model.reachOnBoard?.let { reach ->
                 Text(
-                    "Seen ${Format.seenEvery(reach)} games",
+                    Format.seenGames(reach),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -350,8 +350,8 @@ private fun CoverageCheckStatus(app: AppModel, model: BuilderModel) {
                 style = style.copy(color = color),
             )
         }
-        QueueState.Offline -> SymbolLabel("Offline · $unchecked positions not checked yet", BuilderSymbols.offline, style = style.copy(color = color))
-        QueueState.NeedsLogin -> SymbolLabel("Sign in to Lichess to check $unchecked positions", Symbols.signIn, style = style.copy(color = color))
+        QueueState.Offline -> SymbolLabel("Offline · ${Format.positions(unchecked)} not checked yet", BuilderSymbols.offline, style = style.copy(color = color))
+        QueueState.NeedsLogin -> SymbolLabel("Sign in to Lichess to check ${Format.positions(unchecked)}", Symbols.signIn, style = style.copy(color = color))
         else -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             CircularProgressIndicator(Modifier.size(12.dp), strokeWidth = 1.5.dp)
             Text("Checking coverage · $unchecked waiting", style = style, color = color)

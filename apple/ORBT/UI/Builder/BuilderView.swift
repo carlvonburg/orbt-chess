@@ -518,7 +518,7 @@ struct NodeHeader: View {
             HStack(spacing: 8) {
                 statusChip(info)
                 if let reach = info?.reach, node.id != RepertoireTree.rootID {
-                    Text(reach >= 0.67 ? "Seen in every game" : "Seen \(Format.seenEvery(reach)) games").font(.caption).foregroundStyle(.secondary)
+                    Text(Format.seenGames(reach)).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
                 if node.sideToMove == document.color, document.sidecar.studyCards[node.epd]?.leech == true {
@@ -1064,7 +1064,7 @@ struct DraftPanel: View {
                     Text("New line, not saved").font(.caption).statusBadge()
                 }
                 if let reach = model.reachOnBoard {
-                    Text("Seen \(Format.seenEvery(reach)) games").font(.caption).foregroundStyle(.secondary)
+                    Text(Format.seenGames(reach)).font(.caption).foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -1148,6 +1148,7 @@ struct CoverageCheckStatus: View {
 
     var body: some View {
         let unchecked = document.uncheckedPositions
+        let positions = unchecked == 1 ? "1 position" : "\(unchecked.formatted()) positions"
         if unchecked > 0 {
             HStack(spacing: 6) {
                 switch app.queue.state {
@@ -1156,10 +1157,10 @@ struct CoverageCheckStatus: View {
                     Text("Lichess asked to slow down · resuming \(Date(timeIntervalSince1970: TimeInterval(until) / 1000), style: .relative)")
                 case .offline:
                     Image(systemName: "wifi.slash")
-                    Text("Offline · \(unchecked) positions not checked yet")
+                    Text("Offline · \(positions) not checked yet")
                 case .needsLogin:
                     Image(systemName: "person.crop.circle.badge.exclamationmark")
-                    Text("Sign in to Lichess to check \(unchecked) positions")
+                    Text("Sign in to Lichess to check \(positions)")
                 default:
                     ProgressView().controlSize(.mini)
                     Text("Checking coverage · \(unchecked) waiting")

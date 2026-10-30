@@ -226,8 +226,8 @@ private fun CoverageCheckStatus(app: AppModel, document: RepertoireDocument) {
             val resuming = if (minutes < 1) "in under a minute" else "in $minutes min"
             SecondaryLabel("Lichess asked to slow down · resuming $resuming", Icons.Outlined.HourglassEmpty, style = style)
         }
-        QueueState.Offline -> SecondaryLabel("Offline · $unchecked positions not checked yet", Icons.Outlined.WifiOff, style = style)
-        QueueState.NeedsLogin -> SecondaryLabel("Sign in to Lichess to check $unchecked positions", Icons.Outlined.NoAccounts, style = style)
+        QueueState.Offline -> SecondaryLabel("Offline · ${Format.positions(unchecked)} not checked yet", Icons.Outlined.WifiOff, style = style)
+        QueueState.NeedsLogin -> SecondaryLabel("Sign in to Lichess to check ${Format.positions(unchecked)}", Icons.Outlined.NoAccounts, style = style)
         else -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
             Text("Checking coverage · $unchecked waiting", style = style, color = MaterialTheme.colorScheme.onSurfaceVariant)

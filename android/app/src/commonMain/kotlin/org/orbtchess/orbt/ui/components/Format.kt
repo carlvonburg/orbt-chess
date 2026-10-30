@@ -14,6 +14,13 @@ object Format {
         return "1 in ${NumberFormat.getIntegerInstance().format(n.roundToInt())}"
     }
 
+    /** "Seen in every game", "Seen 1 in 400 games" (never "Seen every game games"). */
+    fun seenGames(reach: Double?): String =
+        if (reach != null && reach > 0 && 1 / reach < 1.5) "Seen in every game" else "Seen ${seenEvery(reach)} games"
+
+    /** "1 position", "12 positions". */
+    fun positions(n: Int): String = if (n == 1) "1 position" else "${NumberFormat.getIntegerInstance().format(n)} positions"
+
     fun percent(value: Double): String = NumberFormat.getPercentInstance().apply { maximumFractionDigits = 0 }.format(value)
 
     /** "1. d4 d5 2. c4 c6", numbered from [startPly] (0 = White's first move). */

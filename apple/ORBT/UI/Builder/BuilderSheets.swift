@@ -106,7 +106,7 @@ struct GapsSheet: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(text(for: gap)).font(.callout).lineLimit(2)
-                            Text("Seen \(Format.seenEvery(gap.mass)) games")
+                            Text(Format.seenGames(gap.mass))
                                 .font(.caption).foregroundStyle(.todo)
                         }
                     }

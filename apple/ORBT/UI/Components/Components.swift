@@ -116,6 +116,12 @@ enum Format {
         return "1 in \(Int(n.rounded()).formatted())"
     }
 
+    /// "Seen in every game", "Seen 1 in 400 games" (never "Seen every game games").
+    static func seenGames(_ reach: Double?) -> String {
+        if let reach, reach > 0, 1 / reach < 1.5 { return "Seen in every game" }
+        return "Seen \(seenEvery(reach)) games"
+    }
+
     static func percent(_ value: Double) -> String {
         value.formatted(.percent.precision(.fractionLength(0)))
     }
