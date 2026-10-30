@@ -95,7 +95,7 @@ private fun CoverageCard(app: AppModel, document: RepertoireDocument, stats: Ent
 /** The overview's Study section as a card: how far along, what is due today, Study Now. */
 @Composable
 private fun StudyCard(document: RepertoireDocument, stats: EntryStats, navigate: (Destination) -> Unit, modifier: Modifier = Modifier) {
-    StatCard("Study", Icons.Filled.School, modifier, color = ThemeColor.learned) {
+    StatCard("Study", Icons.Filled.School, modifier) {
         if (stats.progress.cards == 0L) {
             // Nothing to count yet: only what to do.
             NothingToStudy(Modifier.fillMaxWidth())
