@@ -2,8 +2,21 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>org.orbtchess.orbt.oauth</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>org.orbtchess.orbt</string>
+			</array>
+		</dict>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>ORBTDropboxAppKey</key>
+	<string>$(ORBT_DROPBOX_APP_KEY)</string>
 	<key>NSUbiquitousContainers</key>
 	<dict>
 		<key>iCloud.org.orbtchess.orbt</key>

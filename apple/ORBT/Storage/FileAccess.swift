@@ -13,14 +13,25 @@ nonisolated enum FileAccess {
         return try result.get()
     }
 
+    /// Atomic (a temporary file renamed over the old one), except in a folder chosen on the Mac
+    /// (`FileAccessHooks.chosenFolder`): there an existing file is overwritten in place, so
+    /// the provider's client (Google Drive) keeps it as the same file.
     static func write(_ data: Data, to url: URL, presenter: NSFilePresenter? = nil) throws {
         var coordError: NSError?
         var writeError: Error?
-        NSFileCoordinator(filePresenter: presenter).coordinate(writingItemAt: url, options: .forReplacing, error: &coordError) { actual in
-            do { try data.write(to: actual, options: .atomic) } catch { writeError = error }
+        let inPlace = FileAccessHooks.shared.isInChosenFolder(url)
+        NSFileCoordinator(filePresenter: presenter).coordinate(writingItemAt: url, options: inPlace ? [] : .forReplacing,
+                                                               error: &coordError) { actual in
+            do {
+                let exists = FileManager.default.fileExists(atPath: actual.path)
+                try data.write(to: actual, options: inPlace && exists ? [] : .atomic)
+            } catch {
+                writeError = error
+            }
         }
         if let coordError { throw coordError }
         if let writeError { throw writeError }
+        FileAccessHooks.shared.changed(url)
     }
 
     /// Appends to a file, creating it if needed.
@@ -42,6 +53,7 @@ nonisolated enum FileAccess {
         }
         if let coordError { throw coordError }
         if let writeError { throw writeError }
+        FileAccessHooks.shared.changed(url)
     }
 
     static func delete(_ url: URL) throws {
@@ -52,6 +64,7 @@ nonisolated enum FileAccess {
         }
         if let coordError { throw coordError }
         if let deleteError { throw deleteError }
+        FileAccessHooks.shared.changed(url)
     }
 
     static func move(_ url: URL, to destination: URL) throws {
@@ -70,6 +83,8 @@ nonisolated enum FileAccess {
         }
         if let coordError { throw coordError }
         if let moveError { throw moveError }
+        FileAccessHooks.shared.changed(url)
+        FileAccessHooks.shared.changed(destination)
     }
 
     // MARK: iCloud conflicts
@@ -77,26 +92,42 @@ nonisolated enum FileAccess {
     /// Merges iCloud conflict versions of `url` and resolves them. `merge` takes each version's
     /// bytes; `save` then writes the merged result. The versions are removed only once every one
     /// was merged and the result is saved, so a failure never loses a version.
+    /// In a folder chosen on the Mac, the provider's conflict copies (`Name (… conflicted copy
+    /// …).pgn`) are merged the same way, then deleted.
     static func resolveConflicts(at url: URL, presenter: NSFilePresenter? = nil,
                                  merge: (Data) throws -> Void, save: () throws -> Void) throws {
-        guard let versions = NSFileVersion.unresolvedConflictVersionsOfItem(at: url), !versions.isEmpty else { return }
-        let merged = try mergeVersions(versions.map { version in { try Data(contentsOf: version.url) } },
-                                       merge: merge, save: save)
+        let versions = NSFileVersion.unresolvedConflictVersionsOfItem(at: url) ?? []
+        let copies = ConflictCopies.copies(of: url)
+        guard !versions.isEmpty || !copies.isEmpty else { return }
+        let readers = versions.map { version in { try Data(contentsOf: version.url) } }
+            + copies.map { copy in { try read(copy) } }
+        let merged = try mergeVersions(readers, merge: merge, save: save)
         guard merged else { return }
-        for version in versions { version.isResolved = true }
-        try removeOtherVersions(of: url, presenter: presenter)
+        try resolved(versions, copies, of: url, presenter: presenter)
     }
 
     /// Conflict versions of a file whose bytes merge on their own (the sidecar, the review log):
     /// the file and each version are combined with `merge`, and the result replaces the file.
     static func resolveConflicts(at url: URL, presenter: NSFilePresenter? = nil,
                                  merge: (Data, Data) -> Data?) throws {
-        guard let versions = NSFileVersion.unresolvedConflictVersionsOfItem(at: url), !versions.isEmpty else { return }
-        let merged = try mergeFile(at: url, versions: versions.map { version in { try Data(contentsOf: version.url) } },
-                                   presenter: presenter, merge: merge)
+        let versions = NSFileVersion.unresolvedConflictVersionsOfItem(at: url) ?? []
+        let copies = ConflictCopies.copies(of: url)
+        guard !versions.isEmpty || !copies.isEmpty else { return }
+        let readers = versions.map { version in { try Data(contentsOf: version.url) } }
+            + copies.map { copy in { try read(copy) } }
+        let merged = try mergeFile(at: url, versions: readers, presenter: presenter, merge: merge)
         guard merged else { return }
-        for version in versions { version.isResolved = true }
-        try removeOtherVersions(of: url, presenter: presenter)
+        try resolved(versions, copies, of: url, presenter: presenter)
+    }
+
+    /// Once merged and saved: iCloud's versions marked resolved and removed, the copies deleted.
+    private static func resolved(_ versions: [NSFileVersion], _ copies: [URL], of url: URL,
+                                 presenter: NSFilePresenter?) throws {
+        if !versions.isEmpty {
+            for version in versions { version.isResolved = true }
+            try removeOtherVersions(of: url, presenter: presenter)
+        }
+        for copy in copies { try delete(copy) }
     }
 
     /// Combines the file with each version and writes the result; see `mergeVersions`.
@@ -133,6 +164,38 @@ nonisolated enum FileAccess {
         if let coordError { throw coordError }
         if let removeError { throw removeError }
     }
+}
+
+/// What the app's own file changes tell (the sync, which uploads them), and the folder chosen
+/// on the Mac, where saves write in place and the provider's conflict copies are merged.
+/// Thread-safe: `FileAccess` calls it from any thread.
+nonisolated final class FileAccessHooks: @unchecked Sendable {
+    static let shared = FileAccessHooks()
+
+    private let lock = NSLock()
+    private var _observer: (@Sendable (URL) -> Void)?
+    private var _chosenFolder: URL?
+
+    /// Told after each write, append, delete or move (both ends), on the thread that made it.
+    var observer: (@Sendable (URL) -> Void)? {
+        get { lock.withLock { _observer } }
+        set { lock.withLock { _observer = newValue } }
+    }
+
+    /// The repertoire folder when it is one chosen on the Mac (inside Dropbox or Google Drive
+    /// for desktop), whose client syncs it.
+    var chosenFolder: URL? {
+        get { lock.withLock { _chosenFolder } }
+        set { lock.withLock { _chosenFolder = newValue?.standardizedFileURL } }
+    }
+
+    /// A file directly in the chosen folder.
+    func isInChosenFolder(_ url: URL) -> Bool {
+        guard let folder = chosenFolder else { return false }
+        return url.deletingLastPathComponent().standardizedFileURL.path == folder.path
+    }
+
+    func changed(_ url: URL) { observer?(url) }
 }
 
 /// Watches a file or folder and forwards its callbacks to the main actor.

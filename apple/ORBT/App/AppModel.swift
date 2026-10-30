@@ -18,6 +18,7 @@ final class AppModel {
     let library = RepertoireLibrary()
     @ObservationIgnored lazy var queue = ExplorerService(store: stats, auth: auth)
     @ObservationIgnored lazy var coverage = CoverageTables(explorer: queue)
+    @ObservationIgnored lazy var sync = SyncService(library: library) { [unowned self] in Array(self.documents.values) }
     let engineNetwork = EngineNetwork()
     @ObservationIgnored lazy var engine = EngineService(network: engineNetwork)
 
@@ -30,6 +31,29 @@ final class AppModel {
     @ObservationIgnored private var closing: [String: Task<Void, Never>] = [:]
     /// Old entry id → new one, for renamed repertoires, so open screens keep their document.
     private var renamedIDs: [String: String] = [:]
+
+    /// Sets up the library's folder, then the sync with Dropbox when one is chosen.
+    func setUpLibrary() async {
+        library.onConflictCopies = { [weak self] in
+            guard let self else { return }
+            for doc in documents.values { doc.resolveConflictCopies() }
+        }
+        await library.setUp()
+        sync.start()
+    }
+
+    /// Moves the library to `url`, a folder chosen on the Mac, or back to iCloud Drive's (nil):
+    /// the open repertoires are saved and closed first, and the sync stops while the folder is
+    /// one the provider's own app syncs.
+    func useFolder(_ url: URL?) async throws {
+        await flushAll()
+        closeAll()
+        for task in closing.values { await task.value }
+        sync.suspend()
+        defer { sync.start() }
+        try await library.useFolder(url)
+        await reloadCoverageTables()
+    }
 
     /// Loads the offline coverage tables and reads which ones the server offers.
     func setUpCoverageTables() async {

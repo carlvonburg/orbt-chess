@@ -501,6 +501,44 @@ final class RepertoireDocument {
         }
     }
 
+    /// Versions from the sync (another device's, or merged with it), written on the writer so
+    /// they never overlap a save, and merged into the document as an iCloud change is. The
+    /// review log is united with the file's, which may hold answers the sync has not seen.
+    func applyRemote(pgn: Data?, sidecar: Data?, revlog: Data?) async {
+        guard !isClosed else { return }
+        let core = core, files = files
+        let changes = await writer.run { () -> [Changes] in
+            let current = files.current
+            var changes: [Changes] = []
+            if let pgn {
+                try? FileAccess.write(pgn, to: current.pgn, presenter: current.presenters?.pgn)
+                changes.append(core.remotePgn(text: String(decoding: pgn, as: UTF8.self)))
+            }
+            if let sidecar {
+                try? FileAccess.write(sidecar, to: current.sidecar, presenter: current.presenters?.sidecar)
+                changes.append(core.remoteSidecar(data: sidecar))
+            }
+            if let revlog {
+                let local = try? FileAccess.read(current.revlog, presenter: current.presenters?.revlog)
+                let merged = local.map { mergeRevlogData(a: $0, b: revlog) } ?? revlog
+                try? FileAccess.write(merged, to: current.revlog, presenter: current.presenters?.revlog)
+            }
+            return changes
+        }
+        for c in changes { apply(c) }
+    }
+
+    /// The provider left conflict copies of the files in the folder chosen on the Mac: they
+    /// are merged in as iCloud's conflict versions are, then deleted.
+    func resolveConflictCopies() {
+        pgnChangedOnDisk()
+        sidecarChangedOnDisk()
+        revlogChangedOnDisk()
+    }
+
+    /// The sync deleted the PGN (deleted on another device): the repertoire is gone from here.
+    func removedRemotely() { removedByOthers() }
+
     /// Someone else renamed or moved the PGN. Within the folder, the sidecar and the review log
     /// follow it (the library pairs them by name); out of it, the repertoire is gone from here.
     private func pgnMoved(to url: URL) {

@@ -1,0 +1,12 @@
+// The app target's build settings that are not in the project file.
+//
+// The OAuth client ids for the sync connectors go in Secrets.xcconfig next to this file
+// (ignored by git, never committed), for example:
+//
+//   ORBT_DROPBOX_APP_KEY = abc123xyz
+//
+// Without it the build has no connectors (Settings › Sync shows none).
+
+ORBT_DROPBOX_APP_KEY =
+
+#include? "Secrets.xcconfig"
