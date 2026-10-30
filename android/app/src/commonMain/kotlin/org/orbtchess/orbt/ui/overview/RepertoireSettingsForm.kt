@@ -11,8 +11,10 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenu
@@ -348,16 +350,12 @@ private fun TableDownloadRow(coverage: CoverageTables, database: ExplorerDatabas
             Text("Downloading ${formatBytes(file.bytes)}", style = MaterialTheme.typography.bodyMedium)
             LinearProgressIndicator(progress = { fraction.toFloat() }, modifier = Modifier.fillMaxWidth())
         }
-        file != null -> {
-            var retrying by remember { mutableStateOf(false) }
-            LaunchedEffect(retrying) {
-                if (retrying) {
-                    coverage.retry(database)
-                    retrying = false
-                }
-            }
-            TextButton(onClick = { retrying = true }, enabled = !retrying, modifier = Modifier.padding(horizontal = 4.dp)) {
-                SymbolLabel("Download Again", Icons.Outlined.Download)
+        file != null -> RetryButton("Download Again", Icons.Outlined.Download, coverage, database)
+        // The server's list was never read (offline since installing): the table may exist.
+        !coverage.manifestKnown -> {
+            SecondaryLabel("Downloads when you're online", Icons.Outlined.CloudDownload, padding)
+            if (coverage.manifestFailed && !coverage.readingManifest) {
+                RetryButton("Try Again", Icons.Outlined.Refresh, coverage, database)
             }
         }
         else -> SecondaryLabel(
@@ -373,6 +371,21 @@ private fun TableDownloadRow(coverage: CoverageTables, database: ExplorerDatabas
             color = ThemeColor.failure.color,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
+    }
+}
+
+/**
+ * Reads the server's list again and downloads the table, in the tables' scope: the button gives
+ * way to the progress, which would cancel work started from it.
+ */
+@Composable
+private fun RetryButton(text: String, icon: ImageVector, coverage: CoverageTables, database: ExplorerDatabase) {
+    TextButton(
+        onClick = { coverage.startRetry(database) },
+        enabled = !coverage.readingManifest,
+        modifier = Modifier.padding(horizontal = 4.dp),
+    ) {
+        SymbolLabel(text, icon)
     }
 }
 
