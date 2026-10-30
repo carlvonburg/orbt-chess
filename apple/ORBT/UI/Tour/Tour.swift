@@ -224,14 +224,17 @@ extension Tour.Target {
 }
 
 /// Where a toolbar button is, in window coordinates. SwiftUI hands bar buttons to the system's
-/// bars, which have no SwiftUI geometry; the button is found by its accessibility label (the one
-/// VoiceOver reads), as UI tests find it. Nil where it isn't on screen.
+/// bars, which have no SwiftUI geometry. On iOS the button is the bar button item SwiftUI made
+/// for it, found by its title on the screens in the window and placed with `frame(in:)` (the
+/// popover anchor API); not by the views' accessibility labels, which UIKit fills in only while
+/// an assistive technology runs (in the simulator, not on a phone). On macOS it is found by its
+/// accessibility label, as UI tests find it. Nil where it isn't on screen.
 enum BarButtonLocator {
     static func frame(label: String) -> CGRect? {
         #if os(iOS)
         let windows = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows)
         for window in windows where window.isKeyWindow {
-            if let view = find(label, in: window) { return view.convert(view.bounds, to: nil) }
+            if let frame = itemFrame(label, in: window) { return frame }
         }
         return nil
         #elseif os(macOS)
@@ -255,15 +258,24 @@ enum BarButtonLocator {
     }
 
     #if os(iOS)
-    /// Depth-first, with a work stack (the window's tree is deep).
-    private static func find(_ label: String, in root: UIView) -> UIView? {
-        var stack: [UIView] = [root]
-        while let view = stack.popLast() {
-            if view.isHidden || view.alpha == 0 { continue }
-            if matches(view.accessibilityLabel, label), view.bounds.width > 0 {
-                return view
+    /// The bar button items of the view controllers on screen (a screen pushed under another
+    /// has left the window, with its items), depth-first.
+    private static func itemFrame(_ label: String, in window: UIWindow) -> CGRect? {
+        var stack = [window.rootViewController].compactMap { $0 }
+        while let controller = stack.popLast() {
+            stack.append(contentsOf: controller.children)
+            if let presented = controller.presentedViewController { stack.append(presented) }
+            guard controller.viewIfLoaded?.window === window else { continue }
+            // A phone's bottom bar, or the navigation bar's items (in groups on iPad).
+            let navigation = controller.navigationItem
+            let groups = navigation.leadingItemGroups + navigation.centerItemGroups + navigation.trailingItemGroups
+            let items = (controller.toolbarItems ?? []) + (navigation.leftBarButtonItems ?? [])
+                + (navigation.rightBarButtonItems ?? []) + groups.flatMap(\.barButtonItems)
+            for item in items where !item.isHidden && matches(item.title, label) {
+                if let frame = item.frame(in: window), frame.width > 0, window.bounds.intersects(frame) {
+                    return frame
+                }
             }
-            stack.append(contentsOf: view.subviews)
         }
         return nil
     }
