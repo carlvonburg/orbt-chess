@@ -73,7 +73,9 @@ import org.orbtchess.orbt.storage.RepertoireDocument
 import org.orbtchess.orbt.ui.AnalysisOrigin
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.board.Board
-import org.orbtchess.orbt.ui.components.BoardColumn
+import org.orbtchess.orbt.ui.components.BoardDetailPane
+import org.orbtchess.orbt.ui.components.BoardToolbar
+import org.orbtchess.orbt.ui.components.BoardToolbarFab
 import org.orbtchess.orbt.ui.components.BoardPane
 import org.orbtchess.orbt.ui.components.SymbolLabel
 import org.orbtchess.orbt.ui.components.MoveList
@@ -94,11 +96,11 @@ class NextRepertoire(val name: String, val start: () -> Unit)
  * share [model].
  *
  * - [BoardPane.Whole] (a phone): the board, the moves played, the opening and what to do with
- *   the counts; Hint, Browse Repertoire, Analysis and Next Line in the bottom toolbar.
- * - [BoardPane.Board] (the main pane on wide windows): the board and the moves played, between
- *   the same bars.
- * - [BoardPane.Panel] (the supporting pane): the counts with what each means, the opening and
- *   what to do; the finished screen when the session ends.
+ *   the counts; Hint, Browse Repertoire, Analysis and Next Line in the docked toolbar.
+ * - [BoardPane.List] (the list pane on wide windows): under the same top app bar, the counts with
+ *   what each means, the opening and what to do; the finished screen when the session ends.
+ * - [BoardPane.Detail] (the detail pane): the board; under it the floating toolbar with the
+ *   moves played, Hint, Browse Repertoire and Analysis, Next Line its FAB.
  *
  * @param next the next repertoire when studying all of them (Study All), else null.
  * @param navigate [Destination.Analysis] (origin [AnalysisOrigin.Study]), [Destination.Builder]
@@ -118,7 +120,7 @@ fun DrillScreen(
     // The pane with the board runs the clock: leaving it (Analysis, Browse pushed on top, or
     // the screen popped) stops the opponent's moves; training goes on (or waits for Next at a
     // line's end) when it is back. The coverage check runs while it shows (`checksCoverage`).
-    if (pane != BoardPane.Panel) {
+    if (pane != BoardPane.List) {
         DisposableEffect(model) {
             model.start()
             model.document.startCoverageCheck()
@@ -133,8 +135,8 @@ fun DrillScreen(
     val actions = DrillActions(model, navigate)
     when (pane) {
         BoardPane.Whole -> PhoneLayout(app, model, actions, navigate, onBack, next, modifier)
-        BoardPane.Panel -> PanelLayout(app, model, navigate, onBack, next, modifier)
-        BoardPane.Board -> BoardLayout(model, actions, onBack, modifier)
+        BoardPane.List -> PanelLayout(app, model, navigate, onBack, next, modifier)
+        BoardPane.Detail -> BoardLayout(model, actions, modifier)
     }
 }
 
@@ -246,7 +248,7 @@ private fun PhoneLayout(
     }
 }
 
-/** The supporting pane beside the board: the counts with what each means, and what to do. */
+/** The list pane beside the board: under the screen's top app bar, the counts with what each means, and what to do. */
 @Composable
 private fun PanelLayout(
     app: AppModel,
@@ -256,7 +258,7 @@ private fun PanelLayout(
     next: NextRepertoire?,
     modifier: Modifier,
 ) {
-    Scaffold(modifier) { padding ->
+    Scaffold(modifier, topBar = { DrillTopBar(model, onBack) }) { padding ->
         if (model.finished) {
             StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding), tourEnd = inTour(app, model))
         } else {
@@ -279,22 +281,35 @@ private fun PanelLayout(
 private fun inTour(app: AppModel, model: DrillModel): Boolean =
     app.tour.step == TourGuide.Step.Studying && TourGuide.isSample(model.document.pgnFile)
 
-/** The main pane: the board and the moves played, between the same bars as on a phone. */
+/** The detail pane: the board, and the floating toolbar with the moves played while a session runs. */
 @Composable
-private fun BoardLayout(model: DrillModel, actions: DrillActions, onBack: (() -> Unit)?, modifier: Modifier) {
-    Scaffold(
+private fun BoardLayout(model: DrillModel, actions: DrillActions, modifier: Modifier) {
+    BoardDetailPane(
         modifier,
-        topBar = { DrillTopBar(model, onBack) },
-        bottomBar = { if (!model.finished) DrillToolbar(model, actions) },
-    ) { padding ->
-        BoardColumn(
-            Modifier.padding(padding).fillMaxSize().padding(horizontal = 16.dp),
-            below = { LineHistory(model.document.tree, model.playedNodes) },
-        ) {
-            DrillBoard(model)
-        }
+        toolbar = { if (!model.finished) DrillFloatingToolbar(model, actions) },
+    ) {
+        DrillBoard(model)
     }
 }
+
+/** The detail pane's floating toolbar: the moves played, then the docked toolbar's actions; Next Line its FAB when a finished line waits. */
+@Composable
+private fun DrillFloatingToolbar(model: DrillModel, actions: DrillActions) {
+    val next: (@Composable () -> Unit)? = if (waitsForNext(model)) {
+        { BoardToolbarFab("Next Line", Symbols.nextLine, model::nextLine) }
+    } else {
+        null
+    }
+    BoardToolbar(mainAction = next) {
+        LineHistory(model.document.tree, model.playedNodes, Modifier.weight(1f))
+        HintButton(model)
+        BrowseButton(actions)
+        AnalysisButton(actions)
+    }
+}
+
+/** A finished line waits for Next (paused, or looked at). */
+private fun waitsForNext(model: DrillModel): Boolean = model.phase == Phase.LINE_DONE && model.nextLineAt == null
 
 // MARK: Bar items
 
@@ -319,7 +334,7 @@ private fun AnalysisButton(actions: DrillActions) {
  */
 @Composable
 private fun NextLineButton(model: DrillModel) {
-    if (model.phase == Phase.LINE_DONE && model.nextLineAt == null) {
+    if (waitsForNext(model)) {
         Button(onClick = model::nextLine) {
             Icon(Symbols.nextLine, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
             Spacer(Modifier.width(ButtonDefaults.IconSpacing))

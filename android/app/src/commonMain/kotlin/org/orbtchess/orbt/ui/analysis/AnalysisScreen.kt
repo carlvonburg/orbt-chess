@@ -56,7 +56,8 @@ import org.orbtchess.orbt.lichess.LichessLinks
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.board.Board
 import org.orbtchess.orbt.ui.board.BoardArrow
-import org.orbtchess.orbt.ui.components.BoardColumn
+import org.orbtchess.orbt.ui.components.BoardDetailPane
+import org.orbtchess.orbt.ui.components.BoardToolbar
 import org.orbtchess.orbt.ui.components.BoardPane
 import org.orbtchess.orbt.ui.components.MoveList
 import org.orbtchess.orbt.ui.components.MoveListItem
@@ -68,7 +69,8 @@ import org.orbtchess.orbt.ui.components.TooltipIconToggleButton
  * The analysis board (`AnalysisView.swift`), pushed on Build or Study and laid out as they are:
  * the engine's lines above the board (Lichess's cloud eval, then Stockfish), and in the panel
  * the moves with their variations and evaluations, and the explorer's moves. On a phone the
- * panel shows the explorer or the moves under the board; beside a board pane it shows both.
+ * panel shows the explorer or the moves under the board; in the list pane beside the board it
+ * shows both, under the top app bar, and the engine toggle is in the board's floating toolbar.
  * Going back (the shell calls [AnalysisModel.finish]) hands the line to Build or drops it.
  * Called once per pane it fills ([BoardPane]); both share [model].
  *
@@ -85,9 +87,9 @@ fun AnalysisScreen(
     modifier: Modifier = Modifier,
 ) {
     // The engine follows the board, so it runs from the pane that shows it.
-    if (pane != BoardPane.Panel) EngineEffects(app, model)
-    // The settings are presented where the panel is (on wide windows the board pane's menu asks).
-    if (pane != BoardPane.Board && model.showsSettings) {
+    if (pane != BoardPane.List) EngineEffects(app, model)
+    // The settings are presented where the panel and its menu are.
+    if (pane != BoardPane.Detail && model.showsSettings) {
         EngineSettingsSheet(app) {
             model.showsSettings = false
             reanalyse(app, model)
@@ -95,8 +97,8 @@ fun AnalysisScreen(
     }
     when (pane) {
         BoardPane.Whole -> WholeScreen(app, model, navigate, onBack, modifier)
-        BoardPane.Panel -> PanelScreen(app, model, navigate, modifier)
-        BoardPane.Board -> BoardScreen(app, model, onBack, modifier)
+        BoardPane.List -> PanelScreen(app, model, navigate, onBack, modifier)
+        BoardPane.Detail -> BoardScreen(app, model, modifier)
     }
 }
 
@@ -169,15 +171,16 @@ private fun WholeScreen(
     }
 }
 
-/** The supporting pane: the explorer first, where Build has its replies, the moves below; half each. */
+/** The list pane: under the top app bar, the explorer first, where Build has its replies, the moves below; half each. */
 @Composable
 private fun PanelScreen(
     app: AppModel,
     model: AnalysisModel,
     navigate: (Destination) -> Unit,
+    onBack: (() -> Unit)?,
     modifier: Modifier,
 ) {
-    Scaffold(modifier) { padding ->
+    Scaffold(modifier, topBar = { AnalysisTopBar(app, model, onBack, engineToggle = false) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             ExplorerList(app, model, showsHeader = true, navigate, Modifier.weight(1f))
             HorizontalDivider()
@@ -186,35 +189,39 @@ private fun PanelScreen(
     }
 }
 
-/** The main pane: the engine's lines above the board, the line under it, between the same bars as on a phone. */
+/** The detail pane: the engine's lines above the board, the floating toolbar with the line under it. */
 @Composable
-private fun BoardScreen(app: AppModel, model: AnalysisModel, onBack: (() -> Unit)?, modifier: Modifier) {
-    Scaffold(
-        modifier = modifier.arrowKeys(model),
-        topBar = { AnalysisTopBar(app, model, onBack) },
-        bottomBar = { NavigationToolbar(model) },
-    ) { padding ->
-        BoardColumn(
-            Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-            above = { AnalysisEngineLines(app, model) },
-            below = { PathStrip(model) },
-        ) {
-            AnalysisBoard(app, model)
-        }
+private fun BoardScreen(app: AppModel, model: AnalysisModel, modifier: Modifier) {
+    BoardDetailPane(
+        modifier.arrowKeys(model),
+        toolbar = {
+            // Back and forward, the line, then the engine: the board's own action.
+            BoardToolbar {
+                NavigationButtons(model)
+                PathStrip(model, Modifier.weight(1f))
+                EngineToggle(model, above = true)
+            }
+        },
+        above = { AnalysisEngineLines(app, model) },
+    ) {
+        AnalysisBoard(app, model)
     }
 }
 
-/** "Analysis" over where the lines come from; back; the engine and the menu. */
+/**
+ * "Analysis" over where the lines come from; back; the engine (on a phone; beside the board on
+ * wide windows, [engineToggle] false) and the menu.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AnalysisTopBar(app: AppModel, model: AnalysisModel, onBack: (() -> Unit)?) {
+private fun AnalysisTopBar(app: AppModel, model: AnalysisModel, onBack: (() -> Unit)?, engineToggle: Boolean = true) {
     val status = app.engine.status(model)
     TopAppBar(
         title = { Text("Analysis") },
         subtitle = { if (status.isNotEmpty()) Text(status) },
         navigationIcon = { BackButton(onBack) },
         actions = {
-            EngineToggle(model)
+            if (engineToggle) EngineToggle(model)
             MoreMenu(app, model)
         },
     )
@@ -259,10 +266,14 @@ private fun arrows(lines: List<PvLine>): List<BoardArrow> = lines.mapIndexedNotN
  */
 @Composable
 private fun NavigationToolbar(model: AnalysisModel) {
-    FlexibleBottomAppBar(horizontalArrangement = Arrangement.Center) {
-        TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.state.canBack, above = true)
-        TooltipIconButton("Forward", Symbols.nextMove, model::forward, enabled = model.state.canForward, above = true)
-    }
+    FlexibleBottomAppBar(horizontalArrangement = Arrangement.Center) { NavigationButtons(model) }
+}
+
+/** Back and forward through the analysis, kept together. */
+@Composable
+private fun NavigationButtons(model: AnalysisModel) {
+    TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.state.canBack, above = true)
+    TooltipIconButton("Forward", Symbols.nextMove, model::forward, enabled = model.state.canForward, above = true)
 }
 
 /** ← and → go back and forward while the screen has focus (a keyboard on the desktop or a tablet). */
@@ -310,8 +321,8 @@ private fun PathStrip(model: AnalysisModel, modifier: Modifier = Modifier) {
 
 /** The engine on or off. */
 @Composable
-private fun EngineToggle(model: AnalysisModel) {
-    TooltipIconToggleButton("Engine", Symbols.analysis, checked = model.engineOn, onCheckedChange = { model.engineOn = it })
+private fun EngineToggle(model: AnalysisModel, above: Boolean = false) {
+    TooltipIconToggleButton("Engine", Symbols.analysis, checked = model.engineOn, onCheckedChange = { model.engineOn = it }, above = above)
 }
 
 /** The analysis board's menu: Flip Board, Copy PGN, Open in Lichess, Engine Settings. */

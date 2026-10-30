@@ -57,7 +57,9 @@ import org.orbtchess.orbt.ui.AnalysisOrigin
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.DrillKind
 import org.orbtchess.orbt.ui.board.Board
-import org.orbtchess.orbt.ui.components.BoardColumn
+import org.orbtchess.orbt.ui.components.BoardDetailPane
+import org.orbtchess.orbt.ui.components.BoardToolbar
+import org.orbtchess.orbt.ui.components.BoardToolbarFab
 import org.orbtchess.orbt.ui.components.BoardPane
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.TooltipIconButton
@@ -68,11 +70,11 @@ import org.orbtchess.orbt.ui.components.TooltipIconButton
  * notes. Called once per pane it fills ([BoardPane]); both share [model].
  *
  * - [BoardPane.Whole] (a phone): the board, the move strip and the panel in one list; move
- *   navigation and the actions in the bottom toolbar, the menu top trailing.
- * - [BoardPane.Board] (the main pane on wide windows): the board and the move strip, between the
- *   same bars.
- * - [BoardPane.Panel] (the supporting pane): the panel. It presents the sheets and runs the
- *   explorer fetches and the coverage check.
+ *   navigation and the actions in the docked toolbar, the menu top trailing.
+ * - [BoardPane.List] (the list pane on wide windows): the panel under the same top app bar. It
+ *   presents the sheets and runs the explorer fetches and the coverage check.
+ * - [BoardPane.Detail] (the detail pane): the board, and under it the floating toolbar with
+ *   the move strip and the same actions, Save its FAB.
  *
  * @param navigate [Destination.Analysis] (origin [AnalysisOrigin.Build]), [Destination.Drill]
  *   (Study Branch), [Destination.CardInfo].
@@ -90,10 +92,10 @@ fun BuilderScreen(
     val actions = BuilderActions(model, navigate, app.tour)
     when (pane) {
         BoardPane.Whole -> WholeScreen(app, model, actions, onBack, modifier)
-        BoardPane.Panel -> PanelScreen(app, model, actions, modifier)
-        BoardPane.Board -> BoardScreen(model, actions, onBack, modifier)
+        BoardPane.List -> PanelScreen(app, model, actions, onBack, modifier)
+        BoardPane.Detail -> BoardScreen(model, actions, modifier)
     }
-    if (pane != BoardPane.Board) {
+    if (pane != BoardPane.Detail) {
         BuilderEffects(model)
         TourEffects(model, app.tour, actions.inTour)
         BuilderSheets(model, onStudyBranch = { actions.studyBranch(it) })
@@ -223,35 +225,29 @@ private fun WholeScreen(app: AppModel, model: BuilderModel, actions: BuilderActi
     }
 }
 
-/** The supporting pane beside the board: the replies, the explorer and the rest of the panel. */
+/** The list pane beside the board: the replies, the explorer and the rest of the panel, under the screen's top app bar. */
 @Composable
-private fun PanelScreen(app: AppModel, model: BuilderModel, actions: BuilderActions, modifier: Modifier) {
-    Scaffold(modifier) { padding ->
+private fun PanelScreen(app: AppModel, model: BuilderModel, actions: BuilderActions, onBack: (() -> Unit)?, modifier: Modifier) {
+    Scaffold(modifier, topBar = { BuilderTopBar(model, actions, onBack) }) { padding ->
         BuilderList(app, model, actions.navigate, Modifier.fillMaxSize().padding(padding))
     }
 }
 
-/** The main pane: the board with its moves under it, between the same bars as on a phone. */
+/** The detail pane: the board, and the floating toolbar with its moves under it. */
 @Composable
-private fun BoardScreen(model: BuilderModel, actions: BuilderActions, onBack: (() -> Unit)?, modifier: Modifier) {
-    Scaffold(
-        modifier = modifier.builderKeys(model),
-        topBar = { BuilderTopBar(model, actions, onBack) },
-        bottomBar = { BuilderToolbar(model, actions) },
-    ) { padding ->
-        BoardColumn(
-            Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-            below = { MovePathStrip(model) },
-        ) {
-            Board(
-                position = model.position,
-                orientation = model.orientation,
-                lastMove = model.lastMove,
-                arrows = model.arrows,
-                movableSide = model.position.sideToMove(),
-                onMove = model::play,
-            )
-        }
+private fun BoardScreen(model: BuilderModel, actions: BuilderActions, modifier: Modifier) {
+    BoardDetailPane(
+        modifier.builderKeys(model),
+        toolbar = { BuilderFloatingToolbar(model, actions) },
+    ) {
+        Board(
+            position = model.position,
+            orientation = model.orientation,
+            lastMove = model.lastMove,
+            arrows = model.arrows,
+            movableSide = model.position.sideToMove(),
+            onMove = model::play,
+        )
     }
 }
 
@@ -284,6 +280,35 @@ private fun BuilderToolbar(model: BuilderModel, actions: BuilderActions) {
                 Modifier.tourTarget(TourGuide.Target.Analysis), above = true,
             )
             DraftButtons(model, actions)
+        } else {
+            GapAndStudyButtons(actions)
+            TooltipIconButton("Analysis", Symbols.analysis, actions::analysis, above = true)
+        }
+    }
+}
+
+/**
+ * The detail pane's floating toolbar: back and forward, the move strip, then the docked
+ * toolbar's actions; while a line is being built, Save is its FAB (Material's toolbar and FAB
+ * pairing) and Discard a text button ending the toolbar, labelled as it drops the line (a text
+ * button beside the main action, as in a dialog).
+ */
+@Composable
+private fun BuilderFloatingToolbar(model: BuilderModel, actions: BuilderActions) {
+    val save: (@Composable () -> Unit)? = if (model.hasDraft) {
+        { BoardToolbarFab(actions.saveTitle, Symbols.correct, actions::save, Modifier.tourTarget(TourGuide.Target.Save)) }
+    } else {
+        null
+    }
+    BoardToolbar(mainAction = save) {
+        NavigationButtons(model)
+        MovePathStrip(model, Modifier.weight(1f))
+        if (model.hasDraft) {
+            TooltipIconButton(
+                "Analysis", Symbols.analysis, actions::analysis,
+                Modifier.tourTarget(TourGuide.Target.Analysis), above = true,
+            )
+            TextButton(onClick = model::discardDraft) { Text("Discard") }
         } else {
             GapAndStudyButtons(actions)
             TooltipIconButton("Analysis", Symbols.analysis, actions::analysis, above = true)
@@ -335,7 +360,7 @@ private fun DraftButtons(model: BuilderModel, actions: BuilderActions, modifier:
     }
 }
 
-/** The builder's menu (`BuilderMoreMenu`): top trailing on a phone, above the board on wide windows. */
+/** The builder's menu (`BuilderMoreMenu`): top trailing, over the panel on wide windows. */
 @Composable
 private fun BuilderMoreMenu(model: BuilderModel, actions: BuilderActions) {
     var open by remember { mutableStateOf(false) }

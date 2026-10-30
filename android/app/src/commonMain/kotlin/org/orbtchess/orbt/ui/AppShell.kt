@@ -16,9 +16,6 @@ import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldDefaults
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
-import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
-import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldDefaults
-import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.calculateThreePaneScaffoldValue
@@ -65,8 +62,8 @@ import org.orbtchess.orbt.ui.training.StudyAllScreen
 // list-detail scaffold. On a phone one pane at a time: the library, an overview, a screen pushed
 // on it. On wide windows (tablets, the desktop) the library is the list pane, the overview the
 // detail pane and, on large windows, the statistics the extra pane beside it; Build, Study and
-// Analysis fill the window as Material's supporting-pane layout, the board the main pane and
-// their panel beside it. Every screen's wiring is here; screens only call `navigate(destination)`.
+// Analysis fill the window as their own list-detail layout, their panel the list pane and the
+// board the detail pane. Every screen's wiring is here; screens only call `navigate(destination)`.
 
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
@@ -176,7 +173,7 @@ fun AppShell(app: AppModel) {
 /**
  * The library's panes: list (the library), detail (Today or an overview), extra (the statistics).
  * A board screen (Build, Study, Analysis) is the one pane on a phone; on wide windows it leaves
- * the list and fills the window as its own supporting-pane layout ([BoardPanes]).
+ * the list and fills the window as its own list-detail layout ([BoardPanes]).
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -245,8 +242,10 @@ private fun LibraryPanes(
 }
 
 /**
- * A board screen on a wide window: Material's supporting-pane layout, the board the main pane
- * (with the screen's bars and back) and its panel the supporting pane beside it.
+ * A board screen on a wide window: Material's list-detail layout, as on iPad. The panel (what you
+ * pick from: replies, explorer, counts) is the list pane on the left, with the screen's top app
+ * bar and back; the board, which shows the pick, is the detail pane taking the rest of the window,
+ * with its move list and floating toolbar and no top app bar, so it is as large as it fits.
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -259,16 +258,16 @@ private fun BoardPanes(
 ) {
     val value = calculateThreePaneScaffoldValue(
         maxHorizontalPartitions = directive.maxHorizontalPartitions,
-        adaptStrategies = SupportingPaneScaffoldDefaults.adaptStrategies(),
-        currentDestination = ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main, entry.id),
+        adaptStrategies = ListDetailPaneScaffoldDefaults.adaptStrategies(),
+        currentDestination = ThreePaneScaffoldDestinationItem(ListDetailPaneScaffoldRole.Detail, entry.id),
     )
     // A new layout for each screen, so a screen pushed on another starts from its own panes.
     key(entry.id) {
-        SupportingPaneScaffold(
+        ListDetailPaneScaffold(
             directive = directive,
             value = value,
-            mainPane = { AnimatedPane { Screen(app, entry, BoardPane.Board, navigate, onBack) } },
-            supportingPane = { AnimatedPane { Screen(app, entry, BoardPane.Panel, navigate, onBack) } },
+            listPane = { AnimatedPane { Screen(app, entry, BoardPane.List, navigate, onBack) } },
+            detailPane = { AnimatedPane { Screen(app, entry, BoardPane.Detail, navigate, onBack) } },
         )
     }
 }

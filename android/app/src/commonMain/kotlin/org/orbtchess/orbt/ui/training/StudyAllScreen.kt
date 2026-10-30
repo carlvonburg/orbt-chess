@@ -51,8 +51,8 @@ fun StudyAllScreen(
         }
         return
     }
-    // Opening the next repertoire: in the pane with the bars (the main pane on wide windows).
-    if (pane == BoardPane.Panel) return
+    // Opening the next repertoire: in the pane with the top app bar (the list pane on wide windows).
+    if (pane == BoardPane.Detail) return
     Scaffold(
         modifier,
         topBar = {
