@@ -130,6 +130,12 @@ compose.desktop {
             // joined by ImageMagick (`magick i16.png … i256.png orbt.ico`), for Windows.
             linux { iconFile.set(project.file("src/desktopMain/resources/orbt-icon.png")) }
             windows { iconFile.set(project.file("icons/orbt.ico")) }
+            // On a Mac only to try the Windows and Linux app (the Mac's own is the SwiftUI app):
+            // its packager wants a version from 1, and a bundle id apart from the Mac app's.
+            macOS {
+                packageVersion = "1.0.0"
+                bundleID = "org.orbtchess.orbt.desktop"
+            }
         }
     }
 }
