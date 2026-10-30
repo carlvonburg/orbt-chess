@@ -28,10 +28,22 @@ struct SyncSection: View {
                         Button("Sync Now", systemImage: "arrow.triangle.2.circlepath") { sync.syncNow() }
                     }
                     Button("Stop Syncing", role: .destructive) { confirmingStop = true }
+                        .confirmationDialog("Stop Syncing?", isPresented: $confirmingStop, titleVisibility: .visible) {
+                            Button("Stop Syncing", role: .destructive) { Task { await sync.signOut() } }
+                        } message: {
+                            Text("Your repertoires stay on this device and in iCloud Drive, and in \(provider.title) as they are now. Changes are no longer synced there.")
+                        }
                 } else {
                     ForEach(SyncProvider.available) { provider in
                         Button("Sync with \(provider.title)…") { confirming = provider }
                             .disabled(sync.isSigningIn)
+                            .confirmationDialog("Sync with \(provider.title)?", isPresented: Binding(
+                                get: { confirming == provider }, set: { if !$0 { confirming = nil } }
+                            ), titleVisibility: .visible) {
+                                Button("Sign In") { Task { await sync.signIn(provider, using: webAuth) } }
+                            } message: {
+                                Text("Your repertoires are uploaded to the ORBT Chess folder in \(provider.title), and merged with those already there. Nothing is deleted.")
+                            }
                     }
                     if sync.isSigningIn { SyncStatusRow(sync: sync) }
                 }
@@ -42,18 +54,6 @@ struct SyncSection: View {
                 Text("Sync")
             } footer: {
                 Text("Also keeps your repertoires and training progress in the ORBT Chess folder of Dropbox, for your devices without iCloud. ORBT Chess sees only that folder.")
-            }
-            .confirmationDialog(confirming.map { "Sync with \($0.title)?" } ?? "", isPresented: Binding(
-                get: { confirming != nil }, set: { if !$0 { confirming = nil } }
-            ), titleVisibility: .visible, presenting: confirming) { provider in
-                Button("Sign In") { Task { await sync.signIn(provider, using: webAuth) } }
-            } message: { provider in
-                Text("Your repertoires are uploaded to the ORBT Chess folder in \(provider.title), and merged with those already there. Nothing is deleted.")
-            }
-            .confirmationDialog("Stop Syncing?", isPresented: $confirmingStop, titleVisibility: .visible) {
-                Button("Stop Syncing", role: .destructive) { Task { await sync.signOut() } }
-            } message: {
-                Text("Your repertoires stay on this device and in iCloud Drive, and in \(sync.provider?.title ?? "") as they are now. Changes are no longer synced there.")
             }
         }
     }
