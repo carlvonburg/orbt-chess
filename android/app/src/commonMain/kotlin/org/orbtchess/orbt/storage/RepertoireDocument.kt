@@ -36,6 +36,7 @@ import org.orbtchess.orbt.core.SchedTiming
 import org.orbtchess.orbt.core.Side
 import org.orbtchess.orbt.core.StudyDefaults
 import org.orbtchess.orbt.core.mergeRevlogData
+import org.orbtchess.orbt.core.mergeSidecarData
 import org.orbtchess.orbt.core.nowTimestamp
 import org.orbtchess.orbt.core.openRepertoire
 import org.orbtchess.orbt.core.schedTiming
@@ -415,19 +416,58 @@ class RepertoireDocument private constructor(
      * to merge (`remotePgn`, `remoteSidecar`), which asks for a save when the merge kept
      * something the file lacks; the review logs are merged as files (the union by entry id).
      * Runs on the writer, so it never overlaps one of our own saves.
+     *
+     * `written`: the files already hold `pgn` and `sidecar` (the desktop's folder, changed by the
+     * provider's client), so they are not written again.
      */
-    suspend fun applyRemote(pgn: ByteArray? = null, sidecar: ByteArray? = null, revlog: ByteArray? = null) {
+    suspend fun applyRemote(
+        pgn: ByteArray? = null,
+        sidecar: ByteArray? = null,
+        revlog: ByteArray? = null,
+        written: Boolean = false,
+    ) {
         if (isClosed) return
         val changes = withContext(writer) {
             val current = files.get()
             val changes = mutableListOf<Changes>()
             if (pgn != null) {
-                FileAccess.write(pgn, current.pgn)
+                if (!written) FileAccess.write(pgn, current.pgn)
                 changes += core.remotePgn(pgn.toString(Charsets.UTF_8))
             }
             if (sidecar != null) {
-                FileAccess.write(sidecar, current.sidecar)
+                if (!written) FileAccess.write(sidecar, current.sidecar)
                 changes += core.remoteSidecar(sidecar)
+            }
+            if (revlog != null) {
+                val local = runCatching { FileAccess.read(current.revlog) }.getOrNull()
+                FileAccess.write(if (local == null) revlog else mergeRevlogData(local, revlog), current.revlog)
+            }
+            changes
+        }
+        for (c in changes) apply(c)
+    }
+
+    /**
+     * A provider's conflict copies of the files (Dropbox's "conflicted copy", on the desktop):
+     * merged in, never lost, as iCloud's conflict versions on Apple (`mergeConflictVersion`,
+     * `mergeSidecarData`, the review logs' union). The core asks to save what the PGN's copy
+     * added. On the writer, like [applyRemote].
+     */
+    suspend fun mergeConflictCopy(pgn: ByteArray? = null, sidecar: ByteArray? = null, revlog: ByteArray? = null) {
+        if (isClosed) return
+        val changes = withContext(writer) {
+            val current = files.get()
+            val changes = mutableListOf<Changes>()
+            if (pgn != null) changes += core.mergeConflictVersion(pgn.toString(Charsets.UTF_8))
+            if (sidecar != null) {
+                // Merged as files first (the core saves only what a remote sidecar lacks), then
+                // into what is open.
+                val local = runCatching { FileAccess.read(current.sidecar) }.getOrNull()
+                val merged = if (local == null) sidecar else mergeSidecarData(local, sidecar)
+                if (merged != null) {
+                    FileAccess.write(merged, current.sidecar)
+                    changes += core.remoteSidecar(merged)
+                }
             }
             if (revlog != null) {
                 val local = runCatching { FileAccess.read(current.revlog) }.getOrNull()

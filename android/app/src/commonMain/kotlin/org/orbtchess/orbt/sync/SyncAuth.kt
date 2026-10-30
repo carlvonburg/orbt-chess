@@ -1,5 +1,7 @@
 package org.orbtchess.orbt.sync
 
+import org.orbtchess.orbt.core.RepertoireSync
+
 /** Where the repertoire folder syncs to (`FUTURE.md`, Connectors). None: this device only. */
 enum class SyncProvider(val key: String, val title: String) {
     Dropbox("dropbox", "Dropbox"),
@@ -11,9 +13,10 @@ enum class SyncProvider(val key: String, val title: String) {
 }
 
 /**
- * What a sign-in gives the core (`RepertoireSync.setCredentials`). Dropbox: the refresh token
- * (the core gets access tokens with it); Drive: an access token from the system, no refresh
- * and no expiry (the core asks for a new one when Google refuses it).
+ * What a sign-in gives the core (`RepertoireSync.setCredentials`). Dropbox, and Drive on the
+ * desktop: the refresh token (the core gets access tokens with it); Drive on Android: an access
+ * token from the system, no refresh and no expiry (the core asks for a new one when Google
+ * refuses it).
  */
 class SyncCredentials(
     val accessToken: String? = null,
@@ -27,8 +30,8 @@ class SyncCredentials(
 class SyncSignInException(message: String) : Exception(message)
 
 /**
- * The platform's sign-ins (Android: Dropbox in a Custom Tab, Drive through Play services);
- * the desktop has none (it syncs through a folder, `FUTURE.md`). The requests to the providers
+ * The platform's sign-ins (Android: Dropbox in a Custom Tab, Drive through Play services; the
+ * desktop: both in the browser with a loopback redirect, `DesktopSyncAuth`). The requests to the providers
  * once signed in are the core's.
  */
 interface SyncAuth {
@@ -48,9 +51,13 @@ interface SyncAuth {
     /** Forgets the platform's own sign-in (Drive: the system's token); the core revokes
      *  Dropbox's on the server. */
     suspend fun signOut(provider: SyncProvider, credentials: SyncCredentials?)
+
+    /** The core's Drive sync: tokens from the system by default (Android's Play services,
+     *  [token]); the desktop's own OAuth client refreshes in the core. */
+    fun driveSync(savedState: ByteArray): RepertoireSync = RepertoireSync.drive(savedState)
 }
 
-/** No providers (the desktop). */
+/** No providers: no Sync section. */
 object NoSyncAuth : SyncAuth {
     override val providers: List<SyncProvider> = emptyList()
     override val dropboxAppKey: String = ""

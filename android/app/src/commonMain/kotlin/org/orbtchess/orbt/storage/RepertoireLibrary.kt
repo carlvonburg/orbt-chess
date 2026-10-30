@@ -58,12 +58,23 @@ class RepertoireFileException(val reason: Reason) : IOException(reason.message) 
  * The repertoires in the app's folder (`AppFolders.repertoires`): `<Name>.pgn`, its sidecar
  * `<Name>.otrep.json` and its review log `<Name>.otlog.jsonl`. Imported PGNs are copied into
  * this folder. No folder watching here (iCloud's file presenters on Apple): the app calls
- * `refresh` when it comes back to the foreground, and the sync will after it downloads.
+ * `refresh` when it comes back to the foreground, the sync after it downloads, and the
+ * desktop's `FolderWatcher` when the provider's client changes the folder.
  *
  * Main-thread confined like the Swift `@MainActor` model: `scope` runs on the main thread
  * (e.g. `MainScope()`); scans and writes run on `Dispatchers.IO`.
  */
-class RepertoireLibrary(val folder: File, private val scope: CoroutineScope) {
+class RepertoireLibrary(folder: File, private val scope: CoroutineScope) {
+    /** The folder; the desktop lets the user choose another ([switchTo]). */
+    var folder: File = folder
+        private set
+
+    /**
+     * PGN names the scan leaves out: on the desktop, the conflict copies Dropbox and Google
+     * Drive make, which are merged into their repertoire and removed (`FolderWatcher`).
+     */
+    @Volatile var hidden: (String) -> Boolean = { false }
+
     var entries: List<RepertoireEntry> by mutableStateOf(emptyList())
         private set
     var isLoaded: Boolean by mutableStateOf(false)
@@ -93,10 +104,21 @@ class RepertoireLibrary(val folder: File, private val scope: CoroutineScope) {
     suspend fun refresh() {
         scanGeneration += 1
         val generation = scanGeneration
-        val result = withContext(Dispatchers.IO) { scan(folder) }
+        val folder = folder
+        val hidden = hidden
+        val result = withContext(Dispatchers.IO) { scan(folder, hidden) }
         // A later scan started meanwhile and has fresher results.
         if (generation != scanGeneration) return
         if (result != entries) entries = result
+    }
+
+    /** Lists another folder from now on (the documents of this one closed first, `Documents.closeAll`). */
+    suspend fun switchTo(newFolder: File) {
+        scheduledRefresh?.cancel()
+        folder = newFolder
+        withContext(Dispatchers.IO) { newFolder.mkdirs() }
+        entries = emptyList()
+        refresh()
     }
 
     /** Puts the entry for a file the app just wrote in the list right away; a scan follows. */
@@ -230,10 +252,10 @@ class RepertoireLibrary(val folder: File, private val scope: CoroutineScope) {
             }
         }
 
-        private fun scan(folder: File): List<RepertoireEntry> =
+        private fun scan(folder: File, hidden: (String) -> Boolean): List<RepertoireEntry> =
             folder.walkTopDown()
                 .onEnter { it == folder || !it.name.startsWith(".") }
-                .filter { it.isFile && it.name.endsWith(".pgn") && !it.name.startsWith(".") }
+                .filter { it.isFile && it.name.endsWith(".pgn") && !it.name.startsWith(".") && !hidden(it.name) }
                 .map { entry(it) }
                 .sortedWith(byName)
                 .toList()
