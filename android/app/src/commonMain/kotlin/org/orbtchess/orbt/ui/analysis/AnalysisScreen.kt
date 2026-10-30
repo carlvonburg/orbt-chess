@@ -63,14 +63,13 @@ import org.orbtchess.orbt.ui.components.MoveList
 import org.orbtchess.orbt.ui.components.MoveListItem
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.TooltipIconButton
-import org.orbtchess.orbt.ui.components.TooltipIconToggleButton
 
 /**
  * The analysis board (`AnalysisView.swift`), pushed on Build or Study and laid out as they are:
  * the engine's lines above the board (Lichess's cloud eval, then Stockfish), and in the panel
  * the moves with their variations and evaluations, and the explorer's moves. On a phone the
  * panel shows the explorer or the moves under the board; in the list pane beside the board it
- * shows both, under the top app bar, and the engine toggle is in the board's floating toolbar.
+ * shows both, under the top app bar. The engine's switch is in its header above the board.
  * Going back (the shell calls [AnalysisModel.finish]) hands the line to Build or drops it.
  * Called once per pane it fills ([BoardPane]); both share [model].
  *
@@ -180,7 +179,7 @@ private fun PanelScreen(
     onBack: (() -> Unit)?,
     modifier: Modifier,
 ) {
-    Scaffold(modifier, topBar = { AnalysisTopBar(app, model, onBack, engineToggle = false) }) { padding ->
+    Scaffold(modifier, topBar = { AnalysisTopBar(app, model, onBack) }) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             ExplorerList(app, model, showsHeader = true, navigate, Modifier.weight(1f))
             HorizontalDivider()
@@ -195,11 +194,10 @@ private fun BoardScreen(app: AppModel, model: AnalysisModel, modifier: Modifier)
     BoardDetailPane(
         modifier.arrowKeys(model),
         toolbar = {
-            // Back and forward, the line, then the engine: the board's own action.
+            // Back and forward, and the line. The engine's switch is in its header, above the board.
             BoardToolbar {
                 NavigationButtons(model)
                 PathStrip(model, Modifier.weight(1f))
-                EngineToggle(model, above = true)
             }
         },
         above = { AnalysisEngineLines(app, model) },
@@ -209,21 +207,18 @@ private fun BoardScreen(app: AppModel, model: AnalysisModel, modifier: Modifier)
 }
 
 /**
- * "Analysis" over where the lines come from; back; the engine (on a phone; beside the board on
- * wide windows, [engineToggle] false) and the menu.
+ * "Analysis" over the repertoire's name, as Build and Study; back and the menu. The engine is
+ * turned on and off in its header above the board ([AnalysisEngineLines]), so the analysis
+ * symbol only ever means "open Analysis" (Build's and Study's toolbars).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AnalysisTopBar(app: AppModel, model: AnalysisModel, onBack: (() -> Unit)?, engineToggle: Boolean = true) {
-    val status = app.engine.status(model)
+private fun AnalysisTopBar(app: AppModel, model: AnalysisModel, onBack: (() -> Unit)?) {
     TopAppBar(
         title = { Text("Analysis") },
-        subtitle = { if (status.isNotEmpty()) Text(status) },
+        subtitle = { Text(model.document.name) },
         navigationIcon = { BackButton(onBack) },
-        actions = {
-            if (engineToggle) EngineToggle(model)
-            MoreMenu(app, model)
-        },
+        actions = { MoreMenu(app, model) },
     )
 }
 
@@ -317,12 +312,6 @@ private fun PathStrip(model: AnalysisModel, modifier: Modifier = Modifier) {
         },
         onMove = { model.goToPly((it.key as Int) + 1) },
     )
-}
-
-/** The engine on or off. */
-@Composable
-private fun EngineToggle(model: AnalysisModel, above: Boolean = false) {
-    TooltipIconToggleButton("Engine", Symbols.analysis, checked = model.engineOn, onCheckedChange = { model.engineOn = it }, above = above)
 }
 
 /** The analysis board's menu: Flip Board, Copy PGN, Open in Lichess, Engine Settings. */

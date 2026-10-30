@@ -24,17 +24,20 @@ follows its Swift counterpart; the Swift file is named in each stub's doc commen
   `AppShell.kt`/`ShellModel.kt`. A screen with `onBack == null` shows no back arrow (nothing to go
   back to in that pane).
 - **Board screens share one bar.** Build, Study and Analysis have a top app bar with the
-  screen's title over the repertoire's name (`TopAppBar(title, subtitle)`), back and the ⋮ menu
-  (Analysis on a phone: the engine too); on two panes it is the list pane's, over the panel, as on
-  iPad. Their bottom actions: icon-only items named by a tooltip, back and forward kept together.
+  screen's title over the repertoire's name (`TopAppBar(title, subtitle)`), back and the ⋮ menu;
+  on two panes it is the list pane's, over the panel, as on iPad. Their bottom actions: icon-only items named by a tooltip, back and forward kept together.
   - One pane (a phone): Material's docked toolbar (`FlexibleBottomAppBar`), items spread evenly,
     the main action (Save, Next Line) a labelled filled button in it, a secondary one (Discard) a
     text button beside it.
   - Two panes: no top app bar over the board; under it, as wide as it, Material 3 Expressive's
     floating toolbar (`components/BoardToolbar`, `HorizontalFloatingToolbar`): back and forward,
     the move list taking the width left, then the board's actions (Biggest Gap, Study Branch,
-    Analysis; Hint, Browse Repertoire; the engine), Discard a text button ending it. The main
-    action is the FAB beside it (`BoardToolbarFab`, Material's toolbar and FAB pairing).
+    Analysis; Hint, Browse Repertoire), Discard a text button ending it. The main action is the
+    FAB beside it (`BoardToolbarFab`, Material's toolbar and FAB pairing).
+  - One symbol, one meaning: the analysis symbol only ever opens Analysis (Build's and Study's
+    toolbars, in the same place). Analysis turns its engine on and off with Material's `Switch` at
+    the end of the engine's header above the board ("Cloud · depth 54", named "Engine"); off,
+    only the header stays.
 - **One move list.** The moves of the line on the board are `components/MoveList` in every board
   screen: under the board on a phone (except Analysis, where the Moves tab has them, as on
   iPhone), inside the floating toolbar on two panes (as iPad's bar under the board). A row of
