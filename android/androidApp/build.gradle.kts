@@ -52,7 +52,7 @@ kotlin {
 dependencies {
     implementation(project(":app"))
     implementation(project(":core"))
-    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.activity:activity-compose:1.13.0")
     // Lichess and Dropbox sign-ins, Analyse on Lichess (Custom Tabs).
     implementation("androidx.browser:browser:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")

@@ -508,7 +508,7 @@
   },
   {
    "name": "AndroidX Activity",
-   "version": "1.10.1",
+   "version": "1.13.0",
    "license": "Apache-2.0",
    "repository": "https://developer.android.com/jetpack/androidx/releases/activity",
    "shared": "Apache-2.0"
