@@ -3,34 +3,38 @@ package org.orbtchess.orbt.ui.theme
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 import com.materialkolor.ktx.toColor
+import com.materialkolor.hct.Hct
 import com.materialkolor.ktx.toHct
 
 /**
  * The board for a theme (`BoardTheme` in Palette.swift), in Material's terms: content with its
- * own colors, the same in the app's light and dark appearance (dimmer squares in dark), every
- * color a tone of the theme's primary tonal palette (HCT: the primary's hue and chroma at another
- * tone; Material You's for Multicolor, the seeded scheme's for the other app colors, neutral for
- * graphite), as Material derives its own roles. Its overlays are one ink, the palette's dark
- * tone, told apart by width, opacity and dashes. Design/COLORS.md, "Android and desktop", has the
+ * own colors, the same in the app's light and dark appearance (dimmer squares in dark). Its hue
+ * is the theme's primary's (Material You's for Multicolor, the seeded scheme's for the other app
+ * colors, neutral for graphite); the squares take that hue at low chroma, as the iPhone's calm
+ * board (pale tinted light squares, muted mid-tone dark squares: there tone 87 chroma 17 and tone
+ * 60 chroma 30, measured in HCT), never the primary's own chroma, which made a loud board. The
+ * overlays are one ink, the palette's dark tone, told apart by width, opacity and dashes; the
+ * highlights the primary itself at a mid tone. Design/COLORS.md, "Android and desktop", has the
  * tones.
  */
 @Immutable
 class BoardTheme internal constructor(private val theme: Theme) {
-    private val palette = theme.boardTint.toHct()
+    private val primary = theme.boardTint.toHct()
     private val graphite = theme.appColor == AppColor.Graphite
 
-    /** The palette at [tone] (0 black, 100 white), its hue and chroma kept as far as sRGB allows. */
-    private fun tone(tone: Double): Color = palette.withTone(tone).toColor()
+    /** The primary's hue at [tone] with at most [chroma] (0 black, 100 white). */
+    private fun tone(tone: Double, chroma: Double = primary.chroma): Color =
+        Hct.from(primary.hue, minOf(primary.chroma, chroma), tone).toColor()
 
-    val light: Color = tone(if (theme.isDark) 80.0 else 90.0)
-    val dark: Color = tone(if (theme.isDark) 55.0 else 68.0)
+    val light: Color = if (theme.isDark) tone(76.0, 8.0) else tone(88.0, 10.0)
+    val dark: Color = if (theme.isDark) tone(52.0, 16.0) else tone(62.0, 18.0)
 
     /**
-     * The board's ink: the palette at tone 28, which every board shows clearly (a board swallows
-     * a mid tone of its own hue). Your moves, the hint, the replies you cover and, dashed, the
-     * gaps; the check badge in tinted themes.
+     * The board's ink: the primary's hue at tone 28 (chroma at most 40), which every board shows
+     * clearly. Your moves, the hint, the replies you cover and, dashed, the gaps; the check badge
+     * in tinted themes.
      */
-    val ink: Color = tone(28.0)
+    val ink: Color = tone(28.0, 40.0)
 
     /** The check badge: Multicolor's correct color; tinted themes the ink. */
     val correct: Color = if (theme.appColor == AppColor.Multicolor) theme.color(ThemeColor.Role.Correct) else ink
@@ -41,14 +45,17 @@ class BoardTheme internal constructor(private val theme: Theme) {
     /** The badges' glyph: white on its disc (SF Symbols' palette rendering in Swift). */
     val badgeGlyph: Color = Hues.White
 
-    /** The palette's mid tone, for the highlights. */
-    private val mid = tone(if (theme.isDark) 38.0 else 48.0)
+    /**
+     * The highlights' color: the primary's hue at a mid tone with at least a tonal-spot primary's
+     * chroma (36), so it shows on the low-chroma squares.
+     */
+    private val mid = Hct.from(primary.hue, maxOf(primary.chroma, 36.0), if (theme.isDark) 50.0 else 58.0).toColor()
 
-    /** The last move: the palette's mid tone over the square (the ink for graphite, whose gray the board doesn't show). */
-    val lastMove: Color = if (graphite) ink.copy(alpha = 0.25f) else mid.copy(alpha = 0.6f)
+    /** The last move: the highlight color over the square (the ink for graphite, whose gray the board doesn't show). */
+    val lastMove: Color = if (graphite) ink.copy(alpha = 0.25f) else mid.copy(alpha = 0.5f)
 
     /** The selected square. */
-    val selected: Color = if (graphite) ink.copy(alpha = 0.4f) else mid.copy(alpha = 0.8f)
+    val selected: Color = if (graphite) ink.copy(alpha = 0.4f) else mid.copy(alpha = 0.75f)
 
     /** The engine's lines: graphite (best 70%, then 45%, 30%). */
     val engine: Color = Hues.Engine

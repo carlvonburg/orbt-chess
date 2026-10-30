@@ -147,11 +147,14 @@ class Theme internal constructor(
 
     /**
      * A color outside the scheme as Material makes one (a custom color): harmonized with the
-     * primary (its hue turned up to 15° toward it), then tones of its palette: the color 40 in
-     * light and 80 in dark, the container 90 and 30, the content on it 10 and 90.
+     * primary (its hue turned up to 15° toward it), then tones of its palette at no more than the
+     * chroma of a tonal-spot primary ([CUSTOM_CHROMA]), so a status color reads as itself without
+     * shouting next to the scheme (Apple's system colors are far more saturated): the color 40
+     * in light and 80 in dark, the container 90 and 30, the content on it 10 and 90.
      */
     private fun custom(hue: Color): Roles {
-        val palette = TonalPalette.fromHct(hue.harmonize(scheme.primary).toHct())
+        val hct = hue.harmonize(scheme.primary).toHct()
+        val palette = TonalPalette.fromHueAndChroma(hct.hue, minOf(hct.chroma, CUSTOM_CHROMA))
         fun tone(t: Int) = Color(palette.tone(t))
         return if (isDark) Roles(tone(80), tone(30), tone(90)) else Roles(tone(40), tone(90), tone(10))
     }
@@ -202,12 +205,17 @@ class Theme internal constructor(
     }
 
     /**
-     * A lighter tone of the same palette: [amount] of the way from the color's tone to white
-     * (HCT tone), its hue and chroma kept as far as sRGB allows, as Material's palettes shade.
+     * A lighter shade of the same meaning: [amount] of the way from the color's tone toward the
+     * surface's end of the palette (HCT tone; hue and chroma kept as far as sRGB allows), as
+     * Material's palettes shade. In light that is toward white (iOS mixes toward white); in dark
+     * toward the dark surface, down to tone 30 (mixing a tone-80 color toward white washes it
+     * out to a pastel that no longer reads as weaker).
      */
     private fun lift(color: Color, amount: Float): Color {
         val hct = color.toHct()
-        return hct.withTone(hct.tone + (100.0 - hct.tone) * amount).toColor().copy(alpha = color.alpha)
+        val tone = if (isDark) hct.tone - (hct.tone - 30.0).coerceAtLeast(0.0) * amount
+        else hct.tone + (100.0 - hct.tone) * amount
+        return hct.withTone(tone).toColor().copy(alpha = color.alpha)
     }
 
     val board: BoardTheme by lazy { BoardTheme(this) }
@@ -224,18 +232,50 @@ class Theme internal constructor(
             return Theme(appColor, isDark, scheme, tintScheme, boardTint)
         }
 
+        /** The most chroma a meaning's custom color keeps: a tonal-spot primary's (36). */
+        private const val CUSTOM_CHROMA = 36.0
+
         /**
-         * A scheme seeded with an app color as Android 16's Material 3 Expressive dynamic color
-         * makes one from a wallpaper: tonal spot (the system's default style) on the 2025 color
-         * spec; graphite monochrome.
+         * A scheme seeded with an app color as Android's dynamic color makes one from a
+         * wallpaper with the system's default style, tonal spot, on the 2021 color spec (graphite
+         * monochrome), with the neutral style's surfaces. The 2025 spec's tonal spot raises the
+         * primary container to tone 82 at chroma 32 and tints the surfaces more (orange's
+         * container a strong peach, its surface containers chroma 7–9): every tonal container
+         * in the app shouted. The 2021 spec keeps containers at tone 90 chroma 16; its surfaces
+         * (chroma 6) still read as the seed's hue for warm seeds (an orange app colour made
+         * peach pages), so the surfaces, outlines and their content are the neutral style's
+         * (chroma 2): near-neutral pages, the accent only on what acts.
          */
-        private fun seededScheme(seed: Color, isDark: Boolean, monochrome: Boolean): ColorScheme =
-            dynamicColorScheme(
+        private fun seededScheme(seed: Color, isDark: Boolean, monochrome: Boolean): ColorScheme {
+            fun scheme(style: PaletteStyle) = dynamicColorScheme(
                 seedColor = seed,
                 isDark = isDark,
-                style = if (monochrome) PaletteStyle.Monochrome else PaletteStyle.TonalSpot,
-                specVersion = if (monochrome) ColorSpec.SpecVersion.SPEC_2021 else ColorSpec.SpecVersion.SPEC_2025,
+                style = style,
+                specVersion = ColorSpec.SpecVersion.SPEC_2021,
             )
+            if (monochrome) return scheme(PaletteStyle.Monochrome)
+            val tonal = scheme(PaletteStyle.TonalSpot)
+            val neutral = scheme(PaletteStyle.Neutral)
+            return tonal.copy(
+                background = neutral.background,
+                onBackground = neutral.onBackground,
+                surface = neutral.surface,
+                onSurface = neutral.onSurface,
+                surfaceVariant = neutral.surfaceVariant,
+                onSurfaceVariant = neutral.onSurfaceVariant,
+                inverseSurface = neutral.inverseSurface,
+                inverseOnSurface = neutral.inverseOnSurface,
+                outline = neutral.outline,
+                outlineVariant = neutral.outlineVariant,
+                surfaceBright = neutral.surfaceBright,
+                surfaceDim = neutral.surfaceDim,
+                surfaceContainerLowest = neutral.surfaceContainerLowest,
+                surfaceContainerLow = neutral.surfaceContainerLow,
+                surfaceContainer = neutral.surfaceContainer,
+                surfaceContainerHigh = neutral.surfaceContainerHigh,
+                surfaceContainerHighest = neutral.surfaceContainerHighest,
+            )
+        }
     }
 }
 
