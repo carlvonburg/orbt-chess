@@ -20,20 +20,19 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -74,6 +73,7 @@ import org.orbtchess.orbt.engine.EngineDefaults
 import org.orbtchess.orbt.engine.EngineNetwork
 import org.orbtchess.orbt.storage.TrainingDefaults
 import org.orbtchess.orbt.ui.Destination
+import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
 import org.orbtchess.orbt.ui.components.Format
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.tabularDigits
@@ -105,10 +105,10 @@ fun SettingsScreen(
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
+            LargeFlexibleTopAppBar(
                 title = { Text("Settings") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                 },
                 scrollBehavior = scrollBehavior,
             )
@@ -351,20 +351,15 @@ fun EngineSettingsSection(app: AppModel, heading: String? = "Analysis engine") {
         ListItem(
             supportingContent = {
                 val counts = EngineDefaults.lineCounts.toList()
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                    counts.forEachIndexed { i, n ->
-                        SegmentedButton(
-                            selected = lines == n,
-                            onClick = {
-                                lines = n
-                                defaults.lines = n
-                            },
-                            shape = SegmentedButtonDefaults.itemShape(i, counts.size),
-                            icon = {},
-                            label = { Text("$n") },
-                        )
-                    }
-                }
+                ChoiceButtonGroup(
+                    counts, lines,
+                    onSelect = {
+                        lines = it
+                        defaults.lines = it
+                    },
+                    label = { "$it" },
+                    modifier = Modifier.padding(top = 8.dp),
+                )
             },
         ) { Text("Lines") }
         SwitchRow("Lichess cloud evaluations", cloud) {
@@ -394,13 +389,13 @@ private fun EngineNetworkRows(network: EngineNetwork, use: Boolean, onUse: (Bool
         is EngineNetwork.State.Failed -> DownloadRow(network, state.message)
         is EngineNetwork.State.Downloading -> ListItem(
             supportingContent = {
-                LinearProgressIndicator(
+                LinearWavyProgressIndicator(
                     progress = { state.fraction.toFloat() },
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 )
             },
             trailingContent = {
-                IconButton(onClick = { network.cancel() }) { Icon(Icons.Outlined.Close, contentDescription = "Cancel") }
+                IconButton(onClick = { network.cancel() }, shapes = IconButtonDefaults.shapes()) { Icon(Icons.Outlined.Close, contentDescription = "Cancel") }
             },
         ) { Text("Downloading full network") }
         EngineNetwork.State.Ready -> {
@@ -498,7 +493,7 @@ internal fun <T> ChoiceDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text("Cancel") } },
     )
 }
 
@@ -521,11 +516,11 @@ private fun NumberDialog(title: String, value: Int, range: IntRange, onDismiss: 
             )
         },
         confirmButton = {
-            TextButton(enabled = parsed != null, onClick = {
+            TextButton(enabled = parsed != null, shapes = ButtonDefaults.shapes(), onClick = {
                 parsed?.let(onSave)
                 onDismiss()
             }) { Text("Save") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text("Cancel") } },
     )
 }

@@ -21,6 +21,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -295,7 +296,7 @@ private fun BuilderFloatingToolbar(model: BuilderModel, actions: BuilderActions,
                 "Analysis", Symbols.analysis, actions::analysis,
                 Modifier.tourTarget(TourGuide.Target.Analysis), above = true,
             )
-            TextButton(onClick = model::discardDraft) { Text("Discard") }
+            TextButton(onClick = model::discardDraft, shapes = ButtonDefaults.shapes()) { Text("Discard") }
         } else {
             if (phone) GapAndStudyButtons(actions, above = true)
             TooltipIconButton("Analysis", Symbols.analysis, actions::analysis, above = true)
@@ -306,7 +307,7 @@ private fun BuilderFloatingToolbar(model: BuilderModel, actions: BuilderActions,
 @Composable
 private fun BackButton(onBack: (() -> Unit)?) {
     if (onBack != null) {
-        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+        IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
     }
 }
 
@@ -412,7 +413,7 @@ internal fun SaveErrorDialog(model: BuilderModel) {
     val error = document.saveError ?: return
     AlertDialog(
         onDismissRequest = document::dismissSaveError,
-        confirmButton = { TextButton(onClick = document::dismissSaveError) { Text("OK") } },
+        confirmButton = { TextButton(onClick = document::dismissSaveError, shapes = ButtonDefaults.shapes()) { Text("OK") } },
         title = { Text("Could not save") },
         text = { Text(error) },
     )

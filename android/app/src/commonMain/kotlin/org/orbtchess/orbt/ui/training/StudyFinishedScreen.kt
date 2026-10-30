@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
@@ -125,12 +126,12 @@ private fun Header(model: DrillModel, studied: Boolean, learningLater: Boolean, 
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        val fill = if (studied) ThemeColor.learned.opacity(0.18f).color else MaterialTheme.colorScheme.surfaceContainerHighest
+        val fill = if (studied) ThemeColor.learned.container.color else MaterialTheme.colorScheme.surfaceContainerHighest
         Box(Modifier.size(64.dp).background(fill, CircleShape), contentAlignment = Alignment.Center) {
             Icon(
                 if (studied) Icons.Filled.Check else Icons.Outlined.Inbox,
                 contentDescription = null,
-                tint = if (studied) ThemeColor.learned.color else MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (studied) ThemeColor.learned.onContainer.color else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(32.dp),
             )
         }
@@ -275,6 +276,7 @@ private fun TourEndActions(app: AppModel) {
             textAlign = TextAlign.Center,
         )
         Button(
+            shapes = ButtonDefaults.shapes(),
             onClick = { app.tour.advance(from = TourGuide.Step.Studying, to = TourGuide.Step.Finish) },
             modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
         ) { Text("Create Your Own Repertoire") }
@@ -296,15 +298,15 @@ private fun Actions(model: DrillModel, next: NextRepertoire?) {
     ) {
         val width = Modifier.widthIn(max = 560.dp).fillMaxWidth()
         if (next != null) {
-            Button(onClick = next.start, modifier = width) { Text("Continue with ${next.name}") }
+            Button(onClick = next.start, shapes = ButtonDefaults.shapes(), modifier = width) { Text("Continue with ${next.name}") }
         }
         if (canStudyMore) {
             var menu by remember { mutableStateOf(false) }
             Box(width) {
                 if (next == null) {
-                    Button(onClick = { menu = true }, modifier = Modifier.fillMaxWidth()) { Text("Study More Today") }
+                    Button(onClick = { menu = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth()) { Text("Study More Today") }
                 } else {
-                    OutlinedButton(onClick = { menu = true }, modifier = Modifier.fillMaxWidth()) { Text("Study More Today") }
+                    OutlinedButton(onClick = { menu = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth()) { Text("Study More Today") }
                 }
                 DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                     if (notStudied > 0) {

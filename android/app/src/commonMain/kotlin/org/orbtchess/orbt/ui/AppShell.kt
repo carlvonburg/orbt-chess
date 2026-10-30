@@ -2,6 +2,7 @@ package org.orbtchess.orbt.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -19,6 +20,7 @@ import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.calculateThreePaneScaffoldValue
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItem
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
@@ -105,24 +107,29 @@ fun AppShell(app: AppModel) {
         }
     }
 
+    val suiteType = if (showBar) NavigationSuiteScaffoldDefaults.navigationSuiteType(adaptiveInfo) else NavigationSuiteType.None
     CompositionLocalProvider(LocalTourGuide provides app.tour) {
         Box(Modifier.fillMaxSize()) {
+            // Material 3 Expressive's navigation for the window: the short navigation bar (on a
+            // tablet in portrait its items side by side); wide windows show the tabs as panes.
             NavigationSuiteScaffold(
-                navigationSuiteItems = {
-                    item(
+                navigationItems = {
+                    NavigationSuiteItem(
+                        navigationSuiteType = suiteType,
                         selected = shell.tab == Tab.Repertoires,
                         onClick = { shell.tab = Tab.Repertoires },
                         icon = { Icon(Symbols.repertoires, contentDescription = null) },
                         label = { Text("Repertoires") },
                     )
-                    item(
+                    NavigationSuiteItem(
+                        navigationSuiteType = suiteType,
                         selected = shell.tab == Tab.Statistics,
                         onClick = { shell.tab = Tab.Statistics },
                         icon = { Icon(Symbols.statistics, contentDescription = null) },
                         label = { Text("Statistics") },
                     )
                 },
-                layoutType = if (showBar) NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(adaptiveInfo) else NavigationSuiteType.None,
+                navigationSuiteType = suiteType,
             ) {
                 if (shell.tab == Tab.Statistics && !wide) {
                     StatisticsScreen(
@@ -162,7 +169,7 @@ fun AppShell(app: AppModel) {
         shell.error?.let { message ->
             AlertDialog(
                 onDismissRequest = { shell.error = null },
-                confirmButton = { TextButton(onClick = { shell.error = null }) { Text("OK") } },
+                confirmButton = { TextButton(onClick = { shell.error = null }, shapes = ButtonDefaults.shapes()) { Text("OK") } },
                 title = { Text("Something went wrong") },
                 text = { Text(message) },
             )

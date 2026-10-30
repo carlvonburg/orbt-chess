@@ -27,9 +27,10 @@ import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.SportsScore
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.LocalContentColor
@@ -183,7 +184,7 @@ private fun DrillTopBar(model: DrillModel, onBack: (() -> Unit)?, actions: Drill
         subtitle = { Text(model.document.name) },
         navigationIcon = {
             if (onBack != null) {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
             }
         },
         actions = {
@@ -381,7 +382,7 @@ private fun LineCountdown(end: Long) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Box(contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(progress = { left.toFloat() / DrillModel.LINE_DONE_MS })
+                CircularWavyProgressIndicator(progress = { left.toFloat() / DrillModel.LINE_DONE_MS })
                 Icon(Icons.Filled.Pause, contentDescription = null, modifier = Modifier.size(18.dp))
             }
             Text(

@@ -21,11 +21,13 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -122,7 +124,7 @@ private fun OutlineSheet(model: BuilderModel, onStudyBranch: (NodeId) -> Unit, d
                     leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                     trailingIcon = {
                         if (search.isNotEmpty()) {
-                            IconButton(onClick = { searchField.clearText() }) { Icon(Icons.Filled.Clear, contentDescription = "Clear") }
+                            IconButton(onClick = { searchField.clearText() }, shapes = IconButtonDefaults.shapes()) { Icon(Icons.Filled.Clear, contentDescription = "Clear") }
                         }
                     },
                 )
@@ -192,7 +194,7 @@ private fun OutlineRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (item.hasChildren) {
-                IconButton(onClick = onToggle) {
+                IconButton(onClick = onToggle, shapes = IconButtonDefaults.shapes()) {
                     Icon(
                         if (expanded) Icons.Filled.ExpandMore else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = if (expanded) "Collapse" else "Expand",
@@ -307,8 +309,8 @@ private fun NoteSheet(model: BuilderModel, node: NodeId, dismiss: () -> Unit) {
     val title = document.tree.lineText(node).split(" ").takeLast(2).joinToString(" ").ifEmpty { "Note" }
     ModalBottomSheet(onDismissRequest = dismiss) {
         SheetTitle(title) {
-            TextButton(onClick = dismiss) { Text("Cancel") }
-            Button(onClick = {
+            TextButton(onClick = dismiss, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
+            Button(shapes = ButtonDefaults.shapes(), onClick = {
                 document.setNote(text, node)
                 dismiss()
             }) { Text("Save") }

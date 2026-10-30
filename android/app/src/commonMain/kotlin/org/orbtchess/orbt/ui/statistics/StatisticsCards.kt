@@ -28,9 +28,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -64,6 +61,7 @@ import org.orbtchess.orbt.core.retentionTable
 import org.orbtchess.orbt.core.title
 import org.orbtchess.orbt.core.total
 import org.orbtchess.orbt.core.young
+import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
 import org.orbtchess.orbt.ui.components.tabularDigits
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
@@ -207,17 +205,7 @@ internal fun ReviewsCard(graphs: Graphs, range: GraphRange) {
                 StatValue(value(total / maxOf(summary.periodDays, 1)), if (showTime) "a day" else "answers a day")
             }
         }) {
-            SingleChoiceSegmentedButtonRow {
-                listOf(false to "Answers", true to "Time").forEachIndexed { i, (time, label) ->
-                    SegmentedButton(
-                        selected = showTime == time,
-                        onClick = { showTime = time },
-                        shape = SegmentedButtonDefaults.itemShape(i, 2),
-                        icon = {},
-                        label = { Text(label) },
-                    )
-                }
-            }
+            ChoiceButtonGroup(listOf(false, true), showTime, { showTime = it }, label = { if (it) "Time" else "Answers" }, fill = false)
         }
         val top = niceMax((sums.maxOfOrNull { it.sum() } ?: 0L).toDouble().let { if (showTime) it / 60_000 else it })
         BarChart(

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenu
@@ -22,13 +23,11 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -59,6 +58,7 @@ import org.orbtchess.orbt.core.title
 import org.orbtchess.orbt.explorer.CoverageTables
 import org.orbtchess.orbt.platform.Settings
 import org.orbtchess.orbt.storage.RepertoireDocument
+import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
 import org.orbtchess.orbt.ui.components.SymbolLabel
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
@@ -224,18 +224,10 @@ fun RepertoireSettingsForm(app: AppModel, draft: RepertoireSettingsDraft, onChan
     DepthSection(draft.targetGames, { onChange(draft.copy(targetGames = it)) })
 }
 
-/** White or Black as Material's segmented buttons. */
+/** White or Black: Material 3 Expressive's connected button group. */
 @Composable
 fun SideSegments(side: Side, onChange: (Side) -> Unit, modifier: Modifier = Modifier) {
-    SingleChoiceSegmentedButtonRow(modifier.fillMaxWidth()) {
-        listOf(Side.WHITE, Side.BLACK).forEachIndexed { index, option ->
-            SegmentedButton(
-                selected = side == option,
-                onClick = { onChange(option) },
-                shape = SegmentedButtonDefaults.itemShape(index, 2),
-            ) { Text(option.title) }
-        }
-    }
+    ChoiceButtonGroup(listOf(Side.WHITE, Side.BLACK), side, onChange, label = { it.title }, modifier = modifier)
 }
 
 /**
@@ -270,15 +262,12 @@ fun CoverageSourceSection(
         }
     } else {
         FormSection("Coverage database", footer = footer) {
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-                CoverageSource.entries.forEachIndexed { index, source ->
-                    SegmentedButton(
-                        selected = draft.source == source,
-                        onClick = { onChange(draft.withSource(source, tables)) },
-                        shape = SegmentedButtonDefaults.itemShape(index, CoverageSource.entries.size),
-                    ) { Text(source.title) }
-                }
-            }
+            ChoiceButtonGroup(
+                CoverageSource.entries, draft.source,
+                onSelect = { onChange(draft.withSource(it, tables)) },
+                label = { it.title },
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
             RatingPicker(app, draft, onChange, "Opponent rating")
         }
     }
@@ -348,7 +337,7 @@ private fun TableDownloadRow(coverage: CoverageTables, database: ExplorerDatabas
         coverage.isReady(database) -> SecondaryLabel("On this device", Icons.Outlined.CheckCircle, padding)
         file != null && fraction != null -> Column(padding, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Downloading ${formatBytes(file.bytes)}", style = MaterialTheme.typography.bodyMedium)
-            LinearProgressIndicator(progress = { fraction.toFloat() }, modifier = Modifier.fillMaxWidth())
+            LinearWavyProgressIndicator(progress = { fraction.toFloat() }, modifier = Modifier.fillMaxWidth())
         }
         file != null -> RetryButton("Download Again", Icons.Outlined.Download, coverage, database)
         // The server's list was never read (offline since installing): the table may exist.
@@ -381,6 +370,7 @@ private fun TableDownloadRow(coverage: CoverageTables, database: ExplorerDatabas
 @Composable
 private fun RetryButton(text: String, icon: ImageVector, coverage: CoverageTables, database: ExplorerDatabase) {
     TextButton(
+        shapes = ButtonDefaults.shapes(),
         onClick = { coverage.startRetry(database) },
         enabled = !coverage.readingManifest,
         modifier = Modifier.padding(horizontal = 4.dp),

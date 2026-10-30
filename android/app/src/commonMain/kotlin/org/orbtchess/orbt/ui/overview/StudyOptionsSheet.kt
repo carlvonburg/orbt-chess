@@ -10,6 +10,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -58,8 +59,8 @@ fun StudyOptionsSheet(
     Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("${document.name} Options", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            TextButton(onClick = onDone) { Text("Cancel") }
-            Button(onClick = {
+            TextButton(onClick = onDone, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
+            Button(shapes = ButtonDefaults.shapes(), onClick = {
                 document.updateStudySettings(draft.limits, draft.practiceMode)
                 onDone()
             }) { Text("Save") }
@@ -107,7 +108,7 @@ fun StudyOptionsSheet(
                 }
             }
             if (draft.practiceMode != null) {
-                TextButton(onClick = { draft = draft.copy(practiceMode = null) }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                TextButton(onClick = { draft = draft.copy(practiceMode = null) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(horizontal = 8.dp)) {
                     Text("Use Default (${practiceModeTitle(preset.practiceMode)})")
                 }
             }

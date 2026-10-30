@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.WifiOff
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -181,7 +182,7 @@ private fun StatsUnavailable(app: AppModel, navigate: (Destination) -> Unit) {
             CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
             Text("Loading statistics…", style = style, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        else -> TextButton(onClick = { navigate(Destination.Settings) }, modifier = Modifier.padding(horizontal = 4.dp)) {
+        else -> TextButton(onClick = { navigate(Destination.Settings) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(horizontal = 4.dp)) {
             Text("Sign in with Lichess")
         }
     }

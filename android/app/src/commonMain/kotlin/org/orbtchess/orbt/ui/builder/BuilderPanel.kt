@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -588,7 +589,7 @@ private fun LazyListScope.candidates(
     }
     if (collapsed) {
         item("addAlternative") {
-            TextButton(onClick = onShowOthers, modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)) {
+            TextButton(onClick = onShowOthers, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)) {
                 Icon(Symbols.add, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Add Alternative Move")
@@ -641,7 +642,7 @@ private fun CandidateRow(
 ) {
     // Playing it reaches a position whose lines you already have elsewhere.
     val transposes = model.transposition(uci) != null
-    val background = if (saved != null) Modifier.background(ThemeColor.built.opacity(0.08f).color) else Modifier
+    val background = if (saved != null) Modifier.background(ThemeColor.built.container.opacity(0.5f).color) else Modifier
     MoveRow(model, onClick = onClick, menu = menu, modifier = background, vertical = 10.dp, below = {
         if (saved != null && (saved.tag != null || saved.note.isNotEmpty())) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -783,9 +784,9 @@ private fun DeleteDialog(model: BuilderModel, id: NodeId, onDismiss: () -> Unit)
         title = { Text(node?.mv?.let { "Delete ${it.san}?" } ?: "Delete move?") },
         text = { Text(message) },
         confirmButton = {
-            TextButton(onClick = { onDismiss(); model.delete(id) }) { Text("Delete", color = ThemeColor.failure.color) }
+            TextButton(onClick = { onDismiss(); model.delete(id) }, shapes = ButtonDefaults.shapes()) { Text("Delete", color = ThemeColor.failure.color) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text("Cancel") } },
     )
 }
 
@@ -841,7 +842,7 @@ private fun StatsUnavailableNote(note: StatsNote) {
     @Composable
     fun signIn() {
         Column(Modifier.padding(horizontal = 4.dp)) {
-            TextButton(onClick = { note.navigate(Destination.Settings) }) {
+            TextButton(onClick = { note.navigate(Destination.Settings) }, shapes = ButtonDefaults.shapes()) {
                 Icon(Symbols.signIn, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text("Sign in with Lichess")

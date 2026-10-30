@@ -4,6 +4,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
@@ -16,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
- * An icon-only action with its name in a plain tooltip (Material 3: a plain tooltip labels an
+ * An icon-only action (Material 3 Expressive's icon button, its shape morphing when pressed) with its name in a plain tooltip (Material 3: a plain tooltip labels an
  * icon button; it shows on long press, and on hover with a pointer). The name is also what
  * screen readers say. [above] for bottom bars, below for top bars.
  */
@@ -31,7 +32,7 @@ fun TooltipIconButton(
     above: Boolean = false,
 ) {
     Tooltip(label, above) {
-        IconButton(onClick = onClick, modifier = modifier, enabled = enabled) { Icon(icon, contentDescription = label) }
+        IconButton(onClick = onClick, shapes = IconButtonDefaults.shapes(), modifier = modifier, enabled = enabled) { Icon(icon, contentDescription = label) }
     }
 }
 
@@ -49,11 +50,11 @@ fun TooltipIconToggleButton(
 ) {
     Tooltip(label, above) {
         if (filled) {
-            FilledIconToggleButton(checked = checked, onCheckedChange = onCheckedChange, modifier = modifier) {
+            FilledIconToggleButton(checked = checked, onCheckedChange = onCheckedChange, shapes = IconButtonDefaults.toggleableShapes(), modifier = modifier) {
                 Icon(icon, contentDescription = label)
             }
         } else {
-            IconToggleButton(checked = checked, onCheckedChange = onCheckedChange, modifier = modifier) {
+            IconToggleButton(checked = checked, onCheckedChange = onCheckedChange, shapes = IconButtonDefaults.toggleableShapes(), modifier = modifier) {
                 Icon(icon, contentDescription = label)
             }
         }

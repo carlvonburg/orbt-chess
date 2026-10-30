@@ -8,6 +8,7 @@ import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.SyncProblem
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -145,9 +146,9 @@ private fun SwitchProviderDialog(from: SyncProvider?, to: SyncProvider?, onDismi
             }
         },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text(if (to == null) "Stop Syncing" else "Sign In") }
+            TextButton(onClick = onConfirm, shapes = ButtonDefaults.shapes()) { Text(if (to == null) "Stop Syncing" else "Sign In") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss, shapes = ButtonDefaults.shapes()) { Text("Cancel") } },
     )
 }
 

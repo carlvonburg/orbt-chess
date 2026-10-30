@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ElevatedCard
@@ -150,7 +151,7 @@ fun TourStudyCard(modifier: Modifier = Modifier) {
  * the dialog says where it is.
  */
 @Composable
-fun SkipTourButton(button: @Composable (onClick: () -> Unit) -> Unit = { TextButton(onClick = it) { Text("Skip Tour") } }) {
+fun SkipTourButton(button: @Composable (onClick: () -> Unit) -> Unit = { TextButton(onClick = it, shapes = ButtonDefaults.shapes()) { Text("Skip Tour") } }) {
     val guide = LocalTourGuide.current
     var confirming by remember { mutableStateOf(false) }
     button { confirming = true }
@@ -160,12 +161,12 @@ fun SkipTourButton(button: @Composable (onClick: () -> Unit) -> Unit = { TextBut
             title = { Text("Skip the Tour?") },
             text = { Text("You can take it again any time in Settings › Show Tour.") },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(shapes = ButtonDefaults.shapes(), onClick = {
                     confirming = false
                     guide?.skip()
                 }) { Text("Skip Tour") }
             },
-            dismissButton = { TextButton(onClick = { confirming = false }) { Text("Continue Tour") } },
+            dismissButton = { TextButton(onClick = { confirming = false }, shapes = ButtonDefaults.shapes()) { Text("Continue Tour") } },
         )
     }
 }

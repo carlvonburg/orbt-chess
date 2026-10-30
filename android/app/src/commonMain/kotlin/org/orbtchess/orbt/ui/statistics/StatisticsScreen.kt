@@ -14,18 +14,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.outlined.FilterAlt
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -36,8 +36,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
 import org.orbtchess.orbt.ui.components.TooltipIconButton
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.GraphRange
@@ -87,7 +89,11 @@ fun StatisticsScreen(
 
     if (inline && paneTitle) {
         // A pane of its own beside the overview or Today: titled, as the Swift board column is.
-        Scaffold(modifier = modifier, topBar = { TopAppBar(title = { Text("Statistics") }) }) { padding ->
+        val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+        Scaffold(
+            modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            topBar = { LargeFlexibleTopAppBar(title = { Text("Statistics") }, scrollBehavior = scrollBehavior) },
+        ) { padding ->
             StatisticsSummary(app, model, current, navigate, Modifier.padding(padding))
         }
         return
@@ -96,13 +102,16 @@ fun StatisticsScreen(
         StatisticsSummary(app, model, current, navigate, modifier)
         return
     }
+    // iOS's large title: the large flexible app bar, collapsing as the cards scroll.
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            LargeFlexibleTopAppBar(
                 title = { Text("Statistics") },
                 subtitle = { Text(scopeTitle(app, current)) },
                 actions = { FilterMenu(app, chosenId, choose) },
+                scrollBehavior = scrollBehavior,
             )
         },
     ) { padding ->
@@ -150,12 +159,13 @@ private fun StatisticsSummary(
 ) {
     val graphs = model.graphs
     val coroutines = rememberCoroutineScope()
+    val refreshState = rememberPullToRefreshState()
     val hasData = remember(graphs) {
         graphs != null && (graphs.cardCounts().total > 0 || graphs.reviewsSummary(GraphRange.ALL).answers > 0)
     }
     when {
         graphs == null && model.isLoading -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+            LoadingIndicator()
         }
         graphs == null || !hasData -> EmptyState(
             "No Statistics Yet",
@@ -165,6 +175,10 @@ private fun StatisticsSummary(
         )
         else -> PullToRefreshBox(
             isRefreshing = model.isLoading,
+            state = refreshState,
+            indicator = {
+                PullToRefreshDefaults.LoadingIndicator(refreshState, model.isLoading, Modifier.align(Alignment.TopCenter))
+            },
             onRefresh = { coroutines.launch { model.load(app, scope) } },
             modifier = modifier.fillMaxSize(),
         ) {
@@ -188,20 +202,10 @@ private fun StatisticsSummary(
     }
 }
 
-/** Health's period picker: Material's segmented buttons. */
+/** Health's period picker: Material 3 Expressive's connected button group. */
 @Composable
 private fun RangePicker(range: GraphRange, choose: (GraphRange) -> Unit) {
-    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        GraphRange.entries.forEachIndexed { i, option ->
-            SegmentedButton(
-                selected = range == option,
-                onClick = { choose(option) },
-                shape = SegmentedButtonDefaults.itemShape(i, GraphRange.entries.size),
-                icon = {},
-                label = { Text(option.shortTitle) },
-            )
-        }
-    }
+    ChoiceButtonGroup(GraphRange.entries, range, choose, label = { it.shortTitle })
 }
 
 /**

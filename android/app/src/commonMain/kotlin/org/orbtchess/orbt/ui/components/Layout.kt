@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -154,7 +154,7 @@ fun OpenDocument(app: AppModel, entryId: String, content: @Composable (Repertoir
         document != null -> content(document)
         error != null -> EmptyState("Repertoire unavailable", Symbols.warning, description = error)
         else -> {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { LoadingIndicator() }
             LaunchedEffect(id) { app.library.entry(id)?.let { app.documents.open(it) } }
         }
     }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Text
@@ -21,9 +22,9 @@ import androidx.compose.ui.Modifier
 @Composable
 fun ActionButton(text: String, prominent: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     if (prominent) {
-        Button(onClick, modifier.fillMaxWidth()) { Text(text) }
+        Button(onClick, shapes = ButtonDefaults.shapes(), modifier = modifier.fillMaxWidth()) { Text(text) }
     } else {
-        FilledTonalButton(onClick, modifier.fillMaxWidth()) { Text(text) }
+        FilledTonalButton(onClick, shapes = ButtonDefaults.shapes(), modifier = modifier.fillMaxWidth()) { Text(text) }
     }
 }
 

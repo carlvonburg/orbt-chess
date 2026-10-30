@@ -42,14 +42,14 @@ fun SymbolLabel(
 }
 
 /**
- * A small status label (`statusBadge` in Swift): text in a meaning's color on a light tint of
- * it, or secondary text on a neutral fill. Content, not a control (Material's chips are
- * controls; its `Badge` is for counts on icons).
+ * A small status label (`statusBadge` in Swift): a meaning's tonal container with its content
+ * color (Material's container roles), or secondary text on a neutral fill. Content, not a
+ * control (Material's chips are controls; its `Badge` is for counts on icons).
  */
 @Composable
 fun StatusBadge(text: String, modifier: Modifier = Modifier, meaning: ThemeColor? = null) {
-    val content: Color = meaning?.color ?: MaterialTheme.colorScheme.onSurfaceVariant
-    val fill: Color = meaning?.opacity(0.18f)?.color ?: MaterialTheme.colorScheme.surfaceContainerHighest
+    val content: Color = meaning?.onContainer?.color ?: MaterialTheme.colorScheme.onSurfaceVariant
+    val fill: Color = meaning?.container?.color ?: MaterialTheme.colorScheme.surfaceContainerHighest
     Surface(modifier, shape = CircleShape, color = fill, contentColor = content) {
         Text(text, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
     }

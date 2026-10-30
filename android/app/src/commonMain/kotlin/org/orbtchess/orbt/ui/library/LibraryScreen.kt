@@ -22,7 +22,7 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,8 +34,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.LargeFlexibleTopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +49,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -130,11 +134,14 @@ fun LibraryScreen(
     }
     val tourRunning = tourRunning(app)
 
+    // iOS's large title: Material 3 Expressive's large flexible app bar, collapsing as the list scrolls.
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            LargeFlexibleTopAppBar(
                 title = { Text("Repertoires") },
+                scrollBehavior = scrollBehavior,
                 actions = {
                     // An empty library offers these in its middle.
                     if (library.entries.isNotEmpty()) {
@@ -166,10 +173,11 @@ fun LibraryScreen(
         },
     ) { padding ->
         val content = Modifier.fillMaxSize().padding(padding)
+        val refreshState = rememberPullToRefreshState()
         when {
             // The first launch adds the sample: still loading, not an empty library.
             !library.isLoaded || (library.entries.isEmpty() && !sampleOffered) ->
-                Box(content, contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                Box(content, contentAlignment = Alignment.Center) { LoadingIndicator() }
             library.entries.isEmpty() -> EmptyLibrary(
                 newRepertoire = { navigate(Destination.Setup(SetupMode.New(it))) },
                 importPgn = importPgn,
@@ -178,6 +186,10 @@ fun LibraryScreen(
             )
             else -> PullToRefreshBox(
                 isRefreshing = refreshing,
+                state = refreshState,
+                indicator = {
+                    PullToRefreshDefaults.LoadingIndicator(refreshState, refreshing, Modifier.align(Alignment.TopCenter))
+                },
                 onRefresh = {
                     scope.launch {
                         refreshing = true
@@ -234,7 +246,7 @@ fun LibraryScreen(
     errorMessage?.let { message ->
         AlertDialog(
             onDismissRequest = { errorMessage = null },
-            confirmButton = { TextButton(onClick = { errorMessage = null }) { Text("OK") } },
+            confirmButton = { TextButton(onClick = { errorMessage = null }, shapes = ButtonDefaults.shapes()) { Text("OK") } },
             title = { Text("Something went wrong") },
             text = { Text(message) },
         )
@@ -445,8 +457,8 @@ private fun EmptyLibrary(newRepertoire: (Side) -> Unit, importPgn: () -> Unit, t
             SideCard(Side.WHITE, "White", selected = false, Modifier.weight(1f)) { newRepertoire(Side.WHITE) }
             SideCard(Side.BLACK, "Black", selected = false, Modifier.weight(1f)) { newRepertoire(Side.BLACK) }
         }
-        TextButton(onClick = importPgn) { Text("Import a PGN…") }
-        TextButton(onClick = takeTour, modifier = Modifier.padding(top = 8.dp)) {
+        TextButton(onClick = importPgn, shapes = ButtonDefaults.shapes()) { Text("Import a PGN…") }
+        TextButton(onClick = takeTour, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(top = 8.dp)) {
             Icon(Symbols.tour, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
             Spacer(Modifier.width(ButtonDefaults.IconSpacing))
             Text("Take the Tour with a Sample")
