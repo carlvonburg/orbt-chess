@@ -44,8 +44,8 @@ extension SyncTests {
         return App(library: library, sync: sync, explorer: ExplorerService(store: ExplorerCacheStore(), auth: LichessAuth()))
     }
 
-    private func signIn(_ app: App) {
-        app.sync.connect(.dropbox, SyncCredentials(accessToken: FakeDropbox.token, refreshToken: FakeDropbox.refresh,
+    private func signIn(_ app: App) async {
+        await app.sync.connect(.dropbox, SyncCredentials(accessToken: FakeDropbox.token, refreshToken: FakeDropbox.refresh,
                                                    account: "me@example.com"))
     }
 
@@ -85,7 +85,7 @@ extension SyncTests {
     @Test func firstSyncUploadsTheLocalFiles() async throws {
         let app = await app()
         _ = try app.library.create(name: "Italian", sidecar: sidecar())
-        signIn(app)
+        await signIn(app)
         try await until("uploaded") { server.data("Italian.otrep.json") != nil && server.data("Italian.pgn") != nil }
         try await settled(app)
         #expect(app.sync.provider == .dropbox)
@@ -105,7 +105,7 @@ extension SyncTests {
     @Test func aRemoteChangeIsWrittenAndHandedToTheOpenDocument() async throws {
         let app = await app()
         let entry = try app.library.create(name: "Italian", sidecar: sidecar())
-        signIn(app)
+        await signIn(app)
         try await until("uploaded") { server.data("Italian.pgn") != nil }
         try await settled(app)
         let document = try await open(entry, in: app)
@@ -127,7 +127,7 @@ extension SyncTests {
     @Test func aLocalSaveIsUploaded() async throws {
         let app = await app()
         let entry = try app.library.create(name: "Italian", sidecar: sidecar())
-        signIn(app)
+        await signIn(app)
         try await until("uploaded") { server.data("Italian.pgn") != nil }
         try await settled(app)
         let document = try await open(entry, in: app)
@@ -143,7 +143,7 @@ extension SyncTests {
     @Test func aFileChangedByAnotherAppIsUploaded() async throws {
         let app = await app()
         _ = try app.library.create(name: "Italian", sidecar: sidecar())
-        signIn(app)
+        await signIn(app)
         try await until("uploaded") { server.data("Italian.pgn") != nil }
         try await settled(app)
 
@@ -157,7 +157,7 @@ extension SyncTests {
     @Test func editsMadeOfflineUploadWhenTheNetworkIsBack() async throws {
         let app = await app()
         let entry = try app.library.create(name: "Italian", sidecar: sidecar())
-        signIn(app)
+        await signIn(app)
         try await until("uploaded") { server.data("Italian.pgn") != nil }
         try await settled(app)
         let document = try await open(entry, in: app)
@@ -178,7 +178,7 @@ extension SyncTests {
     @Test func aRevokedSignInAsksToSignInAgain() async throws {
         let app = await app()
         _ = try app.library.create(name: "Italian", sidecar: sidecar())
-        signIn(app)
+        await signIn(app)
         try await until("uploaded") { server.data("Italian.pgn") != nil }
         try await settled(app)
 
@@ -189,7 +189,7 @@ extension SyncTests {
 
         // Signing in again goes on syncing.
         server.restore()
-        signIn(app)
+        await signIn(app)
         try await settled(app)
         #expect(!app.sync.needsSignIn)
         await signOut(app)
@@ -198,7 +198,7 @@ extension SyncTests {
     @Test func signingOutKeepsTheFiles() async throws {
         let app = await app()
         _ = try app.library.create(name: "Italian", sidecar: sidecar())
-        signIn(app)
+        await signIn(app)
         try await until("uploaded") { server.data("Italian.pgn") != nil }
         try await settled(app)
         await app.sync.signOut()
@@ -355,6 +355,22 @@ extension SyncTests {
 
     private func write(_ name: String, _ text: String) throws {
         try Data(text.utf8).write(to: folder.appending(path: name))
+    }
+
+    @Test func movingRepertoiresMergesFilesInBothFolders() throws {
+        let other = folder.appending(path: "Other")
+        try FileManager.default.createDirectory(at: other, withIntermediateDirectories: true)
+        try write("Italian.pgn", "[Event \"Italian\"]\n\n1. e4 e5 2. Nf3 Nc6 3. Bc4 *\n")
+        try write("Ruy.pgn", "1. e4 e5 2. Nf3 Nc6 3. Bb5 *")
+        try write("notes.txt", "x")
+        try Data("[Event \"Italian\"]\n\n1. e4 e5 2. Nf3 Nc6 3. d4 *\n".utf8).write(to: other.appending(path: "Italian.pgn"))
+
+        try RepertoireLibrary.moveRepertoireFiles(from: folder, to: other, removingSource: true)
+        let italian = try String(contentsOf: other.appending(path: "Italian.pgn"), encoding: .utf8)
+        #expect(italian.contains("Bc4") && italian.contains("d4"))
+        #expect(FileManager.default.fileExists(atPath: other.appending(path: "Ruy.pgn").path))
+        // Only the repertoires' files move.
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path).sorted() == ["Other", "notes.txt"])
     }
 
     @Test func onlyTheSyncsFilesAreReported() throws {

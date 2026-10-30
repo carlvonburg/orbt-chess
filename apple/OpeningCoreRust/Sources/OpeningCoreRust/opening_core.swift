@@ -17023,6 +17023,21 @@ public func syncFileKind(name: String) -> FileKind?  {
     )
 })
 }
+/**
+ * Two versions of the repertoire file `name` in one, as the sync merges them (`local`'s PGN
+ * header kept): for moving the repertoires between iCloud Drive and the device's own folder
+ * when a file is in both. None for a file the sync does not handle.
+ */
+public func syncMergeFiles(name: String, local: Data, other: Data) -> Data?  {
+    return try!  FfiConverterOptionData.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_sync_merge_files(
+        FfiConverterString.lower(name),
+        FfiConverterData.lower(local),
+        FfiConverterData.lower(other),uniffiCallStatus
+    )
+})
+}
 public func ankiPreset() -> PresetInfo  {
     return try!  FfiConverterTypePresetInfo_lift(try! rustCall() {
         uniffiCallStatus in
@@ -17481,6 +17496,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_sync_file_kind() != 2482) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_sync_merge_files() != 34987) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_anki_preset() != 41548) {

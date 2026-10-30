@@ -254,6 +254,14 @@ pub fn sync_file_kind(name: String) -> Option<FileKind> {
     sync::file_kind(&name)
 }
 
+/// Two versions of the repertoire file `name` in one, as the sync merges them (`local`'s PGN
+/// header kept): for moving the repertoires between iCloud Drive and the device's own folder
+/// when a file is in both. None for a file the sync does not handle.
+#[uniffi::export]
+pub fn sync_merge_files(name: String, local: Vec<u8>, other: Vec<u8>) -> Option<Vec<u8>> {
+    sync::file_kind(&name).map(|kind| sync::merge(kind, &local, &other))
+}
+
 /// The repertoire folder synced with Dropbox or Google Drive: the platform sends the requests
 /// `poll` hands out, passes the answers to `on_response` and applies the outcome to its files
 /// (see `orbt_core::sync`).

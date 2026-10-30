@@ -23,8 +23,9 @@ nonisolated struct RepertoireEntry: Identifiable, Equatable, Sendable {
     }
 }
 
-/// The repertoires in the app's iCloud Drive folder ("ORBT Chess" in Files). Falls back
-/// to the local Documents folder without iCloud. Imported PGNs are copied into this folder.
+/// The repertoires in the app's iCloud Drive folder ("ORBT Chess" in Files), or in the device's
+/// own Documents folder: when Dropbox or Google Drive syncs them instead (one syncs them, never
+/// two), when sync is off, or without iCloud. Imported PGNs are copied into this folder.
 @Observable
 final class RepertoireLibrary {
     nonisolated static let containerID = "iCloud.org.orbtchess.orbt"
@@ -46,31 +47,83 @@ final class RepertoireLibrary {
         fixedFolder = folder
     }
 
-    func setUp() async {
+    /// iCloud Drive's folder, when there is one (`inICloud`); else the device's.
+    func setUp(inICloud: Bool = true) async {
         guard folder == nil else { return }
         if let fixedFolder {
-            folder = fixedFolder
-            usesICloud = false
+            use(fixedFolder, iCloud: false)
+        } else if inICloud, let ubiquity = await Self.iCloudFolder() {
+            use(ubiquity, iCloud: true)
         } else {
-            let ubiquity = await Task.detached {
-                FileManager.default.url(forUbiquityContainerIdentifier: Self.containerID)
-            }.value
-            if let ubiquity {
-                folder = ubiquity.appending(path: "Documents", directoryHint: .isDirectory)
-                usesICloud = true
-            } else {
-                folder = URL.documentsDirectory
-                usesICloud = false
-            }
-        }
-        if let folder {
-            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            let presenter = FilePresenter(url: folder) { [weak self] in self?.scheduleRefresh() }
-            presenter.start()
-            self.presenter = presenter
+            use(URL.documentsDirectory, iCloud: false)
         }
         await refresh()
         isLoaded = true
+    }
+
+    /// Moves the repertoires to iCloud Drive's folder or to the device's (close the documents
+    /// first). A file already there is merged with the one moved (the core's merge, as the sync
+    /// does); none is lost. The device's copies are removed once moved; iCloud Drive's stay, as
+    /// the Mac or iPad still syncing with it has them. Without iCloud, it stays on the device.
+    func move(toICloud: Bool) async throws {
+        guard let source = folder, fixedFolder == nil, toICloud != usesICloud else { return }
+        let destination: URL
+        if toICloud {
+            guard let ubiquity = await Self.iCloudFolder() else { return }
+            destination = ubiquity
+        } else {
+            destination = URL.documentsDirectory
+        }
+        let removing = !usesICloud
+        try await Task.detached(priority: .userInitiated) {
+            try Self.moveRepertoireFiles(from: source, to: destination, removingSource: removing)
+        }.value
+        presenter?.stop()
+        presenter = nil
+        scheduledRefresh?.cancel()
+        entries = []
+        use(destination, iCloud: toICloud)
+        await refresh()
+    }
+
+    private func use(_ url: URL, iCloud: Bool) {
+        folder = url
+        usesICloud = iCloud
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        let presenter = FilePresenter(url: url) { [weak self] in self?.scheduleRefresh() }
+        presenter.start()
+        self.presenter = presenter
+    }
+
+    nonisolated private static func iCloudFolder() async -> URL? {
+        await Task.detached {
+            FileManager.default.url(forUbiquityContainerIdentifier: containerID)?
+                .appending(path: "Documents", directoryHint: .isDirectory)
+        }.value
+    }
+
+    /// The repertoires' files (PGNs, sidecars, review logs) of `source` into `destination`,
+    /// iCloud placeholders downloaded on the way (the coordinated read waits for them).
+    nonisolated static func moveRepertoireFiles(from source: URL, to destination: URL, removingSource: Bool) throws {
+        let fm = FileManager.default
+        try fm.createDirectory(at: destination, withIntermediateDirectories: true)
+        let names = Set(((try? fm.contentsOfDirectory(atPath: source.path)) ?? []).map { name in
+            // ".Najdorf.pgn.icloud": a file iCloud has not downloaded yet.
+            name.hasPrefix(".") && name.hasSuffix(".icloud") ? String(name.dropFirst().dropLast(".icloud".count)) : name
+        })
+        for name in names.sorted() where syncFileKind(name: name) != nil {
+            let from = source.appending(path: name)
+            let to = destination.appending(path: name)
+            let data = try FileAccess.read(from)
+            if fm.fileExists(atPath: to.path) {
+                let there = try FileAccess.read(to)
+                let merged = syncMergeFiles(name: name, local: there, other: data) ?? there
+                if merged != there { try FileAccess.write(merged, to: to) }
+            } else {
+                try FileAccess.write(data, to: to)
+            }
+            if removingSource { try FileAccess.delete(from) }
+        }
     }
 
     /// Rescans soon. The folder reports every save of an open repertoire, so bursts of

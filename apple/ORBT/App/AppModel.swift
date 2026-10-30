@@ -32,10 +32,35 @@ final class AppModel {
     /// Old entry id → new one, for renamed repertoires, so open screens keep their document.
     private var renamedIDs: [String: String] = [:]
 
-    /// Sets up the library's folder, then the sync with Dropbox when one is chosen.
+    /// Sets up the library's folder (the device's while Dropbox or Google Drive syncs it), then
+    /// the sync. Repertoires still in iCloud Drive with a provider chosen (before one synced them
+    /// alone) are moved to the device first.
     func setUpLibrary() async {
-        await library.setUp()
+        sync.moveFolder = { [unowned self] toICloud in await moveRepertoires(toICloud: toICloud) }
+        let onDevice = UserDefaults.standard.bool(forKey: Self.onDeviceKey)
+        await library.setUp(inICloud: !onDevice)
+        if SyncService.chosenProvider() != nil, library.usesICloud { await moveRepertoires(toICloud: false) }
         sync.start()
+    }
+
+    /// The repertoires were moved to the device (a provider syncs them, or sync is off): iCloud
+    /// Drive's folder, which still has its old copies, is not used again until moved back.
+    static let onDeviceKey = "repertoiresOnDevice"
+
+    /// Moves the repertoires between iCloud Drive and the device (`RepertoireLibrary.move`),
+    /// the open ones saved and closed first.
+    func moveRepertoires(toICloud: Bool) async {
+        guard toICloud != library.usesICloud else { return }
+        await flushAll()
+        closeAll()
+        for task in closing.values { await task.value }
+        do {
+            try await library.move(toICloud: toICloud)
+            UserDefaults.standard.set(!library.usesICloud, forKey: Self.onDeviceKey)
+        } catch {
+            library.lastError = "Could not move the repertoires: \(error.localizedDescription)"
+        }
+        await reloadCoverageTables()
     }
 
     /// Loads the offline coverage tables and reads which ones the server offers.

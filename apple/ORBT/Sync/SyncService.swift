@@ -9,7 +9,8 @@ import os
 /// requests it hands out (one at a time, plus Dropbox's long poll while the app is in front),
 /// reports the answers and applies the outcomes to the files. What to download, upload, merge
 /// or delete is the core's; this does the IO, the timers and the sign-in. The folder is the
-/// library's (iCloud Drive's "ORBT Chess" or Documents), so iCloud keeps syncing it too.
+/// library's, the device's own while a provider syncs it (`moveFolder`): one of iCloud Drive,
+/// Dropbox and Google Drive syncs the repertoires, never two.
 ///
 /// The local files: every file at start (`setLocalFiles`), then every change: the app's own
 /// writes through `FileAccess` (`FileAccessHooks.observer`), and what the folder's presenter
@@ -50,6 +51,9 @@ final class SyncService {
     @ObservationIgnored private var foreground = true
     /// Where the core is reached from `FileAccess`'s threads.
     @ObservationIgnored private let hook = Hook()
+    /// Moves the repertoires to iCloud Drive's folder (true) or the device's (false), the open
+    /// documents closed first (`AppModel.moveRepertoires`).
+    @ObservationIgnored var moveFolder: ((_ toICloud: Bool) async -> Void)?
 
     nonisolated private static let log = Logger(subsystem: "org.orbtchess.orbt", category: "sync")
     static let providerKey = "syncProvider"
@@ -67,6 +71,11 @@ final class SyncService {
     }
 
     nonisolated static func millis(_ date: Date) -> Int64 { Int64(date.timeIntervalSince1970 * 1000) }
+
+    /// The provider chosen in Settings, if this build has it: the library is then the device's.
+    static func chosenProvider(_ defaults: UserDefaults = .standard) -> SyncProvider? {
+        defaults.string(forKey: providerKey).flatMap(SyncProvider.init).flatMap { SyncProvider.available.contains($0) ? $0 : nil }
+    }
 
     /// After the library is set up: the provider chosen in Settings, if this build has it.
     /// Nothing runs while the library has no folder.
@@ -112,7 +121,7 @@ final class SyncService {
         defer { isSigningIn = false }
         do {
             guard let credentials = try await SyncAuth.signIn(provider, using: session) else { return false }
-            connect(provider, credentials)
+            await connect(provider, credentials)
             return true
         } catch {
             lastError = error.localizedDescription
@@ -120,8 +129,9 @@ final class SyncService {
         }
     }
 
-    /// After signing in: keeps the sign-in and syncs with `provider`.
-    func connect(_ provider: SyncProvider, _ credentials: SyncCredentials) {
+    /// After signing in: keeps the sign-in and syncs with `provider`, the repertoires moved out
+    /// of iCloud Drive first.
+    func connect(_ provider: SyncProvider, _ credentials: SyncCredentials) async {
         let previous = storedCredentials(provider)?.account
         stop()
         // Another account (or one we can't tell): what was synced says nothing about its
@@ -133,12 +143,14 @@ final class SyncService {
         defaults.set(provider.rawValue, forKey: Self.providerKey)
         self.provider = provider
         account = credentials.account
+        await moveFolder?(false)
         if library.folder != nil { begin(provider, credentials) }
     }
 
-    /// Stops syncing: the files stay on this device, the provider's stay there. The sign-in is
-    /// revoked on the provider's side (the core's requests; best effort, offline leaves it).
-    func signOut() async {
+    /// Stops syncing: the files stay on this device, or move to iCloud Drive (`toICloud`); the
+    /// provider's stay there. The sign-in is revoked on the provider's side (the core's
+    /// requests; best effort, offline leaves it).
+    func signOut(toICloud: Bool = false) async {
         guard let provider else { return }
         let sync = core ?? makeCore(provider, credentials: storedCredentials(provider))
         stop()
@@ -152,6 +164,7 @@ final class SyncService {
         unsynced = []
         waitingForDownloads = 0
         state = .idle
+        if toICloud { await moveFolder?(true) }
     }
 
     // MARK: Starting and stopping

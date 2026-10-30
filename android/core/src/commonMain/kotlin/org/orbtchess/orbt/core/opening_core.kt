@@ -871,6 +871,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_func_sync_file_kind(
     ): Int
+    external fun uniffi_opening_core_checksum_func_sync_merge_files(
+    ): Int
     external fun uniffi_opening_core_checksum_func_anki_preset(
     ): Int
     external fun uniffi_opening_core_checksum_func_card_is_mature(
@@ -2192,6 +2194,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_sync_file_kind(`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_sync_merge_files(`name`: RustBuffer.ByValue,`local`: RustBuffer.ByValue,`other`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_anki_preset(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_card_is_mature(`card`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -2503,6 +2507,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_sync_file_kind() and 0xFFFF) != 2482) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_sync_merge_files() and 0xFFFF) != 34987) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_anki_preset() and 0xFFFF) != 41548) {
@@ -22105,6 +22112,24 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
     
         
         FfiConverterString.lower(`name`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Two versions of the repertoire file `name` in one, as the sync merges them (`local`'s PGN
+         * header kept): for moving the repertoires between iCloud Drive and the device's own folder
+         * when a file is in both. None for a file the sync does not handle.
+         */ fun `syncMergeFiles`(`name`: kotlin.String, `local`: kotlin.ByteArray, `other`: kotlin.ByteArray): kotlin.ByteArray? {
+            return FfiConverterOptionalByteArray.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_sync_merge_files(
+    
+        
+        FfiConverterString.lower(`name`),
+        FfiConverterByteArray.lower(`local`),
+        FfiConverterByteArray.lower(`other`),_status)
 }
     )
     }

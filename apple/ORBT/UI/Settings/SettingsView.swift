@@ -81,7 +81,7 @@ struct SettingsView: View {
                     Text("Data")
                 } footer: {
                     Text((model.library.usesICloud || model.sync.provider != nil ? ""
-                          : "iCloud Drive is off, so repertoires are stored on this device only. ")
+                          : "Repertoires are stored on this device only. ")
                          + "Repertoires are PGN files you can open in any chess program. Statistics are cached on this device and fetched again when needed.")
                 }
 
@@ -119,8 +119,8 @@ struct SettingsView: View {
     }
 
     private var storage: String {
-        let base = model.library.usesICloud ? "iCloud Drive › ORBT Chess" : "On this device"
-        return model.sync.provider.map { "\(base), \($0.title)" } ?? base
+        if let provider = model.sync.provider { return "On this device, synced with \(provider.title)" }
+        return model.library.usesICloud ? "iCloud Drive › ORBT Chess" : "On this device"
     }
 
     private func steps(_ minutes: [Double]) -> String {
