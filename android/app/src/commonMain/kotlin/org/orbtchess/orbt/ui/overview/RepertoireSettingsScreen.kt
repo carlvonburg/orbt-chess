@@ -152,6 +152,7 @@ fun RepertoireSettingsScreen(
     if (confirmDelete) {
         DeleteRepertoireDialog(
             name = document.name,
+            syncedWith = app.sync.provider?.title,
             onDismiss = { confirmDelete = false },
             onDelete = {
                 confirmDelete = false
@@ -171,13 +172,19 @@ fun RepertoireSettingsScreen(
     }
 }
 
-/** Asks before deleting a repertoire's files (the library's confirmation dialog). */
+/** Asks before deleting a repertoire's files (the library's confirmation dialog). `syncedWith`:
+ *  the sync's provider, where the files are deleted too. */
 @Composable
-fun DeleteRepertoireDialog(name: String, onDismiss: () -> Unit, onDelete: () -> Unit) {
+fun DeleteRepertoireDialog(name: String, syncedWith: String?, onDismiss: () -> Unit, onDelete: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Delete $name?") },
-        text = { Text("Deletes the PGN and its training progress from this device.") },
+        text = {
+            Text(
+                if (syncedWith == null) "Deletes the PGN and its training progress from this device."
+                else "Deletes the PGN and its training progress from this device and from $syncedWith.",
+            )
+        },
         confirmButton = {
             TextButton(onClick = onDelete) { Text("Delete", color = ThemeColor.failure.color) }
         },

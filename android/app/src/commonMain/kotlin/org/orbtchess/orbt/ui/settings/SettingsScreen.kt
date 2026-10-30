@@ -87,7 +87,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 /**
- * The app's settings (`SettingsView.swift`): Lichess account, study defaults, scheduling, app
+ * The app's settings (`SettingsView.swift`): Lichess account, sync, study defaults, scheduling, app
  * color, engine (search time, lines, cloud evals, the full network), data, about. Full window,
  * as Android's settings screens: sections of list items, choices in dialogs.
  *
@@ -116,6 +116,7 @@ fun SettingsScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             LichessSection(app)
+            if (app.sync.auth.providers.isNotEmpty()) SyncSection(app)
             StudyDefaultsSection(app)
             SchedulingSection()
             Section("Appearance", footer = "Buttons, selection and the board.") { AppColorRow() }
@@ -190,7 +191,7 @@ internal fun Section(title: String?, footer: String? = null, content: @Composabl
 
 /** A setting shown with its value (SwiftUI's `LabeledContent`), opening its choice when tapped. */
 @Composable
-private fun ValueRow(title: String, value: String, onClick: (() -> Unit)? = null) {
+internal fun ValueRow(title: String, value: String, onClick: (() -> Unit)? = null) {
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = { Text(value, style = tabularDigits(MaterialTheme.typography.bodyMedium)) },
@@ -301,12 +302,14 @@ private fun SchedulingSection() {
 @Composable
 private fun DataSection(app: AppModel) {
     var cacheCount by remember { mutableIntStateOf(app.stats.entryCount) }
+    val provider = app.sync.provider
     Section(
         "Data",
-        footer = "Repertoires are stored on this device only. Repertoires are PGN files you can open in any chess program. " +
+        footer = (if (provider == null) "Repertoires are stored on this device only. " else "") +
+            "Repertoires are PGN files you can open in any chess program. " +
             "Statistics are cached on this device and fetched again when needed.",
     ) {
-        ValueRow("Storage", "On this device")
+        ValueRow("Storage", if (provider == null) "On this device" else "On this device and in ${provider.title}")
         ValueRow("Cached positions", NumberFormat.getIntegerInstance().format(cacheCount))
         ListItem(
             headlineContent = { Text("Clear Statistics Cache", color = ThemeColor.failure.color) },
@@ -475,7 +478,7 @@ private fun BoardStrip(color: AppColor, squares: Int, modifier: Modifier = Modif
 
 /** One of several options, as Android's settings choose them: a dialog of radio buttons. */
 @Composable
-private fun <T> ChoiceDialog(
+internal fun <T> ChoiceDialog(
     title: String,
     options: List<T>,
     selected: T,

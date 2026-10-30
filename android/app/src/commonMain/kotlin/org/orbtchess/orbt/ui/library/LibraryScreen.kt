@@ -212,6 +212,7 @@ fun LibraryScreen(
     deleteEntry?.let { entry ->
         DeleteRepertoireDialog(
             name = entry.name,
+            syncedWith = app.sync.provider?.title,
             onDismiss = { deleteEntry = null },
             onDelete = {
                 deleteEntry = null
