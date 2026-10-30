@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app icon's foreground: the knight on two flashcards, in the light icon's colors (white, the eye #2B2760).
+     The shapes of apple/ORBT/AppIcon.icon (Assets/card1.svg, card2.svg, knight.svg, eye.svg) in its
+     1024-unit space, with their transforms; the icon's 1024 square is the adaptive icon's visible
+     72dp (18dp in from each side of the 108dp layer), which keeps the card corners about 28dp from
+     the centre, inside the 33dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:translateX="18"
+        android:translateY="18"
+        android:scaleX="0.0703125"
+        android:scaleY="0.0703125">
+        <!-- card2.svg: rotate(8 512 522) translate(30 -10), 22% -->
+        <group android:rotation="8" android:pivotX="512" android:pivotY="522">
+            <group android:translateX="30" android:translateY="-10">
+                <path android:fillColor="#FFFFFF" android:fillAlpha="0.22" android:pathData="M326,212 H698 A64,64 0 0 1 762,276 V768 A64,64 0 0 1 698,832 H326 A64,64 0 0 1 262,768 V276 A64,64 0 0 1 326,212 Z" />
+            </group>
+        </group>
+        <!-- card1.svg: rotate(-9 512 522) translate(-20 0), 40% -->
+        <group android:rotation="-9" android:pivotX="512" android:pivotY="522">
+            <group android:translateX="-20" android:translateY="0">
+                <path android:fillColor="#FFFFFF" android:fillAlpha="0.4" android:pathData="M326,212 H698 A64,64 0 0 1 762,276 V768 A64,64 0 0 1 698,832 H326 A64,64 0 0 1 262,768 V276 A64,64 0 0 1 326,212 Z" />
+            </group>
+        </group>
+        <!-- knight.svg and eye.svg: translate(512 542) scale(1.85) translate(-507 -557.5) -->
+        <group
+            android:pivotX="507"
+            android:pivotY="557.5"
+            android:scaleX="1.85"
+            android:scaleY="1.85"
+            android:translateX="5"
+            android:translateY="-15.5">
+            <path android:fillColor="#FFFFFF" android:pathData="M493,438 L515,457 C560,465 600,500 600,570 C600,600 596,620 590,635 L455,635 C455,600 470,585 500,566 C470,582 450,585 435,578 C418,570 413,548 422,532 C440,505 470,492 478,478 Z M439,635 H588 A12,12 0 0 1 600,647 V665 A12,12 0 0 1 588,677 H439 A12,12 0 0 1 427,665 V647 A12,12 0 0 1 439,635 Z" />
+            <path android:fillColor="#2B2760" android:pathData="M472.5,503 A8.5,8.5 0 1 1 489.5,503 A8.5,8.5 0 1 1 472.5,503 Z" />
+        </group>
+    </group>
+</vector>

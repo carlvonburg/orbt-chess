@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app icon's background: the 2×2 board of apple/ORBT/AppIcon.icon (the document fill
+     #3F3A8C, Assets/squares.svg filled #6B64B8), split at the centre of the 108dp layer. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#3F3A8C" android:pathData="M0,0 H108 V108 H0 Z" />
+    <path android:fillColor="#6B64B8" android:pathData="M0,54 H54 V108 H0 Z M54,0 H108 V54 H54 Z" />
+</vector>
