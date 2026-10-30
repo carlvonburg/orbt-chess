@@ -1,5 +1,8 @@
 package org.orbtchess.orbt.ui.analysis
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -23,16 +26,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.ContentCopy
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -195,28 +193,17 @@ private fun MoveButton(model: AnalysisModel, move: AnalysisMove, modifier: Modif
 @Composable
 private fun MoveMenu(model: AnalysisModel, move: AnalysisMove, expanded: Boolean, dismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
-    DropdownMenu(expanded, onDismissRequest = dismiss) {
-        if (expanded && !model.isMainLine(move.id)) {
-            DropdownMenuItem(
-                text = { Text("Promote Variation") },
-                leadingIcon = { Icon(Icons.Filled.KeyboardArrowUp, contentDescription = null) },
-                onClick = { dismiss(); model.promote(move.id) },
-            )
-            DropdownMenuItem(
-                text = { Text("Make Main Line") },
-                leadingIcon = { Icon(Icons.Filled.Check, contentDescription = null) },
-                onClick = { dismiss(); model.makeMainLine(move.id) },
-            )
+    val variation = expanded && !model.isMainLine(move.id)
+    ExpressiveMenu(expanded, onDismissRequest = dismiss) {
+        if (variation) {
+            group {
+                item("Promote Variation", Icons.Filled.KeyboardArrowUp) { model.promote(move.id) }
+                item("Make Main Line", Icons.Filled.Check) { model.makeMainLine(move.id) }
+            }
         }
-        DropdownMenuItem(
-            text = { Text("Copy Variation PGN") },
-            leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
-            onClick = { dismiss(); clipboard.setText(AnnotatedString(model.linePgn(move.id))) },
-        )
-        DropdownMenuItem(
-            text = { Text("Delete from Here", color = MaterialTheme.colorScheme.error) },
-            leadingIcon = { Icon(Symbols.delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            onClick = { dismiss(); model.deleteFrom(move.id) },
-        )
+        group {
+            item("Copy Variation PGN", Icons.Outlined.ContentCopy) { clipboard.setText(AnnotatedString(model.linePgn(move.id))) }
+            item("Delete from Here", Symbols.delete, destructive = true) { model.deleteFrom(move.id) }
+        }
     }
 }

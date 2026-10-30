@@ -1,5 +1,8 @@
 package org.orbtchess.orbt.ui.builder
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,8 +26,6 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -41,11 +42,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -217,23 +216,13 @@ private fun OutlineRow(
                 }
             }
         }
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(
-                text = { Text("Train This Branch") },
-                onClick = { menu = false; onStudyBranch() },
-                leadingIcon = { Icon(Symbols.study, contentDescription = null) },
-            )
+        ExpressiveMenu(menu, onDismissRequest = { menu = false }) {
+            group {
+                item("Train This Branch", Symbols.study) { onStudyBranch() }
+                if (item.first != ROOT_NODE) item("Make Main Line", BuilderSymbols.makeMain) { document.promote(item.first) }
+            }
             if (item.first != ROOT_NODE) {
-                DropdownMenuItem(
-                    text = { Text("Make Main Line") },
-                    onClick = { menu = false; document.promote(item.first) },
-                    leadingIcon = { Icon(BuilderSymbols.makeMain, contentDescription = null) },
-                )
-                DropdownMenuItem(
-                    text = { Text("Delete From Here") },
-                    onClick = { menu = false; model.delete(item.first) },
-                    leadingIcon = { Icon(Symbols.delete, contentDescription = null) },
-                )
+                group { item("Delete From Here", Symbols.delete, destructive = true) { model.delete(item.first) } }
             }
         }
     }
@@ -283,15 +272,8 @@ private fun GapRow(model: BuilderModel, gap: CoverageGap, onOpen: () -> Unit) {
             supportingContent = { Text(Format.seenGames(gap.mass), color = ThemeColor.todo.color) },
         ) { Text(model.document.core.gapText(gap), maxLines = 2, overflow = TextOverflow.Ellipsis) }
         if (reply != null) {
-            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                DropdownMenuItem(
-                    text = { Text("Exclude ${reply.san}") },
-                    onClick = {
-                        menu = false
-                        model.document.setExcluded(reply.uci, gap.node, true)
-                    },
-                    leadingIcon = { Icon(BuilderSymbols.exclude, contentDescription = null) },
-                )
+            ExpressiveMenu(menu, onDismissRequest = { menu = false }) {
+                group { item("Exclude ${reply.san}", BuilderSymbols.exclude) { model.document.setExcluded(reply.uci, gap.node, true) } }
             }
         }
     }

@@ -1,5 +1,8 @@
 package org.orbtchess.orbt.ui.training
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,8 +31,6 @@ import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -38,11 +39,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -308,35 +307,17 @@ private fun Actions(model: DrillModel, next: NextRepertoire?) {
                 } else {
                     OutlinedButton(onClick = { menu = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth()) { Text("Study More Today") }
                 }
-                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                ExpressiveMenu(menu, onDismissRequest = { menu = false }) {
                     if (notStudied > 0) {
-                        Text(
-                            "$notStudied new moves not studied yet",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        )
-                        for (n in listOf(5, 10, 20)) {
-                            DropdownMenuItem(
-                                text = { Text("Learn $n More New Moves") },
-                                leadingIcon = { Icon(Icons.Outlined.AutoAwesome, contentDescription = null) },
-                                onClick = {
-                                    menu = false
-                                    model.increaseNewLimit(n)
-                                },
-                            )
+                        group {
+                            label("$notStudied new moves not studied yet")
+                            for (n in listOf(5, 10, 20)) {
+                                item("Learn $n More New Moves", Icons.Outlined.AutoAwesome) { model.increaseNewLimit(n) }
+                            }
                         }
                     }
                     if (extraReviews > 0) {
-                        if (notStudied > 0) HorizontalDivider()
-                        DropdownMenuItem(
-                            text = { Text("Review $extraReviews More Moves") },
-                            leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = null) },
-                            onClick = {
-                                menu = false
-                                model.increaseReviewLimit(extraReviews)
-                            },
-                        )
+                        group { item("Review $extraReviews More Moves", Icons.Filled.Refresh) { model.increaseReviewLimit(extraReviews) } }
                     }
                 }
             }

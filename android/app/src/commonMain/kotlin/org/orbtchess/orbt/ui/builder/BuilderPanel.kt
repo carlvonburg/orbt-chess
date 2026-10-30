@@ -1,5 +1,9 @@
 package org.orbtchess.orbt.ui.builder
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.MenuGroupBuilder
+import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -25,21 +29,16 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,7 +59,6 @@ import org.orbtchess.orbt.core.CloudEval
 import org.orbtchess.orbt.core.Epd
 import org.orbtchess.orbt.core.ExplorerMove
 import org.orbtchess.orbt.core.Node
-import org.orbtchess.orbt.core.NodeCoverage
 import org.orbtchess.orbt.core.PlayedMove
 import org.orbtchess.orbt.core.QueueState
 import org.orbtchess.orbt.core.ReplyInfo
@@ -710,10 +708,10 @@ private fun CandidatePlaceholderRow() {
 // MARK: Rows
 
 /** What a long-press menu's items can do: close the menu, or ask to confirm deleting a move. */
-private class MenuActions(val close: () -> Unit, val delete: (NodeId) -> Unit)
+private class MenuActions(val delete: (NodeId) -> Unit)
 
 /** A long-press menu's items. */
-private typealias MoveMenu = @Composable ColumnScope.(MenuActions) -> Unit
+private typealias MoveMenu = MenuGroupBuilder.(MenuActions) -> Unit
 
 /** One move of the panel: tap to open or play it, long press for its menu. */
 @OptIn(ExperimentalFoundationApi::class)
@@ -740,8 +738,8 @@ private fun MoveRow(
             below()
         }
         if (menu != null) {
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                menu(MenuActions(close = { open = false }, delete = { open = false; deleting = it }))
+            ExpressiveMenu(open, onDismissRequest = { open = false }) {
+                group { menu(MenuActions(delete = { deleting = it })) }
             }
         }
     }
@@ -753,18 +751,8 @@ private fun MoveRow(
  * confirmed in a dialog.
  */
 private fun savedMoveMenu(id: NodeId, promote: (() -> Unit)?): MoveMenu = { actions ->
-    if (promote != null) {
-        DropdownMenuItem(
-            text = { Text("Make Main Move") },
-            onClick = { actions.close(); promote() },
-            leadingIcon = { Icon(BuilderSymbols.makeMain, contentDescription = null) },
-        )
-    }
-    DropdownMenuItem(
-        text = { Text("Delete") },
-        onClick = { actions.delete(id) },
-        leadingIcon = { Icon(Symbols.delete, contentDescription = null) },
-    )
+    if (promote != null) item("Make Main Move", BuilderSymbols.makeMain) { promote() }
+    item("Delete", Symbols.delete, destructive = true) { actions.delete(id) }
 }
 
 /** Confirms deleting a saved move and the lines that follow it. */
@@ -791,15 +779,11 @@ private fun DeleteDialog(model: BuilderModel, id: NodeId, onDismiss: () -> Unit)
 }
 
 /** Long press on an opponent move you have no line for (`ExcludeMove`): exclude it from coverage, or include it again. */
-private fun excludeMenu(model: BuilderModel, reply: ReplyInfo, node: NodeId): MoveMenu = { actions ->
-    DropdownMenuItem(
-        text = { Text("${if (reply.excluded) "Include" else "Exclude"} ${reply.san}") },
-        onClick = {
-            actions.close()
-            model.document.setExcluded(reply.uci, node, !reply.excluded)
-        },
-        leadingIcon = { Icon(if (reply.excluded) BuilderSymbols.include else BuilderSymbols.exclude, contentDescription = null) },
-    )
+private fun excludeMenu(model: BuilderModel, reply: ReplyInfo, node: NodeId): MoveMenu = {
+    item(
+        "${if (reply.excluded) "Include" else "Exclude"} ${reply.san}",
+        if (reply.excluded) BuilderSymbols.include else BuilderSymbols.exclude,
+    ) { model.document.setExcluded(reply.uci, node, !reply.excluded) }
 }
 
 @Composable

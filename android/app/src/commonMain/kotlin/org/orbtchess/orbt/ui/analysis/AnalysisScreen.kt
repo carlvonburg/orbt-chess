@@ -1,10 +1,12 @@
 package org.orbtchess.orbt.ui.analysis
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.Box
+import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,8 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -27,8 +27,6 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -328,32 +326,18 @@ private fun MoreMenu(app: AppModel, model: AnalysisModel) {
     var expanded by remember { mutableStateOf(false) }
     val clipboard = LocalClipboardManager.current
     val openPage = app.platform.openUrl
-    TooltipIconButton("More", Symbols.more, { expanded = true })
-    DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
-        DropdownMenuItem(
-            text = { Text("Flip Board") },
-            leadingIcon = { Icon(Symbols.flipBoard, contentDescription = null) },
-            onClick = { expanded = false; model.flip() },
-        )
-        DropdownMenuItem(
-            text = { Text("Copy PGN") },
-            leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
-            onClick = { expanded = false; clipboard.setText(AnnotatedString(model.pgn())) },
-        )
-        DropdownMenuItem(
-            text = { Text("Open in Lichess") },
-            leadingIcon = { Icon(Symbols.openInBrowser, contentDescription = null) },
-            onClick = {
-                expanded = false
-                openPage(LichessLinks.analysis(model.state.movesToBoard, model.state.orientation))
-            },
-        )
-        HorizontalDivider()
-        DropdownMenuItem(
-            text = { Text("Engine Settings") },
-            leadingIcon = { Icon(Symbols.settings, contentDescription = null) },
-            onClick = { expanded = false; model.showsSettings = true },
-        )
+    Box {
+        TooltipIconButton("More", Symbols.more, { expanded = true })
+        ExpressiveMenu(expanded, onDismissRequest = { expanded = false }) {
+            group {
+                item("Flip Board", Symbols.flipBoard) { model.flip() }
+                item("Copy PGN", Icons.Outlined.ContentCopy) { clipboard.setText(AnnotatedString(model.pgn())) }
+                item("Open in Lichess", Symbols.openInBrowser) {
+                    openPage(LichessLinks.analysis(model.state.movesToBoard, model.state.orientation))
+                }
+            }
+            group { item("Engine Settings", Symbols.settings) { model.showsSettings = true } }
+        }
     }
 }
 
