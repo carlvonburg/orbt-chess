@@ -2,7 +2,6 @@ package org.orbtchess.orbt.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,9 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
@@ -21,16 +18,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
@@ -100,21 +93,43 @@ fun BoardColumn(
     below: @Composable ColumnScope.() -> Unit = {},
     board: @Composable () -> Unit,
 ) {
-    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
-        val density = LocalDensity.current
-        // What is above and under the board, measured at their own height (never squeezed by
-        // the board): the board takes the height they leave.
-        var aboveHeight by remember { mutableStateOf(0.dp) }
-        var belowHeight by remember { mutableStateOf(0.dp) }
-        val side = minOf(maxWidth, maxHeight - aboveHeight - belowHeight).coerceAtLeast(0.dp)
-        val shape = if (inset || side < maxWidth) MaterialTheme.shapes.medium else RectangleShape
-        Column(Modifier.width(side).wrapContentHeight(unbounded = true)) {
-            Column(Modifier.fillMaxWidth().onSizeChanged { aboveHeight = with(density) { it.height.toDp() } }, content = above)
-            Box(Modifier.size(side)) { CompositionLocalProvider(LocalBoardShape provides shape) { board() } }
-            Column(Modifier.fillMaxWidth().onSizeChanged { belowHeight = with(density) { it.height.toDp() } }, content = below)
+    val rounded = MaterialTheme.shapes.medium
+    // One layout pass: what is above and under the board is asked its height (never squeezed by
+    // the board), and the board takes the height they leave, so it has its size from the first
+    // frame (a size measured after the first frame made the board jump as the screen came in).
+    SubcomposeLayout(modifier) { constraints ->
+        val width = constraints.maxWidth
+        val aboveSlot = subcompose(BoardColumnSlot.Above) { Column(Modifier.fillMaxWidth(), content = above) }
+        val belowSlot = subcompose(BoardColumnSlot.Below) { Column(Modifier.fillMaxWidth(), content = below) }
+        fun around(w: Int) = aboveSlot.sumOf { it.maxIntrinsicHeight(w) } + belowSlot.sumOf { it.maxIntrinsicHeight(w) }
+        fun sideFor(aroundHeight: Int) =
+            if (constraints.hasBoundedHeight) minOf(width, constraints.maxHeight - aroundHeight).coerceAtLeast(0) else width
+        // At the column's width, then again at the board's (text above it may wrap more).
+        var side = sideFor(around(width))
+        if (side < width) side = sideFor(around(side))
+        val shape = if (inset || side < width) rounded else RectangleShape
+        val boardSlot = subcompose(BoardColumnSlot.Board) {
+            Box { CompositionLocalProvider(LocalBoardShape provides shape) { board() } }
+        }
+        val alongside = Constraints(minWidth = side, maxWidth = side)
+        val abovePlaced = aboveSlot.map { it.measure(alongside) }
+        val belowPlaced = belowSlot.map { it.measure(alongside) }
+        val boardPlaced = boardSlot.map { it.measure(Constraints.fixed(side, side)) }
+        val total = abovePlaced.sumOf { it.height } + side + belowPlaced.sumOf { it.height }
+        val height = if (constraints.hasBoundedHeight) constraints.maxHeight else total
+        layout(width, height) {
+            // Centred in the column, as wide as the board.
+            val x = (width - side) / 2
+            var y = (height - total) / 2
+            for (placeable in abovePlaced + boardPlaced + belowPlaced) {
+                placeable.place(x, y)
+                y += placeable.height
+            }
         }
     }
 }
+
+private enum class BoardColumnSlot { Above, Board, Below }
 
 /**
  * Nothing to show, and why (SwiftUI's `ContentUnavailableView`): a symbol, a title and a line

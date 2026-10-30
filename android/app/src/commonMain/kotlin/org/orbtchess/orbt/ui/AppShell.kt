@@ -11,6 +11,16 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.SeekableTransitionState
+import androidx.compose.animation.core.rememberTransition
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.adaptive.layout.AnimatedPaneScope
+import androidx.compose.material3.adaptive.layout.PaneMotion
+import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldPaneScope
+import androidx.compose.material3.adaptive.layout.calculateDefaultEnterTransition
+import androidx.compose.material3.adaptive.layout.calculateDefaultExitTransition
 import androidx.compose.animation.AnimatedContent
 import org.orbtchess.orbt.ui.components.GroupedBackground
 import androidx.compose.ui.unit.dp
@@ -44,6 +54,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.key
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -158,7 +169,24 @@ fun AppShell(app: AppModel) {
                         onScopeChange = { shell.statisticsScope = it },
                     )
                 } else {
-                    LibraryPanes(app, shell, directive, if (shell.overlays.isEmpty()) backProgress else null)
+                    val progress = if (shell.overlays.isEmpty()) backProgress else null
+                    if (wide) {
+                        // A board screen leaves the library and fills the window: the library and
+                        // the board screens come and go as whole screens, with Material's shared
+                        // axis (as a phone pushes them), and the back gesture seeks toward the one
+                        // under the top.
+                        val board = top?.takeIf { it.role == ListDetailPaneScaffoldRole.Extra }
+                        val under = shell.stack.getOrNull(shell.stack.lastIndex - 1)?.takeIf { it.role == ListDetailPaneScaffoldRole.Extra }
+                        SharedAxisContent(board, previous = under, seeks = board != null, backProgress = progress) { entry ->
+                            if (entry != null) {
+                                BoardPanes(app, entry, directive, shell::navigate, shell::back)
+                            } else {
+                                LibraryPanes(app, shell, directive, if (board == null) progress else null)
+                            }
+                        }
+                    } else {
+                        LibraryPanes(app, shell, directive, progress)
+                    }
                 }
             }
 
@@ -171,23 +199,13 @@ fun AppShell(app: AppModel) {
                 targetState = shell.overlays.lastOrNull(),
                 transitionSpec = {
                     val forward = targetState != null && (initialState == null || shell.overlays.size > 1)
-                    val shift = if (forward) 1 else -1
-                    (slideInHorizontally(motion.defaultSpatialSpec()) { it / 10 * shift } + fadeIn(motion.defaultEffectsSpec()))
-                        .togetherWith(slideOutHorizontally(motion.defaultSpatialSpec()) { -it / 10 * shift } + fadeOut(motion.fastEffectsSpec()))
+                    sharedAxisEnter(motion, forward) togetherWith sharedAxisExit(motion, forward)
                 },
                 label = "overlay",
             ) { overlay ->
                 if (overlay != null) {
                     val progress = if (overlay == shell.overlays.lastOrNull()) backProgress ?: 0f else 0f
-                    Surface(
-                        Modifier.fillMaxSize().graphicsLayer {
-                            val scale = 1f - 0.1f * PredictiveBackEasing.transform(progress)
-                            scaleX = scale
-                            scaleY = scale
-                            shape = RoundedCornerShape(32.dp * progress)
-                            clip = progress > 0f
-                        },
-                    ) { Overlay(app, shell, overlay) }
+                    Surface(Modifier.fillMaxSize().backPreview(progress)) { Overlay(app, shell, overlay) }
                 }
             }
 
@@ -235,18 +253,24 @@ private fun LibraryPanes(
     windowDirective: androidx.compose.material3.adaptive.layout.PaneScaffoldDirective,
     backProgress: Float?,
 ) {
-    val top = shell.top
     val back: () -> Unit = shell::back
     val navigate: (Destination) -> Unit = shell::navigate
-    if (top != null && top.role == ListDetailPaneScaffoldRole.Extra && windowDirective.maxHorizontalPartitions > 1) {
-        BoardPanes(app, top, windowDirective, navigate, back)
-        return
-    }
+    val wide = windowDirective.maxHorizontalPartitions > 1
+    // On wide windows the board screens are not the library's panes ([BoardPanes] replaces it):
+    // the library stays as it was under them, also while it goes and comes back.
+    val stack = if (wide) shell.stack.takeWhile { it.role != ListDetailPaneScaffoldRole.Extra } else shell.stack.toList()
+    val top = stack.lastOrNull()
+    // The overview under a phone's board screen stays the detail pane's, and the board screen
+    // stays the extra pane's while it leaves, so neither pane shows the other's screen.
+    val detailEntry = stack.lastOrNull { it.role == ListDetailPaneScaffoldRole.Detail }
+    val extraEntry = stack.lastOrNull { it.role == ListDetailPaneScaffoldRole.Extra }
+    val leaving = remember { object { var extra: StackEntry? = null } }
+    if (extraEntry != null) leaving.extra = extraEntry
     // Two panes at most: the statistics are in the detail pane's dashboard, not a third.
     val directive = windowDirective.copy(maxHorizontalPartitions = windowDirective.maxHorizontalPartitions.coerceAtMost(2))
 
     val history = listOf(ThreePaneScaffoldDestinationItem<Long>(ListDetailPaneScaffoldRole.List)) +
-        shell.stack.map { ThreePaneScaffoldDestinationItem(it.role, it.id) }
+        stack.map { ThreePaneScaffoldDestinationItem(it.role, it.id) }
     val value = calculateThreePaneScaffoldValue(
         maxHorizontalPartitions = directive.maxHorizontalPartitions,
         adaptStrategies = ListDetailPaneScaffoldDefaults.adaptStrategies(),
@@ -255,20 +279,26 @@ private fun LibraryPanes(
     // Material's predictive back for the panes: while the back gesture is in progress the
     // scaffold seeks toward the panes under the top screen (a fraction of the way, eased, as
     // Material's navigator seeks), animates there when it completes and back when cancelled.
-    val previous = if (shell.stack.isEmpty()) null else calculateThreePaneScaffoldValue(
+    val previous = if (stack.isEmpty()) null else calculateThreePaneScaffoldValue(
         maxHorizontalPartitions = directive.maxHorizontalPartitions,
         adaptStrategies = ListDetailPaneScaffoldDefaults.adaptStrategies(),
         destinationHistory = history.dropLast(1),
     )
     val scaffoldState = remember { MutableThreePaneScaffoldState(value) }
-    LaunchedEffect(value) { scaffoldState.animateTo(value) }
-    LaunchedEffect(backProgress, previous) {
+    LaunchedEffect(value, backProgress, previous) {
         when {
             backProgress != null && previous != null && previous != value -> {
                 val fraction = PredictiveBackEasing.transform(backProgress) * if (directive.maxHorizontalPartitions == 1) 1f / 8f else 1f / 10f
                 scaffoldState.seekTo(fraction, previous, isPredictiveBackInProgress = true)
             }
-            backProgress == null && scaffoldState.targetState != value -> scaffoldState.animateTo(value)
+            // New panes: shown at the start of the motion until they are laid out and drawn.
+            scaffoldState.currentState != value && scaffoldState.targetState != value -> {
+                scaffoldState.seekTo(0f, value)
+                awaitFirstFrames()
+                scaffoldState.animateTo(value)
+            }
+            // A back gesture completed or cancelled, or an interrupted motion.
+            scaffoldState.currentState != value || scaffoldState.targetState != value -> scaffoldState.animateTo(value)
         }
     }
     val listShown = value[ListDetailPaneScaffoldRole.List] == PaneAdaptedValue.Expanded
@@ -281,7 +311,7 @@ private fun LibraryPanes(
         scaffoldState = scaffoldState,
         modifier = Modifier.fillMaxSize().background(GroupedBackground),
         listPane = {
-            AnimatedPane(if (twoPanes) Modifier.preferredWidth(LibraryListWidth) else Modifier) {
+            SharedAxisPane(if (twoPanes) Modifier.preferredWidth(LibraryListWidth) else Modifier) {
                 LibraryScreen(
                     app,
                     selectedEntryId = if (detailShown) shell.selectedEntryId else null,
@@ -291,21 +321,129 @@ private fun LibraryPanes(
             }
         },
         detailPane = {
-            AnimatedPane {
+            SharedAxisPane {
                 when {
-                    top == null -> TodayDashboard(app, navigate)
-                    twoPanes && top.screen is Screen.Overview -> OpenDocument(app, top.screen.entryId) { doc ->
+                    detailEntry == null -> TodayDashboard(app, navigate)
+                    twoPanes && detailEntry.screen is Screen.Overview -> OpenDocument(app, detailEntry.screen.entryId) { doc ->
                         OverviewDashboard(app, doc, navigate, onBack = null)
                     }
-                    else -> Screen(app, top, BoardPane.Whole, navigate, if (listShown) null else back)
+                    else -> Screen(app, detailEntry, BoardPane.Whole, navigate, if (listShown) null else back)
                 }
             }
         },
         extraPane = {
-            // A phone: the board screen alone.
-            AnimatedPane { if (top != null && top.role == ListDetailPaneScaffoldRole.Extra) Screen(app, top, BoardPane.Whole, navigate, back) }
+            // A phone: the board screen alone; one pushed on another (Analysis on Build) comes
+            // with the same shared axis, and the back gesture seeks toward the one under it.
+            SharedAxisPane {
+                val entry = extraEntry ?: leaving.extra
+                val under = stack.getOrNull(stack.lastIndex - 1)?.takeIf { it.role == ListDetailPaneScaffoldRole.Extra }
+                SharedAxisContent(entry, previous = under, seeks = extraEntry != null && under != null, backProgress = backProgress) { shown ->
+                    if (shown != null) Screen(app, shown, BoardPane.Whole, navigate, back)
+                }
+            }
         },
     )
+}
+
+/**
+ * Material's shared axis (X) on the expressive motion scheme's springs: the screen coming in
+ * slides a tenth of the width from the side it comes from and fades in, the one going slides on
+ * and fades out quickly. Forward comes from the end, back from the start.
+ */
+private fun sharedAxisEnter(motion: MotionScheme, forward: Boolean): EnterTransition =
+    slideInHorizontally(motion.defaultSpatialSpec()) { it / 10 * if (forward) 1 else -1 } + fadeIn(motion.defaultEffectsSpec())
+
+private fun sharedAxisExit(motion: MotionScheme, forward: Boolean): ExitTransition =
+    slideOutHorizontally(motion.defaultSpatialSpec()) { -it / 10 * if (forward) 1 else -1 } + fadeOut(motion.fastEffectsSpec())
+
+/**
+ * A pane of the library's layout: where Material's pane motion slides a pane in or out across
+ * the window (one pane: a push or a pop), the shared axis instead, in the same direction; other
+ * pane motions (the panes side by side) are Material's.
+ */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+private fun ThreePaneScaffoldPaneScope.SharedAxisPane(
+    modifier: Modifier = Modifier,
+    content: @Composable AnimatedPaneScope.() -> Unit,
+) {
+    val motion = MaterialTheme.motionScheme
+    val enter = when (paneMotion) {
+        PaneMotion.EnterFromRight, PaneMotion.EnterFromRightDelayed -> sharedAxisEnter(motion, forward = true)
+        PaneMotion.EnterFromLeft, PaneMotion.EnterFromLeftDelayed -> sharedAxisEnter(motion, forward = false)
+        else -> motionDataProvider.calculateDefaultEnterTransition(paneRole)
+    }
+    val exit = when (paneMotion) {
+        PaneMotion.ExitToLeft -> sharedAxisExit(motion, forward = true)
+        PaneMotion.ExitToRight -> sharedAxisExit(motion, forward = false)
+        else -> motionDataProvider.calculateDefaultExitTransition(paneRole)
+    }
+    AnimatedPane(modifier, enterTransition = enter, exitTransition = exit, content = content)
+}
+
+/**
+ * Whole screens (a back-stack entry, or null for what is under them) coming and going with the
+ * shared axis: forward when the new entry is newer (entries are numbered as they are pushed).
+ * While the back gesture is in progress the screen on top shrinks and, when back shows another
+ * screen here ([seeks]: [previous]), it seeks toward it, as Material's navigation does; it
+ * finishes there when the gesture completes, and returns when it is cancelled.
+ */
+@Composable
+private fun SharedAxisContent(
+    target: StackEntry?,
+    previous: StackEntry?,
+    seeks: Boolean,
+    backProgress: Float?,
+    content: @Composable (StackEntry?) -> Unit,
+) {
+    val motion = MaterialTheme.motionScheme
+    val state = remember { SeekableTransitionState(target) }
+    LaunchedEffect(target, previous, seeks, backProgress) {
+        when {
+            backProgress != null && seeks && previous?.id != target?.id ->
+                state.seekTo(PredictiveBackEasing.transform(backProgress), previous)
+            // A new screen: shown at the start of the motion until it is laid out and drawn.
+            state.currentState != target && state.targetState != target -> {
+                state.seekTo(0f, target)
+                awaitFirstFrames()
+                state.animateTo(target)
+            }
+            // A back gesture completed or cancelled, or an interrupted motion.
+            state.currentState != target || state.targetState != target -> state.animateTo(target)
+        }
+    }
+    rememberTransition(state, label = "screens").AnimatedContent(
+        transitionSpec = {
+            val forward = (targetState?.id ?: 0L) > (initialState?.id ?: 0L)
+            sharedAxisEnter(motion, forward) togetherWith sharedAxisExit(motion, forward)
+        },
+        contentKey = { it?.id },
+    ) { shown ->
+        // The back gesture shrinks the screen on top, as the full-window screens do.
+        val progress = if (shown != null && shown.id == target?.id) backProgress ?: 0f else 0f
+        Box(Modifier.fillMaxSize().backPreview(progress)) { content(shown) }
+    }
+}
+
+/**
+ * Waits until what a transition brings in has been composed, laid out and drawn once. A board
+ * screen's first frame is long (the board, the explorer, the lists): a motion started with it
+ * would spend most of its time on that frame and look like a cut, so it starts after it.
+ */
+private suspend fun awaitFirstFrames() {
+    repeat(2) { withFrameNanos { } }
+}
+
+/**
+ * Android's predictive back for a full-screen surface: while the back gesture is in progress
+ * ([progress], 0 to 1) the screen shrinks and rounds its corners, showing what back goes to.
+ */
+private fun Modifier.backPreview(progress: Float): Modifier = graphicsLayer {
+    val scale = 1f - 0.1f * PredictiveBackEasing.transform(progress)
+    scaleX = scale
+    scaleY = scale
+    shape = RoundedCornerShape(32.dp * progress)
+    clip = progress > 0f
 }
 
 /** Material's predictive back easing (the navigator's), for the gesture's progress. */
@@ -334,13 +472,22 @@ private fun BoardPanes(
         adaptStrategies = ListDetailPaneScaffoldDefaults.adaptStrategies(),
         currentDestination = ThreePaneScaffoldDestinationItem(ListDetailPaneScaffoldRole.Detail, entry.id),
     )
-    // A new layout for each screen, so a screen pushed on another starts from its own panes.
+    // A new layout for each screen (the shell's shared axis brings it in as a whole), so a screen
+    // pushed on another starts from its own panes, at their size from the first frame.
     key(entry.id) {
         ListDetailPaneScaffold(
             directive = directive,
             value = value,
-            listPane = { AnimatedPane { Screen(app, entry, BoardPane.List, navigate, onBack) } },
-            detailPane = { AnimatedPane { Screen(app, entry, BoardPane.Detail, navigate, onBack) } },
+            listPane = {
+                AnimatedPane(enterTransition = EnterTransition.None, exitTransition = ExitTransition.None) {
+                    Screen(app, entry, BoardPane.List, navigate, onBack)
+                }
+            },
+            detailPane = {
+                AnimatedPane(enterTransition = EnterTransition.None, exitTransition = ExitTransition.None) {
+                    Screen(app, entry, BoardPane.Detail, navigate, onBack)
+                }
+            },
         )
     }
 }

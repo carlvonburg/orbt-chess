@@ -45,10 +45,18 @@ named in each stub's doc comment.
   - A screen's main actions (Browse / Edit, Study Now, Study All): Expressive's medium buttons
     (`library/ActionButton`: `ButtonDefaults.MediumContainerHeight` with its shapes, padding and
     type).
-  - Motion: `MaterialExpressiveTheme`'s expressive motion scheme; panes move with Material's pane
-    motion and predictive back (`AppShell`: the scaffold state seeks toward the panes under the
-    top screen during the gesture); full-window screens come and go with the shared axis and
-    shrink with the back gesture.
+  - Motion: `MaterialExpressiveTheme`'s expressive motion scheme. Screens come and go with
+    Material's shared axis (X) on its springs, forward from the end and back from the start, one
+    screen fading out as the next fades in (`AppShell`: `sharedAxisEnter`/`sharedAxisExit`): a
+    phone's pushes (the library's panes where Material's pane motion would slide a whole pane
+    across, `SharedAxisPane`; a board screen pushed on another, `SharedAxisContent`), the wide
+    library giving way to a board screen's own panes and back (`SharedAxisContent`; those panes
+    have no motion of their own), and the full-window screens. Side-by-side panes keep Material's
+    pane motion. A new screen starts its motion once it has been laid out and drawn (a board
+    screen's first frame is long), and the board has its final size from the first frame
+    (`BoardColumn` measures what is above and under it in the same pass). Predictive back: the
+    screen on top shrinks with the gesture (`backPreview`) while the scaffold or the screens seek
+    toward what back shows.
   - Board screens: `HorizontalFloatingToolbar` with its FAB (below).
   - Also `ModalBottomSheet`, `AlertDialog`, `Switch`, `Slider`, the collapsed `SearchBar` (in
     the outline sheet), plain tooltips on every icon-only action, Material Symbols (`Icons.*`,
