@@ -108,8 +108,11 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   platform layer ported from the Swift side, by package — `platform` (HTTP for the core's
   requests, `AppFolders`, `Settings`, `SecretStore`), `storage` (library, documents, saves),
   `explorer` (queue, SQLite stats cache, coverage tables), `engine`, `lichess` (PKCE: Custom
-  Tabs on Android, a loopback redirect on the desktop) — wired by `AppModel.kt`; Android's
-  and the desktop's own code in `androidMain`/`desktopMain`; tests in `desktopTest`.
+  Tabs on Android, a loopback redirect on the desktop), `sync` (`SyncService` runs the core's
+  `RepertoireSync` with Dropbox or Google Drive; the sign-ins are Android's) — wired by
+  `AppModel.kt`; Android's and the desktop's own code in `androidMain`/`desktopMain`; tests in
+  `desktopTest`. `android/PLAY.md`: what is sent where (Data safety). Dropbox's app key comes from
+  the Gradle property `orbt.dropboxAppKey` (or `local.properties`), never committed.
 - `Design/` — `AppIcon-*.svg`, flat references of the app icon; `COLORS.md`, how the app uses
   color (read before any color change).
 - The app icon is the Icon Composer document `apple/ORBT/AppIcon.icon` (one for every platform):
