@@ -301,8 +301,11 @@ class SyncService(
             }
         }
         for ((document, remote) in open) document.applyRemote(remote.pgn, remote.sidecar, remote.revlog)
+        // A repertoire deleted elsewhere: its open document is closed before any of its files goes
+        // (they come in name order, the sidecar before the PGN), or a save it had pending would
+        // write the sidecar again after it was deleted.
+        for (name in deletes) documentOf(name)?.takeIf { it.pgnFile.name == name }?.removedRemotely()
         for (name in deletes) {
-            documentOf(name)?.takeIf { it.pgnFile.name == name }?.removedRemotely()
             withContext(Dispatchers.IO) {
                 val file = File(folder, name)
                 if (file.exists()) runCatching { FileAccess.delete(file) }

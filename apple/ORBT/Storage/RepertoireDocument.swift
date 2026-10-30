@@ -155,6 +155,7 @@ final class RepertoireDocument {
     func discard() {
         isClosed = true
         isDiscarded = true
+        files.update { $0.discarded = true }
         pgnSaveTask?.cancel()
         pgnSaveTask = nil
         sidecarSaveTask?.cancel()
@@ -411,6 +412,7 @@ final class RepertoireDocument {
         do {
             try await writer.run {
                 let current = files.current
+                guard !current.discarded else { return }
                 try Self.savePGN(core, to: current.pgn, presenter: current.presenters?.pgn)
             }
             saveError = nil
@@ -432,6 +434,7 @@ final class RepertoireDocument {
         do {
             try await writer.run {
                 let current = files.current
+                guard !current.discarded else { return }
                 if let lines = core.revlogToAppend() {
                     do {
                         try FileAccess.append(lines, to: current.revlog, presenter: current.presenters?.revlog)
@@ -509,6 +512,7 @@ final class RepertoireDocument {
         let core = core, files = files
         let changes = await writer.run { () -> [Changes] in
             let current = files.current
+            guard !current.discarded else { return [] }
             var changes: [Changes] = []
             if let pgn {
                 try? FileAccess.write(pgn, to: current.pgn, presenter: current.presenters?.pgn)
@@ -529,7 +533,12 @@ final class RepertoireDocument {
     }
 
     /// The sync deleted the PGN (deleted on another device): the repertoire is gone from here.
-    func removedRemotely() { removedByOthers() }
+    /// The sync is deleting the repertoire: closed and discarded, and back once no save of it
+    /// is still running, so none writes a file again after it is deleted.
+    func removedRemotely() async {
+        removedByOthers()
+        await writer.run {}
+    }
 
     /// Someone else renamed or moved the PGN. Within the folder, the sidecar and the review log
     /// follow it (the library pairs them by name); out of it, the repertoire is gone from here.
@@ -584,6 +593,9 @@ final class RepertoireDocument {
         var pgn: URL
         var sidecar: URL
         var presenters: Presenters?
+        /// Set with `isDiscarded`, read by the writer as each operation runs: a save that was
+        /// already on its way writes nothing once the files are being deleted.
+        var discarded = false
         var revlog: URL { RepertoireLibrary.revlogURL(for: pgn) }
     }
 

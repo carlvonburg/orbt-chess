@@ -60,19 +60,22 @@ nonisolated final class SyncFolder: @unchecked Sendable {
         return result
     }
 
-    /// One file, as it is now (after the app wrote or deleted it).
+    /// One file, as it is now, right after the app wrote or deleted it, on the thread that did:
+    /// read without coordination. A coordinated read there would ask the open document's
+    /// presenter to save first, and that save waits for the very writer making this call.
     func change(_ name: String) -> (name: String, data: Data?)? {
         let file = url.appending(path: name)
         guard FileManager.default.fileExists(atPath: file.path) else {
             let known = lock.withLock { reported.removeValue(forKey: name) != nil }
             return known ? (name, nil) : nil
         }
-        return read(name, stamp: Self.stamp(file))
+        return read(name, stamp: Self.stamp(file), coordinated: false)
     }
 
     /// The stamp is taken before the bytes: a write in between shows up at the next scan.
-    private func read(_ name: String, stamp: Stamp) -> (name: String, data: Data?)? {
-        guard let data = try? FileAccess.read(url.appending(path: name)) else { return nil }
+    private func read(_ name: String, stamp: Stamp, coordinated: Bool = true) -> (name: String, data: Data?)? {
+        let file = url.appending(path: name)
+        guard let data = try? (coordinated ? FileAccess.read(file) : Data(contentsOf: file)) else { return nil }
         lock.withLock { reported[name] = stamp }
         return (name, data)
     }

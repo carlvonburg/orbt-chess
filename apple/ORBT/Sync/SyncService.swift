@@ -347,10 +347,15 @@ final class SyncService {
         for entry in remote.values {
             await entry.document.applyRemote(pgn: entry.pgn, sidecar: entry.sidecar, revlog: entry.revlog)
         }
-        for name in deletes where syncFileKind(name: name) != nil {
+        // A repertoire deleted elsewhere: its open document is closed before any of its files
+        // goes (they come in name order, the sidecar before the PGN), or a save it had pending
+        // would write the sidecar again after it was deleted.
+        for name in deletes {
             if let document = document(of: name), document.pgnURL.lastPathComponent == name {
-                document.removedRemotely()
+                await document.removedRemotely()
             }
+        }
+        for name in deletes where syncFileKind(name: name) != nil {
             await Task.detached(priority: .utility) {
                 let url = folder.appending(path: name)
                 if FileManager.default.fileExists(atPath: url.path) { try? FileAccess.delete(url) }

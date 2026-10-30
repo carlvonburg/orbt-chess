@@ -373,6 +373,27 @@ extension SyncTests {
         #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path).sorted() == ["Other", "notes.txt"])
     }
 
+    @Test func theAppsOwnWriteIsReadBackWithoutWaitingForAPresenter() throws {
+        // An open document's presenter saves before others read, and that save waits for the
+        // writer that is reporting this very write: a coordinated read here never returns.
+        try write("Italian.otlog.jsonl", "{}\n")
+        let url = folder.appending(path: "Italian.otlog.jsonl")
+        let presenter = FilePresenter(url: url, handlers: .init(changed: {}, save: {
+            try? await Task.sleep(for: .seconds(3600))
+        }))
+        presenter.start()
+        defer { presenter.stop() }
+        let syncFolder = SyncFolder(url: folder)
+        let done = DispatchSemaphore(value: 0)
+        let result = ReadResult()
+        Thread.detachNewThread {
+            result.data = syncFolder.change("Italian.otlog.jsonl")?.data
+            done.signal()
+        }
+        #expect(done.wait(timeout: .now() + 5) == .success, "the read waited for the presenter")
+        #expect(result.data == Data("{}\n".utf8))
+    }
+
     @Test func onlyTheSyncsFilesAreReported() throws {
         try write("Italian.pgn", "1. e4 *")
         try write("Italian.otrep.json", "{}")
@@ -427,6 +448,10 @@ extension SyncTests {
 
 }
 
+}
+
+nonisolated private final class ReadResult: @unchecked Sendable {
+    var data: Data?
 }
 
 nonisolated private final class Told: @unchecked Sendable {

@@ -98,7 +98,8 @@ class RepertoireDocument private constructor(
     /** Closing: no new saves are scheduled and remote changes are ignored. */
     private var isClosed = false
     /** The files are being deleted: nothing is written any more. */
-    private var isDiscarded = false
+    // Volatile: the writer reads it as each save runs, so a save already on its way writes nothing.
+    @Volatile private var isDiscarded = false
     private var cachedCards: Pair<ULong, Map<Epd, Card>>? = null
 
     /** The opened core and what it asked for while opening. */
@@ -364,7 +365,7 @@ class RepertoireDocument private constructor(
     private suspend fun savePgn() {
         if (isDiscarded) return
         try {
-            withContext(writer) { savePgn(core, files.get().pgn) }
+            withContext(writer) { if (!isDiscarded) savePgn(core, files.get().pgn) }
             saveError = null
         } catch (e: CancellationException) {
             throw e
@@ -384,6 +385,7 @@ class RepertoireDocument private constructor(
         if (isDiscarded) return
         try {
             withContext(writer) {
+                if (isDiscarded) return@withContext
                 val current = files.get()
                 core.revlogToAppend()?.let { lines ->
                     try {
@@ -428,6 +430,7 @@ class RepertoireDocument private constructor(
     ) {
         if (isClosed) return
         val changes = withContext(writer) {
+            if (isDiscarded) return@withContext emptyList()
             val current = files.get()
             val changes = mutableListOf<Changes>()
             if (pgn != null) {
@@ -495,10 +498,15 @@ class RepertoireDocument private constructor(
     }
 
     /** Someone else deleted the PGN (the sync): the repertoire is gone from here. */
-    fun removedRemotely() {
+    /**
+     * The sync is deleting the repertoire: closed and discarded, and back once no save of it is
+     * still running, so none writes a file again after it is deleted.
+     */
+    suspend fun removedRemotely() {
         if (isClosed) return
         discard()
         onRemoved?.invoke()
+        withContext(writer) {}
     }
 
     /** The files, read by the writer when each operation runs. */
