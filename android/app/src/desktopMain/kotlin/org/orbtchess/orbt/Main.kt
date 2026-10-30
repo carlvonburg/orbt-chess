@@ -1,11 +1,14 @@
 package org.orbtchess.orbt
 
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.resources.decodeToImageBitmap
 import org.orbtchess.orbt.platform.desktopPlatform
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -18,12 +21,17 @@ fun main() {
     }
     val model = AppModel(desktopPlatform())
     application {
+        // The app icon (app/build.gradle.kts says how it is made from Design/AppIcon-light.svg).
+        val icon = remember {
+            object {}.javaClass.getResourceAsStream("/orbt-icon.png")?.use { BitmapPainter(it.readBytes().decodeToImageBitmap()) }
+        }
         Window(
             onCloseRequest = {
                 runBlocking { model.flush() }
                 exitApplication()
             },
             title = "ORBT Chess",
+            icon = icon,
         ) {
             // Back in front (Android's onResume): files changed meanwhile; the network may be back.
             val scope = rememberCoroutineScope()

@@ -103,6 +103,11 @@ compose.desktop {
             modules("jdk.httpserver")
             packageName = "ORBT Chess"
             packageVersion = "0.1.0"
+            // The app icon, Design/AppIcon-light.svg clipped to a rounded square (rx 224 of 1024):
+            // rsvg-convert to 512 px for Linux (also the window's, Main.kt) and to 16-256 px,
+            // joined by ImageMagick (`magick i16.png … i256.png orbt.ico`), for Windows.
+            linux { iconFile.set(project.file("src/desktopMain/resources/orbt-icon.png")) }
+            windows { iconFile.set(project.file("icons/orbt.ico")) }
         }
     }
 }
