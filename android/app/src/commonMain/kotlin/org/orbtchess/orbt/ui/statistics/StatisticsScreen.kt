@@ -31,7 +31,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -54,55 +53,26 @@ import org.orbtchess.orbt.ui.components.Symbols
  * each answering one question with the chart that suits it: how far the repertoire is learned
  * (moves), what is coming (upcoming), how much you study (reviews), how much you remember
  * (retention, by opening or repertoire), whether you keep at it (streak), when you study best
- * (time of day), how sure you are now (recall), intervals and the moves to work on.
+ * (time of day), how sure you are now (recall), intervals and the moves to work on. The
+ * Statistics tab, on one pane; wide windows show the same cards in the library's dashboard
+ * ([StatisticsDashboard]).
  *
- * @param inline true beside an overview or Today (the extra pane on wide windows, or under the
- *   overview): no top app bar, the scope fixed. False for the Statistics tab on a phone, whose
- *   app bar has the repertoire filter.
  * @param navigate [Destination.Builder] (a weakest move, with its start node), [Destination.CardInfo].
- * @param onScopeChange the tab's filter chose another scope (the shell keeps it, as Swift's
- *   `AppModel.statisticsScope`); null keeps the choice in this screen.
- * @param paneTitle inline in a pane of its own (the extra pane): a top app bar titled Statistics.
+ * @param onScopeChange the filter chose another scope (the shell keeps it, as Swift's
+ *   `AppModel.statisticsScope`).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsScreen(
     app: AppModel,
     scope: StatisticsScope,
-    inline: Boolean,
     navigate: (Destination) -> Unit,
+    onScopeChange: (StatisticsScope) -> Unit,
     modifier: Modifier = Modifier,
-    onScopeChange: ((StatisticsScope) -> Unit)? = null,
-    paneTitle: Boolean = false,
 ) {
-    val model = remember { StatisticsModel() }
-    // The tab's filter starts at the scope it was given; inline, the scope is the shell's.
-    var localId by rememberSaveable(scope) { mutableStateOf((scope as? StatisticsScope.Repertoire)?.entryId) }
-    val chosenId = if (onScopeChange != null) (scope as? StatisticsScope.Repertoire)?.entryId else localId
-    val choose: (String?) -> Unit = { id ->
-        if (onScopeChange != null) onScopeChange(id?.let { StatisticsScope.Repertoire(it) } ?: StatisticsScope.All) else localId = id
-    }
-    val current = if (inline) scope else chosenId?.let { StatisticsScope.Repertoire(it) } ?: StatisticsScope.All
-    LaunchedEffect(current, app.library.entries.size) { model.load(app, current) }
-
-    if (inline && paneTitle) {
-        // A pane of its own beside the overview or Today: titled, as the Swift board column is.
-        val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-        Scaffold(
-            modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            containerColor = GroupedBackground,
-            topBar = {
-                LargeFlexibleTopAppBar(title = { Text("Statistics") }, scrollBehavior = scrollBehavior, colors = groupedTopAppBarColors())
-            },
-        ) { padding ->
-            StatisticsSummary(app, model, current, navigate, Modifier.padding(padding))
-        }
-        return
-    }
-    if (inline) {
-        StatisticsSummary(app, model, current, navigate, modifier)
-        return
-    }
+    val chosenId = (scope as? StatisticsScope.Repertoire)?.entryId
+    val choose: (String?) -> Unit = { id -> onScopeChange(id?.let { StatisticsScope.Repertoire(it) } ?: StatisticsScope.All) }
+    val model = rememberStatistics(app, scope)
     // iOS's large title: the large flexible app bar, collapsing as the cards scroll.
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -112,17 +82,38 @@ fun StatisticsScreen(
             LargeFlexibleTopAppBar(
                 title = { Text("Statistics") },
                 colors = groupedTopAppBarColors(),
-                subtitle = { Text(scopeTitle(app, current)) },
+                subtitle = { Text(scopeTitle(app, scope)) },
                 actions = { FilterMenu(app, chosenId, choose) },
                 scrollBehavior = scrollBehavior,
             )
         },
     ) { padding ->
-        StatisticsSummary(app, model, current, navigate, Modifier.padding(padding))
+        StatisticsSummary(app, model, scope, navigate, Modifier.padding(padding))
     }
 }
 
-private fun scopeTitle(app: AppModel, scope: StatisticsScope): String = when (scope) {
+/**
+ * The statistics of [scope], loaded now and again when the library changes; one model (and so
+ * one period) per scope, so each repertoire's page keeps its own.
+ */
+@Composable
+internal fun rememberStatistics(app: AppModel, scope: StatisticsScope): StatisticsModel {
+    val model = remember(scope) { StatisticsModel() }
+    LaunchedEffect(model, app.library.entries.size) { model.load(app, scope) }
+    return model
+}
+
+/** Whether there is anything to show: moves to study or answers given. */
+@Composable
+internal fun StatisticsModel.hasData(): Boolean {
+    val graphs = graphs
+    return remember(graphs) {
+        graphs != null && (graphs.cardCounts().total > 0 || graphs.reviewsSummary(GraphRange.ALL).answers > 0)
+    }
+}
+
+/** The scope's name: All Repertoires or the repertoire's. */
+internal fun scopeTitle(app: AppModel, scope: StatisticsScope): String = when (scope) {
     StatisticsScope.All -> "All Repertoires"
     is StatisticsScope.Repertoire -> app.library.entry(scope.entryId)?.name ?: "Repertoire"
 }
@@ -158,9 +149,7 @@ private fun StatisticsSummary(
     val graphs = model.graphs
     val coroutines = rememberCoroutineScope()
     val refreshState = rememberPullToRefreshState()
-    val hasData = remember(graphs) {
-        graphs != null && (graphs.cardCounts().total > 0 || graphs.reviewsSummary(GraphRange.ALL).answers > 0)
-    }
+    val hasData = model.hasData()
     when {
         graphs == null && model.isLoading -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             LoadingIndicator()
@@ -190,11 +179,7 @@ private fun StatisticsSummary(
                 item(span = StaggeredGridItemSpan.FullLine) {
                     RangePicker(model.range) { model.range = it }
                 }
-                cards(graphs, model) { move ->
-                    val document = model.document ?: return@cards
-                    val node = model.node(move.epd) ?: return@cards
-                    navigate(Destination.Builder(document.entryId, start = node))
-                }
+                statisticsCards(graphs, model, navigate)
             }
         }
     }
@@ -202,7 +187,7 @@ private fun StatisticsSummary(
 
 /** Health's period picker: Material 3 Expressive's connected button group. */
 @Composable
-private fun RangePicker(range: GraphRange, choose: (GraphRange) -> Unit) {
+internal fun RangePicker(range: GraphRange, choose: (GraphRange) -> Unit) {
     ChoiceButtonGroup(GraphRange.entries, range, choose, label = { it.shortTitle })
 }
 
@@ -210,11 +195,17 @@ private fun RangePicker(range: GraphRange, choose: (GraphRange) -> Unit) {
  * The cards, in the Swift app's order: what a new user can read from the first day comes
  * first: how far the repertoire is learned, what comes next, how much is studied and remembered.
  */
-private fun LazyStaggeredGridScope.cards(
+internal fun LazyStaggeredGridScope.statisticsCards(
     graphs: Graphs,
     model: StatisticsModel,
-    open: (WeakMove) -> Unit,
+    navigate: (Destination) -> Unit,
 ) {
+    // A weakest move opens Build at it.
+    val open: (WeakMove) -> Unit = open@{ move ->
+        val document = model.document ?: return@open
+        val node = model.node(move.epd) ?: return@open
+        navigate(Destination.Builder(document.entryId, start = node))
+    }
     item("moves") { MovesCard(graphs, model.range) }
     item("upcoming") { UpcomingCard(graphs, model.range) }
     item("reviews") { ReviewsCard(graphs, model.range) }
