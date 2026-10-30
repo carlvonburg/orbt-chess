@@ -3,9 +3,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// Sync: the repertoire folder synced with Dropbox or Google Drive as well as iCloud Drive, chosen and
-/// confirmed here, with its status, Sync Now, and signing in again when the provider asks. On
-/// the Mac a folder inside Dropbox or Google Drive for desktop can be chosen instead
-/// (`FolderSection`); the provider's own app syncs it, so there is no sign-in then.
+/// confirmed here, with its status, Sync Now, and signing in again when the provider asks.
 struct SyncSection: View {
     @Environment(AppModel.self) private var model
     @Environment(\.webAuthenticationSession) private var webAuth
@@ -14,7 +12,7 @@ struct SyncSection: View {
 
     var body: some View {
         let sync = model.sync
-        if !model.library.usesChosenFolder, !SyncProvider.available.isEmpty || sync.provider != nil {
+        if !SyncProvider.available.isEmpty || sync.provider != nil {
             Section {
                 if let provider = sync.provider {
                     LabeledContent("Syncing with", value: sync.account.map { "\(provider.title) (\($0))" } ?? provider.title)
@@ -113,54 +111,3 @@ private struct SyncStatusRow: View {
     }
 }
 
-#if os(macOS)
-/// The Mac's repertoire folder: iCloud Drive's, or one chosen inside Dropbox or Google Drive
-/// for desktop (whose app syncs it; a security-scoped bookmark keeps it across launches).
-struct FolderSection: View {
-    @Environment(AppModel.self) private var model
-    @State private var choosing = false
-    @State private var error: String?
-
-    var body: some View {
-        let library = model.library
-        Section {
-            LabeledContent("Folder") {
-                Text(library.usesChosenFolder ? library.folder?.path(percentEncoded: false) ?? ""
-                     : library.usesICloud ? "iCloud Drive › ORBT Chess" : "On this Mac")
-                    .lineLimit(2)
-                    .truncationMode(.middle)
-                    .textSelection(.enabled)
-            }
-            Button("Choose Folder…") { choosing = true }
-            if library.usesChosenFolder {
-                Button("Use iCloud Drive") { use(nil) }
-            }
-            if let error { Text(error).font(.footnote).foregroundStyle(.failure) }
-        } header: {
-            Text("Repertoire folder")
-        } footer: {
-            Text("To sync with Dropbox or Google Drive, choose a folder inside it: their app keeps it up to date on your other computers. Repertoires already in the folder are opened; those in the current folder are not moved.")
-        }
-        .fileImporter(isPresented: $choosing, allowedContentTypes: [.folder]) { result in
-            switch result {
-            case .success(let url): use(url)
-            case .failure(let failure): error = failure.localizedDescription
-            }
-        }
-    }
-
-    private func use(_ url: URL?) {
-        error = nil
-        Task {
-            // The panel's URL is in scope until the bookmark is made and opened again.
-            let accessing = url?.startAccessingSecurityScopedResource() ?? false
-            defer { if accessing { url?.stopAccessingSecurityScopedResource() } }
-            do {
-                try await model.useFolder(url)
-            } catch {
-                self.error = "Could not use this folder: \(error.localizedDescription)"
-            }
-        }
-    }
-}
-#endif

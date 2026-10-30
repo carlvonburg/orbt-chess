@@ -528,14 +528,6 @@ final class RepertoireDocument {
         for c in changes { apply(c) }
     }
 
-    /// The provider left conflict copies of the files in the folder chosen on the Mac: they
-    /// are merged in as iCloud's conflict versions are, then deleted.
-    func resolveConflictCopies() {
-        pgnChangedOnDisk()
-        sidecarChangedOnDisk()
-        revlogChangedOnDisk()
-    }
-
     /// The sync deleted the PGN (deleted on another device): the repertoire is gone from here.
     func removedRemotely() { removedByOthers() }
 

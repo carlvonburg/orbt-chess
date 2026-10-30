@@ -242,27 +242,4 @@ class FolderWatcherTest {
         assertFalse(copy.exists())
         docs.flushAll()
     }
-
-    @Test
-    fun followsTheLibraryToAnotherFolder(): Unit = runBlocking {
-        val (docs, watcher) = watched()
-        watcher.check()
-        val other = Files.createTempDirectory("orbt-other").toFile()
-        try {
-            File(other, "London.pgn").writeText(D4)
-            File(other, "London.${RepertoireLibrary.SIDECAR_EXTENSION}").writeBytes(sidecar())
-            docs.library.switchTo(other)
-            watcher.check()
-            assertEquals(listOf("London"), docs.library.entries.map { it.name })
-            // Watched there now: a conflict copy in the new folder is merged.
-            File(other, "London (conflicted copy 2026-10-30).pgn").writeText(E4)
-            watcher.check()
-            assertFalse(File(other, "London (conflicted copy 2026-10-30).pgn").exists())
-            val pgn = File(other, "London.pgn").readText()
-            assertTrue("e4" in pgn && "d4" in pgn, pgn)
-            docs.flushAll()
-        } finally {
-            other.deleteRecursively()
-        }
-    }
 }

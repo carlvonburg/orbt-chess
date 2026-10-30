@@ -111,8 +111,8 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   and `jvmTest/SmokeTest.kt`, the parallel of the Swift smoke test. `app/` is the shared app
   and the desktop app (`android`, `jvm("desktop")`; `:app:run`): `commonMain` holds the UI and the
   platform layer ported from the Swift side, by package — `platform` (HTTP for the core's
-  requests, `AppFolders`, `Settings`, `SecretStore`), `storage` (library, documents, saves; the desktop's `FolderWatcher` follows the chosen folder's
-  changes and conflict copies, and saves there overwrite in place),
+  requests, `AppFolders`, `Settings`, `SecretStore`), `storage` (library, documents, saves; the desktop's `FolderWatcher` follows changes made to
+  `~/ORBT Chess` outside the app, and its saves overwrite in place),
   `explorer` (queue, SQLite stats cache, coverage tables), `engine`, `lichess` (PKCE: Custom
   Tabs on Android, a loopback redirect on the desktop), `sync` (`SyncService` runs the core's
   `RepertoireSync` with Dropbox or Google Drive; the sign-ins are Android's) — wired by

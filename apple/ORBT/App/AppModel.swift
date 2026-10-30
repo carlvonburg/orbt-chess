@@ -34,25 +34,8 @@ final class AppModel {
 
     /// Sets up the library's folder, then the sync with Dropbox when one is chosen.
     func setUpLibrary() async {
-        library.onConflictCopies = { [weak self] in
-            guard let self else { return }
-            for doc in documents.values { doc.resolveConflictCopies() }
-        }
         await library.setUp()
         sync.start()
-    }
-
-    /// Moves the library to `url`, a folder chosen on the Mac, or back to iCloud Drive's (nil):
-    /// the open repertoires are saved and closed first, and the sync stops while the folder is
-    /// one the provider's own app syncs.
-    func useFolder(_ url: URL?) async throws {
-        await flushAll()
-        closeAll()
-        for task in closing.values { await task.value }
-        sync.suspend()
-        defer { sync.start() }
-        try await library.useFolder(url)
-        await reloadCoverageTables()
     }
 
     /// Loads the offline coverage tables and reads which ones the server offers.

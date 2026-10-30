@@ -1,27 +1,19 @@
 package org.orbtchess.orbt.platform
 
 import com.github.javakeyring.Keyring
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.lichess.LoopbackAuthBrowser
 import org.orbtchess.orbt.storage.FileAccess
 import org.orbtchess.orbt.sync.DesktopSyncAuth
 import java.awt.Desktop
-import java.awt.FileDialog
-import java.awt.Frame
 import java.io.File
 import java.net.URI
 import java.util.logging.Logger
 import java.util.prefs.Preferences
-import javax.swing.JFileChooser
-import javax.swing.UIManager
 
 /**
- * The desktop's folders: the repertoires in `~/ORBT Chess`, or a folder the user chose in
- * Settings (inside Dropbox or Google Drive for desktop, whose client syncs it; `FolderWatcher`
- * follows its changes), the app's data in the OS's per-user application folder. Saves overwrite
- * the files in place (`FileAccess.journal`), so Google Drive keeps each file's id.
+ * The desktop's folders: the repertoires in `~/ORBT Chess` (`FolderWatcher` follows changes made
+ * outside the app; other devices through Settings › Sync), the app's data in the OS's per-user
+ * application folder. Saves overwrite the files in place (`FileAccess.journal`).
  */
 fun desktopPlatform(): PlatformServices {
     val home = File(System.getProperty("user.home"))
@@ -40,77 +32,18 @@ fun desktopPlatform(): PlatformServices {
     val journal = File(support, "Journal")
     FileAccess.recoverJournal(journal).forEach { log.info("finished saving ${it.path}") }
     FileAccess.journal = journal
-    val chooser = DesktopFolderChooser(default = File(home, "ORBT Chess"), mac = os.contains("mac"), linux = !os.contains("win") && !os.contains("mac"))
     val authBrowser = LoopbackAuthBrowser(openUrl)
-    val chosen = settings.getString(AppModel.REPERTOIRE_FOLDER_KEY)?.let(::File)
     return PlatformServices(
-        folders = AppFolders(repertoires = chosen ?: chooser.default, support = support),
+        folders = AppFolders(repertoires = File(home, "ORBT Chess"), support = support),
         settings = settings,
         secrets = KeyringSecrets.open(PrefsSecrets(prefs.node("secrets"))),
         openUrl = openUrl,
         authBrowser = authBrowser,
         syncAuth = DesktopSyncAuth(authBrowser),
-        folderChooser = chooser,
     )
 }
 
 private val log = Logger.getLogger("org.orbtchess.orbt.platform")
-
-/**
- * The system's folder chooser: the native one on macOS (`FileDialog` for folders); on Linux
- * the desktop's own (zenity on GNOME, kdialog on KDE) when installed; otherwise Swing's, in the
- * system's look (Windows: Java has no native folder chooser).
- */
-private class DesktopFolderChooser(override val default: File, private val mac: Boolean, private val linux: Boolean) : FolderChooser {
-    override suspend fun choose(current: File): File? {
-        if (mac) return macDialog(current)
-        if (linux) linuxDialog(current)?.let { return it.getOrNull() }
-        return swingDialog(current)
-    }
-
-    private fun macDialog(current: File): File? {
-        System.setProperty("apple.awt.fileDialogForDirectories", "true")
-        try {
-            val dialog = FileDialog(null as Frame?, "Repertoire Folder", FileDialog.LOAD).apply {
-                directory = current.parentFile?.path
-                file = current.name
-                isVisible = true
-            }
-            return dialog.files.firstOrNull()
-        } finally {
-            System.setProperty("apple.awt.fileDialogForDirectories", "false")
-        }
-    }
-
-    /** Null when neither tool runs; otherwise the result (a null folder: cancelled). */
-    private suspend fun linuxDialog(current: File): Result<File?>? = withContext(Dispatchers.IO) {
-        val commands = listOf(
-            listOf("zenity", "--file-selection", "--directory", "--title=Repertoire Folder", "--filename=${current.path}/"),
-            listOf("kdialog", "--getexistingdirectory", current.path, "--title", "Repertoire Folder"),
-        )
-        for (command in commands) {
-            val process = runCatching { ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.DISCARD).start() }.getOrNull() ?: continue
-            val output = process.inputStream.bufferedReader().readText().trim()
-            // 0: chosen; 1: cancelled.
-            return@withContext when (process.waitFor()) {
-                0 -> Result.success(output.takeIf { it.isNotEmpty() }?.let(::File))
-                1 -> Result.success(null)
-                else -> continue
-            }
-        }
-        null
-    }
-
-    private fun swingDialog(current: File): File? {
-        runCatching { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()) }
-        val chooser = JFileChooser(current).apply {
-            dialogTitle = "Repertoire Folder"
-            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-            isAcceptAllFileFilterUsed = false
-        }
-        return if (chooser.showDialog(null, "Choose") == JFileChooser.APPROVE_OPTION) chooser.selectedFile else null
-    }
-}
 
 private class PrefsSettings(private val prefs: Preferences) : Settings {
     private fun has(key: String) = prefs.get(key, null) != null

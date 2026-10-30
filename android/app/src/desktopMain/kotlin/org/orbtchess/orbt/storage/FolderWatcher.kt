@@ -20,10 +20,10 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 /**
- * The desktop's repertoire folder, which the user may keep inside Dropbox or Google Drive for
- * desktop: the provider's client changes it (other devices' edits, deletes, conflict copies),
- * and this hands those changes to the library and the open documents, as `SyncService` does on
- * Android with what it downloads.
+ * The desktop's repertoire folder (`~/ORBT Chess`), changed outside the app: files added or
+ * edited by hand or by another program, or by a provider's client if the user keeps the folder
+ * in one (other devices' edits, deletes, conflict copies). This hands those changes to the
+ * library and the open documents, as `SyncService` does with what it downloads.
  *
  * The folder's files (not its subfolders: the sync's files are at the top) are listed every
  * [interval], sooner when Java's `WatchService` reports something (it polls on macOS and may say
@@ -42,7 +42,7 @@ import java.util.logging.Logger
  *   lists them ([RepertoireLibrary.hidden]).
  *
  * `run` runs on the main thread (the documents' scope) until cancelled; the listing runs on
- * `Dispatchers.IO`. It follows the library to another folder ([RepertoireLibrary.switchTo]).
+ * `Dispatchers.IO`.
  */
 class FolderWatcher(
     private val documents: Documents,

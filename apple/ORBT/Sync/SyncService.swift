@@ -69,22 +69,15 @@ final class SyncService {
     nonisolated static func millis(_ date: Date) -> Int64 { Int64(date.timeIntervalSince1970 * 1000) }
 
     /// After the library is set up: the provider chosen in Settings, if this build has it.
-    /// Nothing runs while the library has no folder or uses a folder chosen on the Mac (the
-    /// provider's own app syncs that one).
+    /// Nothing runs while the library has no folder.
     func start() {
-        guard core == nil, starting == nil, library.folder != nil, !library.usesChosenFolder,
+        guard core == nil, starting == nil, library.folder != nil,
               let chosen = defaults.string(forKey: Self.providerKey).flatMap(SyncProvider.init),
               SyncProvider.available.contains(chosen) else { return }
         let stored = storedCredentials(chosen)
         account = stored?.account
         provider = chosen
         begin(chosen, stored)
-    }
-
-    /// Stops syncing without signing out (the library's folder changes): `start` resumes it.
-    func suspend() {
-        stop()
-        state = .idle
     }
 
     /// Back in front: look for changes from other devices, long-poll (Dropbox).
@@ -140,7 +133,7 @@ final class SyncService {
         defaults.set(provider.rawValue, forKey: Self.providerKey)
         self.provider = provider
         account = credentials.account
-        if library.folder != nil, !library.usesChosenFolder { begin(provider, credentials) }
+        if library.folder != nil { begin(provider, credentials) }
     }
 
     /// Stops syncing: the files stay on this device, the provider's stay there. The sign-in is

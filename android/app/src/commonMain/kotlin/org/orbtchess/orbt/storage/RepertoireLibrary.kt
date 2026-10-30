@@ -65,9 +65,7 @@ class RepertoireFileException(val reason: Reason) : IOException(reason.message) 
  * (e.g. `MainScope()`); scans and writes run on `Dispatchers.IO`.
  */
 class RepertoireLibrary(folder: File, private val scope: CoroutineScope) {
-    /** The folder; the desktop lets the user choose another ([switchTo]). */
-    var folder: File = folder
-        private set
+    val folder: File = folder
 
     /**
      * PGN names the scan leaves out: on the desktop, the conflict copies Dropbox and Google
@@ -110,15 +108,6 @@ class RepertoireLibrary(folder: File, private val scope: CoroutineScope) {
         // A later scan started meanwhile and has fresher results.
         if (generation != scanGeneration) return
         if (result != entries) entries = result
-    }
-
-    /** Lists another folder from now on (the documents of this one closed first, `Documents.closeAll`). */
-    suspend fun switchTo(newFolder: File) {
-        scheduledRefresh?.cancel()
-        folder = newFolder
-        withContext(Dispatchers.IO) { newFolder.mkdirs() }
-        entries = emptyList()
-        refresh()
     }
 
     /** Puts the entry for a file the app just wrote in the list right away; a scan follows. */

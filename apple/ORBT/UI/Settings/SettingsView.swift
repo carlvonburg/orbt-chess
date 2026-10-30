@@ -68,9 +68,6 @@ struct SettingsView: View {
 
                 EngineSettingsSection()
 
-                #if os(macOS)
-                FolderSection()
-                #endif
                 SyncSection()
 
                 Section {
@@ -83,7 +80,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Data")
                 } footer: {
-                    Text((model.library.usesICloud || model.library.usesChosenFolder || model.sync.provider != nil ? ""
+                    Text((model.library.usesICloud || model.sync.provider != nil ? ""
                           : "iCloud Drive is off, so repertoires are stored on this device only. ")
                          + "Repertoires are PGN files you can open in any chess program. Statistics are cached on this device and fetched again when needed.")
                 }
@@ -122,7 +119,6 @@ struct SettingsView: View {
     }
 
     private var storage: String {
-        if model.library.usesChosenFolder { return model.library.folder?.lastPathComponent ?? "Chosen folder" }
         let base = model.library.usesICloud ? "iCloud Drive › ORBT Chess" : "On this device"
         return model.sync.provider.map { "\(base), \($0.title)" } ?? base
     }

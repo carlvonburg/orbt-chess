@@ -52,7 +52,7 @@ import java.util.logging.Logger
  * from the observer (the core object locks).
  */
 class SyncService(
-    /** The repertoire folder (the desktop may switch it: [folderChanged]). */
+    /** The repertoire folder. */
     private val folderOf: () -> File,
     /** Where the sync's state is kept (the support folder). */
     private val support: File,
@@ -106,17 +106,6 @@ class SyncService(
         val stored = storedCredentials(chosen)
         account = stored?.account
         begin(chosen, stored)
-    }
-
-    /**
-     * The repertoire folder is another one now (the desktop's Settings): the sync starts over
-     * with its files, merged once with the provider's (nothing is deleted).
-     */
-    suspend fun folderChanged() {
-        val provider = provider ?: return
-        stop()
-        withContext(Dispatchers.IO) { stateFile(provider).delete() }
-        begin(provider, storedCredentials(provider))
     }
 
     /** Back in front: look for changes from other devices, long-poll (Dropbox). */

@@ -409,48 +409,6 @@ extension SyncTests {
         #expect(told.names == ["Italian.pgn", "Italian.pgn", "Italian.pgn", "Ruy.pgn", "Ruy.pgn"])
     }
 
-    @Test func savesInTheChosenFolderKeepTheFile() throws {
-        let url = folder.appending(path: "Italian.pgn")
-        try FileAccess.write(Data("1. e4 *".utf8), to: url)
-        let before = try inode(url)
-        // Elsewhere: atomic, a new file.
-        try FileAccess.write(Data("1. e4 e5 *".utf8), to: url)
-        #expect(try inode(url) != before)
-
-        FileAccessHooks.shared.chosenFolder = folder
-        defer { FileAccessHooks.shared.chosenFolder = nil }
-        let kept = try inode(url)
-        try FileAccess.write(Data("1. d4 *".utf8), to: url)
-        #expect(try inode(url) == kept)
-        #expect(try Data(contentsOf: url) == Data("1. d4 *".utf8))
-    }
-
-    @Test func conflictCopiesInTheChosenFolderAreMergedThenDeleted() throws {
-        try write("Italian.otlog.jsonl", revlogLine(1))
-        try write("Italian (Carl's conflicted copy 2026-10-30).otlog.jsonl", revlogLine(2))
-        // Google Drive for desktop's numbered copy too; the names are the core's rule.
-        try write("Italian (1).otlog.jsonl", revlogLine(3))
-        let url = folder.appending(path: "Italian.otlog.jsonl")
-
-        // Not the chosen folder (iCloud Drive): names are the user's.
-        try FileAccess.resolveConflicts(at: url) { mergeRevlogData(a: $0, b: $1) }
-        #expect(decodeRevlog(data: try Data(contentsOf: url)).map(\.id) == [1])
-
-        FileAccessHooks.shared.chosenFolder = folder
-        defer { FileAccessHooks.shared.chosenFolder = nil }
-        try FileAccess.resolveConflicts(at: url) { mergeRevlogData(a: $0, b: $1) }
-        #expect(decodeRevlog(data: try Data(contentsOf: url)).map(\.id) == [1, 2, 3])
-        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path) == ["Italian.otlog.jsonl"])
-    }
-
-    private func inode(_ url: URL) throws -> UInt64 {
-        (try FileManager.default.attributesOfItem(atPath: url.path)[.systemFileNumber] as? NSNumber)?.uint64Value ?? 0
-    }
-
-    private func revlogLine(_ id: Int64) -> String {
-        #"{"cid":"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -","ease":3,"factor":224,"id":\#(id),"ivl":1,"lastIvl":0,"time":1000,"type":1}"#
-            + "\n"
-    }
 }
 
 }
