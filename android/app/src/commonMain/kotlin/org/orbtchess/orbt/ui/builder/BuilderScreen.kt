@@ -1,7 +1,10 @@
 package org.orbtchess.orbt.ui.builder
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.Box
+import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
@@ -16,10 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
@@ -28,13 +28,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -267,7 +264,9 @@ private fun BuilderTopBar(model: BuilderModel, actions: BuilderActions, onBack: 
         subtitle = { Text(model.document.name) },
         navigationIcon = { BackButton(onBack) },
         actions = {
-            if (listPane && !model.hasDraft) GapAndStudyButtons(actions, above = false)
+            if (listPane) {
+                if (model.hasDraft) DraftButtons(model, actions) else GapAndStudyButtons(actions, above = false)
+            }
             BuilderMoreMenu(model, actions)
         },
     )
@@ -283,7 +282,8 @@ private fun BuilderTopBar(model: BuilderModel, actions: BuilderActions, onBack: 
  */
 @Composable
 private fun BuilderFloatingToolbar(model: BuilderModel, actions: BuilderActions, phone: Boolean) {
-    val save: (@Composable () -> Unit)? = if (model.hasDraft) {
+    // Beside the board, Discard and Save are in the list pane's top app bar (iPad's panel bar).
+    val save: (@Composable () -> Unit)? = if (phone && model.hasDraft) {
         { BoardToolbarFab(actions.saveTitle, Symbols.correct, actions::save, Modifier.tourTarget(TourGuide.Target.Save)) }
     } else {
         null
@@ -296,11 +296,32 @@ private fun BuilderFloatingToolbar(model: BuilderModel, actions: BuilderActions,
                 "Analysis", Symbols.analysis, actions::analysis,
                 Modifier.tourTarget(TourGuide.Target.Analysis), above = true,
             )
-            TextButton(onClick = model::discardDraft, shapes = ButtonDefaults.shapes()) { Text("Discard") }
+            if (phone) TextButton(onClick = model::discardDraft, shapes = ButtonDefaults.shapes()) { Text("Discard") }
         } else {
             if (phone) GapAndStudyButtons(actions, above = true)
             TooltipIconButton("Analysis", Symbols.analysis, actions::analysis, above = true)
         }
+    }
+}
+
+/**
+ * While a line is being built, in the list pane's top app bar (iPad's panel bar, where Discard and
+ * Save replace Biggest Gap and Study Branch): Discard a text button, Save the bar's one filled
+ * button with the count of moves it saves, as Material puts a screen's confirming action at the
+ * end of its top app bar.
+ */
+@Composable
+private fun DraftButtons(model: BuilderModel, actions: BuilderActions) {
+    TextButton(onClick = model::discardDraft, shapes = ButtonDefaults.shapes()) { Text("Discard") }
+    Button(
+        onClick = actions::save,
+        shapes = ButtonDefaults.shapes(),
+        contentPadding = ButtonDefaults.SmallContentPadding,
+        modifier = Modifier.padding(horizontal = 4.dp).tourTarget(TourGuide.Target.Save),
+    ) {
+        Icon(Symbols.correct, contentDescription = null, modifier = Modifier.size(ButtonDefaults.SmallIconSize))
+        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+        Text(actions.saveTitle)
     }
 }
 
@@ -337,45 +358,20 @@ private fun GapAndStudyButtons(actions: BuilderActions, above: Boolean) {
 @Composable
 private fun BuilderMoreMenu(model: BuilderModel, actions: BuilderActions) {
     var open by remember { mutableStateOf(false) }
-    TooltipIconButton("More", Symbols.more, { open = true })
-    DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-        fun pick(action: () -> Unit): () -> Unit = {
-            open = false
-            action()
+    val canUndo = model.document.canUndo
+    val canMoveInfo = actions.canMoveInfo
+    Box {
+        TooltipIconButton("More", Symbols.more, { open = true })
+        ExpressiveMenu(open, onDismissRequest = { open = false }) {
+            group { item("Undo", BuilderSymbols.undo, enabled = canUndo) { model.undo() } }
+            group {
+                item("Outline", BuilderSymbols.outline) { model.sheet = BuilderSheet.Outline }
+                item("Gaps", BuilderSymbols.gaps) { model.sheet = BuilderSheet.Gaps }
+                item("Edit Note", BuilderSymbols.note) { model.sheet = BuilderSheet.Note }
+                item("Move Info", Symbols.info, enabled = canMoveInfo) { actions.moveInfo() }
+            }
+            group { item("Flip Board", Symbols.flipBoard) { model.flip() } }
         }
-        DropdownMenuItem(
-            text = { Text("Undo") },
-            onClick = pick(model::undo),
-            leadingIcon = { Icon(BuilderSymbols.undo, contentDescription = null) },
-            enabled = model.document.canUndo,
-        )
-        HorizontalDivider()
-        DropdownMenuItem(
-            text = { Text("Outline") },
-            onClick = pick { model.sheet = BuilderSheet.Outline },
-            leadingIcon = { Icon(BuilderSymbols.outline, contentDescription = null) },
-        )
-        DropdownMenuItem(
-            text = { Text("Gaps") },
-            onClick = pick { model.sheet = BuilderSheet.Gaps },
-            leadingIcon = { Icon(BuilderSymbols.gaps, contentDescription = null) },
-        )
-        DropdownMenuItem(
-            text = { Text("Edit Note") },
-            onClick = pick { model.sheet = BuilderSheet.Note },
-            leadingIcon = { Icon(BuilderSymbols.note, contentDescription = null) },
-        )
-        DropdownMenuItem(
-            text = { Text("Move Info") },
-            onClick = pick(actions::moveInfo),
-            leadingIcon = { Icon(Symbols.info, contentDescription = null) },
-            enabled = actions.canMoveInfo,
-        )
-        DropdownMenuItem(
-            text = { Text("Flip Board") },
-            onClick = pick(model::flip),
-            leadingIcon = { Icon(Symbols.flipBoard, contentDescription = null) },
-        )
     }
 }
 
