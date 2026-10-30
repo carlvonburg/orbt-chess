@@ -12,11 +12,12 @@ enum class SyncProvider(val key: String, val title: String) {
 
 /**
  * What a sign-in gives the core (`RepertoireSync.setCredentials`). Dropbox: the refresh token
- * (the core gets access tokens with it); Drive: an access token from the system, no refresh.
+ * (the core gets access tokens with it); Drive: an access token from the system, no refresh
+ * and no expiry (the core asks for a new one when Google refuses it).
  */
 class SyncCredentials(
     val accessToken: String? = null,
-    /** Unix ms. */
+    /** Unix ms; null when unknown. */
     val expiresAt: Long? = null,
     val refreshToken: String? = null,
     /** The account's email or name, for Settings. */
@@ -44,7 +45,8 @@ interface SyncAuth {
      *  get one. `rejected`: the token the provider just refused, so it is not handed back. */
     suspend fun token(provider: SyncProvider, rejected: String?): SyncCredentials?
 
-    /** Forgets the sign-in on the provider's side where the platform can. */
+    /** Forgets the platform's own sign-in (Drive: the system's token); the core revokes
+     *  Dropbox's on the server. */
     suspend fun signOut(provider: SyncProvider, credentials: SyncCredentials?)
 }
 

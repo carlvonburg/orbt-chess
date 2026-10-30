@@ -324,7 +324,7 @@ pub fn revlog_extension() -> String {
     revlog::FILE_EXTENSION.to_owned()
 }
 
-// Lichess sign-in
+// Signing in (OAuth2 with PKCE): Lichess here, Dropbox in `sync`
 
 #[derive(Debug, thiserror::Error, uniffi::Error)]
 pub enum SignInError {
@@ -341,6 +341,38 @@ impl From<orbt_core::lichess::AuthError> for SignInError {
     }
 }
 
+impl From<orbt_core::oauth::RedirectError> for SignInError {
+    fn from(e: orbt_core::oauth::RedirectError) -> SignInError {
+        SignInError::Failed {
+            reason: e.to_string(),
+        }
+    }
+}
+
+impl From<orbt_core::sync::dropbox::SignInError> for SignInError {
+    fn from(e: orbt_core::sync::dropbox::SignInError) -> SignInError {
+        SignInError::Failed {
+            reason: e.to_string(),
+        }
+    }
+}
+
+/// A PKCE verifier or state from random bytes (one character per byte).
+#[uniffi::export]
+pub fn oauth_random_string(random: Vec<u8>) -> String {
+    orbt_core::oauth::random_string(&random)
+}
+
+/// The redirect back to the app (any provider): the code, or None when the user declined.
+/// Fails when the state is not `expected_state` or the provider answered an error.
+#[uniffi::export]
+pub fn oauth_parse_redirect(
+    url: String,
+    expected_state: String,
+) -> Result<Option<String>, SignInError> {
+    Ok(orbt_core::oauth::parse_redirect(&url, &expected_state)?)
+}
+
 #[derive(uniffi::Record)]
 pub struct Token {
     pub token: String,
@@ -348,14 +380,17 @@ pub struct Token {
     pub expires_at: i64,
 }
 
+/// Lichess's sign-in page, redirecting to `redirect_uri` (the apps: `lichess_redirect_uri`;
+/// the desktop: its loopback server).
 #[uniffi::export]
-pub fn lichess_random_string(random: Vec<u8>) -> String {
-    orbt_core::lichess::random_string(&random)
+pub fn lichess_authorize_url(verifier: String, state: String, redirect_uri: String) -> String {
+    orbt_core::lichess::authorize_url(&verifier, &state, &redirect_uri)
 }
 
+/// The apps' redirect: `org.orbtchess.orbt://oauth-callback`.
 #[uniffi::export]
-pub fn lichess_authorize_url(verifier: String, state: String) -> String {
-    orbt_core::lichess::authorize_url(&verifier, &state)
+pub fn lichess_redirect_uri() -> String {
+    orbt_core::lichess::REDIRECT_URI.to_owned()
 }
 
 #[uniffi::export]
@@ -363,19 +398,11 @@ pub fn lichess_callback_scheme() -> String {
     orbt_core::lichess::CALLBACK_SCHEME.to_owned()
 }
 
-/// The code from the redirect, or None when the user declined.
-#[uniffi::export]
-pub fn lichess_parse_callback(
-    url: String,
-    expected_state: String,
-) -> Result<Option<String>, SignInError> {
-    Ok(orbt_core::lichess::parse_callback(&url, &expected_state)?)
-}
-
 /// Exchanges the code from the callback for a token.
 #[uniffi::export]
-pub fn lichess_token_request(code: String, verifier: String) -> HttpRequest {
-    orbt_core::lichess::token_request(&code, &verifier)
+/// `redirect_uri`: the one the authorize URL named.
+pub fn lichess_token_request(code: String, verifier: String, redirect_uri: String) -> HttpRequest {
+    orbt_core::lichess::token_request(&code, &verifier, &redirect_uri)
 }
 
 #[uniffi::export]

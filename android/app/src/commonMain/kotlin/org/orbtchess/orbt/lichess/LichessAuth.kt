@@ -3,7 +3,6 @@ package org.orbtchess.orbt.lichess
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import org.orbtchess.orbt.core.HttpRequest
 import org.orbtchess.orbt.core.PlayedMove
 import org.orbtchess.orbt.core.Side
 import org.orbtchess.orbt.core.SignInException
@@ -11,14 +10,14 @@ import org.orbtchess.orbt.core.lichessAccountRequest
 import org.orbtchess.orbt.core.lichessAnalysisUrl
 import org.orbtchess.orbt.core.lichessAuthorizeUrl
 import org.orbtchess.orbt.core.lichessParseAccount
-import org.orbtchess.orbt.core.lichessParseCallback
 import org.orbtchess.orbt.core.lichessParseToken
-import org.orbtchess.orbt.core.lichessRandomString
+import org.orbtchess.orbt.core.lichessRedirectUri
 import org.orbtchess.orbt.core.lichessRevokeRequest
 import org.orbtchess.orbt.core.lichessTokenRequest
+import org.orbtchess.orbt.core.oauthParseRedirect
+import org.orbtchess.orbt.core.oauthRandomString
 import org.orbtchess.orbt.platform.Http
 import org.orbtchess.orbt.platform.SecretStore
-import java.net.URLEncoder
 import java.security.SecureRandom
 
 /**
@@ -66,15 +65,15 @@ class LichessAuth(private val secrets: SecretStore) {
     /** Runs the browser sign-in. Returns false when the user cancelled. */
     suspend fun signIn(browser: AuthBrowser): Boolean {
         lastError = null
-        val verifier = lichessRandomString(randomBytes(64))
-        val state = lichessRandomString(randomBytes(32))
+        val verifier = oauthRandomString(randomBytes(64))
+        val state = oauthRandomString(randomBytes(32))
         return try {
-            var redirectUri = CORE_REDIRECT_URI
+            var redirectUri = APP_REDIRECT_URI
             val callback = browser.authenticate { uri ->
                 redirectUri = uri
-                authorizeUrl(verifier, state, uri)
+                lichessAuthorizeUrl(verifier, state, uri)
             } ?: return false
-            val code = lichessParseCallback(callback, state) ?: return false  // the user declined
+            val code = oauthParseRedirect(callback, state) ?: return false  // the user declined
             exchange(code, verifier, redirectUri)
             true
         } catch (error: SignInException) {
@@ -102,7 +101,7 @@ class LichessAuth(private val secrets: SecretStore) {
     }
 
     private suspend fun exchange(code: String, verifier: String, redirectUri: String) {
-        val response = Http.send(tokenRequest(code, verifier, redirectUri))
+        val response = Http.send(lichessTokenRequest(code, verifier, redirectUri))
             ?: throw SignInException.Failed("Could not reach Lichess")
         val parsed = lichessParseToken(response, System.currentTimeMillis() / 1000)
         token = parsed.token
@@ -139,30 +138,8 @@ class LichessAuth(private val secrets: SecretStore) {
     }
 }
 
-/** The redirect the core's requests name: the app's custom scheme (Apple, Android). */
-internal const val CORE_REDIRECT_URI = "org.orbtchess.orbt://oauth-callback"
-
-// TODO(core): let `lichessAuthorizeUrl` and `lichessTokenRequest` take the redirect URI. Until
-// then the desktop's loopback URI replaces the core's in the URL and the form body, both
-// form-encoded by the core as `URLEncoder` does.
-private fun encoded(uri: String) = URLEncoder.encode(uri, "UTF-8")
-
-/** The core's authorize URL, redirecting to `redirectUri`. */
-internal fun authorizeUrl(verifier: String, state: String, redirectUri: String): String {
-    val url = lichessAuthorizeUrl(verifier, state)
-    if (redirectUri == CORE_REDIRECT_URI) return url
-    check(encoded(CORE_REDIRECT_URI) in url) { "The core's redirect URI changed" }
-    return url.replace(encoded(CORE_REDIRECT_URI), encoded(redirectUri))
-}
-
-/** The core's token request, for a code sent to `redirectUri`. */
-internal fun tokenRequest(code: String, verifier: String, redirectUri: String): HttpRequest {
-    val request = lichessTokenRequest(code, verifier)
-    if (redirectUri == CORE_REDIRECT_URI) return request
-    val body = request.body.toString(Charsets.UTF_8)
-    check(encoded(CORE_REDIRECT_URI) in body) { "The core's redirect URI changed" }
-    return request.copy(body = body.replace(encoded(CORE_REDIRECT_URI), encoded(redirectUri)).toByteArray())
-}
+/** The apps' redirect to Lichess (the custom scheme, as the Apple app's). */
+internal val APP_REDIRECT_URI: String = lichessRedirectUri()
 
 object LichessLinks {
     /** The line in the Lichess analysis board, keeping the move history. */

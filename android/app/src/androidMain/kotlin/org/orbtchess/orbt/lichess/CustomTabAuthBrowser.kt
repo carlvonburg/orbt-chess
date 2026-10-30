@@ -17,7 +17,7 @@ import kotlinx.coroutines.CompletableDeferred
  */
 class CustomTabAuthBrowser(
     private val context: Context,
-    private val redirectUri: String = CORE_REDIRECT_URI,
+    private val redirectUri: String = APP_REDIRECT_URI,
 ) : AuthBrowser {
     override suspend fun authenticate(authorizeUrl: (redirectUri: String) -> String): String? {
         val url = authorizeUrl(redirectUri)

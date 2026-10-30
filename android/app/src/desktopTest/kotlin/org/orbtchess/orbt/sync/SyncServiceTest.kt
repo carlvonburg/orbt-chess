@@ -242,6 +242,8 @@ class SyncServiceTest {
         onMain { app.sync.signIn(SyncProvider.Dropbox) }
         settled(app)
         onMain { app.sync.signOut() }
+        // Revoked on the server, not only forgotten here.
+        assertTrue(server.revoked)
         assertNull(app.sync.provider)
         assertTrue(File(folder, "Italian.pgn").exists())
         assertTrue(server.files.containsKey("Italian.pgn"))
@@ -262,6 +264,8 @@ private class FakeDropbox {
     @Volatile var offline = false
     @Volatile var busy = false
     @Volatile private var access = TOKEN
+    /** Signed out with `auth/token/revoke`. */
+    @Volatile var revoked = false
     @Volatile private var refresh = REFRESH
     private var nextRev = 0
 
@@ -305,6 +309,11 @@ private class FakeDropbox {
         if (endpoint == "/2/files/list_folder/longpoll") return respond(200, """{"changes": false}""")
         if (header(r, "Authorization") != "Bearer $access" || access == "revoked") {
             return respond(401, """{"error_summary": "invalid_access_token/"}""")
+        }
+        if (endpoint == "/2/auth/token/revoke") {
+            revoked = true
+            revoke()
+            return respond(200, "null")
         }
         val arg = header(r, "Dropbox-API-Arg") ?: body
         val name = field(arg, "path")?.removePrefix("/")

@@ -125,6 +125,13 @@ impl Server for Dropbox {
         if header(r, "Authorization") != Some(&format!("Bearer {}", self.access)) {
             return respond(401, r#"{"error_summary": "expired_access_token/"}"#);
         }
+        if endpoint == "/2/auth/token/revoke" {
+            // The access token and the refresh token it came from stop working.
+            assert!(r.body.is_empty());
+            self.access = "revoked".into();
+            self.refresh = "revoked".into();
+            return respond(200, "null");
+        }
         let arg: Value = match header(r, "Dropbox-API-Arg") {
             Some(h) => {
                 assert!(h.is_ascii());
@@ -636,6 +643,60 @@ fn an_expired_token_is_refreshed_and_a_revoked_one_asks_to_sign_in() {
 }
 
 #[test]
+fn signing_out_revokes_the_sign_in_on_the_server() {
+    let mut server = Dropbox::new();
+    let (mut a, mut b) = two_synced_devices(&mut server);
+    // A valid access token: revoked directly, and nothing else is sent from then on.
+    a.edit("Najdorf.pgn", E4);
+    let request = a.engine.sign_out_request(a.now).expect("a revoke request");
+    assert!(request.url.ends_with("/2/auth/token/revoke"));
+    let response = server.handle(&request);
+    a.engine.on_sign_out_response(Some(&response), a.now);
+    assert_eq!(a.engine.sign_out_request(a.now), None);
+    assert!(a.engine.poll(a.now).ops.is_empty());
+    assert_eq!(a.engine.poll(a.now).needs, None);
+    // The refresh token is dead on the server: the other device must sign in again.
+    b.edit("Najdorf.pgn", E4);
+    b.engine.set_credentials(None, None, None);
+    b.sync(&mut server);
+    assert_eq!(b.needs, Some(AuthNeed::SignIn));
+
+    // The access token expired: refreshed once, then revoked.
+    let mut server = Dropbox::new();
+    let (mut a, _) = two_synced_devices(&mut server);
+    a.now += 5 * 3_600_000;
+    let request = a.engine.sign_out_request(a.now).unwrap();
+    assert!(request.url.ends_with("/oauth2/token"));
+    let response = server.handle(&request);
+    a.engine.on_sign_out_response(Some(&response), a.now);
+    let request = a.engine.sign_out_request(a.now).unwrap();
+    assert!(request.url.ends_with("/2/auth/token/revoke"));
+    let response = server.handle(&request);
+    a.engine.on_sign_out_response(Some(&response), a.now);
+    assert_eq!(a.engine.sign_out_request(a.now), None);
+    assert_eq!(server.refresh, "revoked");
+
+    // Offline, or the refresh refused: done after one request (never a loop).
+    let mut server = Dropbox::new();
+    let (mut a, _) = two_synced_devices(&mut server);
+    a.now += 5 * 3_600_000;
+    assert!(a.engine.sign_out_request(a.now).is_some());
+    a.engine.on_sign_out_response(None, a.now);
+    assert_eq!(a.engine.sign_out_request(a.now), None);
+    let (mut c, _) = two_synced_devices(&mut server);
+    c.now += 5 * 3_600_000;
+    server.refresh = "other".into();
+    let request = c.engine.sign_out_request(c.now).unwrap();
+    let response = server.handle(&request);
+    c.engine.on_sign_out_response(Some(&response), c.now);
+    assert_eq!(c.engine.sign_out_request(c.now), None);
+
+    // Drive: the platform drops the token itself, nothing to send.
+    let mut d = Device::drive();
+    assert_eq!(d.engine.sign_out_request(d.now), None);
+}
+
+#[test]
 fn a_file_deleted_on_one_device_is_deleted_on_the_other() {
     let mut server = Dropbox::new();
     let (mut a, mut b) = two_synced_devices(&mut server);
@@ -827,4 +888,58 @@ fn drive_makes_its_folder_and_uploads_conditionally() {
         .set_credentials(Some("access-2".into()), None, None);
     b.sync(&mut server);
     assert!(!b.local.contains_key("Najdorf.otrep.json"));
+}
+
+#[test]
+fn a_drive_token_of_unknown_lifetime_is_used_until_refused() {
+    let mut server = Drive {
+        access: TOKEN.into(),
+        ..Drive::default()
+    };
+    // No expiry: the system did not say how long the token lasts.
+    let mut a = Device::drive();
+    a.engine.set_credentials(Some(TOKEN.into()), None, None);
+    a.edit("Najdorf.pgn", E4);
+    a.sync(&mut server);
+    assert_eq!(server.files.len(), 1);
+    // Days later it still is the token used: no expiry is assumed.
+    a.now += 3 * 86_400_000;
+    a.edit("Najdorf.otrep.json", sidecar("n"));
+    a.sync(&mut server);
+    assert_eq!(server.files.len(), 2);
+    assert_eq!(a.needs, None);
+
+    // Every hour Google's token expires: the 401 asks the platform for a new one.
+    for hour in 2..5 {
+        server.access = format!("access-{hour}");
+        a.edit(
+            "Najdorf.pgn",
+            format!("[Event \"Najdorf\"]\n\n1. e4 c5 2. Nf3 d6 3. d4 cxd4 {hour}. Nxd4 *\n"),
+        );
+        let sent = a.sync(&mut server);
+        assert_eq!(
+            sent.len(),
+            1,
+            "one request is refused, then it waits: {sent:?}"
+        );
+        assert_eq!(a.needs, Some(AuthNeed::Token));
+        assert_eq!(a.engine.state(), &SyncState::NeedsToken);
+        assert!(a.engine.poll(a.now).ops.is_empty());
+        a.needs = None;
+        a.engine
+            .set_credentials(Some(format!("access-{hour}")), None, None);
+        a.sync(&mut server);
+        // Never "sign in again": each new token works.
+        assert_eq!(a.needs, None);
+        assert!(a.engine.unsynced_files().is_empty());
+    }
+
+    // A new token that is refused too: only signing in again helps.
+    server.access = "access-9".into();
+    a.edit("Najdorf.pgn", E4);
+    a.sync(&mut server);
+    assert_eq!(a.needs, Some(AuthNeed::Token));
+    a.engine.set_credentials(Some("wrong".into()), None, None);
+    a.sync(&mut server);
+    assert_eq!(a.engine.state(), &SyncState::NeedsSignIn);
 }

@@ -164,12 +164,19 @@ class SyncService(
         }
     }
 
-    /** Stops syncing: the files stay on this device, the provider's stay there. */
+    /**
+     * Stops syncing: the files stay on this device, the provider's stay there. The sign-in is
+     * revoked on the provider's side (the core's requests: Dropbox's `auth/token/revoke`; best
+     * effort, offline leaves it), and the platform's own sign-in is dropped (Drive's token).
+     */
     suspend fun signOut() {
         val provider = provider ?: return
         val stored = storedCredentials(provider)
         val credentials = SyncCredentials(accessToken, refreshToken = stored?.refreshToken, account = stored?.account)
-        stop()
+        val sync = core
+        stop(close = false)
+        sync?.let { revoke(it) }
+        sync?.close()
         secrets.remove(secretKey(provider))
         settings.remove(PROVIDER_KEY)
         withContext(Dispatchers.IO) { stateFile(provider).delete() }
@@ -208,12 +215,22 @@ class SyncService(
         sync.syncNow()
     }
 
-    private fun stop() {
+    private fun stop(close: Boolean = true) {
         val sync = core ?: return
         core = null
         wake?.cancel()
         wake = null
-        sync.close()
+        if (close) sync.close()
+    }
+
+    /** Sends the core's sign-out requests until there are none (at most a refresh and a revoke). */
+    private suspend fun revoke(sync: RepertoireSync) {
+        repeat(MAX_SIGN_OUT_REQUESTS) {
+            val request = sync.signOutRequest(clock()) ?: return
+            val response = send(request)
+            sync.onSignOutResponse(response, clock())
+            if (response == null) return
+        }
     }
 
     // MARK: The core's queue
@@ -354,6 +371,7 @@ class SyncService(
 
     companion object {
         const val PROVIDER_KEY = "syncProvider"
+        private const val MAX_SIGN_OUT_REQUESTS = 3
         private val log = Logger.getLogger("org.orbtchess.orbt.sync")
     }
 }

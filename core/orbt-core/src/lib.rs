@@ -14,6 +14,7 @@ pub mod explorer;
 pub mod formats;
 pub mod http;
 pub mod lichess;
+pub mod oauth;
 pub mod pgn;
 pub mod repertoire;
 pub mod statistics;

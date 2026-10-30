@@ -235,6 +235,18 @@ enum Action {
     Forget,
 }
 
+/// Where signing out is (`sign_out_request`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum SignOut {
+    /// Next: revoke with a valid access token, or refresh first (when `may_refresh`).
+    Ready {
+        may_refresh: bool,
+    },
+    Refreshing,
+    Revoking,
+    Done,
+}
+
 #[derive(Debug)]
 struct Access {
     token: String,
@@ -269,6 +281,8 @@ pub struct SyncEngine {
     paused_until: Option<Millis>,
     state: SyncState,
     next_id: u64,
+    /// Signing out: nothing else is sent.
+    sign_out: Option<SignOut>,
 }
 
 impl SyncEngine {
@@ -314,6 +328,7 @@ impl SyncEngine {
             paused_until: None,
             state: SyncState::Idle,
             next_id: 1,
+            sign_out: None,
         }
     }
 
@@ -362,7 +377,9 @@ impl SyncEngine {
 
     // Events
 
-    /// After signing in, or a fresh token from the system. `expires_at`: unix ms;
+    /// After signing in, or a fresh token from the system. `expires_at`: unix ms, or None when
+    /// unknown (Drive: the system does not say): the token is used until the provider refuses
+    /// it (401), and then the platform is asked for a new one (`AuthNeed::Token`).
     /// `refresh_token`: Dropbox's, which the core uses to get new access tokens (None keeps
     /// the one it has).
     pub fn set_credentials(
@@ -481,9 +498,73 @@ impl SyncEngine {
         self.state = SyncState::Paused { until };
     }
 
+    /// Signing out: the next request that revokes the sign-in on the provider's side, or None
+    /// when none is left (revoked, failed, or the platform revokes itself: Drive). Send it and
+    /// pass the answer to `on_sign_out_response`; best effort, so stopping early (offline) is
+    /// fine. Dropbox refreshes an expired access token first (once): revoking it disables the
+    /// refresh token too. From the first call, `poll` hands out nothing.
+    pub fn sign_out_request(&mut self, now: Millis) -> Option<HttpRequest> {
+        let step = *self
+            .sign_out
+            .get_or_insert(SignOut::Ready { may_refresh: true });
+        let SignOut::Ready { may_refresh } = step else {
+            return None;
+        };
+        let (next, request) = if let Some(token) = self.token_valid(now) {
+            (SignOut::Revoking, self.provider.revoke(token))
+        } else if may_refresh {
+            let refresh = self
+                .refresh_token
+                .as_deref()
+                .and_then(|t| self.provider.refresh(t));
+            (SignOut::Refreshing, refresh)
+        } else {
+            (SignOut::Done, None)
+        };
+        self.sign_out = Some(if request.is_some() {
+            next
+        } else {
+            SignOut::Done
+        });
+        if request.is_none() {
+            self.forget_credentials();
+        }
+        request
+    }
+
+    /// The answer to `sign_out_request`'s request (None: none came).
+    pub fn on_sign_out_response(&mut self, response: Option<&HttpResponse>, now: Millis) {
+        let refreshed = match (self.sign_out, response) {
+            (Some(SignOut::Refreshing), Some(r)) => match self.provider.read_refresh(r) {
+                Answer::Ok((token, expires_in)) => Some(Access {
+                    token,
+                    expires_at: expires_in.map(|s| now + s.clamp(0, 1 << 31) * 1000),
+                }),
+                _ => None,
+            },
+            _ => None,
+        };
+        if let Some(access) = refreshed {
+            self.access = Some(access);
+            self.sign_out = Some(SignOut::Ready { may_refresh: false });
+        } else if self.sign_out.is_some() {
+            self.sign_out = Some(SignOut::Done);
+            self.forget_credentials();
+        }
+    }
+
+    fn forget_credentials(&mut self) {
+        self.access = None;
+        self.refresh_token = None;
+    }
+
     /// The requests to send now, and when to poll again.
     pub fn poll(&mut self, now: Millis) -> SyncPoll {
         let mut poll = SyncPoll::default();
+        if self.sign_out.is_some() {
+            self.state = SyncState::Idle;
+            return poll;
+        }
         if let Some(needs) = self.needs {
             poll.needs = Some(needs);
             return poll;

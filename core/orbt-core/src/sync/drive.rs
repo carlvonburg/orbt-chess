@@ -99,6 +99,10 @@ impl Provider for Drive {
         Answer::Failed
     }
 
+    fn revoke(&self, _token: &str) -> Option<HttpRequest> {
+        None
+    }
+
     fn find_folder(&self, token: &str) -> Option<HttpRequest> {
         let q = format!(
             "name = '{}' and mimeType = '{FOLDER_TYPE}' and 'root' in parents and trashed = false",

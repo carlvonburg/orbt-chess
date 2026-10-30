@@ -5,163 +5,58 @@
 
 pub mod cloud_eval;
 
-use sha2::{Digest, Sha256};
-
 use crate::chess::{PlayedMove, Side, san};
 use crate::http::{HttpMethod, HttpRequest, HttpResponse};
+use crate::oauth::{code_challenge, form};
 
 pub const HOST: &str = "https://lichess.org";
 pub const CLIENT_ID: &str = "org.orbtchess.orbt";
 pub const CALLBACK_SCHEME: &str = "org.orbtchess.orbt";
+/// The apps' redirect (their custom scheme); the desktop's is a loopback URI.
 pub const REDIRECT_URI: &str = "org.orbtchess.orbt://oauth-callback";
 /// Without `expires_in`, Lichess tokens last about a year.
 pub const DEFAULT_TOKEN_SECS: i64 = 365 * 86_400;
 
-const PKCE_CHARS: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
-
-/// A PKCE verifier or state from random bytes (one character per byte).
-pub fn random_string(random: &[u8]) -> String {
-    random
-        .iter()
-        .map(|&b| PKCE_CHARS[b as usize % PKCE_CHARS.len()] as char)
-        .collect()
-}
-
-fn base64url(data: &[u8]) -> String {
-    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-    let mut out = String::new();
-    for chunk in data.chunks(3) {
-        let b = [
-            chunk[0],
-            *chunk.get(1).unwrap_or(&0),
-            *chunk.get(2).unwrap_or(&0),
-        ];
-        let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
-        for i in 0..=chunk.len() {
-            out.push(ALPHABET[(n >> (18 - 6 * i) & 63) as usize] as char);
-        }
-    }
-    out
-}
-
-/// The S256 code challenge: base64url (no padding) of SHA-256 of the verifier.
-pub fn code_challenge(verifier: &str) -> String {
-    base64url(&Sha256::digest(verifier.as_bytes()))
-}
-
-/// Percent-encodes everything but unreserved characters (as for form bodies and queries).
-pub fn form_encode(value: &str) -> String {
-    let mut out = String::new();
-    for b in value.bytes() {
-        match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'.' | b'_' | b'~' => {
-                out.push(b as char)
-            }
-            _ => out.push_str(&format!("%{b:02X}")),
-        }
-    }
-    out
-}
-
-/// The page that asks the user to allow access.
-pub fn authorize_url(verifier: &str, state: &str) -> String {
-    let query = [
-        ("response_type", "code".to_owned()),
-        ("client_id", CLIENT_ID.to_owned()),
-        ("redirect_uri", REDIRECT_URI.to_owned()),
-        ("code_challenge_method", "S256".to_owned()),
-        ("code_challenge", code_challenge(verifier)),
-        ("state", state.to_owned()),
-    ];
-    let query: Vec<String> = query
-        .iter()
-        .map(|(k, v)| format!("{k}={}", form_encode(v)))
-        .collect();
-    format!("{HOST}/oauth?{}", query.join("&"))
+/// The page that asks the user to allow access, redirecting to `redirect_uri` (read the
+/// redirect with `oauth::parse_redirect`).
+pub fn authorize_url(verifier: &str, state: &str, redirect_uri: &str) -> String {
+    let challenge = code_challenge(verifier);
+    let query = form(&[
+        ("response_type", "code"),
+        ("client_id", CLIENT_ID),
+        ("redirect_uri", redirect_uri),
+        ("code_challenge_method", "S256"),
+        ("code_challenge", &challenge),
+        ("state", state),
+    ]);
+    format!("{HOST}/oauth?{query}")
 }
 
 #[derive(Debug, PartialEq, Eq, thiserror::Error)]
 pub enum AuthError {
-    #[error("State mismatch in Lichess callback")]
-    StateMismatch,
-    #[error("Lichess refused sign-in: {0}")]
-    Refused(String),
-    #[error("No code in Lichess callback")]
-    NoCode,
     #[error("Token exchange failed")]
     BadTokenResponse,
     #[error("Token exchange failed ({0})")]
     TokenStatus(u16),
 }
 
-fn percent_decode(value: &str) -> String {
-    let bytes = value.as_bytes();
-    let mut out = Vec::new();
-    let mut i = 0;
-    while i < bytes.len() {
-        match bytes[i] {
-            b'%' => {
-                if let Some(hex) = value.get(i + 1..i + 3)
-                    && let Ok(b) = u8::from_str_radix(hex, 16)
-                {
-                    out.push(b);
-                    i += 3;
-                    continue;
-                }
-                out.push(b'%');
-            }
-            b'+' => out.push(b' '),
-            b => out.push(b),
-        }
-        i += 1;
-    }
-    String::from_utf8_lossy(&out).into_owned()
-}
-
-/// Reads the redirect: the code to exchange, or None when the user declined.
-pub fn parse_callback(url: &str, expected_state: &str) -> Result<Option<String>, AuthError> {
-    let query = url.split_once('?').map_or("", |(_, q)| q);
-    let query = query.split('#').next().unwrap_or("");
-    let param = |name: &str| {
-        query
-            .split('&')
-            .filter_map(|kv| kv.split_once('='))
-            .find(|(k, _)| *k == name)
-            .map(|(_, v)| percent_decode(v))
-    };
-    if param("state").as_deref() != Some(expected_state) {
-        return Err(AuthError::StateMismatch);
-    }
-    if let Some(error) = param("error") {
-        return if error == "access_denied" {
-            Ok(None)
-        } else {
-            Err(AuthError::Refused(error))
-        };
-    }
-    param("code").map(Some).ok_or(AuthError::NoCode)
-}
-
-/// The form body for `POST https://lichess.org/api/token`.
-pub fn token_request_body(code: &str, verifier: &str) -> String {
-    let body = [
+/// The form body for `POST https://lichess.org/api/token`: the redirect URI is the one the
+/// authorize URL named.
+pub fn token_request_body(code: &str, verifier: &str, redirect_uri: &str) -> String {
+    form(&[
         ("grant_type", "authorization_code"),
         ("code", code),
         ("code_verifier", verifier),
-        ("redirect_uri", REDIRECT_URI),
+        ("redirect_uri", redirect_uri),
         ("client_id", CLIENT_ID),
-    ];
-    body.iter()
-        .map(|(k, v)| format!("{k}={}", form_encode(v)))
-        .collect::<Vec<_>>()
-        .join("&")
+    ])
 }
 
 /// Exchanges the code from the callback for a token.
-pub fn token_request(code: &str, verifier: &str) -> HttpRequest {
+pub fn token_request(code: &str, verifier: &str, redirect_uri: &str) -> HttpRequest {
     HttpRequest::new(HttpMethod::Post, format!("{HOST}/api/token")).body(
         "application/x-www-form-urlencoded",
-        token_request_body(code, verifier),
+        token_request_body(code, verifier, redirect_uri),
     )
 }
 
@@ -272,38 +167,13 @@ mod tests {
     use crate::chess::ChessPosition;
 
     #[test]
-    fn pkce_challenge_matches_rfc_7636() {
-        // RFC 7636, Appendix B.
-        assert_eq!(
-            code_challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"),
-            "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
-        );
-        assert_eq!(random_string(&[0, 1, 65, 66]), "AB~A");
-    }
-
-    #[test]
-    fn authorize_and_callback() {
-        let url = authorize_url("verifier", "st8");
-        assert!(url.starts_with(
-            "https://lichess.org/oauth?response_type=code&client_id=org.orbtchess.orbt"
-        ));
-        assert!(url.contains("redirect_uri=org.orbtchess.orbt%3A%2F%2Foauth-callback"));
-        assert!(url.ends_with("&state=st8"));
-        let cb = "org.orbtchess.orbt://oauth-callback?code=abc%2B1&state=st8";
-        assert_eq!(parse_callback(cb, "st8"), Ok(Some("abc+1".into())));
-        assert_eq!(parse_callback(cb, "other"), Err(AuthError::StateMismatch));
-        let denied = "org.orbtchess.orbt://oauth-callback?error=access_denied&state=st8";
-        assert_eq!(parse_callback(denied, "st8"), Ok(None));
-    }
-
-    #[test]
     fn token_exchange() {
-        let body = token_request_body("c o", "v");
+        let body = token_request_body("c o", "v", REDIRECT_URI);
         assert_eq!(
             body,
             "grant_type=authorization_code&code=c%20o&code_verifier=v&redirect_uri=org.orbtchess.orbt%3A%2F%2Foauth-callback&client_id=org.orbtchess.orbt"
         );
-        let request = token_request("c o", "v");
+        let request = token_request("c o", "v", REDIRECT_URI);
         assert_eq!(request.method, HttpMethod::Post);
         assert_eq!(request.url, "https://lichess.org/api/token");
         assert_eq!(request.body, body.as_bytes());

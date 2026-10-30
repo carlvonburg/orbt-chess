@@ -16,10 +16,15 @@ import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.json.JSONObject
 import org.orbtchess.orbt.core.SignInException
-import org.orbtchess.orbt.core.lichessParseCallback
-import org.orbtchess.orbt.core.lichessRandomString
+import org.orbtchess.orbt.core.dropboxAccountRequest
+import org.orbtchess.orbt.core.dropboxAuthorizeUrl
+import org.orbtchess.orbt.core.dropboxParseAccount
+import org.orbtchess.orbt.core.dropboxParseToken
+import org.orbtchess.orbt.core.dropboxRedirectUri
+import org.orbtchess.orbt.core.dropboxTokenRequest
+import org.orbtchess.orbt.core.oauthParseRedirect
+import org.orbtchess.orbt.core.oauthRandomString
 import org.orbtchess.orbt.lichess.CustomTabAuthBrowser
 import org.orbtchess.orbt.platform.Http
 import java.security.SecureRandom
@@ -46,45 +51,37 @@ class AndroidSyncAuth(private val context: Context, override val dropboxAppKey: 
     }
 
     override suspend fun signOut(provider: SyncProvider, credentials: SyncCredentials?) {
-        // Dropbox: the refresh token is forgotten (the user can remove the app in Dropbox's
-        // settings, Connected apps). Drive: the system's cached token is dropped.
+        // Dropbox: the core revoked the tokens on the server (`SyncService.signOut`). Drive:
+        // the system's cached token is dropped.
         if (provider == SyncProvider.Drive) credentials?.accessToken?.let { clearDriveToken(it) }
     }
 
     // MARK: Dropbox
 
+    /** PKCE in a Custom Tab; the requests and the answers are the core's. */
     private suspend fun dropboxSignIn(): SyncCredentials? {
         if (dropboxAppKey.isEmpty()) throw SyncSignInException("This build has no Dropbox app key.")
-        val verifier = lichessRandomString(randomBytes(64))
-        val state = lichessRandomString(randomBytes(32))
-        val callback = CustomTabAuthBrowser(context, DROPBOX_REDIRECT_URI).authenticate { uri ->
+        val verifier = oauthRandomString(randomBytes(64))
+        val state = oauthRandomString(randomBytes(32))
+        val redirectUri = dropboxRedirectUri()
+        val callback = CustomTabAuthBrowser(context, redirectUri).authenticate { uri ->
             dropboxAuthorizeUrl(dropboxAppKey, verifier, state, uri)
         } ?: return null
-        // The redirect's query is OAuth's, as Lichess's: state, then code or error.
-        val code = try {
-            lichessParseCallback(callback, state)
-        } catch (_: SignInException) {
-            throw SyncSignInException("Dropbox's answer did not match the sign-in.")
-        } ?: return null  // the user declined
-        val response = Http.send(dropboxTokenRequest(dropboxAppKey, code, verifier))
-            ?: throw SyncSignInException("Could not reach Dropbox.")
-        val json = runCatching { JSONObject(response.body.toString(Charsets.UTF_8)) }.getOrNull()
-        val refresh = json?.optString("refresh_token")?.ifEmpty { null }
-        val access = json?.optString("access_token")?.ifEmpty { null }
-        if (response.status.toInt() != 200 || refresh == null || access == null) {
-            val reason = json?.optString("error_description")?.ifEmpty { null } ?: "error ${response.status}"
-            throw SyncSignInException("Dropbox refused the sign-in ($reason).")
+        try {
+            val code = oauthParseRedirect(callback, state) ?: return null  // the user declined
+            val response = Http.send(dropboxTokenRequest(dropboxAppKey, code, verifier, redirectUri))
+                ?: throw SyncSignInException("Could not reach Dropbox.")
+            val signIn = dropboxParseToken(response, System.currentTimeMillis())
+            val account = Http.send(dropboxAccountRequest(signIn.accessToken))?.let(::dropboxParseAccount)
+            return SyncCredentials(
+                accessToken = signIn.accessToken,
+                expiresAt = signIn.expiresAt,
+                refreshToken = signIn.refreshToken,
+                account = account,
+            )
+        } catch (e: SignInException) {
+            throw SyncSignInException((e as? SignInException.Failed)?.reason ?: e.message ?: "Dropbox sign-in failed.")
         }
-        val expiresIn = json.optLong("expires_in", 0).takeIf { it > 0 }
-        val account = Http.send(dropboxAccountRequest(access))?.takeIf { it.status.toInt() == 200 }?.let {
-            runCatching { JSONObject(it.body.toString(Charsets.UTF_8)).optString("email").ifEmpty { null } }.getOrNull()
-        }
-        return SyncCredentials(
-            accessToken = access,
-            expiresAt = expiresIn?.let { System.currentTimeMillis() + it * 1000 },
-            refreshToken = refresh,
-            account = account,
-        )
     }
 
     // MARK: Google Drive
@@ -115,9 +112,9 @@ class AndroidSyncAuth(private val context: Context, override val dropboxAppKey: 
         val token = result.accessToken ?: return null
         return SyncCredentials(
             accessToken = token,
-            // Google's tokens last an hour; the system says when only through a 401. Asked
-            // again before, without the user.
-            expiresAt = System.currentTimeMillis() + DRIVE_TOKEN_MS,
+            // The system does not say when it expires: the core uses it until Google answers
+            // 401, then asks for a new one (`AuthNeed.TOKEN`, `token`).
+            expiresAt = null,
             account = result.toGoogleSignInAccount()?.email,
         )
     }
@@ -130,7 +127,6 @@ class AndroidSyncAuth(private val context: Context, override val dropboxAppKey: 
 
     private companion object {
         const val DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file"
-        const val DRIVE_TOKEN_MS = 50 * 60 * 1000L
         val random = SecureRandom()
 
         fun randomBytes(count: Int) = ByteArray(count).also(random::nextBytes)

@@ -32,19 +32,20 @@ final class LichessAuth {
     @discardableResult
     func signIn(using session: WebAuthenticationSession) async -> Bool {
         lastError = nil
-        let verifier = lichessRandomString(random: Self.randomBytes(64))
-        let state = lichessRandomString(random: Self.randomBytes(32))
+        let verifier = oauthRandomString(random: Self.randomBytes(64))
+        let state = oauthRandomString(random: Self.randomBytes(32))
+        let redirectUri = lichessRedirectUri()
         do {
             let callback = try await session.authenticate(
-                using: URL(string: lichessAuthorizeUrl(verifier: verifier, state: state))!,
+                using: URL(string: lichessAuthorizeUrl(verifier: verifier, state: state, redirectUri: redirectUri))!,
                 callback: .customScheme(lichessCallbackScheme()),
                 preferredBrowserSession: .shared,
                 additionalHeaderFields: [:]
             )
-            guard let code = try lichessParseCallback(url: callback.absoluteString, expectedState: state) else {
+            guard let code = try oauthParseRedirect(url: callback.absoluteString, expectedState: state) else {
                 return false  // the user declined
             }
-            try await exchange(code: code, verifier: verifier)
+            try await exchange(code: code, verifier: verifier, redirectUri: redirectUri)
             return true
         } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
             return false
@@ -74,8 +75,9 @@ final class LichessAuth {
         Keychain.delete(Self.tokenKey)
     }
 
-    private func exchange(code: String, verifier: String) async throws {
-        guard let response = await HTTP.send(lichessTokenRequest(code: code, verifier: verifier)) else {
+    private func exchange(code: String, verifier: String, redirectUri: String) async throws {
+        let request = lichessTokenRequest(code: code, verifier: verifier, redirectUri: redirectUri)
+        guard let response = await HTTP.send(request) else {
             throw AuthError.message("Could not reach Lichess")
         }
         let parsed = try lichessParseToken(response: response, nowSecs: Int64(Date.now.timeIntervalSince1970))

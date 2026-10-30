@@ -5709,6 +5709,11 @@ public protocol RepertoireSyncProtocol: AnyObject, Sendable {
     func onResponse(op: SyncOp, response: HttpResponse?, nowMs: Int64)  -> SyncOutcome
     
     /**
+     * The answer to `sign_out_request`'s request (None: none came).
+     */
+    func onSignOutResponse(response: HttpResponse?, nowMs: Int64) 
+    
+    /**
      * The requests to send now, and when to poll again.
      */
     func poll(nowMs: Int64)  -> SyncPoll
@@ -5724,8 +5729,9 @@ public protocol RepertoireSyncProtocol: AnyObject, Sendable {
     func savedState()  -> Data
     
     /**
-     * After signing in, or a fresh token (`expires_at` in unix ms). Dropbox: pass the refresh
-     * token, the core refreshes the access token itself.
+     * After signing in, or a fresh token (`expires_at` in unix ms, None when unknown: the
+     * token is used until refused, then `AuthNeed::Token` asks for another). Dropbox: pass
+     * the refresh token, the core refreshes the access token itself.
      */
     func setCredentials(accessToken: String?, expiresAt: Int64?, refreshToken: String?) 
     
@@ -5740,6 +5746,13 @@ public protocol RepertoireSyncProtocol: AnyObject, Sendable {
      * Long-poll for changes (Dropbox) while the app is in front.
      */
     func setWatching(watching: Bool) 
+    
+    /**
+     * Signing out: the next request that revokes the sign-in on the provider's side (Dropbox),
+     * or None when none is left. Send each and pass its answer to `on_sign_out_response`
+     * until None (best effort: stop when offline). From the first call nothing else is sent.
+     */
+    func signOutRequest(nowMs: Int64)  -> HttpRequest?
     
     func state()  -> SyncState
     
@@ -5869,6 +5882,19 @@ open func onResponse(op: SyncOp, response: HttpResponse?, nowMs: Int64) -> SyncO
 }
     
     /**
+     * The answer to `sign_out_request`'s request (None: none came).
+     */
+open func onSignOutResponse(response: HttpResponse?, nowMs: Int64)  {try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_on_sign_out_response(
+            self.uniffiCloneHandle(),
+        FfiConverterOptionTypeHttpResponse.lower(response),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+}
+}
+    
+    /**
      * The requests to send now, and when to poll again.
      */
 open func poll(nowMs: Int64) -> SyncPoll  {
@@ -5905,8 +5931,9 @@ open func savedState() -> Data  {
 }
     
     /**
-     * After signing in, or a fresh token (`expires_at` in unix ms). Dropbox: pass the refresh
-     * token, the core refreshes the access token itself.
+     * After signing in, or a fresh token (`expires_at` in unix ms, None when unknown: the
+     * token is used until refused, then `AuthNeed::Token` asks for another). Dropbox: pass
+     * the refresh token, the core refreshes the access token itself.
      */
 open func setCredentials(accessToken: String?, expiresAt: Int64?, refreshToken: String?)  {try! rustCall() {
         uniffiCallStatus in
@@ -5950,6 +5977,21 @@ open func setWatching(watching: Bool)  {try! rustCall() {
         FfiConverterBool.lower(watching),uniffiCallStatus
     )
 }
+}
+    
+    /**
+     * Signing out: the next request that revokes the sign-in on the provider's side (Dropbox),
+     * or None when none is left. Send each and pass its answer to `on_sign_out_response`
+     * until None (best effort: stop when offline). From the first call nothing else is sent.
+     */
+open func signOutRequest(nowMs: Int64) -> HttpRequest?  {
+    return try!  FfiConverterOptionTypeHttpRequest.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiresync_sign_out_request(
+            self.uniffiCloneHandle(),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+})
 }
     
 open func state() -> SyncState  {
@@ -7667,6 +7709,83 @@ public func FfiConverterTypeDeckStudyStats_lift(_ buf: RustBuffer) throws -> Dec
 #endif
 public func FfiConverterTypeDeckStudyStats_lower(_ value: DeckStudyStats) -> RustBuffer {
     return FfiConverterTypeDeckStudyStats.lower(value)
+}
+
+
+/**
+ * What signing in to Dropbox gives: keep the refresh token (the core refreshes with it).
+ */
+public struct DropboxSignIn: Equatable, Hashable {
+    public var accessToken: String
+    /**
+     * Unix ms; None when Dropbox did not say.
+     */
+    public var expiresAt: Int64?
+    public var refreshToken: String
+    /**
+     * `dbid:…`: whether a new sign-in is the same account.
+     */
+    public var accountId: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(accessToken: String, 
+        /**
+         * Unix ms; None when Dropbox did not say.
+         */expiresAt: Int64?, refreshToken: String, 
+        /**
+         * `dbid:…`: whether a new sign-in is the same account.
+         */accountId: String?) {
+        self.accessToken = accessToken
+        self.expiresAt = expiresAt
+        self.refreshToken = refreshToken
+        self.accountId = accountId
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DropboxSignIn: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDropboxSignIn: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DropboxSignIn {
+        return
+            try DropboxSignIn(
+                accessToken: FfiConverterString.read(from: &buf), 
+                expiresAt: FfiConverterOptionInt64.read(from: &buf), 
+                refreshToken: FfiConverterString.read(from: &buf), 
+                accountId: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DropboxSignIn, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.accessToken, into: &buf)
+        FfiConverterOptionInt64.write(value.expiresAt, into: &buf)
+        FfiConverterString.write(value.refreshToken, into: &buf)
+        FfiConverterOptionString.write(value.accountId, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDropboxSignIn_lift(_ buf: RustBuffer) throws -> DropboxSignIn {
+    return try FfiConverterTypeDropboxSignIn.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDropboxSignIn_lower(_ value: DropboxSignIn) -> RustBuffer {
+    return FfiConverterTypeDropboxSignIn.lower(value)
 }
 
 
@@ -14700,6 +14819,30 @@ fileprivate struct FfiConverterOptionTypeExplorerStats: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeHttpRequest: FfiConverterRustBuffer {
+    typealias SwiftType = HttpRequest?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeHttpRequest.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeHttpRequest.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeHttpResponse: FfiConverterRustBuffer {
     typealias SwiftType = HttpResponse?
 
@@ -16349,12 +16492,17 @@ public func lichessAccountRequest(token: String) -> HttpRequest  {
     )
 })
 }
-public func lichessAuthorizeUrl(verifier: String, state: String) -> String  {
+/**
+ * Lichess's sign-in page, redirecting to `redirect_uri` (the apps: `lichess_redirect_uri`;
+ * the desktop: its loopback server).
+ */
+public func lichessAuthorizeUrl(verifier: String, state: String, redirectUri: String) -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_func_lichess_authorize_url(
         FfiConverterString.lower(verifier),
-        FfiConverterString.lower(state),uniffiCallStatus
+        FfiConverterString.lower(state),
+        FfiConverterString.lower(redirectUri),uniffiCallStatus
     )
 })
 }
@@ -16376,18 +16524,6 @@ public func lichessParseAccount(response: HttpResponse) -> String?  {
     )
 })
 }
-/**
- * The code from the redirect, or None when the user declined.
- */
-public func lichessParseCallback(url: String, expectedState: String)throws  -> String?  {
-    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeSignInError_lift) {
-        uniffiCallStatus in
-    uniffi_opening_core_fn_func_lichess_parse_callback(
-        FfiConverterString.lower(url),
-        FfiConverterString.lower(expectedState),uniffiCallStatus
-    )
-})
-}
 public func lichessParseToken(response: HttpResponse, nowSecs: Int64)throws  -> Token  {
     return try  FfiConverterTypeToken_lift(try rustCallWithError(FfiConverterTypeSignInError_lift) {
         uniffiCallStatus in
@@ -16397,11 +16533,13 @@ public func lichessParseToken(response: HttpResponse, nowSecs: Int64)throws  -> 
     )
 })
 }
-public func lichessRandomString(random: Data) -> String  {
+/**
+ * The apps' redirect: `org.orbtchess.orbt://oauth-callback`.
+ */
+public func lichessRedirectUri() -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
         uniffiCallStatus in
-    uniffi_opening_core_fn_func_lichess_random_string(
-        FfiConverterData.lower(random),uniffiCallStatus
+    uniffi_opening_core_fn_func_lichess_redirect_uri(uniffiCallStatus
     )
 })
 }
@@ -16418,13 +16556,15 @@ public func lichessRevokeRequest(token: String) -> HttpRequest  {
 }
 /**
  * Exchanges the code from the callback for a token.
+ * `redirect_uri`: the one the authorize URL named.
  */
-public func lichessTokenRequest(code: String, verifier: String) -> HttpRequest  {
+public func lichessTokenRequest(code: String, verifier: String, redirectUri: String) -> HttpRequest  {
     return try!  FfiConverterTypeHttpRequest_lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_func_lichess_token_request(
         FfiConverterString.lower(code),
-        FfiConverterString.lower(verifier),uniffiCallStatus
+        FfiConverterString.lower(verifier),
+        FfiConverterString.lower(redirectUri),uniffiCallStatus
     )
 })
 }
@@ -16488,6 +16628,30 @@ public func newSidecar(id: String, color: Side, database: ExplorerDatabase, targ
     )
 })
 }
+/**
+ * The redirect back to the app (any provider): the code, or None when the user declined.
+ * Fails when the state is not `expected_state` or the provider answered an error.
+ */
+public func oauthParseRedirect(url: String, expectedState: String)throws  -> String?  {
+    return try  FfiConverterOptionString.lift(try rustCallWithError(FfiConverterTypeSignInError_lift) {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_oauth_parse_redirect(
+        FfiConverterString.lower(url),
+        FfiConverterString.lower(expectedState),uniffiCallStatus
+    )
+})
+}
+/**
+ * A PKCE verifier or state from random bytes (one character per byte).
+ */
+public func oauthRandomString(random: Data) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_oauth_random_string(
+        FfiConverterData.lower(random),uniffiCallStatus
+    )
+})
+}
 public func revlogExtension() -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
         uniffiCallStatus in
@@ -16512,6 +16676,76 @@ public func weakestMoves(cards: [Epd: Card], nowSecs: Double, limit: UInt32) -> 
         FfiConverterDictionaryTypeEpdTypeCard.lower(cards),
         FfiConverterDouble.lower(nowSecs),
         FfiConverterUInt32.lower(limit),uniffiCallStatus
+    )
+})
+}
+/**
+ * The signed-in account, for its email (`dropbox_parse_account`).
+ */
+public func dropboxAccountRequest(accessToken: String) -> HttpRequest  {
+    return try!  FfiConverterTypeHttpRequest_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_dropbox_account_request(
+        FfiConverterString.lower(accessToken),uniffiCallStatus
+    )
+})
+}
+/**
+ * Dropbox's sign-in page (PKCE, for a refresh token), redirecting to `redirect_uri`. Read the
+ * redirect with `oauth_parse_redirect`.
+ */
+public func dropboxAuthorizeUrl(appKey: String, verifier: String, state: String, redirectUri: String) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_dropbox_authorize_url(
+        FfiConverterString.lower(appKey),
+        FfiConverterString.lower(verifier),
+        FfiConverterString.lower(state),
+        FfiConverterString.lower(redirectUri),uniffiCallStatus
+    )
+})
+}
+public func dropboxParseAccount(response: HttpResponse) -> String?  {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_dropbox_parse_account(
+        FfiConverterTypeHttpResponse_lower(response),uniffiCallStatus
+    )
+})
+}
+/**
+ * The token request's answer (`now_ms`: unix ms).
+ */
+public func dropboxParseToken(response: HttpResponse, nowMs: Int64)throws  -> DropboxSignIn  {
+    return try  FfiConverterTypeDropboxSignIn_lift(try rustCallWithError(FfiConverterTypeSignInError_lift) {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_dropbox_parse_token(
+        FfiConverterTypeHttpResponse_lower(response),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+/**
+ * The apps' redirect from Dropbox (registered in its app console).
+ */
+public func dropboxRedirectUri() -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_dropbox_redirect_uri(uniffiCallStatus
+    )
+})
+}
+/**
+ * Exchanges the code from the redirect for the tokens (`redirect_uri`: the authorize URL's).
+ */
+public func dropboxTokenRequest(appKey: String, code: String, verifier: String, redirectUri: String) -> HttpRequest  {
+    return try!  FfiConverterTypeHttpRequest_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_dropbox_token_request(
+        FfiConverterString.lower(appKey),
+        FfiConverterString.lower(code),
+        FfiConverterString.lower(verifier),
+        FfiConverterString.lower(redirectUri),uniffiCallStatus
     )
 })
 }
@@ -16890,7 +17124,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_lichess_account_request() != 41549) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_lichess_authorize_url() != 53182) {
+    if (uniffi_opening_core_checksum_func_lichess_authorize_url() != 41515) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_lichess_callback_scheme() != 60445) {
@@ -16899,19 +17133,16 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_lichess_parse_account() != 48987) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_lichess_parse_callback() != 45402) {
-        return InitializationResult.apiChecksumMismatch
-    }
     if (uniffi_opening_core_checksum_func_lichess_parse_token() != 55513) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_lichess_random_string() != 45180) {
+    if (uniffi_opening_core_checksum_func_lichess_redirect_uri() != 21776) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_lichess_revoke_request() != 48529) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_func_lichess_token_request() != 54561) {
+    if (uniffi_opening_core_checksum_func_lichess_token_request() != 9752) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_merge_revlog_data() != 20501) {
@@ -16929,6 +17160,12 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_new_sidecar() != 58506) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_func_oauth_parse_redirect() != 28472) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_oauth_random_string() != 26365) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_func_revlog_extension() != 3396) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -16936,6 +17173,24 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_weakest_moves() != 51550) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_dropbox_account_request() != 30709) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_dropbox_authorize_url() != 7158) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_dropbox_parse_account() != 16268) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_dropbox_parse_token() != 57617) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_dropbox_redirect_uri() != 26006) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_dropbox_token_request() != 25595) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_sync_file_kind() != 2482) {
@@ -17772,6 +18027,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiresync_on_response() != 38461) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_repertoiresync_on_sign_out_response() != 8933) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_repertoiresync_poll() != 42127) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -17781,7 +18039,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiresync_saved_state() != 22651) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_repertoiresync_set_credentials() != 10) {
+    if (uniffi_opening_core_checksum_method_repertoiresync_set_credentials() != 55878) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiresync_set_listener() != 12761) {
@@ -17791,6 +18049,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiresync_set_watching() != 34597) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiresync_sign_out_request() != 61027) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiresync_state() != 26947) {

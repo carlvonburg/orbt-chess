@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
 
+use crate::stats::SignInError;
 use orbt_core::http::{HttpRequest, HttpResponse};
+use orbt_core::sync::dropbox::{self, Dropbox};
 use orbt_core::sync::{
     self, AuthNeed, FileKind, LocalWrite, SyncEngine, SyncOp, SyncOpKind, SyncOutcome, SyncPoll,
     SyncState,
@@ -83,6 +85,76 @@ pub trait SyncListener: Send + Sync {
     fn wake(&self);
 }
 
+/// What signing in to Dropbox gives: keep the refresh token (the core refreshes with it).
+#[derive(uniffi::Record)]
+pub struct DropboxSignIn {
+    pub access_token: String,
+    /// Unix ms; None when Dropbox did not say.
+    pub expires_at: Option<i64>,
+    pub refresh_token: String,
+    /// `dbid:…`: whether a new sign-in is the same account.
+    pub account_id: Option<String>,
+}
+
+fn dropbox(app_key: String) -> Dropbox {
+    Dropbox { app_key }
+}
+
+/// The apps' redirect from Dropbox (registered in its app console).
+#[uniffi::export]
+pub fn dropbox_redirect_uri() -> String {
+    dropbox::REDIRECT_URI.to_owned()
+}
+
+/// Dropbox's sign-in page (PKCE, for a refresh token), redirecting to `redirect_uri`. Read the
+/// redirect with `oauth_parse_redirect`.
+#[uniffi::export]
+pub fn dropbox_authorize_url(
+    app_key: String,
+    verifier: String,
+    state: String,
+    redirect_uri: String,
+) -> String {
+    dropbox(app_key).authorize_url(&verifier, &state, &redirect_uri)
+}
+
+/// Exchanges the code from the redirect for the tokens (`redirect_uri`: the authorize URL's).
+#[uniffi::export]
+pub fn dropbox_token_request(
+    app_key: String,
+    code: String,
+    verifier: String,
+    redirect_uri: String,
+) -> HttpRequest {
+    dropbox(app_key).token_request(&code, &verifier, &redirect_uri)
+}
+
+/// The token request's answer (`now_ms`: unix ms).
+#[uniffi::export]
+pub fn dropbox_parse_token(
+    response: HttpResponse,
+    now_ms: i64,
+) -> Result<DropboxSignIn, SignInError> {
+    let s = dropbox::read_token(&response, now_ms)?;
+    Ok(DropboxSignIn {
+        access_token: s.access_token,
+        expires_at: s.expires_at,
+        refresh_token: s.refresh_token,
+        account_id: s.account_id,
+    })
+}
+
+/// The signed-in account, for its email (`dropbox_parse_account`).
+#[uniffi::export]
+pub fn dropbox_account_request(access_token: String) -> HttpRequest {
+    dropbox::account_request(&access_token)
+}
+
+#[uniffi::export]
+pub fn dropbox_parse_account(response: HttpResponse) -> Option<String> {
+    dropbox::read_account(&response)
+}
+
 /// The kind of a file the sync handles, or None for any other file.
 #[uniffi::export]
 pub fn sync_file_kind(name: String) -> Option<FileKind> {
@@ -149,8 +221,9 @@ impl RepertoireSync {
         self.engine.lock().expect("sync lock").unsynced_files()
     }
 
-    /// After signing in, or a fresh token (`expires_at` in unix ms). Dropbox: pass the refresh
-    /// token, the core refreshes the access token itself.
+    /// After signing in, or a fresh token (`expires_at` in unix ms, None when unknown: the
+    /// token is used until refused, then `AuthNeed::Token` asks for another). Dropbox: pass
+    /// the refresh token, the core refreshes the access token itself.
     pub fn set_credentials(
         &self,
         access_token: Option<String>,
@@ -183,6 +256,24 @@ impl RepertoireSync {
     /// The network is back.
     pub fn resume(&self) {
         self.update(SyncEngine::resume);
+    }
+
+    /// Signing out: the next request that revokes the sign-in on the provider's side (Dropbox),
+    /// or None when none is left. Send each and pass its answer to `on_sign_out_response`
+    /// until None (best effort: stop when offline). From the first call nothing else is sent.
+    pub fn sign_out_request(&self, now_ms: i64) -> Option<HttpRequest> {
+        self.engine
+            .lock()
+            .expect("sync lock")
+            .sign_out_request(now_ms)
+    }
+
+    /// The answer to `sign_out_request`'s request (None: none came).
+    pub fn on_sign_out_response(&self, response: Option<HttpResponse>, now_ms: i64) {
+        self.engine
+            .lock()
+            .expect("sync lock")
+            .on_sign_out_response(response.as_ref(), now_ms);
     }
 
     /// The requests to send now, and when to poll again.

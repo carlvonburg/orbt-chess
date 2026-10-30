@@ -11,7 +11,7 @@ the device to the service named, and only when the user turned it on.
 | Lichess sign-in (`lichess.org`) | Settings → Sign in with Lichess | OAuth (PKCE); no scopes | the token (Keystore-encrypted) and username |
 | Coverage tables (Cloudflare R2) | a repertoire's coverage database | the file's name | the table |
 | Stockfish's full network (download) | Settings → Download | the file's name | the network |
-| Dropbox (`api.dropboxapi.com`, `content.dropboxapi.com`, `notify.dropboxapi.com`) | Settings → Sync with Dropbox | the repertoire files (PGN, `.otrep.json` settings and training state, `.otlog.jsonl` review log) of the app's folder, uploaded to and downloaded from the App folder `Apps/ORBT Chess`; OAuth (PKCE) | the refresh token and account email (Keystore-encrypted); what was last synced (names, revs, content hashes) |
+| Dropbox (`api.dropboxapi.com`, `content.dropboxapi.com`, `notify.dropboxapi.com`) | Settings → Sync with Dropbox | the repertoire files (PGN, `.otrep.json` settings and training state, `.otlog.jsonl` review log) of the app's folder, uploaded to and downloaded from the App folder `Apps/ORBT Chess`; OAuth (PKCE); signing out revokes the token | the refresh token and account email (Keystore-encrypted); what was last synced (names, revs, content hashes) |
 | Google Drive (`www.googleapis.com`) | Settings → Sync with Google Drive | the same files, in the "ORBT Chess" folder (scope `drive.file`: only files the app created) | the account email; what was last synced. The access token comes from Play services and is kept in memory only |
 
 Data safety answers:

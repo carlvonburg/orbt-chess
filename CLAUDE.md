@@ -47,10 +47,12 @@ One folder per platform around a shared core (Android, Windows and Linux would b
     manifest), `coverage`,
     `training` (`anki/` is Anki's scheduler; trainer, study session, line run), `statistics`
     (Anki's graphs, scoping, chess stats), `formats` (sidecar and revlog), `document` (the open repertoire: edits, undo, save hints, remote merges,
-    outline/search), `builder`, `drill` (state machines behind the two main screens), `lichess`
-    (PKCE, analysis URL, cloud evals), `engine` (UCI, which evaluation to show), `analysis`
+    outline/search), `builder`, `drill` (state machines behind the two main screens), `oauth`
+    (PKCE and the redirect back, for every sign-in), `lichess` (sign-in requests, analysis
+    URL, cloud evals), `engine` (UCI, which evaluation to show), `analysis`
     (the analysis board's tree), `sync` (the folder synced with Dropbox or Google Drive: a
-    sans-IO loop like the explorer queue, each provider a small `Provider` of requests and answers).
+    sans-IO loop like the explorer queue, each provider a small `Provider` of requests and answers;
+    Dropbox's sign-in requests too, and signing out revokes on the server).
   - `orbt-engine/` — native only (never wasm): Stockfish 19 vendored from lichess's
     dart-multistockfish (`vendor/PATCHES.md`), built with `cc`, run on a thread over pipes
     behind `EngineBackend` (Leela would be another backend). CPU flags per target in `build.rs`:

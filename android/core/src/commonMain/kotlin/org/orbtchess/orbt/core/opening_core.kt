@@ -813,11 +813,9 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_func_lichess_parse_account(
     ): Int
-    external fun uniffi_opening_core_checksum_func_lichess_parse_callback(
-    ): Int
     external fun uniffi_opening_core_checksum_func_lichess_parse_token(
     ): Int
-    external fun uniffi_opening_core_checksum_func_lichess_random_string(
+    external fun uniffi_opening_core_checksum_func_lichess_redirect_uri(
     ): Int
     external fun uniffi_opening_core_checksum_func_lichess_revoke_request(
     ): Int
@@ -833,11 +831,27 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_func_new_sidecar(
     ): Int
+    external fun uniffi_opening_core_checksum_func_oauth_parse_redirect(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_oauth_random_string(
+    ): Int
     external fun uniffi_opening_core_checksum_func_revlog_extension(
     ): Int
     external fun uniffi_opening_core_checksum_func_sidecar_extension(
     ): Int
     external fun uniffi_opening_core_checksum_func_weakest_moves(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_dropbox_account_request(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_dropbox_authorize_url(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_dropbox_parse_account(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_dropbox_parse_token(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_dropbox_redirect_uri(
+    ): Int
+    external fun uniffi_opening_core_checksum_func_dropbox_token_request(
     ): Int
     external fun uniffi_opening_core_checksum_func_sync_file_kind(
     ): Int
@@ -1395,6 +1409,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiresync_on_response(
     ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_on_sign_out_response(
+    ): Int
     external fun uniffi_opening_core_checksum_method_repertoiresync_poll(
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiresync_resume(
@@ -1408,6 +1424,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_opening_core_checksum_method_repertoiresync_set_local_files(
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiresync_set_watching(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiresync_sign_out_request(
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiresync_state(
     ): Int
@@ -2042,6 +2060,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_opening_core_fn_method_repertoiresync_on_response(`ptr`: Long,`op`: RustBuffer.ByValue,`response`: RustBuffer.ByValue,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_method_repertoiresync_on_sign_out_response(`ptr`: Long,`response`: RustBuffer.ByValue,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Unit
     external fun uniffi_opening_core_fn_method_repertoiresync_poll(`ptr`: Long,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiresync_resume(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -2056,6 +2076,8 @@ internal object UniffiLib {
     ): Unit
     external fun uniffi_opening_core_fn_method_repertoiresync_set_watching(`ptr`: Long,`watching`: Byte,uniffi_out_err: UniffiRustCallStatus, 
     ): Unit
+    external fun uniffi_opening_core_fn_method_repertoiresync_sign_out_request(`ptr`: Long,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiresync_state(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiresync_sync_now(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
@@ -2086,21 +2108,19 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_lichess_account_request(`token`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_opening_core_fn_func_lichess_authorize_url(`verifier`: RustBuffer.ByValue,`state`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_opening_core_fn_func_lichess_authorize_url(`verifier`: RustBuffer.ByValue,`state`: RustBuffer.ByValue,`redirectUri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_lichess_callback_scheme(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_lichess_parse_account(`response`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_opening_core_fn_func_lichess_parse_callback(`url`: RustBuffer.ByValue,`expectedState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_lichess_parse_token(`response`: RustBuffer.ByValue,`nowSecs`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_opening_core_fn_func_lichess_random_string(`random`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_opening_core_fn_func_lichess_redirect_uri(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_lichess_revoke_request(`token`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_opening_core_fn_func_lichess_token_request(`code`: RustBuffer.ByValue,`verifier`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_opening_core_fn_func_lichess_token_request(`code`: RustBuffer.ByValue,`verifier`: RustBuffer.ByValue,`redirectUri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_merge_revlog_data(`a`: RustBuffer.ByValue,`b`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -2112,11 +2132,27 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_new_sidecar(`id`: RustBuffer.ByValue,`color`: RustBuffer.ByValue,`database`: RustBuffer.ByValue,`targetGames`: Long,`now`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_oauth_parse_redirect(`url`: RustBuffer.ByValue,`expectedState`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_oauth_random_string(`random`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_revlog_extension(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_sidecar_extension(uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_weakest_moves(`cards`: RustBuffer.ByValue,`nowSecs`: Double,`limit`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_dropbox_account_request(`accessToken`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_dropbox_authorize_url(`appKey`: RustBuffer.ByValue,`verifier`: RustBuffer.ByValue,`state`: RustBuffer.ByValue,`redirectUri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_dropbox_parse_account(`response`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_dropbox_parse_token(`response`: RustBuffer.ByValue,`nowMs`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_dropbox_redirect_uri(uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_dropbox_token_request(`appKey`: RustBuffer.ByValue,`code`: RustBuffer.ByValue,`verifier`: RustBuffer.ByValue,`redirectUri`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_sync_file_kind(`name`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -2337,7 +2373,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_func_lichess_account_request() and 0xFFFF) != 41549) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if ((lib.uniffi_opening_core_checksum_func_lichess_authorize_url() and 0xFFFF) != 53182) {
+    if ((lib.uniffi_opening_core_checksum_func_lichess_authorize_url() and 0xFFFF) != 41515) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_lichess_callback_scheme() and 0xFFFF) != 60445) {
@@ -2346,19 +2382,16 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_func_lichess_parse_account() and 0xFFFF) != 48987) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if ((lib.uniffi_opening_core_checksum_func_lichess_parse_callback() and 0xFFFF) != 45402) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
     if ((lib.uniffi_opening_core_checksum_func_lichess_parse_token() and 0xFFFF) != 55513) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if ((lib.uniffi_opening_core_checksum_func_lichess_random_string() and 0xFFFF) != 45180) {
+    if ((lib.uniffi_opening_core_checksum_func_lichess_redirect_uri() and 0xFFFF) != 21776) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_lichess_revoke_request() and 0xFFFF) != 48529) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if ((lib.uniffi_opening_core_checksum_func_lichess_token_request() and 0xFFFF) != 54561) {
+    if ((lib.uniffi_opening_core_checksum_func_lichess_token_request() and 0xFFFF) != 9752) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_merge_revlog_data() and 0xFFFF) != 20501) {
@@ -2376,6 +2409,12 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_func_new_sidecar() and 0xFFFF) != 58506) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if ((lib.uniffi_opening_core_checksum_func_oauth_parse_redirect() and 0xFFFF) != 28472) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_oauth_random_string() and 0xFFFF) != 26365) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if ((lib.uniffi_opening_core_checksum_func_revlog_extension() and 0xFFFF) != 3396) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2383,6 +2422,24 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_weakest_moves() and 0xFFFF) != 51550) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_dropbox_account_request() and 0xFFFF) != 30709) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_dropbox_authorize_url() and 0xFFFF) != 7158) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_dropbox_parse_account() and 0xFFFF) != 16268) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_dropbox_parse_token() and 0xFFFF) != 57617) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_dropbox_redirect_uri() and 0xFFFF) != 26006) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_func_dropbox_token_request() and 0xFFFF) != 25595) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_func_sync_file_kind() and 0xFFFF) != 2482) {
@@ -3219,6 +3276,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_method_repertoiresync_on_response() and 0xFFFF) != 38461) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_on_sign_out_response() and 0xFFFF) != 8933) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if ((lib.uniffi_opening_core_checksum_method_repertoiresync_poll() and 0xFFFF) != 42127) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -3228,7 +3288,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_method_repertoiresync_saved_state() and 0xFFFF) != 22651) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_set_credentials() and 0xFFFF) != 10) {
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_set_credentials() and 0xFFFF) != 55878) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_method_repertoiresync_set_listener() and 0xFFFF) != 12761) {
@@ -3238,6 +3298,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_method_repertoiresync_set_watching() and 0xFFFF) != 34597) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiresync_sign_out_request() and 0xFFFF) != 61027) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_method_repertoiresync_state() and 0xFFFF) != 26947) {
@@ -11628,6 +11691,11 @@ public interface RepertoireSyncInterface {
     fun `onResponse`(`op`: SyncOp, `response`: HttpResponse?, `nowMs`: kotlin.Long): SyncOutcome
     
     /**
+     * The answer to `sign_out_request`'s request (None: none came).
+     */
+    fun `onSignOutResponse`(`response`: HttpResponse?, `nowMs`: kotlin.Long)
+    
+    /**
      * The requests to send now, and when to poll again.
      */
     fun `poll`(`nowMs`: kotlin.Long): SyncPoll
@@ -11643,8 +11711,9 @@ public interface RepertoireSyncInterface {
     fun `savedState`(): kotlin.ByteArray
     
     /**
-     * After signing in, or a fresh token (`expires_at` in unix ms). Dropbox: pass the refresh
-     * token, the core refreshes the access token itself.
+     * After signing in, or a fresh token (`expires_at` in unix ms, None when unknown: the
+     * token is used until refused, then `AuthNeed::Token` asks for another). Dropbox: pass
+     * the refresh token, the core refreshes the access token itself.
      */
     fun `setCredentials`(`accessToken`: kotlin.String?, `expiresAt`: kotlin.Long?, `refreshToken`: kotlin.String?)
     
@@ -11659,6 +11728,13 @@ public interface RepertoireSyncInterface {
      * Long-poll for changes (Dropbox) while the app is in front.
      */
     fun `setWatching`(`watching`: kotlin.Boolean)
+    
+    /**
+     * Signing out: the next request that revokes the sign-in on the provider's side (Dropbox),
+     * or None when none is left. Send each and pass its answer to `on_sign_out_response`
+     * until None (best effort: stop when offline). From the first call nothing else is sent.
+     */
+    fun `signOutRequest`(`nowMs`: kotlin.Long): HttpRequest?
     
     fun `state`(): SyncState
     
@@ -11821,6 +11897,23 @@ open class RepertoireSync: Disposable, AutoCloseable, RepertoireSyncInterface
 
     
     /**
+     * The answer to `sign_out_request`'s request (None: none came).
+     */override fun `onSignOutResponse`(`response`: HttpResponse?, `nowMs`: kotlin.Long)
+        = 
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_on_sign_out_response(
+        it,
+        
+        FfiConverterOptionalTypeHttpResponse.lower(`response`),
+        FfiConverterLong.lower(`nowMs`),_status)
+}
+    }
+    
+    
+
+    
+    /**
      * The requests to send now, and when to poll again.
      */override fun `poll`(`nowMs`: kotlin.Long): SyncPoll {
             return FfiConverterTypeSyncPoll.lift(
@@ -11869,8 +11962,9 @@ open class RepertoireSync: Disposable, AutoCloseable, RepertoireSyncInterface
 
     
     /**
-     * After signing in, or a fresh token (`expires_at` in unix ms). Dropbox: pass the refresh
-     * token, the core refreshes the access token itself.
+     * After signing in, or a fresh token (`expires_at` in unix ms, None when unknown: the
+     * token is used until refused, then `AuthNeed::Token` asks for another). Dropbox: pass
+     * the refresh token, the core refreshes the access token itself.
      */override fun `setCredentials`(`accessToken`: kotlin.String?, `expiresAt`: kotlin.Long?, `refreshToken`: kotlin.String?)
         = 
     callWithHandle {
@@ -11929,6 +12023,25 @@ open class RepertoireSync: Disposable, AutoCloseable, RepertoireSyncInterface
 }
     }
     
+    
+
+    
+    /**
+     * Signing out: the next request that revokes the sign-in on the provider's side (Dropbox),
+     * or None when none is left. Send each and pass its answer to `on_sign_out_response`
+     * until None (best effort: stop when offline). From the first call nothing else is sent.
+     */override fun `signOutRequest`(`nowMs`: kotlin.Long): HttpRequest? {
+            return FfiConverterOptionalTypeHttpRequest.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiresync_sign_out_request(
+        it,
+        
+        FfiConverterLong.lower(`nowMs`),_status)
+}
+    }
+    )
+    }
     
 
     override fun `state`(): SyncState {
@@ -13647,6 +13760,63 @@ public object FfiConverterTypeDeckStudyStats: FfiConverterRustBuffer<DeckStudySt
             FfiConverterLong.write(value.`millisecondsStudied`, buf)
             FfiConverterLong.write(value.`newStudied`, buf)
             FfiConverterLong.write(value.`reviewStudied`, buf)
+    }
+}
+
+
+
+/**
+ * What signing in to Dropbox gives: keep the refresh token (the core refreshes with it).
+ */
+data class DropboxSignIn (
+    var `accessToken`: kotlin.String
+    , 
+    /**
+     * Unix ms; None when Dropbox did not say.
+     */
+    var `expiresAt`: kotlin.Long?
+    , 
+    var `refreshToken`: kotlin.String
+    , 
+    /**
+     * `dbid:…`: whether a new sign-in is the same account.
+     */
+    var `accountId`: kotlin.String?
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeDropboxSignIn: FfiConverterRustBuffer<DropboxSignIn> {
+    override fun read(buf: ByteBuffer): DropboxSignIn {
+        return DropboxSignIn(
+            FfiConverterString.read(buf),
+            FfiConverterOptionalLong.read(buf),
+            FfiConverterString.read(buf),
+            FfiConverterOptionalString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: DropboxSignIn) = (
+            FfiConverterString.allocationSize(value.`accessToken`) +
+            FfiConverterOptionalLong.allocationSize(value.`expiresAt`) +
+            FfiConverterString.allocationSize(value.`refreshToken`) +
+            FfiConverterOptionalString.allocationSize(value.`accountId`)
+    )
+
+    override fun write(value: DropboxSignIn, buf: ByteBuffer) {
+            FfiConverterString.write(value.`accessToken`, buf)
+            FfiConverterOptionalLong.write(value.`expiresAt`, buf)
+            FfiConverterString.write(value.`refreshToken`, buf)
+            FfiConverterOptionalString.write(value.`accountId`, buf)
     }
 }
 
@@ -19306,6 +19476,38 @@ public object FfiConverterOptionalTypeExplorerStats: FfiConverterRustBuffer<Expl
 /**
  * @suppress
  */
+public object FfiConverterOptionalTypeHttpRequest: FfiConverterRustBuffer<HttpRequest?> {
+    override fun read(buf: ByteBuffer): HttpRequest? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeHttpRequest.read(buf)
+    }
+
+    override fun allocationSize(value: HttpRequest?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeHttpRequest.allocationSize(value)
+        }
+    }
+
+    override fun write(value: HttpRequest?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeHttpRequest.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
 public object FfiConverterOptionalTypeHttpResponse: FfiConverterRustBuffer<HttpResponse?> {
     override fun read(buf: ByteBuffer): HttpResponse? {
         if (buf.get().toInt() == 0) {
@@ -21241,14 +21443,19 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
     )
     }
     
- fun `lichessAuthorizeUrl`(`verifier`: kotlin.String, `state`: kotlin.String): kotlin.String {
+
+        /**
+         * Lichess's sign-in page, redirecting to `redirect_uri` (the apps: `lichess_redirect_uri`;
+         * the desktop: its loopback server).
+         */ fun `lichessAuthorizeUrl`(`verifier`: kotlin.String, `state`: kotlin.String, `redirectUri`: kotlin.String): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_opening_core_fn_func_lichess_authorize_url(
     
         
         FfiConverterString.lower(`verifier`),
-        FfiConverterString.lower(`state`),_status)
+        FfiConverterString.lower(`state`),
+        FfiConverterString.lower(`redirectUri`),_status)
 }
     )
     }
@@ -21278,22 +21485,6 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
     }
     
 
-        /**
-         * The code from the redirect, or None when the user declined.
-         */
-    @Throws(SignInException::class) fun `lichessParseCallback`(`url`: kotlin.String, `expectedState`: kotlin.String): kotlin.String? {
-            return FfiConverterOptionalString.lift(
-    uniffiRustCallWithError(SignInException) { _status ->
-    UniffiLib.uniffi_opening_core_fn_func_lichess_parse_callback(
-    
-        
-        FfiConverterString.lower(`url`),
-        FfiConverterString.lower(`expectedState`),_status)
-}
-    )
-    }
-    
-
     @Throws(SignInException::class) fun `lichessParseToken`(`response`: HttpResponse, `nowSecs`: kotlin.Long): Token {
             return FfiConverterTypeToken.lift(
     uniffiRustCallWithError(SignInException) { _status ->
@@ -21306,13 +21497,15 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
     )
     }
     
- fun `lichessRandomString`(`random`: kotlin.ByteArray): kotlin.String {
+
+        /**
+         * The apps' redirect: `org.orbtchess.orbt://oauth-callback`.
+         */ fun `lichessRedirectUri`(): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
-    UniffiLib.uniffi_opening_core_fn_func_lichess_random_string(
+    UniffiLib.uniffi_opening_core_fn_func_lichess_redirect_uri(
     
-        
-        FfiConverterByteArray.lower(`random`),_status)
+        _status)
 }
     )
     }
@@ -21334,14 +21527,16 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
 
         /**
          * Exchanges the code from the callback for a token.
-         */ fun `lichessTokenRequest`(`code`: kotlin.String, `verifier`: kotlin.String): HttpRequest {
+         * `redirect_uri`: the one the authorize URL named.
+         */ fun `lichessTokenRequest`(`code`: kotlin.String, `verifier`: kotlin.String, `redirectUri`: kotlin.String): HttpRequest {
             return FfiConverterTypeHttpRequest.lift(
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_opening_core_fn_func_lichess_token_request(
     
         
         FfiConverterString.lower(`code`),
-        FfiConverterString.lower(`verifier`),_status)
+        FfiConverterString.lower(`verifier`),
+        FfiConverterString.lower(`redirectUri`),_status)
 }
     )
     }
@@ -21421,6 +21616,37 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
     )
     }
     
+
+        /**
+         * The redirect back to the app (any provider): the code, or None when the user declined.
+         * Fails when the state is not `expected_state` or the provider answered an error.
+         */
+    @Throws(SignInException::class) fun `oauthParseRedirect`(`url`: kotlin.String, `expectedState`: kotlin.String): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    uniffiRustCallWithError(SignInException) { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_oauth_parse_redirect(
+    
+        
+        FfiConverterString.lower(`url`),
+        FfiConverterString.lower(`expectedState`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * A PKCE verifier or state from random bytes (one character per byte).
+         */ fun `oauthRandomString`(`random`: kotlin.ByteArray): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_oauth_random_string(
+    
+        
+        FfiConverterByteArray.lower(`random`),_status)
+}
+    )
+    }
+    
  fun `revlogExtension`(): kotlin.String {
             return FfiConverterString.lift(
     uniffiRustCall() { _status ->
@@ -21453,6 +21679,95 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
         FfiConverterMapTypeEpdTypeCard.lower(`cards`),
         FfiConverterDouble.lower(`nowSecs`),
         FfiConverterUInt.lower(`limit`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * The signed-in account, for its email (`dropbox_parse_account`).
+         */ fun `dropboxAccountRequest`(`accessToken`: kotlin.String): HttpRequest {
+            return FfiConverterTypeHttpRequest.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_dropbox_account_request(
+    
+        
+        FfiConverterString.lower(`accessToken`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * Dropbox's sign-in page (PKCE, for a refresh token), redirecting to `redirect_uri`. Read the
+         * redirect with `oauth_parse_redirect`.
+         */ fun `dropboxAuthorizeUrl`(`appKey`: kotlin.String, `verifier`: kotlin.String, `state`: kotlin.String, `redirectUri`: kotlin.String): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_dropbox_authorize_url(
+    
+        
+        FfiConverterString.lower(`appKey`),
+        FfiConverterString.lower(`verifier`),
+        FfiConverterString.lower(`state`),
+        FfiConverterString.lower(`redirectUri`),_status)
+}
+    )
+    }
+    
+ fun `dropboxParseAccount`(`response`: HttpResponse): kotlin.String? {
+            return FfiConverterOptionalString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_dropbox_parse_account(
+    
+        
+        FfiConverterTypeHttpResponse.lower(`response`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * The token request's answer (`now_ms`: unix ms).
+         */
+    @Throws(SignInException::class) fun `dropboxParseToken`(`response`: HttpResponse, `nowMs`: kotlin.Long): DropboxSignIn {
+            return FfiConverterTypeDropboxSignIn.lift(
+    uniffiRustCallWithError(SignInException) { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_dropbox_parse_token(
+    
+        
+        FfiConverterTypeHttpResponse.lower(`response`),
+        FfiConverterLong.lower(`nowMs`),_status)
+}
+    )
+    }
+    
+
+        /**
+         * The apps' redirect from Dropbox (registered in its app console).
+         */ fun `dropboxRedirectUri`(): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_dropbox_redirect_uri(
+    
+        _status)
+}
+    )
+    }
+    
+
+        /**
+         * Exchanges the code from the redirect for the tokens (`redirect_uri`: the authorize URL's).
+         */ fun `dropboxTokenRequest`(`appKey`: kotlin.String, `code`: kotlin.String, `verifier`: kotlin.String, `redirectUri`: kotlin.String): HttpRequest {
+            return FfiConverterTypeHttpRequest.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_dropbox_token_request(
+    
+        
+        FfiConverterString.lower(`appKey`),
+        FfiConverterString.lower(`code`),
+        FfiConverterString.lower(`verifier`),
+        FfiConverterString.lower(`redirectUri`),_status)
 }
     )
     }
