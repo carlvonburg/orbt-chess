@@ -122,7 +122,7 @@ named in each stub's doc comment.
   `wide`, what is left on the leading side, the streak and Study All on the trailing side; the
   tour's card while it runs) or a repertoire's Coverage and Study cards (`OverviewDashboard`:
   side by side at equal height, their buttons on one line; stacked on one column). Then
-  "Statistics · <scope>" with the period (its own per page) and the statistics' cards
+  "Statistics" (Today's: "Statistics · All Repertoires") with the period (its own per page) and the statistics' cards
   (`statisticsCards`, the Statistics screen's). No Statistics tab there. One pane (a phone, a
   tablet in portrait) keeps the phone's screens: Today in the library, the overview pushed
   with its Statistics row, the Statistics tab.

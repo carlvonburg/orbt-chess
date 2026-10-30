@@ -38,7 +38,7 @@ import org.orbtchess.orbt.ui.components.Symbols
 /**
  * The library's detail pane on wide windows (Material's list-detail layout, the library the
  * list): one scrolling page of cards. First [lead], across the page (Today's card, or a
- * repertoire's Coverage and Study), then "Statistics · [scope]" with its period and the
+ * repertoire's Coverage and Study), then "Statistics" ("· All Repertoires" on Today) with its period and the
  * statistics' cards. Two columns where each gets [MinColumnWidth], else one; [lead] is told how
  * many, to lay its cards side by side or stacked. The period is this page's own.
  *
@@ -78,7 +78,10 @@ fun StatisticsDashboard(
             ) {
                 item("lead", span = StaggeredGridItemSpan.FullLine) { lead(columns) }
                 item("statisticsHeader", span = StaggeredGridItemSpan.FullLine) {
-                    StatisticsHeader(scopeTitle(app, scope), model.range) { model.range = it }
+                    // A repertoire's page already has its name as its title (and selected in the
+                    // list): its section is just "Statistics". Today's names what it covers.
+                    val title = if (scope is StatisticsScope.Repertoire) "Statistics" else "Statistics · ${scopeTitle(app, scope)}"
+                    StatisticsHeader(title, model.range) { model.range = it }
                 }
                 when {
                     graphs == null && model.isLoading -> item("loading", span = StaggeredGridItemSpan.FullLine) {
@@ -107,10 +110,10 @@ private val Gutter = 16.dp
 /** Two columns where both fit [MinColumnWidth], else one. */
 private fun dashboardColumns(width: Dp): Int = if (width >= MinColumnWidth * 2 + Gutter) 2 else 1
 
-/** "Statistics · All Repertoires" and the period (a connected button group), wrapping when narrow. */
+/** The section's title and the period (a connected button group), wrapping when narrow. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StatisticsHeader(scopeName: String, range: GraphRange, choose: (GraphRange) -> Unit) {
+private fun StatisticsHeader(title: String, range: GraphRange, choose: (GraphRange) -> Unit) {
     FlowRow(
         Modifier.fillMaxWidth().padding(top = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -118,7 +121,7 @@ private fun StatisticsHeader(scopeName: String, range: GraphRange, choose: (Grap
         itemVerticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            "Statistics · $scopeName",
+            title,
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(end = 16.dp).semantics { heading() },
         )
