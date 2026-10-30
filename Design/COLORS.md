@@ -173,6 +173,10 @@ The icon keeps its own indigo (`#6B64B8`, `#3F3A8C`, the knight's eye `#2B2760`;
 learned by review. `AppIcon.icon` holds the shapes in white; the colors are its fills, set in
 Icon Composer (light and dark), which derives tinted and clear. `Design/AppIcon-*.svg` are flat
 references. It has the same hue as Apple's indigo (~245°), the default app color until October 2026 (now blue).
+Android uses the light colors (its launchers have no dark icon): the board as the adaptive icon's
+background, the knight and cards as its foreground; the themed icon (Android 13) is the knight and
+cards in one color with the eye cut out, as Apple's tinted icon. The splash shows the icon on the
+app's background (Material You's background color, light or dark).
 
 ## Adding a color
 1. Name the meaning. If an existing role already means it, use that role.

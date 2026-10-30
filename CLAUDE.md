@@ -133,6 +133,12 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   `"/Applications/Xcode.app/Contents/Applications/Icon Composer.app/Contents/Executables/ictool" apple/ORBT/AppIcon.icon --export-image --output-file out.png --platform iOS --rendition Default --width 1024 --height 1024 --scale 1`
   (renditions Default, Dark, TintedLight, TintedDark, ClearLight, ClearDark), then update the
   `Design/` references and the App icon section of `COLORS.md`.
+  Android's adaptive icon is derived from it by hand: vector drawables in
+  `android/androidApp/src/main/res/drawable/ic_launcher_{background,foreground,monochrome}.xml`
+  (the board; the cards and knight in the icon's 1024 units, its square the visible 72dp; the
+  themed icon's one-color layer), also the splash's icon; the desktop's `android/app/icons/orbt.ico`
+  and `app/src/desktopMain/resources/orbt-icon.png` are rendered from `Design/AppIcon-light.svg`
+  (how: `android/app/build.gradle.kts`). Change them with the icon.
 - `testData/` — ignored by git: personal repertoires for testing by hand and timing
   (`ORBT_LARGE_PGN`). Never committed.
 - `FUTURE.md` — native only: Compose for Android, Windows and Linux; Google Drive and Dropbox; why no web app.
