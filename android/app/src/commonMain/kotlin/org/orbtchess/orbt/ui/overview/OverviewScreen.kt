@@ -48,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.orbtchess.orbt.ui.components.TooltipIconButton
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.ui.tour.TourGuide
 import org.orbtchess.orbt.ui.tour.TourScreen
@@ -126,7 +127,7 @@ fun OverviewScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { menu = true }) { Icon(Symbols.settings, contentDescription = "Repertoire") }
+                    TooltipIconButton("Repertoire", Symbols.settings, { menu = true })
                     DropdownMenu(menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(
                             text = { Text("Repertoire Settings…") },

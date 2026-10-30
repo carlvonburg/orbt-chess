@@ -41,6 +41,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.orbtchess.orbt.ui.components.TooltipIconButton
+import org.orbtchess.orbt.ui.components.TitleWithSubtitle
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.GraphRange
 import org.orbtchess.orbt.core.Graphs
@@ -102,16 +104,7 @@ fun StatisticsScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = {
-                    Column {
-                        Text("Statistics")
-                        Text(
-                            scopeTitle(app, current),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
+                title = { TitleWithSubtitle("Statistics", scopeTitle(app, current)) },
                 actions = { FilterMenu(app, chosenId, choose) },
             )
         },
@@ -130,9 +123,7 @@ private fun scopeTitle(app: AppModel, scope: StatisticsScope): String = when (sc
 private fun FilterMenu(app: AppModel, chosenId: String?, choose: (String?) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { expanded = true }) {
-            Icon(if (chosenId == null) Icons.Outlined.FilterAlt else Icons.Filled.FilterAlt, contentDescription = "Filter")
-        }
+        TooltipIconButton("Filter", if (chosenId == null) Icons.Outlined.FilterAlt else Icons.Filled.FilterAlt, { expanded = true })
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             val options = listOf<Pair<String?, String>>(null to "All Repertoires") +
                 app.library.entries.filter { !it.needsSetup }.map { it.id to it.name }

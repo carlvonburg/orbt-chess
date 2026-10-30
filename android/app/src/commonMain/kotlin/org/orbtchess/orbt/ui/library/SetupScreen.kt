@@ -58,6 +58,7 @@ import orbt.app.generated.resources.Res
 import orbt.app.generated.resources.piece_bk
 import orbt.app.generated.resources.piece_wk
 import org.jetbrains.compose.resources.painterResource
+import org.orbtchess.orbt.ui.components.TitleWithSubtitle
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.Side
 import org.orbtchess.orbt.storage.RepertoireEntry
@@ -154,12 +155,7 @@ fun SetupScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = {
-                    Column {
-                        Text(title, maxLines = 1)
-                        Text("Step $step of 3", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                },
+                title = { TitleWithSubtitle(title, "Step $step of 3") },
                 navigationIcon = {
                     if (step == 1) {
                         IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = "Cancel") }
