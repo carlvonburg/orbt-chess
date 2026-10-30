@@ -30,7 +30,8 @@ kotlin {
 
 android {
     namespace = "org.orbtchess.orbt.core"
-    compileSdk = 36
+    compileSdk = 37
+    compileSdkMinor = 1
     defaultConfig {
         minSdk = 29
         consumerProguardFiles("consumer-rules.pro")

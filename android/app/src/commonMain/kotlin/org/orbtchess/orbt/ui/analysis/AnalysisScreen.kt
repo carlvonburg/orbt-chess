@@ -1,14 +1,12 @@
 package org.orbtchess.orbt.ui.analysis
 
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -17,27 +15,24 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
@@ -47,7 +42,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.CloudEval
@@ -63,12 +57,11 @@ import org.orbtchess.orbt.ui.board.Board
 import org.orbtchess.orbt.ui.board.BoardArrow
 import org.orbtchess.orbt.ui.components.BoardColumn
 import org.orbtchess.orbt.ui.components.BoardPane
-import org.orbtchess.orbt.ui.components.DockedToolbar
+import org.orbtchess.orbt.ui.components.MoveList
+import org.orbtchess.orbt.ui.components.MoveListItem
 import org.orbtchess.orbt.ui.components.Symbols
-import org.orbtchess.orbt.ui.components.TitleWithSubtitle
 import org.orbtchess.orbt.ui.components.TooltipIconButton
 import org.orbtchess.orbt.ui.components.TooltipIconToggleButton
-import org.orbtchess.orbt.ui.components.tabularDigits
 
 /**
  * The analysis board (`AnalysisView.swift`), pushed on Build or Study and laid out as they are:
@@ -101,8 +94,8 @@ fun AnalysisScreen(
     }
     when (pane) {
         BoardPane.Whole -> WholeScreen(app, model, navigate, onBack, modifier)
-        BoardPane.Panel -> PanelScreen(app, model, navigate, onBack, modifier)
-        BoardPane.Board -> BoardScreen(app, model, modifier)
+        BoardPane.Panel -> PanelScreen(app, model, navigate, modifier)
+        BoardPane.Board -> BoardScreen(app, model, onBack, modifier)
     }
 }
 
@@ -142,7 +135,6 @@ private fun reanalyse(app: AppModel, model: AnalysisModel) {
 private enum class PanelTab { Explorer, Moves }
 
 /** A phone: the board edge to edge under the engine's lines, the moves or the explorer below. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WholeScreen(
     app: AppModel,
@@ -152,26 +144,15 @@ private fun WholeScreen(
     modifier: Modifier,
 ) {
     var tab by rememberSaveable { mutableStateOf(PanelTab.Explorer) }
-    val status = app.engine.status(model)
     Scaffold(
         modifier = modifier.arrowKeys(model),
-        topBar = {
-            TopAppBar(
-                // The subtitle says where the lines come from.
-                title = { TitleWithSubtitle("Analysis", status) },
-                navigationIcon = { BackButton(onBack) },
-                actions = {
-                    EngineToggle(model)
-                    MoreMenu(app, model)
-                },
-            )
-        },
-        // The docked toolbar under the board, as beside a board pane: back, the moves, forward.
+        topBar = { AnalysisTopBar(app, model, onBack) },
         bottomBar = { NavigationToolbar(model) },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             AnalysisEngineLines(app, model, Modifier.padding(horizontal = 16.dp))
             AnalysisBoard(app, model, Modifier.fillMaxWidth())
+            PathStrip(model)
             // Two views of the panel's content: Material's secondary tabs (tabs switch between
             // content; segmented buttons choose options).
             SecondaryTabRow(selectedTabIndex = tab.ordinal) {
@@ -187,20 +168,15 @@ private fun WholeScreen(
     }
 }
 
-/** Beside the board pane: the explorer first, where Build has its replies, the moves below; half each. */
-@OptIn(ExperimentalMaterial3Api::class)
+/** The supporting pane: the explorer first, where Build has its replies, the moves below; half each. */
 @Composable
 private fun PanelScreen(
     app: AppModel,
     model: AnalysisModel,
     navigate: (Destination) -> Unit,
-    onBack: (() -> Unit)?,
     modifier: Modifier,
 ) {
-    Scaffold(
-        modifier = modifier,
-        topBar = { TopAppBar(title = { Text("Analysis") }, navigationIcon = { BackButton(onBack) }) },
-    ) { padding ->
+    Scaffold(modifier) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             ExplorerList(app, model, showsHeader = true, navigate, Modifier.weight(1f))
             HorizontalDivider()
@@ -209,44 +185,38 @@ private fun PanelScreen(
     }
 }
 
-/**
- * The board pane: where the lines come from and the lines above the board; move navigation and
- * the history under it; the engine and the menu, which act on the board, end the top bar.
- */
-@OptIn(ExperimentalMaterial3Api::class)
+/** The main pane: the engine's lines above the board, the line under it, between the same bars as on a phone. */
 @Composable
-private fun BoardScreen(app: AppModel, model: AnalysisModel, modifier: Modifier) {
+private fun BoardScreen(app: AppModel, model: AnalysisModel, onBack: (() -> Unit)?, modifier: Modifier) {
     Scaffold(
         modifier = modifier.arrowKeys(model),
-        topBar = {
-            TopAppBar(
-                title = {},
-                actions = {
-                    EngineToggle(model)
-                    MoreMenu(app, model)
-                },
-            )
-        },
+        topBar = { AnalysisTopBar(app, model, onBack) },
         bottomBar = { NavigationToolbar(model) },
     ) { padding ->
         BoardColumn(
             Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-            above = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (model.engineOn) {
-                        Text(
-                            app.engine.status(model),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    AnalysisEngineLines(app, model)
-                }
-            },
+            above = { AnalysisEngineLines(app, model) },
+            below = { PathStrip(model) },
         ) {
             AnalysisBoard(app, model)
         }
     }
+}
+
+/** "Analysis" over where the lines come from; back; the engine and the menu. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AnalysisTopBar(app: AppModel, model: AnalysisModel, onBack: (() -> Unit)?) {
+    val status = app.engine.status(model)
+    TopAppBar(
+        title = { Text("Analysis") },
+        subtitle = { if (status.isNotEmpty()) Text(status) },
+        navigationIcon = { BackButton(onBack) },
+        actions = {
+            EngineToggle(model)
+            MoreMenu(app, model)
+        },
+    )
 }
 
 @Composable
@@ -282,13 +252,18 @@ private fun arrows(lines: List<PvLine>): List<BoardArrow> = lines.mapIndexedNotN
     )
 }
 
-/** Back, the moves (tap one to go to it) and forward through the analysis (also ← and → on a keyboard). */
+/**
+ * Material's docked toolbar: back and forward through the analysis (also ← and → on a
+ * keyboard), kept together as Build's, then Flip Board.
+ */
 @Composable
 private fun NavigationToolbar(model: AnalysisModel) {
-    DockedToolbar {
-        TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.state.canBack, above = true)
-        PathStrip(model, Modifier.weight(1f))
-        TooltipIconButton("Forward", Symbols.nextMove, model::forward, enabled = model.state.canForward, above = true)
+    FlexibleBottomAppBar {
+        Row {
+            TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.state.canBack, above = true)
+            TooltipIconButton("Forward", Symbols.nextMove, model::forward, enabled = model.state.canForward, above = true)
+        }
+        TooltipIconButton("Flip Board", Symbols.flipBoard, model::flip, above = true)
     }
 }
 
@@ -315,39 +290,24 @@ private fun Modifier.arrowKeys(model: AnalysisModel): Modifier {
 private fun PathStrip(model: AnalysisModel, modifier: Modifier = Modifier) {
     val state = model.state
     val path = state.movesToBoard
-    val line = path + state.lineAhead
     val firstPly = state.startPly + 1
-    val list = rememberLazyListState()
-    LaunchedEffect(path.size) {
-        // The home button comes first.
-        if (path.isNotEmpty()) list.animateScrollToItem(maxOf(0, path.size - 2))
+    val moves = (path + state.lineAhead).mapIndexed { index, move ->
+        MoveListItem(
+            index,
+            firstPly + index,
+            move.san,
+            if (index < path.size) MoveListItem.Kind.Played else MoveListItem.Kind.Ahead,
+            isCurrent = index == path.size - 1,
+        )
     }
-    LazyRow(
+    MoveList(
+        moves,
         modifier,
-        state = list,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        item {
-            TooltipIconButton("Start position", Icons.Outlined.Home, { model.goToPly(0) }, enabled = path.isNotEmpty(), above = true)
-        }
-        itemsIndexed(line) { index, move ->
-            val ply = firstPly + index
-            val current = index == path.size - 1
-            FilterChip(
-                selected = current,
-                onClick = { model.goToPly(index + 1) },
-                label = {
-                    Text(
-                        (if (ply % 2 == 1) "${ply / 2 + 1}. " else "") + move.san,
-                        style = tabularDigits(),
-                        fontWeight = if (current) FontWeight.Bold else FontWeight.Normal,
-                    )
-                },
-                modifier = Modifier.alpha(if (index < path.size) 1f else 0.45f),
-            )
-        }
-    }
+        start = {
+            TooltipIconButton("Start Position", Icons.Outlined.Home, { model.goToPly(0) }, enabled = path.isNotEmpty(), above = true)
+        },
+        onMove = { model.goToPly((it.key as Int) + 1) },
+    )
 }
 
 /** The engine on or off. */
@@ -356,7 +316,7 @@ private fun EngineToggle(model: AnalysisModel) {
     TooltipIconToggleButton("Engine", Symbols.analysis, checked = model.engineOn, onCheckedChange = { model.engineOn = it })
 }
 
-/** The analysis board's menu: Flip Board, Copy PGN, Open in Lichess, Engine Settings. */
+/** The analysis board's menu: Copy PGN, Open in Lichess, Engine Settings. */
 @Suppress("DEPRECATION")
 @Composable
 private fun MoreMenu(app: AppModel, model: AnalysisModel) {
@@ -365,11 +325,6 @@ private fun MoreMenu(app: AppModel, model: AnalysisModel) {
     val openPage = rememberOpenPage(app)
     TooltipIconButton("More", Symbols.more, { expanded = true })
     DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
-        DropdownMenuItem(
-            text = { Text("Flip Board") },
-            leadingIcon = { Icon(Symbols.flipBoard, contentDescription = null) },
-            onClick = { expanded = false; model.flip() },
-        )
         DropdownMenuItem(
             text = { Text("Copy PGN") },
             leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },

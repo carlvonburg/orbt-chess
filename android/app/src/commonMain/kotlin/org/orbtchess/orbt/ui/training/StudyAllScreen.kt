@@ -51,7 +51,8 @@ fun StudyAllScreen(
         }
         return
     }
-    if (pane == BoardPane.Board) return
+    // Opening the next repertoire: in the pane with the bars (the main pane on wide windows).
+    if (pane == BoardPane.Panel) return
     Scaffold(
         modifier,
         topBar = {

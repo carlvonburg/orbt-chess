@@ -19,6 +19,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,12 +28,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -58,9 +59,7 @@ import org.orbtchess.orbt.ui.DrillKind
 import org.orbtchess.orbt.ui.board.Board
 import org.orbtchess.orbt.ui.components.BoardColumn
 import org.orbtchess.orbt.ui.components.BoardPane
-import org.orbtchess.orbt.ui.components.DockedToolbar
 import org.orbtchess.orbt.ui.components.Symbols
-import org.orbtchess.orbt.ui.components.TitleWithSubtitle
 import org.orbtchess.orbt.ui.components.TooltipIconButton
 
 /**
@@ -69,15 +68,15 @@ import org.orbtchess.orbt.ui.components.TooltipIconButton
  * notes. Called once per pane it fills ([BoardPane]); both share [model].
  *
  * - [BoardPane.Whole] (a phone): the board, the move strip and the panel in one list; move
- *   navigation and the actions in the bottom bar, the menu top trailing.
- * - [BoardPane.Panel]: the panel, with the actions in its top bar. It presents the sheets and
- *   runs the explorer fetches and the coverage check.
- * - [BoardPane.Board]: the board with Analysis and the menu above it, move navigation and the
- *   move strip below it.
+ *   navigation and the actions in the bottom toolbar, the menu top trailing.
+ * - [BoardPane.Board] (the main pane on wide windows): the board and the move strip, between the
+ *   same bars.
+ * - [BoardPane.Panel] (the supporting pane): the panel. It presents the sheets and runs the
+ *   explorer fetches and the coverage check.
  *
  * @param navigate [Destination.Analysis] (origin [AnalysisOrigin.Build]), [Destination.Drill]
  *   (Study Branch), [Destination.CardInfo].
- * @param onBack null where there is nothing to go back to in this pane (the board pane beside the panel).
+ * @param onBack null where there is nothing to go back to in this pane.
  */
 @Composable
 fun BuilderScreen(
@@ -91,7 +90,7 @@ fun BuilderScreen(
     val actions = BuilderActions(model, navigate, app.tour)
     when (pane) {
         BoardPane.Whole -> WholeScreen(app, model, actions, onBack, modifier)
-        BoardPane.Panel -> PanelScreen(app, model, actions, onBack, modifier)
+        BoardPane.Panel -> PanelScreen(app, model, actions, modifier)
         BoardPane.Board -> BoardScreen(model, actions, onBack, modifier)
     }
     if (pane != BoardPane.Board) {
@@ -201,31 +200,8 @@ private fun TourEffects(model: BuilderModel, tour: TourGuide, inTour: Boolean) {
 private fun WholeScreen(app: AppModel, model: BuilderModel, actions: BuilderActions, onBack: (() -> Unit)?, modifier: Modifier) {
     Scaffold(
         modifier = modifier.builderKeys(model),
-        topBar = {
-            TopAppBar(
-                title = { TitleWithSubtitle("Browse", model.document.name) },
-                navigationIcon = { BackButton(onBack) },
-                actions = { BuilderMoreMenu(model, actions) },
-            )
-        },
-        bottomBar = {
-            // Material's docked toolbar: move navigation, then the actions spread evenly, each
-            // named by its tooltip; while a line is being built, Discard and Save, labelled
-            // (the docked toolbar's own primary action, in place of a FAB).
-            DockedToolbar {
-                NavigationButtons(model)
-                if (model.hasDraft) {
-                    TooltipIconButton(
-                        "Analysis", Symbols.analysis, actions::analysis,
-                        Modifier.tourTarget(TourGuide.Target.Analysis), above = true,
-                    )
-                    DraftButtons(model, actions)
-                } else {
-                    GapAndStudyButtons(actions, above = true)
-                    TooltipIconButton("Analysis", Symbols.analysis, actions::analysis, above = true)
-                }
-            }
-        },
+        topBar = { BuilderTopBar(model, actions, onBack) },
+        bottomBar = { BuilderToolbar(model, actions) },
     ) { padding ->
         BuilderList(app, model, actions.navigate, Modifier.fillMaxSize().padding(padding)) {
             item("board") {
@@ -241,63 +217,32 @@ private fun WholeScreen(app: AppModel, model: BuilderModel, actions: BuilderActi
                 )
             }
             if (model.current != ROOT_NODE || model.hasDraft) {
-                item("strip") { MovePathStrip(model, Modifier.padding(vertical = 4.dp)) }
+                item("strip") { MovePathStrip(model) }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** The supporting pane beside the board: the replies, the explorer and the rest of the panel. */
 @Composable
-private fun PanelScreen(app: AppModel, model: BuilderModel, actions: BuilderActions, onBack: (() -> Unit)?, modifier: Modifier) {
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { TitleWithSubtitle("Browse", model.document.name) },
-                navigationIcon = { BackButton(onBack) },
-                actions = {
-                    if (model.hasDraft) {
-                        DraftButtons(model, actions, Modifier.padding(end = 8.dp))
-                    } else {
-                        GapAndStudyButtons(actions)
-                    }
-                },
-            )
-        },
-    ) { padding ->
+private fun PanelScreen(app: AppModel, model: BuilderModel, actions: BuilderActions, modifier: Modifier) {
+    Scaffold(modifier) { padding ->
         BuilderList(app, model, actions.navigate, Modifier.fillMaxSize().padding(padding))
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** The main pane: the board with its moves under it, between the same bars as on a phone. */
 @Composable
 private fun BoardScreen(model: BuilderModel, actions: BuilderActions, onBack: (() -> Unit)?, modifier: Modifier) {
     Scaffold(
         modifier = modifier.builderKeys(model),
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = { BackButton(onBack) },
-                actions = {
-                    TooltipIconButton(
-                        "Analysis", Symbols.analysis, actions::analysis,
-                        if (model.hasDraft) Modifier.tourTarget(TourGuide.Target.Analysis) else Modifier,
-                    )
-                    BuilderMoreMenu(model, actions)
-                },
-            )
-        },
-        bottomBar = {
-            // The docked toolbar under the board: back, the moves, forward.
-            DockedToolbar {
-                TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.canBack, above = true)
-                MovePathStrip(model, Modifier.weight(1f))
-                TooltipIconButton("Forward", Symbols.nextMove, model::forward, enabled = model.canForward, above = true)
-            }
-        },
+        topBar = { BuilderTopBar(model, actions, onBack) },
+        bottomBar = { BuilderToolbar(model, actions) },
     ) { padding ->
-        BoardColumn(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
+        BoardColumn(
+            Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+            below = { MovePathStrip(model) },
+        ) {
             Board(
                 position = model.position,
                 orientation = model.orientation,
@@ -311,6 +256,40 @@ private fun BoardScreen(model: BuilderModel, actions: BuilderActions, onBack: ((
 }
 
 // MARK: Bars
+
+/** "Browse" over the repertoire's name, back, and the menu. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BuilderTopBar(model: BuilderModel, actions: BuilderActions, onBack: (() -> Unit)?) {
+    TopAppBar(
+        title = { Text("Browse") },
+        subtitle = { Text(model.document.name) },
+        navigationIcon = { BackButton(onBack) },
+        actions = { BuilderMoreMenu(model, actions) },
+    )
+}
+
+/**
+ * Material's docked toolbar: move navigation, then the actions, each named by its tooltip;
+ * while a line is being built, Discard and Save, labelled (the toolbar's primary action, in
+ * place of a FAB).
+ */
+@Composable
+private fun BuilderToolbar(model: BuilderModel, actions: BuilderActions) {
+    FlexibleBottomAppBar {
+        NavigationButtons(model)
+        if (model.hasDraft) {
+            TooltipIconButton(
+                "Analysis", Symbols.analysis, actions::analysis,
+                Modifier.tourTarget(TourGuide.Target.Analysis), above = true,
+            )
+            DraftButtons(model, actions)
+        } else {
+            GapAndStudyButtons(actions)
+            TooltipIconButton("Analysis", Symbols.analysis, actions::analysis, above = true)
+        }
+    }
+}
 
 @Composable
 private fun BackButton(onBack: (() -> Unit)?) {
@@ -329,14 +308,14 @@ private fun NavigationButtons(model: BuilderModel) {
 }
 
 @Composable
-private fun GapAndStudyButtons(actions: BuilderActions, above: Boolean = false) {
+private fun GapAndStudyButtons(actions: BuilderActions) {
     TooltipIconButton(
         "Biggest Gap", BuilderSymbols.biggestGap, actions::biggestGap,
-        Modifier.tourTarget(TourGuide.Target.BiggestGap), enabled = actions.canBiggestGap, above = above,
+        Modifier.tourTarget(TourGuide.Target.BiggestGap), enabled = actions.canBiggestGap, above = true,
     )
     TooltipIconButton(
         "Study Branch", Symbols.study, { actions.studyBranch() },
-        Modifier.tourTarget(TourGuide.Target.StudyBranch), enabled = actions.canStudyBranch, above = above,
+        Modifier.tourTarget(TourGuide.Target.StudyBranch), enabled = actions.canStudyBranch, above = true,
     )
 }
 

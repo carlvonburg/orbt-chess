@@ -1,7 +1,6 @@
 package org.orbtchess.orbt.ui
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -11,14 +10,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.AnimatedPane
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldDefaults
 import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
 import androidx.compose.material3.adaptive.layout.PaneAdaptedValue
 import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldDestinationItem
-import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth
+import androidx.compose.material3.adaptive.layout.SupportingPaneScaffold
+import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldDefaults
+import androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldRole
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.layout.calculateThreePaneScaffoldValue
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
@@ -27,12 +29,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.orbtchess.orbt.AppModel
@@ -61,13 +62,10 @@ import org.orbtchess.orbt.ui.tour.TourSpotlight
 // navigation suite (the bottom bar on a phone: Repertoires, Statistics) around Material's
 // list-detail scaffold. On a phone one pane at a time: the library, an overview, a screen pushed
 // on it. On wide windows (tablets, the desktop) the library is the list pane, the overview the
-// detail pane, and the extra pane shows the board of Build, Study and Analysis (their panel in
-// the detail pane) or, beside an overview or Today, the statistics, as the Swift app's split
-// view does. Every screen's wiring is here; screens only call `navigate(destination)`.
+// detail pane and, on large windows, the statistics the extra pane beside it; Build, Study and
+// Analysis fill the window as Material's supporting-pane layout, the board the main pane and
+// their panel beside it. Every screen's wiring is here; screens only call `navigate(destination)`.
 
-/** Starting widths of the list and of a panel beside a board (the Swift split view's ideals: 260, 380). */
-private val ListPaneWidth = 300.dp
-private val PanelWidth = 400.dp
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -75,9 +73,9 @@ fun AppShell(app: AppModel) {
     val owner = LocalViewModelStoreOwner.current
     val shell = if (owner != null) viewModel(owner) { ShellModel(app) } else remember { ShellModel(app) }
 
-    val adaptiveInfo = currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true)
-    // Two panes from medium width on (a tablet in portrait, as iPad's split view), three on large.
-    val directive = calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth(adaptiveInfo)
+    val adaptiveInfo = currentWindowAdaptiveInfoV2()
+    // Material's panes for the window: one up to medium width, two on expanded, three on large.
+    val directive = calculatePaneScaffoldDirective(adaptiveInfo)
     val wide = directive.maxHorizontalPartitions > 1
     SideEffect { shell.wide = wide }
     // A window grown past a phone's has no Statistics tab: its statistics are beside the overview.
@@ -169,7 +167,11 @@ fun AppShell(app: AppModel) {
     }
 }
 
-/** The library's panes: list (the library), detail (Today, an overview or a panel), extra (a board or the statistics). */
+/**
+ * The library's panes: list (the library), detail (Today or an overview), extra (the statistics).
+ * A board screen (Build, Study, Analysis) is the one pane on a phone; on wide windows it leaves
+ * the list and fills the window as its own supporting-pane layout ([BoardPanes]).
+ */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 private fun LibraryPanes(
@@ -177,6 +179,14 @@ private fun LibraryPanes(
     shell: ShellModel,
     directive: androidx.compose.material3.adaptive.layout.PaneScaffoldDirective,
 ) {
+    val top = shell.top
+    val back: () -> Unit = shell::back
+    val navigate: (Destination) -> Unit = shell::navigate
+    if (top != null && top.role == ListDetailPaneScaffoldRole.Extra && directive.maxHorizontalPartitions > 1) {
+        BoardPanes(app, top, directive, navigate, back)
+        return
+    }
+
     val history = listOf(ThreePaneScaffoldDestinationItem<Long>(ListDetailPaneScaffoldRole.List)) +
         shell.stack.map { ThreePaneScaffoldDestinationItem(it.role, it.id) }
     val value = calculateThreePaneScaffoldValue(
@@ -187,57 +197,72 @@ private fun LibraryPanes(
     val listShown = value[ListDetailPaneScaffoldRole.List] == PaneAdaptedValue.Expanded
     val detailShown = value[ListDetailPaneScaffoldRole.Detail] == PaneAdaptedValue.Expanded
     val extraShown = value[ListDetailPaneScaffoldRole.Extra] == PaneAdaptedValue.Expanded
-    val top = shell.top
-    val back: () -> Unit = shell::back
-    val navigate: (Destination) -> Unit = shell::navigate
 
-    BoxWithConstraints {
-        // The extra pane (the board, or the statistics) takes what the others leave.
-        val spacer = directive.horizontalPartitionSpacerSize
-        val extraWidth: Dp = maxWidth -
-            (if (listShown) ListPaneWidth + spacer else 0.dp) -
-            (if (detailShown) PanelWidth + spacer else 0.dp)
+    ListDetailPaneScaffold(
+        directive = directive,
+        value = value,
+        listPane = {
+            AnimatedPane {
+                LibraryScreen(
+                    app,
+                    selectedEntryId = if (detailShown) shell.selectedEntryId else null,
+                    showToday = directive.maxHorizontalPartitions == 1,
+                    navigate = navigate,
+                )
+            }
+        },
+        detailPane = {
+            AnimatedPane {
+                when {
+                    top == null -> TodayPane(app, statisticsInline = !extraShown, navigate = navigate)
+                    else -> Screen(app, top, BoardPane.Whole, navigate, if (listShown) null else back, statisticsInline = shell.wide && !extraShown)
+                }
+            }
+        },
+        extraPane = {
+            AnimatedPane {
+                when {
+                    top == null -> StatisticsScreen(app, StatisticsScope.All, inline = true, navigate = navigate, paneTitle = true)
+                    top.role == ListDetailPaneScaffoldRole.Detail -> StatisticsScreen(
+                        app,
+                        top.screen.entryId?.let { StatisticsScope.Repertoire(it) } ?: StatisticsScope.All,
+                        inline = true,
+                        navigate = navigate,
+                        paneTitle = true,
+                    )
+                    // A phone: the board screen alone.
+                    else -> Screen(app, top, BoardPane.Whole, navigate, back)
+                }
+            }
+        },
+    )
+}
 
-        ListDetailPaneScaffold(
+/**
+ * A board screen on a wide window: Material's supporting-pane layout, the board the main pane
+ * (with the screen's bars and back) and its panel the supporting pane beside it.
+ */
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+@Composable
+private fun BoardPanes(
+    app: AppModel,
+    entry: StackEntry,
+    directive: androidx.compose.material3.adaptive.layout.PaneScaffoldDirective,
+    navigate: (Destination) -> Unit,
+    onBack: () -> Unit,
+) {
+    val value = calculateThreePaneScaffoldValue(
+        maxHorizontalPartitions = directive.maxHorizontalPartitions,
+        adaptStrategies = SupportingPaneScaffoldDefaults.adaptStrategies(),
+        currentDestination = ThreePaneScaffoldDestinationItem(SupportingPaneScaffoldRole.Main, entry.id),
+    )
+    // A new layout for each screen, so a screen pushed on another starts from its own panes.
+    key(entry.id) {
+        SupportingPaneScaffold(
             directive = directive,
             value = value,
-            listPane = {
-                AnimatedPane(Modifier.preferredWidth(ListPaneWidth)) {
-                    LibraryScreen(
-                        app,
-                        selectedEntryId = if (detailShown) shell.selectedEntryId else null,
-                        showToday = directive.maxHorizontalPartitions == 1,
-                        navigate = navigate,
-                    )
-                }
-            },
-            detailPane = {
-                AnimatedPane(if (extraShown) Modifier.preferredWidth(PanelWidth) else Modifier) {
-                    when {
-                        top == null -> TodayPane(app, statisticsInline = !extraShown, navigate = navigate)
-                        top.role == ListDetailPaneScaffoldRole.Detail ->
-                            Screen(app, top, BoardPane.Whole, navigate, if (listShown) null else back, statisticsInline = shell.wide && !extraShown)
-                        // A board screen's panel, its board beside it.
-                        else -> Screen(app, top, if (extraShown) BoardPane.Panel else BoardPane.Whole, navigate, back)
-                    }
-                }
-            },
-            extraPane = {
-                AnimatedPane(Modifier.preferredWidth(extraWidth.coerceAtLeast(ListPaneWidth))) {
-                    when {
-                        top == null -> StatisticsScreen(app, StatisticsScope.All, inline = true, navigate = navigate, paneTitle = true)
-                        top.role == ListDetailPaneScaffoldRole.Detail -> StatisticsScreen(
-                            app,
-                            top.screen.entryId?.let { StatisticsScope.Repertoire(it) } ?: StatisticsScope.All,
-                            inline = true,
-                            navigate = navigate,
-                            paneTitle = true,
-                        )
-                        detailShown -> Screen(app, top, BoardPane.Board, navigate, onBack = null)
-                        else -> Screen(app, top, BoardPane.Whole, navigate, back)
-                    }
-                }
-            },
+            mainPane = { AnimatedPane { Screen(app, entry, BoardPane.Board, navigate, onBack) } },
+            supportingPane = { AnimatedPane { Screen(app, entry, BoardPane.Panel, navigate, onBack) } },
         )
     }
 }

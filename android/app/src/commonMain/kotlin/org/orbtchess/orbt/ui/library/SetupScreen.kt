@@ -30,13 +30,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -58,7 +58,6 @@ import orbt.app.generated.resources.Res
 import orbt.app.generated.resources.piece_bk
 import orbt.app.generated.resources.piece_wk
 import org.jetbrains.compose.resources.painterResource
-import org.orbtchess.orbt.ui.components.TitleWithSubtitle
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.Side
 import org.orbtchess.orbt.storage.RepertoireEntry
@@ -155,7 +154,8 @@ fun SetupScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { TitleWithSubtitle(title, "Step $step of 3") },
+                title = { Text(title) },
+                subtitle = { Text("Step $step of 3") },
                 navigationIcon = {
                     if (step == 1) {
                         IconButton(onClick = onCancel) { Icon(Icons.Filled.Close, contentDescription = "Cancel") }

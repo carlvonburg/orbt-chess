@@ -23,14 +23,20 @@ follows its Swift counterpart; the Swift file is named in each stub's doc commen
   `navigate(destination)` and goes back with `onBack`; it never builds another screen or edits
   `AppShell.kt`/`ShellModel.kt`. A screen with `onBack == null` shows no back arrow (nothing to go
   back to in that pane).
-- **Board screens share one bar.** Build, Study and Analysis put their bottom actions in the
-  docked toolbar (`DockedToolbar`): items spread evenly, icon-only ones named by a tooltip, the
-  main action (Save, Next Line) a labelled filled button in it, a secondary one (Discard) a text
-  button beside it.
+- **Board screens share one bar.** Build, Study and Analysis put their bottom actions in
+  Material's docked toolbar (`FlexibleBottomAppBar`): items spread evenly, icon-only ones named
+  by a tooltip, back and forward kept together, the main action (Save, Next Line) a labelled
+  filled button in it, a secondary one (Discard) a text button beside it. Their top app bar has
+  the screen's title over the repertoire's name (`TopAppBar(title, subtitle)`), back and the menu.
+- **One move list.** The moves of the line on the board are `components/MoveList` under the board
+  in every board screen: a row of moves that scrolls sideways, the move on the board highlighted,
+  moves ahead faint, unsaved ones in italics; back and forward are toolbar buttons.
 - **Board screens fill panes.** Build, Study, Study All and Analysis take a `pane: BoardPane`:
-  `Whole` (a phone, or one pane), `Panel` (the detail pane: what is beside the board) and `Board`
-  (the extra pane: the board and what belongs with it). The shell calls the screen once per pane
-  with the same model.
+  `Whole` (one pane: a phone, a tablet in portrait), `Board` (the main pane of Material's
+  supporting-pane layout on wider windows: the board and its move list between the screen's
+  bars) and `Panel` (the supporting pane beside it). The shell calls the screen once per pane with
+  the same model. The panes are Material's (`calculatePaneScaffoldDirective`): one up to medium
+  width, two on expanded, three on large; their widths are Material's defaults.
 - **Shared components** (`components/`) only for what Material lacks; a component one screen uses
   stays in that screen's package.
 
@@ -39,7 +45,7 @@ follows its Swift counterpart; the Swift file is named in each stub's doc commen
 |---|---|---|
 | `ui` | the shell: destinations, back stack, panes, tabs, sheets, full-window screens | `Destination.kt`, `ShellModel.kt`, `AppShell.kt` (shell only); `Placeholder.kt` (temporary, delete once unused) |
 | `ui.theme` | Material theme, app color, meanings, board colors | `Theme.kt`, `AppColor.kt`, `BoardTheme.kt`, `Hues.kt`, `DynamicColor.*.kt` |
-| `ui.components` | coverage, studied and segmented bars, score bar, due counts, labels, status badge, empty state, board column, `OpenDocument`, `Format`, `Symbols`, `BoardPane`; `DockedToolbar` and `TitleWithSubtitle` (stand-ins for `FlexibleBottomAppBar` and `TopAppBar(subtitle)`, internal in material3 1.4), `TooltipIconButton` | shared |
+| `ui.components` | coverage, studied and segmented bars, score bar, due counts, labels, status badge, empty state, board column, `OpenDocument`, `Format`, `Symbols`, `BoardPane`, `MoveList`, `TooltipIconButton` | shared |
 | `ui.library` | `LibraryScreen` (list pane / Repertoires tab), `TodayPane` (detail with no selection), `SetupScreen` | library |
 | `ui.overview` | `OverviewScreen`, `RepertoireSettingsScreen`, `StudyOptionsSheet` | overview |
 | `ui.builder` | `BuilderScreen`, `BuilderModel` | Build |
@@ -56,12 +62,12 @@ contract (add optional parameters freely; change required ones together with the
 ## Destinations (`Destination.kt`) and where the shell shows them
 | Destination | Phone | Wide window (2–3 panes) |
 |---|---|---|
-| `Library` | Repertoires tab (Today first) | list pane; detail is `TodayPane`, extra the statistics |
-| `Overview(entryId)` | pushed | detail pane beside the list; extra pane: its statistics (two panes: under the overview, `statisticsInline`) |
-| `Builder(entryId, start, showGaps)` | pushed on its overview | panel in detail, board in extra |
-| `Drill(entryId, kind)` — Study, LearnMore, Practice, Branch(node) | pushed | panel + board |
-| `StudyAll(entryIds)` | pushed | panel + board |
-| `Analysis(entryId, startFen, moves, orientation, origin)` | pushed on the screen it came from | panel + board; popping calls `AnalysisModel.finish()` |
+| `Library` | Repertoires tab (Today first) | list pane; detail is `TodayPane`, extra (large windows) the statistics |
+| `Overview(entryId)` | pushed | detail pane beside the list; on large windows the extra pane: its statistics (two panes: under the overview, `statisticsInline`) |
+| `Builder(entryId, start, showGaps)` | pushed on its overview | the whole window: board (main pane) + panel (supporting pane) |
+| `Drill(entryId, kind)` — Study, LearnMore, Practice, Branch(node) | pushed | board + panel |
+| `StudyAll(entryIds)` | pushed | board + panel |
+| `Analysis(entryId, startFen, moves, orientation, origin)` | pushed on the screen it came from | board + panel; popping calls `AnalysisModel.finish()` |
 | `Statistics(scope)` | All: the Statistics tab; one repertoire: its overview | beside Today / the overview |
 | `RepertoireSettings(entryId)`, `Setup(mode)`, `Settings`, `Acknowledgements` | full window | full window |
 | `CardInfo(entryId, node)`, `StudyOptions(entryId)` | bottom sheet | bottom sheet |

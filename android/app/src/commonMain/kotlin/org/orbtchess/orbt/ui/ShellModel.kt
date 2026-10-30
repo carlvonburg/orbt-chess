@@ -28,7 +28,8 @@ enum class Tab { Repertoires, Statistics }
 
 /**
  * A screen on the library's back stack with what it shows: its pane (the overview in the detail
- * pane, board screens in the extra pane) and the model made for it before it was shown.
+ * pane, board screens in the extra pane on a phone, the whole window on wider ones) and the
+ * model made for it before it was shown.
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 class StackEntry internal constructor(

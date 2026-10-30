@@ -27,11 +27,11 @@ import org.orbtchess.orbt.storage.RepertoireDocument
 
 /**
  * How a board screen (Build, Study, Study All, Analysis) is shown, which the shell decides from
- * the window (`inSplitView` and the board column in the Swift app):
- * - [Whole]: the whole screen, panel and board together (a phone, or a pane alone).
- * - [Panel]: only what is beside the board (moves, explorer, actions), in the list-detail
- *   scaffold's detail pane; the board is in the extra pane.
- * - [Board]: only the board and what belongs right with it (history, navigation), in the extra pane.
+ * the window's panes (Material's supporting-pane layout):
+ * - [Whole]: the whole screen, panel and board together (a phone, or one pane).
+ * - [Board]: the main pane: the board with its move list, between the screen's top app bar and
+ *   its docked toolbar.
+ * - [Panel]: the supporting pane beside it: what goes with the board (replies, explorer, counts).
  *
  * A screen is called once per pane it fills, with the same model, so both panes show the same
  * state without telling each other.

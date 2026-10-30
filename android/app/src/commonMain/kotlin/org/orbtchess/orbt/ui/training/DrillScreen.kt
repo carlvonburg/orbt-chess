@@ -12,11 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -33,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -43,13 +40,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,9 +76,9 @@ import org.orbtchess.orbt.ui.board.Board
 import org.orbtchess.orbt.ui.components.BoardColumn
 import org.orbtchess.orbt.ui.components.BoardPane
 import org.orbtchess.orbt.ui.components.SymbolLabel
-import org.orbtchess.orbt.ui.components.DockedToolbar
+import org.orbtchess.orbt.ui.components.MoveList
+import org.orbtchess.orbt.ui.components.MoveListItem
 import org.orbtchess.orbt.ui.components.Symbols
-import org.orbtchess.orbt.ui.components.TitleWithSubtitle
 import org.orbtchess.orbt.ui.components.TooltipIconButton
 import org.orbtchess.orbt.ui.components.tabularDigits
 import org.orbtchess.orbt.ui.theme.ThemeColor
@@ -97,11 +94,11 @@ class NextRepertoire(val name: String, val start: () -> Unit)
  * share [model].
  *
  * - [BoardPane.Whole] (a phone): the board, the moves played, the opening and what to do with
- *   the counts; Hint, Browse Repertoire and Analysis in the bottom app bar, Next Line its FAB.
- * - [BoardPane.Panel]: the counts with what each means, the opening and what to do; Hint and
- *   Browse Repertoire in the top app bar.
- * - [BoardPane.Board]: the board, with the moves played, Analysis and Next Line in the bottom
- *   app bar.
+ *   the counts; Hint, Browse Repertoire, Analysis and Next Line in the bottom toolbar.
+ * - [BoardPane.Board] (the main pane on wide windows): the board and the moves played, between
+ *   the same bars.
+ * - [BoardPane.Panel] (the supporting pane): the counts with what each means, the opening and
+ *   what to do; the finished screen when the session ends.
  *
  * @param next the next repertoire when studying all of them (Study All), else null.
  * @param navigate [Destination.Analysis] (origin [AnalysisOrigin.Study]), [Destination.Builder]
@@ -136,8 +133,8 @@ fun DrillScreen(
     val actions = DrillActions(model, navigate)
     when (pane) {
         BoardPane.Whole -> PhoneLayout(app, model, actions, navigate, onBack, next, modifier)
-        BoardPane.Panel -> PanelLayout(app, model, actions, navigate, onBack, next, modifier)
-        BoardPane.Board -> BoardLayout(model, actions, modifier)
+        BoardPane.Panel -> PanelLayout(app, model, navigate, onBack, next, modifier)
+        BoardPane.Board -> BoardLayout(model, actions, onBack, modifier)
     }
 }
 
@@ -171,21 +168,37 @@ private fun Haptics(model: DrillModel) {
 
 // MARK: Layouts
 
+/** The mode over the repertoire's name, and back. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DrillTopBar(model: DrillModel, onBack: (() -> Unit)?, actions: @Composable () -> Unit = {}) {
+private fun DrillTopBar(model: DrillModel, onBack: (() -> Unit)?) {
     TopAppBar(
-        title = { TitleWithSubtitle(model.mode.title, model.document.name) },
+        title = { Text(model.mode.title) },
+        subtitle = { Text(model.document.name) },
         navigationIcon = {
             if (onBack != null) {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
             }
         },
-        actions = { actions() },
     )
 }
 
-/** A phone: everything in one column, the actions in the bottom app bar (Swift's bottom toolbar). */
+/**
+ * Build's docked toolbar: the actions, each named by its tooltip; Next Line, when a finished
+ * line waits, is the toolbar's labelled primary action.
+ */
+@Composable
+private fun DrillToolbar(model: DrillModel, actions: DrillActions) {
+    FlexibleBottomAppBar {
+        // Disabled at a line's end (no move to ask about), in its place.
+        HintButton(model)
+        BrowseButton(actions)
+        AnalysisButton(actions)
+        NextLineButton(model)
+    }
+}
+
+/** A phone: everything in one column, the actions in the bottom toolbar. */
 @Composable
 private fun PhoneLayout(
     app: AppModel,
@@ -205,32 +218,22 @@ private fun PhoneLayout(
     Scaffold(
         modifier,
         topBar = { DrillTopBar(model, onBack) },
-        // Build's docked toolbar: the actions spread evenly, each named by its tooltip; Next
-        // Line, when a finished line waits, is the toolbar's labelled primary action.
-        bottomBar = {
-            DockedToolbar {
-                // Disabled at a line's end (no move to ask about), in its place.
-                HintButton(model, above = true)
-                BrowseButton(actions, above = true)
-                AnalysisButton(actions)
-                NextLineButton(model)
-            }
-        },
+        bottomBar = { DrillToolbar(model, actions) },
     ) { padding ->
         Column(
             Modifier.padding(padding).fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // Edge to edge on a phone, as in the builder.
             DrillBoard(model, Modifier.widthIn(max = 680.dp).fillMaxWidth())
             // Laid out like the builder: move list, then opening name; then what to do, with
             // the counts (status, not a control, so not in a bar).
+            LineHistory(model.document.tree, model.playedNodes, Modifier.widthIn(max = 680.dp))
             Column(
                 Modifier.widthIn(max = 680.dp).fillMaxWidth().padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                LineHistory(model.document.tree, model.playedNodes)
                 OpeningName(model)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Status(model, Modifier.weight(1f))
@@ -243,30 +246,18 @@ private fun PhoneLayout(
     }
 }
 
-/** The detail pane beside the board: the counts with what each means, and what to do. */
+/** The supporting pane beside the board: the counts with what each means, and what to do. */
 @Composable
 private fun PanelLayout(
     app: AppModel,
     model: DrillModel,
-    actions: DrillActions,
     navigate: (Destination) -> Unit,
     onBack: (() -> Unit)?,
     next: NextRepertoire?,
     modifier: Modifier,
 ) {
-    val finished = model.finished
-    Scaffold(
-        modifier,
-        topBar = {
-            DrillTopBar(model, onBack) {
-                if (!finished) {
-                    HintButton(model)
-                    BrowseButton(actions)
-                }
-            }
-        },
-    ) { padding ->
-        if (finished) {
+    Scaffold(modifier) { padding ->
+        if (model.finished) {
             StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding), tourEnd = inTour(app, model))
         } else {
             Column(
@@ -288,23 +279,18 @@ private fun PanelLayout(
 private fun inTour(app: AppModel, model: DrillModel): Boolean =
     app.tour.step == TourGuide.Step.Studying && TourGuide.isSample(model.document.pgnFile)
 
-/** The extra pane: the board, the moves played, Analysis and Next Line in the bottom app bar. */
+/** The main pane: the board and the moves played, between the same bars as on a phone. */
 @Composable
-private fun BoardLayout(model: DrillModel, actions: DrillActions, modifier: Modifier) {
-    val finished = model.finished
+private fun BoardLayout(model: DrillModel, actions: DrillActions, onBack: (() -> Unit)?, modifier: Modifier) {
     Scaffold(
         modifier,
-        bottomBar = {
-            if (!finished) {
-                DockedToolbar {
-                    LineHistory(model.document.tree, model.playedNodes, Modifier.weight(1f).padding(start = 8.dp))
-                    AnalysisButton(actions)
-                    NextLineButton(model)
-                }
-            }
-        },
+        topBar = { DrillTopBar(model, onBack) },
+        bottomBar = { if (!model.finished) DrillToolbar(model, actions) },
     ) { padding ->
-        BoardColumn(Modifier.padding(padding).fillMaxSize().padding(16.dp)) {
+        BoardColumn(
+            Modifier.padding(padding).fillMaxSize().padding(horizontal = 16.dp),
+            below = { LineHistory(model.document.tree, model.playedNodes) },
+        ) {
             DrillBoard(model)
         }
     }
@@ -313,16 +299,15 @@ private fun BoardLayout(model: DrillModel, actions: DrillActions, modifier: Modi
 // MARK: Bar items
 
 @Composable
-private fun HintButton(model: DrillModel, above: Boolean = false) {
-    TooltipIconButton("Hint", Symbols.hint, model::hint, enabled = model.canMove, above = above)
+private fun HintButton(model: DrillModel) {
+    TooltipIconButton("Hint", Symbols.hint, model::hint, enabled = model.canMove, above = true)
 }
 
 @Composable
-private fun BrowseButton(actions: DrillActions, above: Boolean = false) {
-    TooltipIconButton("Browse Repertoire", Icons.AutoMirrored.Outlined.FormatIndentIncrease, actions::browse, above = above)
+private fun BrowseButton(actions: DrillActions) {
+    TooltipIconButton("Browse Repertoire", Icons.AutoMirrored.Outlined.FormatIndentIncrease, actions::browse, above = true)
 }
 
-/** Only in bottom bars (the board's). */
 @Composable
 private fun AnalysisButton(actions: DrillActions) {
     TooltipIconButton("Analysis", Symbols.analysis, actions::analyze, above = true)
@@ -443,33 +428,13 @@ private fun SecondaryLabel(text: String, icon: ImageVector, modifier: Modifier) 
 /** The moves played so far on a study line. Read-only: going to a move would show its answer. */
 @Composable
 private fun LineHistory(tree: RepertoireDocument.Tree, nodes: List<NodeId>, modifier: Modifier = Modifier) {
-    val state = rememberLazyListState()
-    LaunchedEffect(nodes.lastOrNull()) { if (nodes.isNotEmpty()) state.animateScrollToItem(nodes.lastIndex) }
     // Plies from the line's position: after a transposition a node's own ply can differ.
     val rootPly = tree.root.ply.toInt()
-    LazyRow(modifier.fillMaxWidth(), state = state, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        itemsIndexed(nodes, key = { _, id -> id.toLong() }) { i, id ->
-            val san = tree[id]?.mv?.san ?: return@itemsIndexed
-            val ply = rootPly + i + 1
-            val text = when {
-                ply % 2 == 1 -> "${(ply + 1) / 2}. $san"
-                i == 0 -> "${ply / 2}… $san"
-                else -> san
-            }
-            val current = i == nodes.lastIndex
-            Surface(
-                shape = CircleShape,
-                color = if (current) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
-            ) {
-                Text(
-                    text,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = if (current) FontWeight.SemiBold else null,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                )
-            }
-        }
+    val moves = nodes.mapIndexedNotNull { i, id ->
+        val san = tree[id]?.mv?.san ?: return@mapIndexedNotNull null
+        MoveListItem(id.toLong(), rootPly + i + 1, san, isCurrent = i == nodes.lastIndex)
     }
+    MoveList(moves, modifier)
 }
 
 /** Anki's three counts, colored like the studied bar: New, Learning, To Review; the one asked underlined. */
