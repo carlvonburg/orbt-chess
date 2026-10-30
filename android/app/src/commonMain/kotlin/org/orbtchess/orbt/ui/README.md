@@ -7,7 +7,8 @@ follows its Swift counterpart; the Swift file is named in each stub's doc commen
 - **Native components only**, as the Swift app uses SwiftUI's own with no custom overrides: stock
   Material 3 components and patterns as Google ships them — `NavigationSuiteScaffold`,
   `ListDetailPaneScaffold`, `Scaffold` + `TopAppBar`, `ListItem`, `ModalBottomSheet`,
-  `AlertDialog`, `Switch`, `Slider`, `SegmentedButton`, `FloatingActionButton`, Material
+  `AlertDialog`, `Switch`, `Slider`, `SegmentedButton` (choosing an option; tabs switch content),
+  `SearchBar`, plain tooltips on every icon-only action, Material
   Symbols (`Icons.*`, `components/Symbols.kt`), the platform's back handling, dynamic color.
   Don't hand-roll what Material has, don't restyle Material components to look like iOS, and let
   containers supply titles, spacing and typography. Custom drawing only where no component
@@ -22,6 +23,10 @@ follows its Swift counterpart; the Swift file is named in each stub's doc commen
   `navigate(destination)` and goes back with `onBack`; it never builds another screen or edits
   `AppShell.kt`/`ShellModel.kt`. A screen with `onBack == null` shows no back arrow (nothing to go
   back to in that pane).
+- **Board screens share one bar.** Build, Study and Analysis put their bottom actions in the
+  docked toolbar (`DockedToolbar`): items spread evenly, icon-only ones named by a tooltip, the
+  main action (Save, Next Line) a labelled filled button in it, a secondary one (Discard) a text
+  button beside it.
 - **Board screens fill panes.** Build, Study, Study All and Analysis take a `pane: BoardPane`:
   `Whole` (a phone, or one pane), `Panel` (the detail pane: what is beside the board) and `Board`
   (the extra pane: the board and what belongs with it). The shell calls the screen once per pane
@@ -34,7 +39,7 @@ follows its Swift counterpart; the Swift file is named in each stub's doc commen
 |---|---|---|
 | `ui` | the shell: destinations, back stack, panes, tabs, sheets, full-window screens | `Destination.kt`, `ShellModel.kt`, `AppShell.kt` (shell only); `Placeholder.kt` (temporary, delete once unused) |
 | `ui.theme` | Material theme, app color, meanings, board colors | `Theme.kt`, `AppColor.kt`, `BoardTheme.kt`, `Hues.kt`, `DynamicColor.*.kt` |
-| `ui.components` | coverage, studied and segmented bars, score bar, due counts, labels, status badge, empty state, board column, `OpenDocument`, `Format`, `Symbols`, `BoardPane` | shared |
+| `ui.components` | coverage, studied and segmented bars, score bar, due counts, labels, status badge, empty state, board column, `OpenDocument`, `Format`, `Symbols`, `BoardPane`; `DockedToolbar` and `TitleWithSubtitle` (stand-ins for `FlexibleBottomAppBar` and `TopAppBar(subtitle)`, internal in material3 1.4), `TooltipIconButton` | shared |
 | `ui.library` | `LibraryScreen` (list pane / Repertoires tab), `TodayPane` (detail with no selection), `SetupScreen` | library |
 | `ui.overview` | `OverviewScreen`, `RepertoireSettingsScreen`, `StudyOptionsSheet` | overview |
 | `ui.builder` | `BuilderScreen`, `BuilderModel` | Build |
