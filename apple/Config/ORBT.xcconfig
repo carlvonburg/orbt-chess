@@ -4,9 +4,16 @@
 // (ignored by git, never committed), for example:
 //
 //   ORBT_DROPBOX_APP_KEY = abc123xyz
+//   ORBT_GOOGLE_IOS_CLIENT_ID = 1234-abc.apps.googleusercontent.com
+//   ORBT_GOOGLE_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234-abc
+//
+// Dropbox redirects to org.orbtchess.orbt://dropbox-callback (register it in the app console);
+// Google's iOS client (iPhone, iPad and Mac) to its reversed id, a URL scheme in Info.plist.
 //
 // Without it the build has no connectors (Settings › Sync shows none).
 
 ORBT_DROPBOX_APP_KEY =
+ORBT_GOOGLE_IOS_CLIENT_ID =
+ORBT_GOOGLE_REVERSED_CLIENT_ID =
 
 #include? "Secrets.xcconfig"

@@ -10,11 +10,14 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>org.orbtchess.orbt</string>
+				<string>$(ORBT_GOOGLE_REVERSED_CLIENT_ID)</string>
 			</array>
 		</dict>
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>ORBTGoogleClientID</key>
+	<string>$(ORBT_GOOGLE_IOS_CLIENT_ID)</string>
 	<key>ORBTDropboxAppKey</key>
 	<string>$(ORBT_DROPBOX_APP_KEY)</string>
 	<key>NSUbiquitousContainers</key>

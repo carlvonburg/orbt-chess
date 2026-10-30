@@ -2,7 +2,7 @@ import OpeningCoreRust
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Sync: the repertoire folder synced with Dropbox as well as iCloud Drive, chosen and
+/// Sync: the repertoire folder synced with Dropbox or Google Drive as well as iCloud Drive, chosen and
 /// confirmed here, with its status, Sync Now, and signing in again when the provider asks. On
 /// the Mac a folder inside Dropbox or Google Drive for desktop can be chosen instead
 /// (`FolderSection`); the provider's own app syncs it, so there is no sign-in then.
@@ -53,9 +53,17 @@ struct SyncSection: View {
             } header: {
                 Text("Sync")
             } footer: {
-                Text("Also keeps your repertoires and training progress in the ORBT Chess folder of Dropbox, for your devices without iCloud. ORBT Chess sees only that folder.")
+                Text("Also keeps your repertoires and training progress in the ORBT Chess folder of \(providers), for your devices without iCloud. ORBT Chess sees only that folder.")
             }
         }
+    }
+}
+
+extension SyncSection {
+    /// "Dropbox or Google Drive", or the one in use.
+    private var providers: String {
+        if let provider = model.sync.provider { return provider.title }
+        return SyncProvider.available.map(\.title).formatted(.list(type: .or))
     }
 }
 

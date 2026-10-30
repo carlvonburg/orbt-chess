@@ -5,7 +5,7 @@ import AuthenticationServices
 import SwiftUI
 import os
 
-/// Runs the core's sync of the repertoire folder with Dropbox (`orbt_core::sync`): sends the
+/// Runs the core's sync of the repertoire folder with Dropbox or Google Drive (`orbt_core::sync`): sends the
 /// requests it hands out (one at a time, plus Dropbox's long poll while the app is in front),
 /// reports the answers and applies the outcomes to the files. What to download, upload, merge
 /// or delete is the core's; this does the IO, the timers and the sign-in. The folder is the
@@ -167,6 +167,7 @@ final class SyncService {
         let saved = (try? Data(contentsOf: stateFile(provider))) ?? Data()
         let sync = switch provider {
         case .dropbox: RepertoireSync.dropbox(appKey: SyncAuth.clientID(for: .dropbox), savedState: saved)
+        case .drive: RepertoireSync.driveOauth(clientId: SyncAuth.clientID(for: .drive), clientSecret: nil, savedState: saved)
         }
         if let credentials {
             sync.setCredentials(accessToken: credentials.accessToken, expiresAt: credentials.expiresAt,

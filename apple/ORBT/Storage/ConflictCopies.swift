@@ -9,10 +9,8 @@ import OpeningCoreRust
 nonisolated enum ConflictCopies {
     /// Each copy and the original it stands for, among a folder's file names (originals that
     /// exist only). Which names are copies is the core's rule.
-    nonisolated(unsafe) static var pairs: @Sendable ([String]) -> [(copy: String, original: String)] = { _ in
-        // The rule is `sync_conflict_copies` on the core-sync branch; until it is merged here
-        // no name is taken for a copy.
-        []
+    nonisolated(unsafe) static var pairs: @Sendable ([String]) -> [(copy: String, original: String)] = { names in
+        syncConflictCopies(names: names).map { ($0.copy, $0.original) }
     }
 
     /// The copies of `url` next to it, when it is in the chosen folder.

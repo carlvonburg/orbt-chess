@@ -428,13 +428,8 @@ extension SyncTests {
     @Test func conflictCopiesInTheChosenFolderAreMergedThenDeleted() throws {
         try write("Italian.otlog.jsonl", revlogLine(1))
         try write("Italian (Carl's conflicted copy 2026-10-30).otlog.jsonl", revlogLine(2))
-        let previous = ConflictCopies.pairs
-        ConflictCopies.pairs = { names in
-            names.compactMap { name in
-                name.contains("conflicted copy") ? (name, "Italian.otlog.jsonl") : nil
-            }
-        }
-        defer { ConflictCopies.pairs = previous }
+        // Google Drive for desktop's numbered copy too; the names are the core's rule.
+        try write("Italian (1).otlog.jsonl", revlogLine(3))
         let url = folder.appending(path: "Italian.otlog.jsonl")
 
         // Not the chosen folder (iCloud Drive): names are the user's.
@@ -444,7 +439,7 @@ extension SyncTests {
         FileAccessHooks.shared.chosenFolder = folder
         defer { FileAccessHooks.shared.chosenFolder = nil }
         try FileAccess.resolveConflicts(at: url) { mergeRevlogData(a: $0, b: $1) }
-        #expect(decodeRevlog(data: try Data(contentsOf: url)).map(\.id) == [1, 2])
+        #expect(decodeRevlog(data: try Data(contentsOf: url)).map(\.id) == [1, 2, 3])
         #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path) == ["Italian.otlog.jsonl"])
     }
 
