@@ -349,6 +349,14 @@ impl From<orbt_core::oauth::RedirectError> for SignInError {
     }
 }
 
+impl From<orbt_core::sync::drive::SignInError> for SignInError {
+    fn from(e: orbt_core::sync::drive::SignInError) -> SignInError {
+        SignInError::Failed {
+            reason: e.to_string(),
+        }
+    }
+}
+
 impl From<orbt_core::sync::dropbox::SignInError> for SignInError {
     fn from(e: orbt_core::sync::dropbox::SignInError) -> SignInError {
         SignInError::Failed {
