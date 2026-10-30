@@ -7,6 +7,8 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -44,6 +46,12 @@ fun <T> ChoiceButtonGroup(
                     options.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
                     else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
                 },
+                // Material's unselected container is the surface container: the color of the
+                // app's grouped pages, where it would vanish. The highest container shows on
+                // the page and on its segments alike.
+                colors = ToggleButtonDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                ),
             ) {
                 Text(label(option), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }

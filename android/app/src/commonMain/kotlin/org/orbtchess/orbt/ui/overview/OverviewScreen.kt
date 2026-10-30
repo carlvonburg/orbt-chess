@@ -1,5 +1,12 @@
 package org.orbtchess.orbt.ui.overview
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.groupedTopAppBarColors
+import org.orbtchess.orbt.ui.components.ListSection
+import org.orbtchess.orbt.ui.components.GroupedBackground
+import androidx.compose.foundation.layout.Box
+import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -26,10 +32,7 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
@@ -41,10 +44,8 @@ import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -121,45 +122,47 @@ fun OverviewScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = GroupedBackground,
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text(document.name, maxLines = 1) },
                 scrollBehavior = scrollBehavior,
+                colors = groupedTopAppBarColors(),
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                     }
                 },
                 actions = {
-                    TooltipIconButton("More options", Symbols.more, { menu = true })
-                    DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(
-                            text = { Text("Repertoire Settings…") },
-                            leadingIcon = { Icon(Symbols.settings, contentDescription = null) },
-                            onClick = {
-                                menu = false
-                                navigate(Destination.RepertoireSettings(id))
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Study Options…") },
-                            leadingIcon = { Icon(Symbols.options, contentDescription = null) },
-                            onClick = {
-                                menu = false
-                                navigate(Destination.StudyOptions(id))
-                            },
-                        )
+                    Box {
+                        TooltipIconButton("More options", Symbols.more, { menu = true })
+                        ExpressiveMenu(menu, onDismissRequest = { menu = false }) {
+                            group {
+                                item("Repertoire Settings…", Symbols.settings) { navigate(Destination.RepertoireSettings(id)) }
+                                item("Study Options…", Symbols.options) { navigate(Destination.StudyOptions(id)) }
+                            }
+                        }
                     }
                 },
             )
         },
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-            coverageSection(app, document, stats) { navigate(Destination.Builder(id)) }
-            item { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
-            studySection(document, stats, navigate, showStatisticsRow = onBack != null && !statisticsInline)
+            item("coverage") { CoverageSection(app, document, stats) { navigate(Destination.Builder(id)) } }
+            item("study") { StudySection(document, stats, navigate) }
+            // Wide windows show the statistics beside the overview, or under it.
+            if (onBack != null && !statisticsInline) {
+                item("statistics") {
+                    ListSection(null) {
+                        ListItem(
+                            onClick = { navigate(Destination.Statistics(StatisticsScope.Repertoire(id))) },
+                            leadingContent = { Icon(Symbols.statistics, contentDescription = null) },
+                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
+                        ) { Text("Statistics") }
+                    }
+                }
+            }
             if (statisticsInline) {
-                item { HorizontalDivider(Modifier.padding(top = 8.dp)) }
                 // A pane of its own height, scrolled within (the statistics are a screen).
                 item { StatisticsScreen(app, StatisticsScope.Repertoire(id), inline = true, navigate = navigate, modifier = Modifier.fillParentMaxHeight()) }
             }
@@ -170,49 +173,46 @@ fun OverviewScreen(
 /** While there are gaps (or nothing of yours to study), building is the main action. */
 private fun buildFirst(stats: EntryStats): Boolean = stats.gaps > 0 || stats.progress.cards == 0L
 
-@Composable
-private fun SectionHeader(title: String) {
-    Text(
-        title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-    )
-}
-
 // MARK: Coverage
 
-private fun LazyListScope.coverageSection(app: AppModel, document: RepertoireDocument, stats: EntryStats, browse: () -> Unit) {
-    item { SectionHeader("Coverage") }
-    item {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+/**
+ * Coverage, as one group of Material's segmented list: how complete and the gaps (the
+ * percentage in the emphasized type Material 3 Expressive gives a key number), the saved
+ * moves, then Browse / Edit.
+ */
+@Composable
+private fun CoverageSection(app: AppModel, document: RepertoireDocument, stats: EntryStats, browse: () -> Unit) {
+    ListSection("Coverage") {
+        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    "${Format.percent(stats.completion)} complete",
-                    style = tabularDigits(MaterialTheme.typography.titleMedium),
-                    modifier = Modifier.weight(1f),
+                    Format.percent(stats.completion),
+                    style = tabularDigits(MaterialTheme.typography.headlineMediumEmphasized),
+                )
+                Text(
+                    " complete",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f).padding(bottom = 3.dp),
                 )
                 if (stats.gaps > 0) {
                     Text(
                         if (stats.gaps == 1) "1 gap" else "${NumberFormat.getIntegerInstance().format(stats.gaps)} gaps",
-                        style = tabularDigits(MaterialTheme.typography.titleSmall).copy(fontWeight = FontWeight.SemiBold),
+                        style = tabularDigits(MaterialTheme.typography.titleSmallEmphasized),
                         color = ThemeColor.todo.color,
+                        modifier = Modifier.padding(bottom = 3.dp),
                     )
                 }
             }
             CoverageBar(stats.completion)
             CoverageCheckStatus(app, document)
         }
-    }
-    item {
         ListItem(
             trailingContent = { Text(NumberFormat.getIntegerInstance().format(stats.savedMoves), style = tabularDigits(MaterialTheme.typography.bodyLarge)) },
         ) { Text("Saved moves") }
-    }
-    item {
         ActionButton(
             "Browse / Edit", prominent = buildFirst(stats), onClick = browse,
-            modifier = Modifier.padding(horizontal = 16.dp).tourTarget(TourGuide.Target.BrowseButton),
+            modifier = Modifier.padding(16.dp).tourTarget(TourGuide.Target.BrowseButton),
         )
     }
 }
@@ -240,24 +240,22 @@ private fun CoverageCheckStatus(app: AppModel, document: RepertoireDocument) {
 
 // MARK: Study
 
-private fun LazyListScope.studySection(
+/** Study, as one group: how far along, what is due today, then Study Now (or Study More Today). */
+@Composable
+private fun StudySection(
     document: RepertoireDocument,
     stats: EntryStats,
     navigate: (Destination) -> Unit,
-    showStatisticsRow: Boolean,
 ) {
     val id = document.entryId
-    item { SectionHeader("Study") }
-    if (stats.progress.cards == 0L) {
-        // Nothing to count yet: only what to do.
-        item {
-            SecondaryLabel("Add moves of yours to study them.", Icons.Outlined.CheckCircle, Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+    ListSection("Study") {
+        if (stats.progress.cards == 0L) {
+            // Nothing to count yet: only what to do.
+            SecondaryLabel("Add moves of yours to study them.", Icons.Outlined.CheckCircle, Modifier.fillMaxWidth().padding(16.dp))
+            return@ListSection
         }
-        return
-    }
-    item { StudyProgress(stats) }
-    item {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+        StudyProgress(stats)
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
             if (stats.counts.total > 0) {
                 DueToday(stats.counts)
             } else {
@@ -269,27 +267,12 @@ private fun LazyListScope.studySection(
                 }
             }
         }
-    }
-    item {
         val prominent = !buildFirst(stats)
-        val modifier = Modifier.padding(horizontal = 16.dp)
+        val modifier = Modifier.padding(16.dp)
         if (stats.counts.total > 0) {
             ActionButton("Study Now", prominent, { navigate(Destination.Drill(id, DrillKind.Study)) }, modifier)
         } else {
             StudyMoreMenu(document, stats, prominent, navigate, modifier)
-        }
-    }
-    // Wide windows show the statistics beside the overview, or under it.
-    if (showStatisticsRow) {
-        item {
-            ListItem(
-                onClick = {
-                    navigate(Destination.Statistics(StatisticsScope.Repertoire(id)))
-                },
-                leadingContent = { Icon(Symbols.statistics, contentDescription = null) },
-                trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
-                modifier = Modifier.padding(top = 8.dp),
-            ) { Text("Statistics") }
         }
     }
 }
@@ -300,11 +283,16 @@ private fun LazyListScope.studySection(
 private fun StudyProgress(stats: EntryStats) {
     val progress = stats.progress
     val number = NumberFormat.getIntegerInstance()
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            "${number.format(progress.studied)} of ${number.format(progress.cards)} moves studied",
-            style = tabularDigits(MaterialTheme.typography.titleMedium),
-        )
+    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(number.format(progress.studied), style = tabularDigits(MaterialTheme.typography.headlineMediumEmphasized))
+            Text(
+                " of ${number.format(progress.cards)} moves studied",
+                style = tabularDigits(MaterialTheme.typography.titleMedium),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 3.dp),
+            )
+        }
         StudiedBar(progress)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Legend(progress.mature, "mature", ThemeColor.learned)
@@ -358,47 +346,29 @@ private fun StudyMoreMenu(
 ) {
     val id = document.entryId
     val extraReviews = document.reviewsBeyondLimit()
-    ActionMenuButton("Study More Today", prominent, modifier) { close ->
+    ActionMenuButton("Study More Today", prominent, modifier) {
         val notStudied = stats.progress.notStudied
         if (notStudied > 0) {
-            Text(
-                "$notStudied new moves not studied yet",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            )
-            for (n in listOf(5, 10, 20)) {
-                DropdownMenuItem(
-                    text = { Text("Learn $n More New Moves") },
-                    leadingIcon = { Icon(Icons.Outlined.AutoAwesome, contentDescription = null) },
-                    onClick = {
-                        close()
+            group {
+                label("$notStudied new moves not studied yet")
+                for (n in listOf(5, 10, 20)) {
+                    item("Learn $n More New Moves", Icons.Outlined.AutoAwesome) {
                         document.extendNewLimitToday(n)
                         navigate(Destination.Drill(id, DrillKind.Study))
-                    },
-                )
+                    }
+                }
             }
         }
         if (extraReviews > 0) {
-            DropdownMenuItem(
-                text = { Text("Review $extraReviews More Moves") },
-                leadingIcon = { Icon(Icons.Outlined.Refresh, contentDescription = null) },
-                onClick = {
-                    close()
+            group {
+                item("Review $extraReviews More Moves", Icons.Outlined.Refresh) {
                     document.extendReviewLimitToday(extraReviews)
                     navigate(Destination.Drill(id, DrillKind.Study))
-                },
-            )
+                }
+            }
         }
         if (stats.progress.studied > 0) {
-            DropdownMenuItem(
-                text = { Text("Practice the Whole Repertoire") },
-                leadingIcon = { Icon(Symbols.practice, contentDescription = null) },
-                onClick = {
-                    close()
-                    navigate(Destination.Drill(id, DrillKind.Practice))
-                },
-            )
+            group { item("Practice the Whole Repertoire", Symbols.practice) { navigate(Destination.Drill(id, DrillKind.Practice)) } }
         }
     }
 }

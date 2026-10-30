@@ -1,11 +1,17 @@
 package org.orbtchess.orbt.ui.library
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.groupedTopAppBarColors
+import org.orbtchess.orbt.ui.components.ListSection
+import org.orbtchess.orbt.ui.components.GroupedBackground
+import org.orbtchess.orbt.ui.components.MenuBuilder
+import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,11 +27,8 @@ import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -40,11 +43,9 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -136,32 +137,22 @@ fun LibraryScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = GroupedBackground,
         topBar = {
             LargeFlexibleTopAppBar(
                 title = { Text("Repertoires") },
                 scrollBehavior = scrollBehavior,
+                colors = groupedTopAppBarColors(),
                 actions = {
                     // An empty library offers these in its middle.
                     if (library.entries.isNotEmpty()) {
                         Box {
                             TooltipIconButton("Add", Symbols.add, { addMenu = true })
-                            DropdownMenu(addMenu, onDismissRequest = { addMenu = false }) {
-                                DropdownMenuItem(
-                                    text = { Text("New Repertoire") },
-                                    leadingIcon = { Icon(Symbols.add, contentDescription = null) },
-                                    onClick = {
-                                        addMenu = false
-                                        navigate(Destination.Setup(SetupMode.New()))
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Import PGN…") },
-                                    leadingIcon = { Icon(Symbols.importFile, contentDescription = null) },
-                                    onClick = {
-                                        addMenu = false
-                                        importPgn()
-                                    },
-                                )
+                            ExpressiveMenu(addMenu, onDismissRequest = { addMenu = false }) {
+                                group {
+                                    item("New Repertoire", Symbols.add) { navigate(Destination.Setup(SetupMode.New())) }
+                                    item("Import PGN…", Symbols.importFile) { importPgn() }
+                                }
                             }
                         }
                     }
@@ -200,21 +191,17 @@ fun LibraryScreen(
                 LazyColumn(Modifier.fillMaxSize()) {
                     if (showToday && tourRunning) {
                         // Studying moves you haven't built yet isn't the next step.
-                        item { SectionHeader("Tour") }
-                        item { TourSection(app, navigate) }
+                        item { ListSection("Tour") { TourSection(app, navigate) } }
                     } else if (showToday) {
-                        item { SectionHeader("Today") }
-                        item { TodayCard(app, navigate) }
+                        item { ListSection("Today") { TodayCard(app, navigate) } }
                     } else {
                         // Today's card is in the pane beside when this row is selected.
-                        item { TodayRow(app, selected = selectedEntryId == null) { navigate(Destination.Library) } }
+                        item { ListSection(null) { TodayRow(app, selected = selectedEntryId == null) { navigate(Destination.Library) } } }
                     }
                     groups(
                         app, selectedEntryId, navigate,
-                        // The list pane beside a detail selects its rows; a phone's tab does not.
-                        inset = !showToday,
-                        menu = { entry, close ->
-                            EntryMenu(entry, navigate, close, export = { export(entry) }, delete = { deleteEntry = entry })
+                        menu = { entry ->
+                            entryMenu(entry, navigate, export = { export(entry) }, delete = { deleteEntry = entry })
                         },
                     )
                 }
@@ -253,17 +240,6 @@ fun LibraryScreen(
     }
 }
 
-@Composable
-private fun SectionHeader(title: String, inset: Boolean = false) {
-    val start = if (inset) 16.dp + SelectableInset else 16.dp
-    Text(
-        title,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = start, end = 16.dp, top = 16.dp, bottom = 4.dp),
-    )
-}
-
 /** Sections of the repertoire list: grouped by side, as Chessbook does; by name within each group. */
 private enum class LibraryGroup(val title: String) {
     White("White"), Black("Black"), Setup("Not Set Up");
@@ -279,23 +255,25 @@ private fun LazyListScope.groups(
     app: AppModel,
     selectedEntryId: String?,
     navigate: (Destination) -> Unit,
-    inset: Boolean,
-    menu: @Composable (RepertoireEntry, close: () -> Unit) -> Unit,
+    menu: MenuBuilder.(RepertoireEntry) -> Unit,
 ) {
     for (group in LibraryGroup.entries) {
         val entries = app.library.entries.filter(group::contains)
         if (entries.isEmpty()) continue
-        item(key = "group-${group.name}") { SectionHeader(group.title, inset) }
-        items(entries, key = { it.id }) { entry ->
-            LibraryRow(
-                app, entry,
-                selected = selectedEntryId != null && app.documents.currentId(selectedEntryId) == entry.id,
-                inset = inset,
-                onClick = {
-                    navigate(if (entry.needsSetup) Destination.Setup(SetupMode.SetUp(entry.id)) else Destination.Overview(entry.id))
-                },
-                menu = { close -> menu(entry, close) },
-            )
+        // A side's repertoires as one group of Material's segmented list.
+        item(key = "group-${group.name}") {
+            ListSection(group.title) {
+                for (entry in entries) {
+                    LibraryRow(
+                        app, entry,
+                        selected = selectedEntryId != null && app.documents.currentId(selectedEntryId) == entry.id,
+                        onClick = {
+                            navigate(if (entry.needsSetup) Destination.Setup(SetupMode.SetUp(entry.id)) else Destination.Overview(entry.id))
+                        },
+                        menu = { menu(entry) },
+                    )
+                }
+            }
         }
     }
 }
@@ -308,7 +286,6 @@ private fun TodayRow(app: AppModel, selected: Boolean, onClick: () -> Unit) {
         ListItem(
             selected = selected,
             onClick = onClick,
-            modifier = Modifier.padding(horizontal = SelectableInset),
             leadingContent = { Icon(Icons.Outlined.CalendarToday, contentDescription = null) },
             trailingContent = { if (due > 0) Text("$due", style = MaterialTheme.typography.labelLarge) },
             colors = rowColors(selected),
@@ -317,11 +294,9 @@ private fun TodayRow(app: AppModel, selected: Boolean, onClick: () -> Unit) {
 }
 
 /**
- * The list pane's rows are Material 3 Expressive's selectable list items, inset from the pane's
- * edges so the selected one shows its rounded shape (as a navigation drawer's items).
+ * The list pane's rows are Material 3 Expressive's selectable list items in segmented groups:
+ * the selected one in the secondary container, as Material selects.
  */
-private val SelectableInset = 12.dp
-
 @Composable
 private fun rowColors(selected: Boolean) = if (selected) {
     val scheme = MaterialTheme.colorScheme
@@ -342,9 +317,8 @@ private fun LibraryRow(
     app: AppModel,
     entry: RepertoireEntry,
     selected: Boolean,
-    inset: Boolean,
     onClick: () -> Unit,
-    menu: @Composable (close: () -> Unit) -> Unit,
+    menu: MenuBuilder.() -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
     val stats = EntryStats.of(entry, app)
@@ -355,7 +329,6 @@ private fun LibraryRow(
                 onClick = onClick,
                 onLongClick = { showMenu = true },
                 onLongClickLabel = "Repertoire menu",
-                modifier = if (inset) Modifier.padding(horizontal = SelectableInset) else Modifier,
                 supportingContent = {
                     when {
                         entry.needsSetup -> Text("New PGN. Tap to set it up.")
@@ -367,37 +340,20 @@ private fun LibraryRow(
                 colors = rowColors(selected),
             ) { Text(entry.name, maxLines = 1) }
         }
-        DropdownMenu(showMenu, onDismissRequest = { showMenu = false }) {
-            menu { showMenu = false }
-        }
+        ExpressiveMenu(showMenu, onDismissRequest = { showMenu = false }, content = menu)
     }
 }
 
 /** Anki's deck gear menu: Rename (the repertoire's settings), Options, Export, Delete. */
-@Composable
-private fun EntryMenu(entry: RepertoireEntry, navigate: (Destination) -> Unit, close: () -> Unit, export: () -> Unit, delete: () -> Unit) {
+private fun MenuBuilder.entryMenu(entry: RepertoireEntry, navigate: (Destination) -> Unit, export: () -> Unit, delete: () -> Unit) {
     if (!entry.needsSetup) {
-        DropdownMenuItem(
-            text = { Text("Rename") },
-            leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
-            onClick = { close(); navigate(Destination.RepertoireSettings(entry.id)) },
-        )
-        DropdownMenuItem(
-            text = { Text("Options") },
-            leadingIcon = { Icon(Symbols.options, contentDescription = null) },
-            onClick = { close(); navigate(Destination.StudyOptions(entry.id)) },
-        )
-        DropdownMenuItem(
-            text = { Text("Export") },
-            leadingIcon = { Icon(Symbols.share, contentDescription = null) },
-            onClick = { close(); export() },
-        )
+        group {
+            item("Rename", Icons.Outlined.Edit) { navigate(Destination.RepertoireSettings(entry.id)) }
+            item("Options", Symbols.options) { navigate(Destination.StudyOptions(entry.id)) }
+            item("Export", Symbols.share) { export() }
+        }
     }
-    DropdownMenuItem(
-        text = { Text("Delete", color = ThemeColor.failure.color) },
-        leadingIcon = { Icon(Symbols.delete, contentDescription = null, tint = ThemeColor.failure.color) },
-        onClick = { close(); delete() },
-    )
+    group { item("Delete", Symbols.delete, destructive = true) { delete() } }
 }
 
 /**

@@ -1,5 +1,7 @@
 package org.orbtchess.orbt.ui.library
 
+import org.orbtchess.orbt.ui.components.groupedTopAppBarColors
+import org.orbtchess.orbt.ui.components.GroupedBackground
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -163,9 +165,11 @@ fun SetupScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = GroupedBackground,
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text(title) },
+                colors = groupedTopAppBarColors(),
                 scrollBehavior = scrollBehavior,
                 subtitle = { Text("Step $step of 3") },
                 navigationIcon = {

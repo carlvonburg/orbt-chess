@@ -1,5 +1,6 @@
 package org.orbtchess.orbt.ui.statistics
 
+import androidx.compose.material3.CardDefaults
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,7 +48,11 @@ import kotlin.math.roundToLong
 // The building blocks of the Statistics screen (`StatisticsComponents.swift`): a card names its
 // subject with a symbol, leads with one number and shows the chart that answers it.
 
-/** A card of the Statistics grid: Material's card, titled with its subject. */
+/**
+ * A card of the Statistics grid: Material's card on the grouped page's container color, in the
+ * surface color with the large shape (as the segments of the app's grouped lists), titled with
+ * its subject in Material 3 Expressive's emphasized title.
+ */
 @Composable
 internal fun StatCard(
     title: String,
@@ -56,7 +61,11 @@ internal fun StatCard(
     color: ThemeColor? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Card(modifier.fillMaxWidth()) {
+    Card(
+        modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val tint = color?.color ?: MaterialTheme.colorScheme.primary
             Row(
@@ -65,7 +74,7 @@ internal fun StatCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
-                Text(title, style = MaterialTheme.typography.titleSmall, color = tint)
+                Text(title, style = MaterialTheme.typography.titleSmallEmphasized, color = tint)
             }
             content()
         }
@@ -75,7 +84,7 @@ internal fun StatCard(
 /** A number with its unit smaller and secondary (Health's style in the Swift app). */
 @Composable
 internal fun StatValue(value: String, unit: String? = null, large: Boolean = true, modifier: Modifier = Modifier) {
-    val style = if (large) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleLarge
+    val style = if (large) MaterialTheme.typography.headlineMediumEmphasized else MaterialTheme.typography.titleLargeEmphasized
     val secondary = MaterialTheme.colorScheme.onSurfaceVariant
     Text(
         buildAnnotatedString {

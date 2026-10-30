@@ -1,24 +1,24 @@
 package org.orbtchess.orbt.ui.statistics
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.groupedTopAppBarColors
+import org.orbtchess.orbt.ui.components.GroupedBackground
+import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.LargeFlexibleTopAppBar
@@ -27,8 +27,6 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -92,7 +90,10 @@ fun StatisticsScreen(
         val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
         Scaffold(
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            topBar = { LargeFlexibleTopAppBar(title = { Text("Statistics") }, scrollBehavior = scrollBehavior) },
+            containerColor = GroupedBackground,
+            topBar = {
+                LargeFlexibleTopAppBar(title = { Text("Statistics") }, scrollBehavior = scrollBehavior, colors = groupedTopAppBarColors())
+            },
         ) { padding ->
             StatisticsSummary(app, model, current, navigate, Modifier.padding(padding))
         }
@@ -106,9 +107,11 @@ fun StatisticsScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = GroupedBackground,
         topBar = {
             LargeFlexibleTopAppBar(
                 title = { Text("Statistics") },
+                colors = groupedTopAppBarColors(),
                 subtitle = { Text(scopeTitle(app, current)) },
                 actions = { FilterMenu(app, chosenId, choose) },
                 scrollBehavior = scrollBehavior,
@@ -130,18 +133,13 @@ private fun FilterMenu(app: AppModel, chosenId: String?, choose: (String?) -> Un
     var expanded by remember { mutableStateOf(false) }
     Box {
         TooltipIconButton("Filter", if (chosenId == null) Icons.Outlined.FilterAlt else Icons.Filled.FilterAlt, { expanded = true })
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            val options = listOf<Pair<String?, String>>(null to "All Repertoires") +
-                app.library.entries.filter { !it.needsSetup }.map { it.id to it.name }
-            for ((id, name) in options) {
-                DropdownMenuItem(
-                    text = { Text(name) },
-                    onClick = {
-                        choose(id)
-                        expanded = false
-                    },
-                    trailingIcon = { if (id == chosenId) Icon(Icons.Filled.Check, contentDescription = "Selected") },
-                )
+        val entries = app.library.entries.filter { !it.needsSetup }
+        ExpressiveMenu(expanded, onDismissRequest = { expanded = false }) {
+            group { item("All Repertoires", selected = chosenId == null) { choose(null) } }
+            if (entries.isNotEmpty()) {
+                group {
+                    for (entry in entries) item(entry.name, selected = entry.id == chosenId) { choose(entry.id) }
+                }
             }
         }
     }

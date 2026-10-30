@@ -1,5 +1,10 @@
 package org.orbtchess.orbt.ui.library
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.ListSection
+import org.orbtchess.orbt.ui.components.groupedTopAppBarColors
+import org.orbtchess.orbt.ui.components.GroupedBackground
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,9 +17,7 @@ import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -22,10 +25,8 @@ import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -77,13 +78,15 @@ fun TodayPane(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = { LargeFlexibleTopAppBar(title = { Text("Today") }, scrollBehavior = scrollBehavior) },
+        containerColor = GroupedBackground,
+        topBar = {
+            LargeFlexibleTopAppBar(title = { Text("Today") }, scrollBehavior = scrollBehavior, colors = groupedTopAppBarColors())
+        },
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
             // While the tour runs, its card instead.
-            item { if (tourRunning(app)) TourSection(app, navigate) else TodayCard(app, navigate) }
+            item { ListSection(null) { if (tourRunning(app)) TourSection(app, navigate) else TodayCard(app, navigate) } }
             if (statisticsInline) {
-                item { HorizontalDivider(Modifier.padding(top = 8.dp)) }
                 // A pane of its own height, scrolled within (the statistics are a screen).
                 item {
                     StatisticsScreen(app, StatisticsScope.All, inline = true, navigate = navigate, modifier = Modifier.fillParentMaxHeight())
@@ -201,20 +204,11 @@ fun TodayCard(app: AppModel, navigate: (Destination) -> Unit, modifier: Modifier
         if (single != null) {
             ActionButton(title, main, { navigate(destination(single.entry.id)) })
         } else {
-            ActionMenuButton(title, main) { close ->
-                for (item in of) {
-                    DropdownMenuItem(
-                        text = {
-                            Column {
-                                Text(item.entry.name)
-                                detail(item.stats)?.let { Text(it, style = secondary, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                            }
-                        },
-                        onClick = {
-                            close()
-                            navigate(destination(item.entry.id))
-                        },
-                    )
+            ActionMenuButton(title, main) {
+                group {
+                    for (item in of) {
+                        item(item.entry.name, supporting = detail(item.stats)) { navigate(destination(item.entry.id)) }
+                    }
                 }
             }
         }

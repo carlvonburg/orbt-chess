@@ -1,5 +1,7 @@
 package org.orbtchess.orbt.ui.overview
 
+import org.orbtchess.orbt.ui.components.groupedTopAppBarColors
+import org.orbtchess.orbt.ui.components.GroupedBackground
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -92,9 +94,11 @@ fun RepertoireSettingsScreen(
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = GroupedBackground,
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text("Repertoire Settings") },
+                colors = groupedTopAppBarColors(),
                 scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.Filled.Close, contentDescription = "Cancel") }

@@ -1,8 +1,10 @@
 package org.orbtchess.orbt.ui.overview
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.ListSection
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -36,10 +38,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.input.KeyboardType
@@ -185,33 +185,15 @@ data class RepertoireSettingsDraft(
 
 // MARK: Sections
 
-/** A titled group of a settings page, with an explanation under it (a Form section). */
+/** A titled group of a settings page, with an explanation under it (a Form section): Material's segmented list, a segment per row. */
 @Composable
 fun FormSection(
     header: String?,
     modifier: Modifier = Modifier,
     footer: String? = null,
-    content: @Composable ColumnScope.() -> Unit,
+    content: @Composable () -> Unit,
 ) {
-    Column(modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        if (header != null) {
-            Text(
-                header,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        }
-        content()
-        if (footer != null) {
-            Text(
-                footer,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        }
-    }
+    ListSection(header, modifier, footer, content)
 }
 
 /** Every repertoire setting on one page (Repertoire Settings). */

@@ -1,5 +1,7 @@
 package org.orbtchess.orbt.ui.statistics
 
+import androidx.compose.foundation.layout.Column
+import org.orbtchess.orbt.ui.components.ListSection
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -78,14 +80,6 @@ fun CardInfoSheet(
         }
         val offset = ZoneId.systemDefault().rules.getOffset(Instant.now()).totalSeconds.toLong()
         val info = Graphs(listOf(card), 0, 0, revlog, schedTiming(), offset).cardInfo(card, epd)
-        item {
-            Text(
-                document.tree.lineText(node).ifEmpty { "Starting position" },
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        }
         val rows = buildList {
             add("Added" to date(info.added * 1000))
             info.firstReview?.let { add("First review" to date(it)) }
@@ -102,23 +96,22 @@ fun CardInfoSheet(
             }
             info.retrievability?.let { add("Retrievability" to percent(it)) }
         }
-        items(rows) { (label, value) ->
-            ListItem(
-                trailingContent = { Text(value, style = tabularDigits(MaterialTheme.typography.bodyMedium)) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            ) { Text(label) }
-        }
         item {
-            HorizontalDivider(Modifier.padding(top = 8.dp))
-            Text(
-                "History",
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp).semantics { heading() },
-            )
+            ListSection(document.tree.lineText(node).ifEmpty { "Starting position" }) {
+                for ((label, value) in rows) {
+                    ListItem(trailingContent = { Text(value, style = tabularDigits(MaterialTheme.typography.bodyMedium)) }) { Text(label) }
+                }
+            }
         }
-        items(info.history.reversed(), key = { it.id }) { entry ->
-            HistoryRow(entry)
+        if (info.history.isNotEmpty()) {
+            item {
+                // The history as one segment: a log, not rows to pick.
+                ListSection("History") {
+                    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+                        for (entry in info.history.reversed()) HistoryRow(entry)
+                    }
+                }
+            }
         }
     }
 }

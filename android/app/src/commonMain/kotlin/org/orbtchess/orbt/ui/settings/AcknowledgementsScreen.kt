@@ -1,5 +1,8 @@
 package org.orbtchess.orbt.ui.settings
 
+import org.orbtchess.orbt.ui.components.ListSection
+import org.orbtchess.orbt.ui.components.groupedTopAppBarColors
+import org.orbtchess.orbt.ui.components.GroupedBackground
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -89,9 +92,11 @@ private fun Page(title: String, onBack: () -> Unit, modifier: Modifier, content:
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = GroupedBackground,
         topBar = {
             MediumFlexibleTopAppBar(
                 title = { Text(title) },
+                colors = groupedTopAppBarColors(),
                 scrollBehavior = scrollBehavior,
                 navigationIcon = {
                     IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
@@ -108,20 +113,18 @@ private fun AboutPage(onBack: () -> Unit, modifier: Modifier, openLicenses: () -
     val version = appVersion()
     Page("About", onBack, modifier) { inner ->
         Column(inner.verticalScroll(rememberScrollState())) {
-            for ((title, url) in listOf("Website" to AppLinks.WEBSITE, "Support" to AppLinks.SUPPORT, "Privacy Policy" to AppLinks.PRIVACY)) {
-                LinkRow(title) { uri.openUri(url) }
+            ListSection(null) {
+                for ((title, url) in listOf("Website" to AppLinks.WEBSITE, "Support" to AppLinks.SUPPORT, "Privacy Policy" to AppLinks.PRIVACY)) {
+                    LinkRow(title) { uri.openUri(url) }
+                }
             }
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            LinkRow("Source Code") { uri.openUri(AppLinks.SOURCE) }
-            ListItem(
-                onClick = openLicenses,
-            ) { Text("Licenses") }
-            Text(
-                "Version $version. ORBT Chess is free software: you can share and change it under the GNU AGPL 3.0 or later.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
+            ListSection(
+                null,
+                footer = "Version $version. ORBT Chess is free software: you can share and change it under the GNU AGPL 3.0 or later.",
+            ) {
+                LinkRow("Source Code") { uri.openUri(AppLinks.SOURCE) }
+                ListItem(onClick = openLicenses) { Text("Licenses") }
+            }
         }
     }
 }
@@ -153,14 +156,11 @@ private fun LicensesPage(acknowledgements: Acknowledgements, onBack: () -> Unit,
     }
     Page("Licenses", onBack, modifier) { inner ->
         LazyColumn(inner) {
-            item { ListItem(
-                onClick = { open(app) },
-            ) { Text(app.name) } }
-            item { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
-            items(entries, key = { it.id }) { entry ->
-                ListItem(
-                    onClick = { open(entry) },
-                ) { Text(entry.name) }
+            item { ListSection(null) { ListItem(onClick = { open(app) }) { Text(app.name) } } }
+            item {
+                ListSection(null) {
+                    for (entry in entries) ListItem(onClick = { open(entry) }) { Text(entry.name) }
+                }
             }
         }
     }
