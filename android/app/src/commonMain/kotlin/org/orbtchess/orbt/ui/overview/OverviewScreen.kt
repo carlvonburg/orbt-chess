@@ -126,7 +126,7 @@ fun OverviewScreen(
                     }
                 },
                 actions = {
-                    TooltipIconButton("Repertoire", Symbols.settings, { menu = true })
+                    TooltipIconButton("More options", Symbols.more, { menu = true })
                     DropdownMenu(menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(
                             text = { Text("Repertoire Settings…") },
