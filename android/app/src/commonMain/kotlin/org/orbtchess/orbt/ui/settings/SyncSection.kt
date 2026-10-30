@@ -38,7 +38,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 /**
- * Sync (Android only; the Apple app has iCloud Drive): the repertoire folder synced with
+ * Sync (Android and the desktop; the Apple app has iCloud Drive): the repertoire folder synced with
  * Dropbox or Google Drive, chosen in a dialog and confirmed, with its status, Sync Now, and
  * signing in again when the provider asks.
  */
@@ -69,7 +69,7 @@ internal fun SyncSection(app: AppModel) {
                     onClick = { scope.launch { sync.signIn(provider) } },
                     enabled = !sync.isSigningIn,
                     leadingContent = { Icon(Symbols.signIn, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                ) { Text("Sign In to ${provider.title}", color = MaterialTheme.colorScheme.primary) }
+                ) { Text("Sign In Again", color = MaterialTheme.colorScheme.primary) }
             } else {
                 ListItem(
                     onClick = { sync.syncNow() },
@@ -166,7 +166,12 @@ private fun status(sync: SyncService): Status {
     }
     return when {
         sync.isSigningIn -> Status("Signing in…", Icons.Outlined.Sync)
-        sync.needsSignIn -> Status("Sign in again to keep syncing.$pending", Icons.Outlined.SyncProblem, ThemeColor.todo)
+        // Refused by the provider (revoked, unused for months): what changed here waits for the sign-in.
+        sync.needsSignIn -> Status(
+            "Signed out by ${sync.provider?.title}. Sign in again to keep syncing; your changes stay on this device.$pending",
+            Icons.Outlined.SyncProblem,
+            ThemeColor.todo,
+        )
         else -> when (val state = sync.state) {
             SyncState.Syncing -> Status("Syncing…$pending", Icons.Outlined.Sync)
             SyncState.NeedsToken -> Status("Signing in…", Icons.Outlined.Sync)

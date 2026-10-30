@@ -35,7 +35,7 @@ class AppModel(val platform: PlatformServices, private val scope: CoroutineScope
     val engine = EngineService(engineNetwork, engineDefaults, scope)
     val tour = TourGuide(platform.settings)
     val sync = SyncService(
-        platform.folders.repertoires, platform.folders.support, platform.settings, platform.secrets,
+        { platform.folders.repertoires }, platform.folders.support, platform.settings, platform.secrets,
         platform.syncAuth, documents, scope = scope,
     )
 
@@ -60,9 +60,30 @@ class AppModel(val platform: PlatformServices, private val scope: CoroutineScope
         coverage.load(File(platform.folders.repertoires, "Coverage"))
     }
 
+    /**
+     * Keeps the repertoires in `folder` from now on (the desktop's Settings): the open
+     * documents are saved and closed, the library lists the new folder, remembered for the next
+     * launch. Nothing is moved or copied.
+     */
+    suspend fun switchRepertoireFolder(folder: File) {
+        if (folder.absoluteFile == platform.folders.repertoires.absoluteFile) return
+        documents.closeAll()
+        documents.flushAll()
+        platform.folders.repertoires = folder
+        platform.settings.putString(REPERTOIRE_FOLDER_KEY, folder.absolutePath)
+        library.switchTo(folder)
+        sync.folderChanged()
+        coverage.load(File(folder, "Coverage"))
+    }
+
     /** Leaving: write every pending change (the sync uploads it while it can). */
     suspend fun flush() {
         documents.flushAll()
         sync.background()
+    }
+
+    companion object {
+        /** The chosen repertoire folder's path (the desktop), read by its platform at launch. */
+        const val REPERTOIRE_FOLDER_KEY = "repertoireFolder"
     }
 }

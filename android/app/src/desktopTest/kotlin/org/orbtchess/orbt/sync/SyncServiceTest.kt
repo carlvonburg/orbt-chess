@@ -115,7 +115,7 @@ class SyncServiceTest {
         library.setUp()
         val documents = Documents(library, Explorer(MemoryStore(), null, null), { defaultStudyDefaults() }, scope)
         val sync = SyncService(
-            folder, root, settings, settings, FakeAuth(), documents,
+            { folder }, root, settings, settings, FakeAuth(), documents,
             send = { server.handle(it) }, scope = scope,
         )
         sync.start()

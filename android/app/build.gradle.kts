@@ -2,6 +2,7 @@
 // Linux), a Kotlin Multiplatform library that androidApp builds the Android app from, and the
 // desktop app (`run`, `packageDistributionForCurrentOS`).
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.util.Properties
 
 plugins {
     kotlin("multiplatform")
@@ -58,6 +59,7 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.10.2")
+                implementation("com.github.javakeyring:java-keyring:1.0.4")
             }
         }
         val desktopTest by getting {
@@ -97,9 +99,23 @@ val copyHostLibrary by tasks.registering(Sync::class) {
 }
 tasks.matching { it.name == "prepareAppResources" }.configureEach { dependsOn(copyHostLibrary) }
 
+// The sync's keys (OAuth client ids of the owner's Dropbox app and Google "Desktop app" client;
+// a desktop client's secret ships in the app and is not secret): Gradle properties (`-P`,
+// ~/.gradle/gradle.properties) or local.properties, never committed, handed to the app as system
+// properties (`DesktopSyncAuth`). A provider without its key is not offered.
+val syncKeys: Map<String, String> = run {
+    val local = rootProject.file("local.properties").takeIf { it.exists() }?.let { file ->
+        Properties().apply { file.inputStream().use { load(it) } }
+    }
+    listOf("orbt.dropboxAppKey", "orbt.driveDesktopClientId", "orbt.driveDesktopClientSecret").associateWith { key ->
+        providers.gradleProperty(key).orNull ?: local?.getProperty(key) ?: ""
+    }.filterValues { it.isNotEmpty() }
+}
+
 compose.desktop {
     application {
         mainClass = "org.orbtchess.orbt.MainKt"
+        jvmArgs += syncKeys.map { (key, value) -> "-D$key=$value" }
         nativeDistributions {
             appResourcesRootDir.set(hostResourcesDir)
             targetFormats(TargetFormat.Msi, TargetFormat.Deb)

@@ -10,15 +10,30 @@ import java.io.File
  * equivalents: the iCloud Drive folder (or Documents) for repertoires, Application Support.
  */
 class AppFolders(
-    /** The repertoires: `<Name>.pgn`, `<Name>.otrep.json`, `<Name>.otlog.jsonl`. */
-    val repertoires: File,
+    /** The repertoires: `<Name>.pgn`, `<Name>.otrep.json`, `<Name>.otlog.jsonl`. The desktop
+     *  lets the user choose another (`AppModel.switchRepertoireFolder`). */
+    repertoires: File,
     /** The app's own data: coverage tables, the engine's full net, the stats cache. */
     val support: File,
 ) {
+    var repertoires: File = repertoires
+        internal set
+
     init {
         repertoires.mkdirs()
         support.mkdirs()
     }
+}
+
+/**
+ * Choosing the repertoire folder (the desktop's Settings): one inside Dropbox or Google Drive
+ * for desktop, whose client syncs it. Android and Apple keep theirs.
+ */
+interface FolderChooser {
+    /** The system's folder chooser, at `current`; null when cancelled. */
+    suspend fun choose(current: File): File?
+    /** Where the repertoires go unless the user chose another folder. */
+    val default: File
 }
 
 /** Small settings (UserDefaults on Apple): SharedPreferences on Android, java.util.prefs on the desktop. */
@@ -58,6 +73,8 @@ class PlatformServices(
     val authBrowser: AuthBrowser,
     /** Logical processors, for the engine's threads. */
     val processors: Int = Runtime.getRuntime().availableProcessors(),
-    /** Dropbox and Google Drive sign-ins (Android); none on the desktop. */
+    /** Dropbox and Google Drive sign-ins (Android, the desktop). */
     val syncAuth: SyncAuth = NoSyncAuth,
+    /** The desktop's choice of repertoire folder; null where the folder is the platform's. */
+    val folderChooser: FolderChooser? = null,
 )

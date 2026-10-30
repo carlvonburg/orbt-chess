@@ -52,8 +52,8 @@ import java.util.logging.Logger
  * from the observer (the core object locks).
  */
 class SyncService(
-    /** The repertoire folder. */
-    private val folder: File,
+    /** The repertoire folder (the desktop may switch it: [folderChanged]). */
+    private val folderOf: () -> File,
     /** Where the sync's state is kept (the support folder). */
     private val support: File,
     private val settings: Settings,
@@ -97,7 +97,7 @@ class SyncService(
     suspend fun start() {
         FileAccess.observer = { file, data ->
             val sync = core
-            if (sync != null && file.parentFile?.absoluteFile == folder.absoluteFile && syncFileKind(file.name) != null) {
+            if (sync != null && file.parentFile?.absoluteFile == folderOf().absoluteFile && syncFileKind(file.name) != null) {
                 // A sync closed meanwhile (signed out) refuses calls; the write itself went through.
                 runCatching { sync.localChanged(file.name, data) }
             }
@@ -106,6 +106,17 @@ class SyncService(
         val stored = storedCredentials(chosen)
         account = stored?.account
         begin(chosen, stored)
+    }
+
+    /**
+     * The repertoire folder is another one now (the desktop's Settings): the sync starts over
+     * with its files, merged once with the provider's (nothing is deleted).
+     */
+    suspend fun folderChanged() {
+        val provider = provider ?: return
+        stop()
+        withContext(Dispatchers.IO) { stateFile(provider).delete() }
+        begin(provider, storedCredentials(provider))
     }
 
     /** Back in front: look for changes from other devices, long-poll (Dropbox). */
@@ -196,7 +207,7 @@ class SyncService(
         val saved = withContext(Dispatchers.IO) { runCatching { stateFile(provider).readBytes() }.getOrDefault(ByteArray(0)) }
         val sync = when (provider) {
             SyncProvider.Dropbox -> RepertoireSync.dropbox(auth.dropboxAppKey, saved)
-            SyncProvider.Drive -> RepertoireSync.drive(saved)
+            SyncProvider.Drive -> auth.driveSync(saved)
         }
         this.provider = provider
         tokenFailed = false
@@ -204,6 +215,7 @@ class SyncService(
         core = sync
         sync.setListener(Listener(this))
         if (credentials != null) sync.setCredentials(credentials.accessToken, credentials.expiresAt, credentials.refreshToken)
+        val folder = folderOf()
         val files = withContext(Dispatchers.IO) {
             folder.listFiles().orEmpty()
                 .filter { it.isFile && syncFileKind(it.name) != null }
@@ -285,6 +297,7 @@ class SyncService(
     private suspend fun applyFiles(writes: List<LocalWrite>, deletes: List<String>) {
         class Remote(var pgn: ByteArray? = null, var sidecar: ByteArray? = null, var revlog: ByteArray? = null)
         val open = mutableMapOf<RepertoireDocument, Remote>()
+        val folder = folderOf()
         for (write in writes) {
             val document = documentOf(write.name)
             if (document == null) {
@@ -314,8 +327,17 @@ class SyncService(
 
     private fun refresh(sync: RepertoireSync) {
         if (core !== sync) return
+        val previous = state
         state = sync.state()
         unsynced = sync.unsyncedFiles()
+        // The provider refused the refresh token (revoked, unused for months, Google's 7 days
+        // in Testing): the core dropped it, and so does the store, so the next launch doesn't
+        // try it again. The account is kept; edits wait for the next sign-in.
+        if (state == SyncState.NeedsSignIn && previous != SyncState.NeedsSignIn) {
+            val provider = provider ?: return
+            val stored = storedCredentials(provider) ?: return
+            if (stored.refreshToken != null) storeCredentials(provider, SyncCredentials(account = stored.account))
+        }
     }
 
     /** Drive's token expired or was refused: ask the system for a new one, without the user. */

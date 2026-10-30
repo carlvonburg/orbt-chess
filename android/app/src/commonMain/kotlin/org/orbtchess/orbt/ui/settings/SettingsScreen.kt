@@ -121,6 +121,12 @@ fun SettingsScreen(
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             LichessSection(app)
             if (app.sync.auth.providers.isNotEmpty()) SyncSection(app)
+            app.platform.folderChooser?.let { chooser ->
+                FolderSection(app, chooser, onSwitched = {
+                    onBack()
+                    navigate(Destination.Library)
+                })
+            }
             StudyDefaultsSection(app)
             SchedulingSection()
             Section("Appearance", footer = "Buttons, selection and the board.") { AppColorRow() }
@@ -288,7 +294,7 @@ private fun DataSection(app: AppModel) {
     val provider = app.sync.provider
     Section(
         "Data",
-        footer = (if (provider == null) "Repertoires are stored on this device only. " else "") +
+        footer = (if (provider == null && app.platform.folderChooser == null) "Repertoires are stored on this device only. " else "") +
             "Repertoires are PGN files you can open in any chess program. " +
             "Statistics are cached on this device and fetched again when needed.",
     ) {

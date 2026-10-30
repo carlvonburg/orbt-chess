@@ -3,6 +3,7 @@ package org.orbtchess.orbt.lichess
 import com.sun.net.httpserver.HttpServer
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
+import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 
@@ -11,13 +12,23 @@ import java.net.InetSocketAddress
  * on the loopback address (RFC 8252's loopback redirect; a desktop app has no custom scheme
  * it can count on). There is no way to tell the user closed the tab: the wait ends after
  * `timeoutMs`, or when the caller's coroutine is cancelled.
+ *
+ * `ports`: the first free one is used. 0 (any port) suits Lichess and Google; Dropbox matches
+ * redirect URIs exactly, so its sign-in names the few registered with its app.
  */
 class LoopbackAuthBrowser(
     private val openUrl: (String) -> Unit,
     private val timeoutMs: Long = 5 * 60_000,
+    private val ports: List<Int> = listOf(0),
 ) : AuthBrowser {
+    /** The same browser, listening on one of `ports`. */
+    fun onPorts(ports: List<Int>) = LoopbackAuthBrowser(openUrl, timeoutMs, ports)
+
     override suspend fun authenticate(authorizeUrl: (redirectUri: String) -> String): String? {
-        val server = HttpServer.create(InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0), 0)
+        val address = InetAddress.getByName("127.0.0.1")
+        val server = ports.firstNotNullOfOrNull { port ->
+            runCatching { HttpServer.create(InetSocketAddress(address, port), 0) }.getOrNull()
+        } ?: throw IOException("Ports ${ports.joinToString()} are in use.")
         val redirectUri = "http://127.0.0.1:${server.address.port}/"
         val callback = CompletableDeferred<String>()
         server.createContext("/") { exchange ->
