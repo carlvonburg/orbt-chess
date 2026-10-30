@@ -1,6 +1,7 @@
 package org.orbtchess.orbt.ui.analysis
 
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -134,7 +135,7 @@ private fun reanalyse(app: AppModel, model: AnalysisModel) {
 
 private enum class PanelTab { Explorer, Moves }
 
-/** A phone: the board edge to edge under the engine's lines, the moves or the explorer below. */
+/** A phone: the board edge to edge under the engine's lines, the explorer or the moves below (as on iPhone, no history strip). */
 @Composable
 private fun WholeScreen(
     app: AppModel,
@@ -151,8 +152,8 @@ private fun WholeScreen(
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
             AnalysisEngineLines(app, model, Modifier.padding(horizontal = 16.dp))
+            // The moves are the Moves tab's (the history is beside the board only on wide windows).
             AnalysisBoard(app, model, Modifier.fillMaxWidth())
-            PathStrip(model)
             // Two views of the panel's content: Material's secondary tabs (tabs switch between
             // content; segmented buttons choose options).
             SecondaryTabRow(selectedTabIndex = tab.ordinal) {
@@ -254,16 +255,13 @@ private fun arrows(lines: List<PvLine>): List<BoardArrow> = lines.mapIndexedNotN
 
 /**
  * Material's docked toolbar: back and forward through the analysis (also ← and → on a
- * keyboard), kept together as Build's, then Flip Board.
+ * keyboard), centred, as nothing else is in it.
  */
 @Composable
 private fun NavigationToolbar(model: AnalysisModel) {
-    FlexibleBottomAppBar {
-        Row {
-            TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.state.canBack, above = true)
-            TooltipIconButton("Forward", Symbols.nextMove, model::forward, enabled = model.state.canForward, above = true)
-        }
-        TooltipIconButton("Flip Board", Symbols.flipBoard, model::flip, above = true)
+    FlexibleBottomAppBar(horizontalArrangement = Arrangement.Center) {
+        TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.state.canBack, above = true)
+        TooltipIconButton("Forward", Symbols.nextMove, model::forward, enabled = model.state.canForward, above = true)
     }
 }
 
@@ -316,7 +314,7 @@ private fun EngineToggle(model: AnalysisModel) {
     TooltipIconToggleButton("Engine", Symbols.analysis, checked = model.engineOn, onCheckedChange = { model.engineOn = it })
 }
 
-/** The analysis board's menu: Copy PGN, Open in Lichess, Engine Settings. */
+/** The analysis board's menu: Flip Board, Copy PGN, Open in Lichess, Engine Settings. */
 @Suppress("DEPRECATION")
 @Composable
 private fun MoreMenu(app: AppModel, model: AnalysisModel) {
@@ -325,6 +323,11 @@ private fun MoreMenu(app: AppModel, model: AnalysisModel) {
     val openPage = app.platform.openUrl
     TooltipIconButton("More", Symbols.more, { expanded = true })
     DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenuItem(
+            text = { Text("Flip Board") },
+            leadingIcon = { Icon(Symbols.flipBoard, contentDescription = null) },
+            onClick = { expanded = false; model.flip() },
+        )
         DropdownMenuItem(
             text = { Text("Copy PGN") },
             leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },

@@ -29,7 +29,8 @@ follows its Swift counterpart; the Swift file is named in each stub's doc commen
   filled button in it, a secondary one (Discard) a text button beside it. Their top app bar has
   the screen's title over the repertoire's name (`TopAppBar(title, subtitle)`), back and the menu.
 - **One move list.** The moves of the line on the board are `components/MoveList` under the board
-  in every board screen: a row of moves that scrolls sideways, the move on the board highlighted,
+  in every board screen (except Analysis on a phone, where the Moves tab has them, as on
+  iPhone): a row of moves that scrolls sideways, the move on the board highlighted,
   moves ahead faint, unsaved ones in italics; back and forward are toolbar buttons.
 - **Board screens fill panes.** Build, Study, Study All and Analysis take a `pane: BoardPane`:
   `Whole` (one pane: a phone, a tablet in portrait), `Board` (the main pane of Material's
