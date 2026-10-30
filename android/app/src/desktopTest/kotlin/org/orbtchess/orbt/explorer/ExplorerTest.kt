@@ -13,6 +13,7 @@ import org.orbtchess.orbt.platform.Settings
 import java.io.File
 import java.net.InetSocketAddress
 import java.nio.file.Files
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -130,6 +131,47 @@ class ExplorerTest {
             val offline = CoverageTables(service, folder, "http://127.0.0.1:${server.address.port}/", scope)
             offline.setUp(appFolder = null)
             assertEquals(2, offline.available.size)
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun withoutTheManifestTablesAreUnknownUntilARetry() = runBlocking {
+        val manifest = """{"version":1,"files":[
+          {"file":"rapid_2000-2199_1in800.otcb.zst","database":{"lichess":{"ratings":[2000],"speeds":["rapid"]}},"targetGames":800,"bytes":3,"sha256":"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"}
+        ]}"""
+        val online = AtomicBoolean(false)
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/") { exchange ->
+            val body = when (exchange.requestURI.path) {
+                "/manifest.json" -> manifest.toByteArray()
+                else -> "abc".toByteArray()
+            }
+            exchange.sendResponseHeaders(if (online.get()) 200 else 503, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.start()
+        try {
+            // Partial downloads of a process killed mid-download.
+            val coverage = File(folder, "Coverage").apply { mkdirs() }
+            File(coverage, ".download123.part").writeText("partial")
+            File(coverage, ".manifest456.part").writeText("partial")
+
+            val service = ExplorerService(ExplorerCacheStore.inFolder(folder), MemorySettings(), { null }, scope)
+            val tables = CoverageTables(service, folder, "http://127.0.0.1:${server.address.port}/", scope)
+            tables.setUp(appFolder = null)
+            assertTrue(coverage.listFiles()!!.none { it.name.endsWith(".part") })
+            assertFalse(tables.manifestKnown)
+            assertTrue(tables.manifestFailed)
+            assertNull(tables.file(rapid(2000)))
+
+            online.set(true)
+            tables.retry(rapid(2000))
+            assertTrue(tables.manifestKnown)
+            assertFalse(tables.manifestFailed)
+            val file = assertNotNull(tables.file(rapid(2000)))
+            assertTrue(File(coverage, file.file).exists())
         } finally {
             server.stop(0)
         }

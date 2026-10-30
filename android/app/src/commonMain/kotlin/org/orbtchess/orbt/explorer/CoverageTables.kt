@@ -56,6 +56,18 @@ class CoverageTables(
     val downloads: Map<String, Double> get() = downloadsState
     /** Why the last download of a file failed, by file name. */
     val failures: Map<String, String> get() = failuresState
+    /**
+     * Whether the server's list is known (read now or saved by an earlier launch). Until then
+     * no database has a file to download, though the server may well have one.
+     */
+    var manifestKnown by mutableStateOf(false)
+        private set
+    /** Whether the server's list is being read. */
+    var readingManifest by mutableStateOf(false)
+        private set
+    /** Whether the last reading of the server's list failed (offline, or the server's error). */
+    var manifestFailed by mutableStateOf(false)
+        private set
 
     private val loadedFiles = mutableSetOf<String>()
     /** Databases of open repertoires, downloaded once the manifest is known. */
@@ -86,9 +98,16 @@ class CoverageTables(
         ensure(database)
     }
 
-    /** Starts downloading the database's table unless it is here or already downloading. */
+    /**
+     * Starts downloading the database's table unless it is here or already downloading. Reads
+     * the server's list first when it is not known yet (the device was offline so far).
+     */
     fun ensure(database: ExplorerDatabase) {
         if (isReady(database)) return
+        if (!manifestKnown) {
+            if (!readingManifest) scope.launch { refreshManifest() }
+            return
+        }
         val file = file(database) ?: return
         if (file.file in downloadsState) return
         scope.launch { download(file) }
@@ -114,25 +133,39 @@ class CoverageTables(
                 ?.forEach { it.delete() }
             runCatching { savedManifest.readBytes() }.getOrNull()
         }
-        if (manifest != null) available = coverageManifestFiles(manifest) ?: emptyList()
+        val files = manifest?.let { coverageManifestFiles(it) }
+        if (files != null) {
+            available = files
+            manifestKnown = true
+        }
         load(directory)
         if (appFolder != null) load(File(appFolder, "Coverage"))
         refreshManifest()
     }
 
     suspend fun refreshManifest() {
+        if (readingManifest) return
+        readingManifest = true
         val request = HttpRequest(HttpMethod.GET, "${server}manifest.json", emptyList(), ByteArray(0), null)
-        val response = Http.send(request)
+        val response = try {
+            Http.send(request)
+        } finally {
+            readingManifest = false
+        }
         if (response == null) {
             log.severe("coverage manifest: no answer")
+            manifestFailed = true
             return
         }
         val files = if (response.status.toInt() == 200) coverageManifestFiles(response.body) else null
         if (files == null) {
             log.severe("coverage manifest: unexpected response")
+            manifestFailed = true
             return
         }
         available = files
+        manifestKnown = true
+        manifestFailed = false
         val directory = directory
         stale = withContext(Dispatchers.IO) {
             runCatching { writeAtomically(File(directory, "manifest.json"), response.body) }
@@ -152,6 +185,14 @@ class CoverageTables(
         refreshManifest()
         val file = file(database)
         if (file != null && !isReady(database)) download(file)
+    }
+
+    /**
+     * [retry] in this object's scope: not tied to the screen, whose button gives way to the
+     * progress (leaving the composition would cancel a retry run there).
+     */
+    fun startRetry(database: ExplorerDatabase) {
+        scope.launch { retry(database) }
     }
 
     /** Downloads a table, checks it, replaces any other file for the same selection and loads it. */
