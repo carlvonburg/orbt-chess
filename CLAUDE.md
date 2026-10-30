@@ -56,7 +56,9 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   - `orbt-engine/` — native only (never wasm): Stockfish 19 vendored from lichess's
     dart-multistockfish (`vendor/PATCHES.md`), built with `cc`, run on a thread over pipes
     behind `EngineBackend` (Leela would be another backend). CPU flags per target in `build.rs`:
-    dotprod and AVX2 on Apple, Stockfish's armv8 and x86-64-sse41-popcnt elsewhere.
+    dotprod and AVX2 on Apple, Stockfish's armv8 and x86-64-sse41-popcnt elsewhere; Android's
+    arm64 also gets an armv8-dotprod copy of each flavour, started when `getauxval(AT_HWCAP)`
+    has the dot product (`Simd`; upstream's arm64-universal build, see `vendor/PATCHES.md`).
   - `orbt-ffi/` — the UniFFI 0.32 bindings: objects (`RepertoireDoc`, `BuilderSession`,
     `DrillSession`, `Explorer`, `Engine`, `AnalysisSession`, `Position`, `Graphs`,
     `LibrarySidecar`, `RepertoireSync`) and the core's records and enums as remote types. Thin:

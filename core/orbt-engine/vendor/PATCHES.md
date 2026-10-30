@@ -26,6 +26,35 @@ There are none. One thing to keep in mind: the full flavour calls `exit()` when 
 fails to load (`Network::verify`). That would end the app, so `orbt_engine::network_is_valid`
 checks the file's SHA-256 against its name before the full flavour starts.
 
+## Android arm64: two copies, chosen at run time
+
+Android cannot ship a library per CPU feature, and phones before ARMv8.2 (Cortex-A53, A73)
+lack the dot product that speeds up the nets' layers. So on
+`aarch64-linux-android` `build.rs` compiles each flavour twice, Stockfish's `armv8` and
+`armv8-dotprod`, and `Simd::current` in `src/lib.rs` starts the dot product copy only when
+`getauxval(AT_HWCAP)` has `HWCAP_ASIMDDP`. This is upstream's `arm64-universal` build
+(Stockfish's `src/universal/entry_arm64.cpp` and section 6 of its `Makefile`, both in
+dart-multistockfish's trees at the commit above, not copied here), done without LTO:
+
+- The second copy is compiled with `-DStockfish=StockfishDotprod
+  -DStockfishLight=StockfishLightDotprod` (upstream: `-DStockfish=Stockfish_<arch>`) and its own
+  entry point (`orbt_sf_light_dotprod_main`, `orbt_sf_full_dotprod_main`).
+- Its objects are linked into one (`ld.lld -r`), then `llvm-objcopy` removes the COMDAT groups
+  and makes every symbol local but the entry point, so the C++ library templates both copies
+  instantiate are never shared: the baseline never calls code compiled for ARMv8.2 (upstream:
+  `objcopy -R .group`, with LTO making the symbols local).
+- Its `.init_array` is renamed `orbt_sf_<flavour>_dotprod_init` (upstream: `<arch>_init`), so
+  its static initializers do not run when the library loads on every phone; `bridge.cpp` runs
+  them once, through `__start_`/`__stop_`, before the copy's first start.
+- The light copy defines `UNIVERSAL_BINARY`, which makes `nnue/network.cpp` declare the
+  baseline's `gEmbeddedNNUEData` instead of embedding the net a second time.
+
+None of this touches the trees. The arm64 library grows by about 0.9 MB stripped (5.5 to 6.4
+MB). On the arm64 emulator (an Apple M-series core) the light flavour's dot product copy
+searches about 18% more nodes per second than the baseline (2.4 against 2.0 million, one
+thread), and both copies search the same tree (`both_arm64_copies_search_the_same_tree`, which
+runs only on a device).
+
 ## Updating
 
 1. Follow `UPDATING-io-patch.md` (the private-I/O patch) and `UPDATING-light.md` (light
@@ -35,3 +64,9 @@ checks the file's SHA-256 against its name before the full flavour starts.
 2. Copy as described above, and update the commit here.
 3. If the full net changes, update its name in the app's download list and `EvalFileDefaultName`.
 4. Run `cargo test -p orbt-engine`. It runs the light flavour for real.
+5. If `network.cpp` no longer reads `UNIVERSAL_BINARY`, or new names outside the namespaces
+   need to be shared between the copies, update `dotprod_copy` in `build.rs`. Then run the unit
+   tests on an arm64 phone or emulator: build them with the NDK as `scripts/build-android.sh`
+   sets it up (`cargo test --release -p orbt-engine --target aarch64-linux-android --no-run`),
+   `adb push` the `orbt_engine-*` test binary and `libc++_shared.so` to `/data/local/tmp`, and run
+   it there with `LD_LIBRARY_PATH=.`.
