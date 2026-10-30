@@ -123,11 +123,16 @@ Material role (`MaterialTheme.colorScheme.*`) or the board's colors (`OrbtTheme.
 stock Material components color themselves.
 
 - **The app color is the scheme.** Multicolor is Material You on Android 12 and later (the
-  system's dynamic color from the wallpaper); on the desktop and older Android, a scheme seeded
-  with blue. Every other app color seeds a Material scheme from Apple's system color of that
-  name as Android 16's Expressive dynamic color makes one from a wallpaper: tonal spot (the
-  system's default style) on the 2025 color spec, whose primaries and containers are brighter
-  (Graphite: monochrome, on the 2021 spec). The primary is the accent: controls
+  system's dynamic color from the wallpaper, as the system gives it); on the desktop and older
+  Android, a scheme seeded with blue. Every other app color seeds a Material scheme from
+  Apple's system color of that name with tonal spot (the system's default wallpaper style) on
+  the **2021** color spec, with the **neutral style's surfaces** (Graphite: monochrome). Why:
+  the 2025 spec's tonal spot puts the primary container at tone 82 chroma 32 (orange's a strong
+  peach) and tints the surface containers (chroma 7–9), so every tonal container and page
+  shouted; the 2021 spec keeps containers at tone 90 chroma 16, and the neutral style's
+  surfaces, outlines and their content (chroma 2) keep pages near-neutral even for warm seeds,
+  where tonal spot's chroma-6 surfaces still read peach. Surfaces stay neutral; the primary is on
+  the few things that act. The primary is the accent: controls
   take it from Material, as SwiftUI's take the tint; filled buttons, the selected option of a
   button group and the FAB take the primary, tonal buttons and selected rows the secondary
   container, as Expressive assigns them. Tertiary is not used: every accent in the app means
@@ -147,7 +152,10 @@ stock Material components color themselves.
 | inactive | `outline` | `onSurfaceVariant` at 40% |
 
   A named hue (green, red, …) is a Material custom color: harmonized with the primary (its hue
-  turned up to 15° toward it, in every scheme), then tones of its own palette.
+  turned up to 15° toward it, in every scheme), then tones of its own palette at no more than
+  **chroma 36** (a tonal-spot primary's): Apple's system colors run to chroma 60–90, and at full
+  chroma the status colors shouted next to Material's scheme; capped, they keep their identity
+  as Google's apps show status colors.
 - **Containers.** Every meaning has Material's three roles, as a custom color group: the color
   (text, symbols, bars), its container (a surface the meaning fills: a status badge, Study's
   finished disc) and the content on that container. Custom colors: tones 40, 90, 10 in light
@@ -155,29 +163,41 @@ stock Material components color themselves.
   tinted accent the tint scheme's, failure `errorContainer`/`onErrorContainer`, the label colors
   (tinted learning and new, inactive) on `surfaceContainerHighest`. A saved candidate's row in
   Build is the built container at 50%.
-- **Lighter shades** are higher tones of the same palette (HCT: hue and chroma kept), the same
-  share of the way to white as iOS mixes (young, Anki's learning: 45%).
+- **Lighter shades** (young, Anki's learning: 45%) are other tones of the same palette (HCT:
+  hue and chroma kept): in light appearance that share of the way to white, as iOS mixes; in
+  dark appearance that share of the way down toward tone 30 (the dark surface's end), because
+  lifting a tone-80 color toward white washed it out to a pastel that no longer read as weaker.
 - **Selected rows.** Material selects a row with the secondary container, not the accent: inside
   one (`LocalSelectedRow provides true`) meanings take the row's content color, lighter shades
   at 75% and learning at 55%, as they turn white on the Mac.
 - **Neutral** is Material's surfaces and `onSurfaceVariant`; bar tracks are
   `surfaceContainerHighest`.
-- **The board** is the table above in Material's terms (`ui/theme/BoardTheme.kt`): every color is
-  a tone of the theme's primary tonal palette (HCT: the scheme primary's hue and chroma at another
-  tone), Material You's for Multicolor, the seeded scheme's for the other app colors, neutral for
-  graphite; one rule for all. iOS's formula (gray squares mixed toward the tint) needs the
-  system colors' high chroma: with Material's lower-chroma primaries it turned the board gray.
+- **Grouped pages** (settings, the library, Today, the overview, statistics, sheets) are
+  Material 3 Expressive's segmented lists, as Android 16's Settings: the page
+  `surfaceContainer` (`components.GroupedBackground`, its top app bar the same), rows and cards
+  on `surface` segments (Material's segmented list item color). Board screens stay on `surface`.
+- **Menus** select with the secondary container, not Material's default tertiary, which the
+  app leaves unused.
+- **The board** is the table above in Material's terms (`ui/theme/BoardTheme.kt`): every color
+  is the hue of the theme's primary (HCT; Material You's for Multicolor, the seeded scheme's for
+  the other app colors, neutral for graphite) at a tone and a chroma of its own; one rule for
+  all. The squares are low chroma, as the iPhone's calm board (measured: light squares tone 87
+  chroma 17, dark tone 60 chroma 30, both blue): the primary's own chroma (36–48) made a loud
+  board, orange and peach in Orange, strong blue in Multicolor. Chroma is capped lower than the
+  iPhone's because warm hues read stronger at the same chroma (orange at 24 was tan).
 
   | Element | Light appearance | Dark appearance |
   |---|---|---|
-  | light / dark squares | tone 90 / 68 | tone 80 / 55 |
-  | ink (your moves, covered replies, gaps dashed, hint; ✓ in tinted themes) | tone 28 | tone 28 |
-  | last move / selected square | tone 48 at 60% / 80% (graphite: the ink 25% / 40%) | tone 38 at 60% / 80% |
-  | coordinates | the opposite square's tone | same |
+  | light squares | tone 88, chroma ≤ 10 | tone 76, chroma ≤ 8 |
+  | dark squares | tone 62, chroma ≤ 18 | tone 52, chroma ≤ 16 |
+  | ink (your moves, covered replies, gaps dashed, hint; ✓ in tinted themes) | tone 28, chroma ≤ 40 | same |
+  | last move / selected square | tone 58, chroma ≥ 36, at 50% / 75% (graphite: the ink 25% / 40%) | tone 50, same |
+  | coordinates | the opposite square's color | same |
 
-  The tones were picked on screenshots (Multicolor on the emulator's default wallpaper, Blue,
-  Green): white and black pieces read on both squares, the squares part like the iPhone's board,
-  the ink and the highlights stand out on both. The OKLab measurements below are the iOS board's;
+  The values were picked on screenshots (Multicolor on the emulator's wallpaper, Orange and Green,
+  light and dark): white and black pieces, the coordinates, the ink, the hint and the engine's
+  graphite read on both squares; the highlights take the hue at full chroma so they show on the
+  calm squares. The OKLab measurements below are the iOS board's;
   the Android tones are not measured that way yet. The badges, engine graphite, dots and the
   explorer's fixed white, gray and black are the table's.
 

@@ -28,8 +28,26 @@ named in each stub's doc comment.
     `CircularProgressIndicator` (a loading indicator's shapes don't read that small); the app's
     data bars (coverage, studied, how much to learn) are values, not progress: plain
     `LinearProgressIndicator` without stop indicator.
-  - Lists: `ListItem`; a pane's selectable rows use its `selected`/`onClick`/`onLongClick`
-    overload, inset 12 dp so the selected row shows its rounded shape.
+  - Lists: `ListItem` in Material's segmented groups, as Android 16's Settings
+    (`components/Sections`: `ListSection(title, footer) { rows }`, `SegmentedGroup`): the page in
+    `GroupedBackground` (surface container) with `groupedTopAppBarColors()`, each row a surface
+    segment, the group's ends rounded large and the segments between extra small, 2 dp apart; any
+    row works (a list item, a text field, a chart). Settings, Repertoire Settings, setup, About,
+    Licenses, Move Info, Study Options, the library, Today and the overview are grouped; a pane's
+    selectable rows use `ListItem`'s `selected`/`onClick`/`onLongClick` overload inside a group.
+  - Menus: `components/ExpressiveMenu` (Material's `DropdownMenuPopup` with `DropdownMenuGroup`s,
+    group and item shapes by place, `MenuDefaults.GroupSpacing` between groups, group labels,
+    selectable items for a choice, Delete `destructive`). Never `DropdownMenu`.
+  - Cards (statistics): Material's card on the grouped page, surface color, `shapes.large`.
+  - Type: Expressive's emphasized styles for key numbers and card titles
+    (`headlineMediumEmphasized`, `titleSmallEmphasized`, …).
+  - A screen's main actions (Browse / Edit, Study Now, Study All): Expressive's medium buttons
+    (`library/ActionButton`: `ButtonDefaults.MediumContainerHeight` with its shapes, padding and
+    type).
+  - Motion: `MaterialExpressiveTheme`'s expressive motion scheme; panes move with Material's pane
+    motion and predictive back (`AppShell`: the scaffold state seeks toward the panes under the
+    top screen during the gesture); full-window screens come and go with the shared axis and
+    shrink with the back gesture.
   - Board screens: `HorizontalFloatingToolbar` with its FAB (below).
   - Also `ModalBottomSheet`, `AlertDialog`, `Switch`, `Slider`, the collapsed `SearchBar` (in
     the outline sheet), plain tooltips on every icon-only action, Material Symbols (`Icons.*`,
@@ -63,12 +81,13 @@ named in each stub's doc comment.
   - One pane (a phone, as iPhone's glass bar): the toolbar floats at the bottom over the content,
     which scrolls under it (`FloatingToolbarScaffold`; lists take its bottom padding so their last
     row scrolls clear). Build: back and forward, then Biggest Gap, Study Branch, Analysis (while a
-    line is being built: Analysis, Discard). Study: Hint, then Browse Repertoire, Analysis.
-    Analysis: back and forward only, centred.
+    line is being built: Analysis, Discard, and Save the FAB). Study: Hint, then Browse
+    Repertoire, Analysis. Analysis: back and forward only, centred.
   - Two panes (as iPad): no top app bar over the board; under it, as wide as it, the toolbar with
-    back and forward, the move list, then Analysis (and Discard). The panel's actions are in the
-    list pane's top app bar, before ⋮: Biggest Gap and Study Branch in Build, Hint and Browse
-    Repertoire in Study.
+    back and forward, the move list, then Analysis. The panel's actions are in the list pane's top
+    app bar, before ⋮: Biggest Gap and Study Branch in Build (while a line is being built, as
+    iPad's `hasDraft` group: Discard, a text button, and Save with its count, "Save 3", the bar's
+    one filled button; no FAB), Hint and Browse Repertoire in Study.
   - The engine: Analysis's top app bar has its toggle before ⋮ (Material's filled icon toggle,
     filled while on, named "Engine"), on phones and tablets. Build's and Study's Analysis button is
     in their bottom toolbar, so the engine's symbol up there reads as the engine.
@@ -85,7 +104,9 @@ named in each stub's doc comment.
   as large as it fits, the floating toolbar under it; `components/BoardDetailPane`). The shell
   calls the screen once per pane with the same model. The panes are Material's
   (`calculatePaneScaffoldDirective`): one up to medium width, two or more on expanded; their
-  widths are Material's defaults.
+  widths are Material's defaults. The library on a large window (three panes): the list 320 dp,
+  Today or the overview 380 dp (`preferredWidth`; iPad's ideal columns 260 and 380), the
+  statistics the rest, their cards in an adaptive grid (a column per 320 dp).
 - **Shared components** (`components/`) only for what Material lacks; a component one screen uses
   stays in that screen's package.
 

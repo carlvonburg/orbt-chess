@@ -10,6 +10,7 @@ import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,6 +75,15 @@ fun ExpressiveMenu(expanded: Boolean, onDismissRequest: () -> Unit, content: Men
                                     selectedLeadingIcon = { Icon(Icons.Filled.Check, contentDescription = "Selected") },
                                     supportingText = supporting,
                                     enabled = entry.enabled,
+                                    // The selected choice in the secondary container, as the
+                                    // app's selected rows: Material's menus select with the
+                                    // tertiary, which the app leaves unused (Design/COLORS.md).
+                                    colors = MenuDefaults.selectableItemColors(
+                                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        selectedTextColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        selectedTrailingContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    ),
                                 )
                             } else {
                                 DropdownMenuItem(
