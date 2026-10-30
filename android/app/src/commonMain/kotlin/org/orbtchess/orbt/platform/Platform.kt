@@ -1,5 +1,6 @@
 package org.orbtchess.orbt.platform
 
+import org.orbtchess.orbt.lichess.AuthBrowser
 import org.orbtchess.orbt.sync.NoSyncAuth
 import org.orbtchess.orbt.sync.SyncAuth
 import java.io.File
@@ -48,8 +49,13 @@ class PlatformServices(
     val folders: AppFolders,
     val settings: Settings,
     val secrets: SecretStore,
-    /** Opens a URL in the browser (Analyse on Lichess). */
+    /** Opens a page (Analyse on Lichess): a Custom Tab on Android, the default browser on the desktop. */
     val openUrl: (String) -> Unit,
+    /**
+     * The browser for the Lichess sign-in (`webAuthenticationSession` in the Swift app):
+     * a Custom Tab on Android, the default browser and a loopback redirect on the desktop.
+     */
+    val authBrowser: AuthBrowser,
     /** Logical processors, for the engine's threads. */
     val processors: Int = Runtime.getRuntime().availableProcessors(),
     /** Dropbox and Google Drive sign-ins (Android); none on the desktop. */

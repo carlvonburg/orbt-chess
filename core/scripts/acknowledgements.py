@@ -35,7 +35,8 @@ if ANDROID:
 
 # The Kotlin and Java libraries the Android and desktop app ships: name, the Maven coordinate
 # (group:artifact) whose version the Gradle files give, license, the text shown, repository.
-GRADLE_FILES = ["android/build.gradle.kts", "android/app/build.gradle.kts", "android/core/build.gradle.kts"]
+GRADLE_FILES = ["android/build.gradle.kts", "android/app/build.gradle.kts", "android/androidApp/build.gradle.kts",
+                "android/core/build.gradle.kts"]
 LIBRARIES = [
     ("Kotlin standard library", "kotlin-multiplatform", "Apache-2.0", "Apache-2.0", "https://github.com/JetBrains/kotlin"),
     ("Compose Multiplatform", "org.jetbrains.compose", "Apache-2.0", "Apache-2.0", "https://github.com/JetBrains/compose-multiplatform"),

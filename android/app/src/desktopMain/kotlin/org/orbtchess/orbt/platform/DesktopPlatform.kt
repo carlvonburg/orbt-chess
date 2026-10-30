@@ -1,5 +1,6 @@
 package org.orbtchess.orbt.platform
 
+import org.orbtchess.orbt.lichess.LoopbackAuthBrowser
 import java.awt.Desktop
 import java.io.File
 import java.net.URI
@@ -19,14 +20,16 @@ fun desktopPlatform(): PlatformServices {
         else -> File(System.getenv("XDG_DATA_HOME") ?: File(home, ".local/share").path, "orbt-chess")
     }
     val prefs = Preferences.userRoot().node("org/orbtchess/orbt")
+    val openUrl = { url: String ->
+        if (Desktop.isDesktopSupported()) Desktop.getDesktop().browse(URI(url))
+    }
     return PlatformServices(
         folders = AppFolders(repertoires = File(home, "ORBT Chess"), support = support),
         settings = PrefsSettings(prefs.node("settings")),
         // TODO(step 6): the OS credential store (Windows Credential Manager, libsecret).
         secrets = PrefsSecrets(prefs.node("secrets")),
-        openUrl = { url ->
-            if (Desktop.isDesktopSupported()) Desktop.getDesktop().browse(URI(url))
-        },
+        openUrl = openUrl,
+        authBrowser = LoopbackAuthBrowser(openUrl),
     )
 }
 

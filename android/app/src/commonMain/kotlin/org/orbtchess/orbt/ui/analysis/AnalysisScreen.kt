@@ -322,7 +322,7 @@ private fun EngineToggle(model: AnalysisModel) {
 private fun MoreMenu(app: AppModel, model: AnalysisModel) {
     var expanded by remember { mutableStateOf(false) }
     val clipboard = LocalClipboardManager.current
-    val openPage = rememberOpenPage(app)
+    val openPage = app.platform.openUrl
     TooltipIconButton("More", Symbols.more, { expanded = true })
     DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
         DropdownMenuItem(

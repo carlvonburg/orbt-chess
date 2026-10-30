@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Builds the Rust core for Android and the desktop JVM and refreshes the Kotlin bindings:
-#   android/core/src/androidMain/jniLibs/<abi>/            (libopening_core.so + libc++_shared.so, not committed)
+#   android/androidApp/src/main/jniLibs/<abi>/             (libopening_core.so + libc++_shared.so, not committed)
 #   android/core/build/host/                               (the host's library, not committed)
 #   android/core/src/commonMain/kotlin/.../opening_core.kt (generated Kotlin bindings, committed)
 #   android/app/src/commonMain/composeResources/files/Acknowledgements.json
@@ -20,6 +20,8 @@ export PATH="/opt/homebrew/opt/rustup/bin:$HOME/.cargo/bin:$PATH"
 core_dir="${0:A:h:h}"
 repo_dir="${core_dir:h}"
 module_dir="$repo_dir/android/core"
+# The Android app packages the core's .so files.
+jni_dir="$repo_dir/android/androidApp/src/main/jniLibs"
 lib_name="libopening_core.so"
 # The app's minSdk.
 api=29
@@ -57,7 +59,7 @@ for entry in $abis; do
   export "CARGO_TARGET_${upper}_LINKER=$toolchain/bin/$triple$api-clang"
   # Stockfish is C++: link the NDK's shared libc++, shipped next to the core.
   CXXSTDLIB=c++_shared cargo build -q -p orbt-ffi --target "$target" $cargo_flags
-  out="$module_dir/src/androidMain/jniLibs/$abi"
+  out="$jni_dir/$abi"
   rm -rf "$out"
   mkdir -p "$out"
   cp "target/$target/$profile/$lib_name" "$out/"
@@ -82,7 +84,7 @@ sources="$module_dir/src/commonMain/kotlin"
 rm -f "$sources/org/orbtchess/orbt/core/opening_core.kt"
 mkdir -p "$sources"
 cp -R "$generated/" "$sources/"
-echo "updated $module_dir"
+echo "updated $module_dir and $jni_dir"
 
 # The licenses of what the Android and desktop app ships.
 python3 "$core_dir/scripts/acknowledgements.py" --android

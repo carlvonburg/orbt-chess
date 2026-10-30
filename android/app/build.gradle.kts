@@ -1,17 +1,24 @@
-// The app: one Compose Multiplatform UI for Android and the desktop (Windows, Linux).
+// The app's shared code: one Compose Multiplatform UI for Android and the desktop (Windows,
+// Linux), a Kotlin Multiplatform library that androidApp builds the Android app from, and the
+// desktop app (`run`, `packageDistributionForCurrentOS`).
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import java.util.Properties
 
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.compose")
     id("org.jetbrains.compose")
-    id("com.android.application")
+    id("com.android.kotlin.multiplatform.library")
 }
 
 kotlin {
     jvmToolchain(17)
-    androidTarget()
+    android {
+        namespace = "org.orbtchess.orbt.shared"
+        compileSdk { version = release(37) { minorApiLevel = 1 } }
+        minSdk = 29
+        // Compose resources (composeResources/) go into the Android app's assets.
+        androidResources { enable = true }
+    }
     jvm("desktop")
 
     sourceSets {
@@ -42,10 +49,6 @@ kotlin {
         androidMain.dependencies {
             implementation("androidx.activity:activity-compose:1.10.1")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-            // Lichess and Dropbox sign-ins, Analyse on Lichess (Custom Tabs).
-            implementation("androidx.browser:browser:1.8.0")
-            // Google Drive sign-in (Identity's AuthorizationClient, the drive.file scope).
-            implementation("com.google.android.gms:play-services-auth:21.4.0")
         }
         val desktopMain by getting {
             dependencies {
@@ -59,44 +62,6 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
             }
         }
-    }
-}
-
-// Dropbox's app key (the OAuth client id of the owner's Dropbox app): the Gradle property
-// `orbt.dropboxAppKey` (`-P`, ~/.gradle/gradle.properties) or the same key in local.properties.
-// Without it the Dropbox sign-in says the build has none.
-val dropboxAppKey: String = providers.gradleProperty("orbt.dropboxAppKey").orNull
-    ?: rootProject.file("local.properties").takeIf { it.exists() }?.let { file ->
-        Properties().apply { file.inputStream().use { load(it) } }.getProperty("orbt.dropboxAppKey")
-    }
-    ?: ""
-
-android {
-    namespace = "org.orbtchess.orbt"
-    compileSdk = 37
-    compileSdkMinor = 1
-    buildFeatures {
-        buildConfig = true
-    }
-    defaultConfig {
-        buildConfigField("String", "DROPBOX_APP_KEY", "\"$dropboxAppKey\"")
-        applicationId = "org.orbtchess.orbt"
-        minSdk = 29
-        targetSdk = 36
-        versionCode = 1
-        versionName = "0.1"
-        ndk {
-            abiFilters += listOf("arm64-v8a", "x86_64")
-        }
-    }
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 

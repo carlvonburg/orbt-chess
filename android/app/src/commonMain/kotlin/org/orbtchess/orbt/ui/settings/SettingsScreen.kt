@@ -202,7 +202,7 @@ internal fun ValueRow(title: String, value: String, onClick: (() -> Unit)? = nul
 @Composable
 private fun LichessSection(app: AppModel) {
     val auth = app.auth
-    val browser = rememberAuthBrowser(app)
+    val browser = app.platform.authBrowser
     val scope = rememberCoroutineScope()
     Section("Lichess", footer = "Used only to read opening statistics from the Lichess explorer. No scopes are requested.") {
         if (auth.isSignedIn) {

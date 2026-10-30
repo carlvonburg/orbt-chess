@@ -1,13 +1,13 @@
 package org.orbtchess.orbt.platform
 
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
-import android.net.Uri
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
 import org.orbtchess.orbt.BuildConfig
+import org.orbtchess.orbt.lichess.CustomTabAuthBrowser
+import org.orbtchess.orbt.lichess.openInCustomTab
 import org.orbtchess.orbt.sync.AndroidSyncAuth
 import java.io.File
 import java.security.KeyStore
@@ -25,9 +25,8 @@ fun androidPlatform(context: Context): PlatformServices {
         ),
         settings = PreferenceSettings(app.getSharedPreferences("settings", Context.MODE_PRIVATE)),
         secrets = KeystoreSecrets(app.getSharedPreferences("secrets", Context.MODE_PRIVATE)),
-        openUrl = { url ->
-            app.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        },
+        openUrl = { url -> openInCustomTab(app, url) },
+        authBrowser = CustomTabAuthBrowser(app),
         syncAuth = AndroidSyncAuth(app, BuildConfig.DROPBOX_APP_KEY),
     )
 }

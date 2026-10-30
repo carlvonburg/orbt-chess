@@ -4,15 +4,6 @@ import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import org.orbtchess.orbt.AppModel
-import org.orbtchess.orbt.lichess.AuthBrowser
-import org.orbtchess.orbt.lichess.CustomTabAuthBrowser
-
-@Composable
-internal actual fun rememberAuthBrowser(app: AppModel): AuthBrowser {
-    val context = LocalContext.current.applicationContext
-    return remember(context) { CustomTabAuthBrowser(context) }
-}
 
 @Composable
 internal actual fun appVersion(): String {

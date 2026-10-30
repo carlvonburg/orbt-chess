@@ -3,4 +3,4 @@
 build/
 local.properties
 # Built by core/scripts/build-android.sh.
-core/src/androidMain/jniLibs/
+androidApp/src/main/jniLibs/

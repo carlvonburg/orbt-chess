@@ -139,7 +139,7 @@ class LichessAuth(private val secrets: SecretStore) {
 }
 
 /** The apps' redirect to Lichess (the custom scheme, as the Apple app's). */
-internal val APP_REDIRECT_URI: String = lichessRedirectUri()
+val APP_REDIRECT_URI: String = lichessRedirectUri()
 
 object LichessLinks {
     /** The line in the Lichess analysis board, keeping the move history. */
