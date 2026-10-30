@@ -76,18 +76,18 @@ named in each stub's doc comment.
   on two panes it is the list pane's, over the panel, as on iPad. Their bottom bar is Material 3
   Expressive's floating toolbar (`components/BoardToolbar`, `HorizontalFloatingToolbar`), on
   phones as on tablets: icon-only items named by a tooltip, back and forward kept together,
-  Discard a text button; the main action (Save, Next Line) the FAB beside it (`BoardToolbarFab`,
-  Material's toolbar and FAB pairing).
+  Study's main action (Next Line) the FAB beside it (`BoardToolbarFab`, Material's toolbar and
+  FAB pairing). While a line is being built, Discard and Save are one pair, as iPhone's ✕ and ✓:
+  a tonal ✕ and a filled ✓ icon button side by side (`DraftButtons` in BuilderScreen.kt).
   - One pane (a phone, as iPhone's glass bar): the toolbar floats at the bottom over the content,
     which scrolls under it (`FloatingToolbarScaffold`; lists take its bottom padding so their last
     row scrolls clear). Build: back and forward, then Biggest Gap, Study Branch, Analysis (while a
-    line is being built: Analysis, Discard, and Save the FAB). Study: Hint, then Browse
+    line is being built: Analysis, then the ✕ ✓ pair at the end). Study: Hint, then Browse
     Repertoire, Analysis. Analysis: back and forward only, centred.
   - Two panes (as iPad): no top app bar over the board; under it, as wide as it, the toolbar with
     back and forward, the move list, then Analysis. The panel's actions are in the list pane's top
     app bar, before ⋮: Biggest Gap and Study Branch in Build (while a line is being built, as
-    iPad's `hasDraft` group: Discard, a text button, and Save with its count, "Save 3", the bar's
-    one filled button; no FAB), Hint and Browse Repertoire in Study.
+    iPad's `hasDraft` group: the ✕ ✓ pair; no FAB), Hint and Browse Repertoire in Study.
   - The engine: Analysis's top app bar has its toggle before ⋮ (Material's filled icon toggle,
     filled while on, named "Engine"), on phones and tablets. Build's and Study's Analysis button is
     in their bottom toolbar, so the engine's symbol up there reads as the engine.

@@ -1,14 +1,10 @@
 package org.orbtchess.orbt.ui.builder
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
-import androidx.compose.foundation.layout.Box
-import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,9 +16,11 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,8 +28,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -46,21 +46,22 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
-import org.orbtchess.orbt.ui.tour.TourGuide
-import org.orbtchess.orbt.ui.tour.TourScreen
-import org.orbtchess.orbt.ui.tour.tourTarget
 import org.orbtchess.orbt.storage.ROOT_NODE
 import org.orbtchess.orbt.ui.AnalysisOrigin
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.DrillKind
 import org.orbtchess.orbt.ui.board.Board
 import org.orbtchess.orbt.ui.components.BoardDetailPane
-import org.orbtchess.orbt.ui.components.BoardToolbar
-import org.orbtchess.orbt.ui.components.BoardToolbarFab
-import org.orbtchess.orbt.ui.components.FloatingToolbarScaffold
 import org.orbtchess.orbt.ui.components.BoardPane
+import org.orbtchess.orbt.ui.components.BoardToolbar
+import org.orbtchess.orbt.ui.components.ExpressiveMenu
+import org.orbtchess.orbt.ui.components.FloatingToolbarScaffold
 import org.orbtchess.orbt.ui.components.Symbols
+import org.orbtchess.orbt.ui.components.Tooltip
 import org.orbtchess.orbt.ui.components.TooltipIconButton
+import org.orbtchess.orbt.ui.tour.TourGuide
+import org.orbtchess.orbt.ui.tour.TourScreen
+import org.orbtchess.orbt.ui.tour.tourTarget
 
 /**
  * Build (`BuilderView.swift`, `BuilderSheets.swift`): the board with your moves, replies and
@@ -74,7 +75,7 @@ import org.orbtchess.orbt.ui.components.TooltipIconButton
  *   also has Biggest Gap and Study Branch (as iPad's panel bar). It presents the sheets and runs
  *   the explorer fetches and the coverage check.
  * - [BoardPane.Detail] (the detail pane): the board, and under it the floating toolbar with
- *   move navigation, the move strip and Analysis, Save its FAB.
+ *   move navigation, the move strip and Analysis.
  *
  * @param navigate [Destination.Analysis] (origin [AnalysisOrigin.Build]), [Destination.Drill]
  *   (Study Branch), [Destination.CardInfo].
@@ -151,8 +152,6 @@ private class BuilderActions(val model: BuilderModel, val navigate: (Destination
             return node.sideToMove == document.color && document.studyCards[node.epd] != null
         }
 
-    /** "Save" or "Save 3". */
-    val saveTitle: String get() = model.draft.size.let { if (it == 1) "Save" else "Save $it" }
 }
 
 /** The explorer fetch of the position on screen, and the coverage check while Build shows. */
@@ -265,7 +264,7 @@ private fun BuilderTopBar(model: BuilderModel, actions: BuilderActions, onBack: 
         navigationIcon = { BackButton(onBack) },
         actions = {
             if (listPane) {
-                if (model.hasDraft) DraftButtons(model, actions) else GapAndStudyButtons(actions, above = false)
+                if (model.hasDraft) DraftButtons(model, actions, above = false) else GapAndStudyButtons(actions, above = false)
             }
             BuilderMoreMenu(model, actions)
         },
@@ -276,19 +275,12 @@ private fun BuilderTopBar(model: BuilderModel, actions: BuilderActions, onBack: 
  * The floating toolbar (iPhone's bottom bar; iPad's bar under the board). On a phone: back and
  * forward, then Biggest Gap, Study Branch and Analysis. Beside the board: back and forward, the
  * move strip, then Analysis (Biggest Gap and Study Branch are in the list pane's top app bar).
- * While a line is being built: Analysis and Discard, a text button labelled as it drops the line
- * (a text button beside the main action, as in a dialog), and Save the FAB (Material's toolbar and
- * FAB pairing).
+ * While a line is being built, on a phone: Analysis, then Discard and Save as one pair at the end
+ * ([DraftButtons], iPhone's ✕ and ✓); beside the board they are in the list pane's top app bar.
  */
 @Composable
 private fun BuilderFloatingToolbar(model: BuilderModel, actions: BuilderActions, phone: Boolean) {
-    // Beside the board, Discard and Save are in the list pane's top app bar (iPad's panel bar).
-    val save: (@Composable () -> Unit)? = if (phone && model.hasDraft) {
-        { BoardToolbarFab(actions.saveTitle, Symbols.correct, actions::save, Modifier.tourTarget(TourGuide.Target.Save)) }
-    } else {
-        null
-    }
-    BoardToolbar(mainAction = save) {
+    BoardToolbar {
         NavigationButtons(model)
         if (phone) Spacer(Modifier.weight(1f)) else MovePathStrip(model, Modifier.weight(1f))
         if (model.hasDraft) {
@@ -296,7 +288,7 @@ private fun BuilderFloatingToolbar(model: BuilderModel, actions: BuilderActions,
                 "Analysis", Symbols.analysis, actions::analysis,
                 Modifier.tourTarget(TourGuide.Target.Analysis), above = true,
             )
-            if (phone) TextButton(onClick = model::discardDraft, shapes = ButtonDefaults.shapes()) { Text("Discard") }
+            if (phone) DraftButtons(model, actions, above = true)
         } else {
             if (phone) GapAndStudyButtons(actions, above = true)
             TooltipIconButton("Analysis", Symbols.analysis, actions::analysis, above = true)
@@ -305,23 +297,28 @@ private fun BuilderFloatingToolbar(model: BuilderModel, actions: BuilderActions,
 }
 
 /**
- * While a line is being built, in the list pane's top app bar (iPad's panel bar, where Discard and
- * Save replace Biggest Gap and Study Branch): Discard a text button, Save the bar's one filled
- * button with the count of moves it saves, as Material puts a screen's confirming action at the
- * end of its top app bar.
+ * While a line is being built: Discard (✕, tonal) and Save (✓, filled, the screen's one strong
+ * action) side by side as one pair, as iPhone and iPad show them: at the end of the phone's
+ * floating toolbar, and in the list pane's top app bar beside the board (where they replace
+ * Biggest Gap and Study Branch, as in iPad's panel bar).
  */
 @Composable
-private fun DraftButtons(model: BuilderModel, actions: BuilderActions) {
-    TextButton(onClick = model::discardDraft, shapes = ButtonDefaults.shapes()) { Text("Discard") }
-    Button(
-        onClick = actions::save,
-        shapes = ButtonDefaults.shapes(),
-        contentPadding = ButtonDefaults.SmallContentPadding,
-        modifier = Modifier.padding(horizontal = 4.dp).tourTarget(TourGuide.Target.Save),
-    ) {
-        Icon(Symbols.correct, contentDescription = null, modifier = Modifier.size(ButtonDefaults.SmallIconSize))
-        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-        Text(actions.saveTitle)
+private fun DraftButtons(model: BuilderModel, actions: BuilderActions, above: Boolean) {
+    Row(Modifier.padding(horizontal = 4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Tooltip("Discard", above) {
+            FilledTonalIconButton(onClick = model::discardDraft, shapes = IconButtonDefaults.shapes()) {
+                Icon(Symbols.wrong, contentDescription = "Discard")
+            }
+        }
+        Tooltip("Save", above) {
+            FilledIconButton(
+                onClick = actions::save,
+                shapes = IconButtonDefaults.shapes(),
+                modifier = Modifier.tourTarget(TourGuide.Target.Save),
+            ) {
+                Icon(Symbols.correct, contentDescription = "Save")
+            }
+        }
     }
 }
 
