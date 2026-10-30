@@ -103,6 +103,15 @@ struct LibraryView: View {
         }
         // Going back from the analysis board (not covering it) hands its line back.
         .onChange(of: path) { screens.finishAnalyses(notIn: path) }
+        // A repertoire deleted elsewhere while open: its screens close, back to the library.
+        .onChange(of: model.removedEntryIDs) { _, removed in
+            if let first = path.firstIndex(where: { route in
+                route.entryID.map(removed.contains) ?? false
+            }) {
+                path.removeSubrange(first...)
+            }
+            if case .repertoire(let id) = selection, removed.contains(id) { selection = .today }
+        }
         // The tour's last step, from Study's end: back to the library, at New Repertoire.
         .onChange(of: tourStep) { _, step in
             // Started (Settings › Show Tour): its card is in Today's place, so show Today.

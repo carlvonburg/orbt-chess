@@ -134,9 +134,14 @@ private struct SyncStatusRow: View {
 
     var body: some View {
         let status = status
+        // A symbol and text, not a `Label`: on iOS a Label as a form row's content took several
+        // rows' height below the text.
         LabeledContent("Status") {
-            Label(status.text, systemImage: status.symbol)
-                .foregroundStyle(status.color.map(AnyShapeStyle.init) ?? AnyShapeStyle(.secondary))
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(systemName: status.symbol)
+                Text(status.text)
+            }
+            .foregroundStyle(status.color.map(AnyShapeStyle.init) ?? AnyShapeStyle(.secondary))
         }
     }
 

@@ -31,6 +31,9 @@ class Documents(
     /** Told about each document opened (the coverage tables want its database). */
     var onOpened: ((RepertoireDocument) -> Unit)? = null
 
+    /** An open repertoire was deleted elsewhere (another device, the folder): its screens close. */
+    var onRemoved: ((entryId: String) -> Unit)? = null
+
     private val opening = mutableMapOf<String, Deferred<RepertoireDocument?>>()
     /** Closed documents' last saves (done ones return at once); opening the entry again waits
      *  for them. */
@@ -52,6 +55,7 @@ class Documents(
                 doc.onRemoved = {
                     if (documents[doc.entryId] === doc) {
                         documents.remove(doc.entryId)
+                        onRemoved?.invoke(doc.entryId)
                         scope.launch { library.refresh() }
                     }
                 }

@@ -88,6 +88,22 @@ class ShellModel(private val app: AppModel) : ViewModel() {
 
     private var nextId = 1L
 
+    init {
+        app.documents.onRemoved = ::closeEntry
+    }
+
+    /** A repertoire deleted elsewhere while shown: its screens, settings and sheet close. */
+    private fun closeEntry(entryId: String) {
+        val first = stack.indexOfFirst { it.screen.entryId == entryId }
+        if (first >= 0) replaceStack(stack.take(first))
+        overlays.removeAll { (it as? Destination.RepertoireSettings)?.entryId == entryId }
+        when (val shown = sheet) {
+            is Destination.CardInfo -> if (shown.entryId == entryId) sheet = null
+            is Destination.StudyOptions -> if (shown.entryId == entryId) sheet = null
+            else -> Unit
+        }
+    }
+
     val top: StackEntry? get() = stack.lastOrNull()
 
     /** The repertoire the library selects (its overview is at the bottom of the stack). */

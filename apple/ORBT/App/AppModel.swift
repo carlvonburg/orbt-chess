@@ -25,6 +25,9 @@ final class AppModel {
     private(set) var documents: [String: RepertoireDocument] = [:]
     /// Why an entry could not be opened, by entry id.
     private(set) var openErrors: [String: String] = [:]
+    /// Open repertoires deleted elsewhere (another device, iCloud Drive, Files): their screens
+    /// close (`LibraryView`).
+    private(set) var removedEntryIDs: Set<String> = []
     @ObservationIgnored private var opening: [String: Task<RepertoireDocument?, Never>] = [:]
     /// Closed documents' last saves (done ones return at once); opening the entry again waits
     /// for them.
@@ -90,6 +93,7 @@ final class AppModel {
                 doc.onRemoved = { [weak self, weak doc] in
                     guard let self, let doc, self.documents[doc.entryID] === doc else { return }
                     self.documents[doc.entryID] = nil
+                    self.removedEntryIDs.insert(doc.entryID)
                     Task { await self.library.refresh() }
                 }
                 doc.onRenamed = { [weak self, weak doc] oldID in
@@ -100,6 +104,7 @@ final class AppModel {
                 coverage.want(doc.sidecar.database)
                 documents[entry.id] = doc
                 openErrors[entry.id] = nil
+                removedEntryIDs.remove(entry.id)
                 return doc
             } catch {
                 openErrors[entry.id] = "Could not open \(entry.name): \(error.localizedDescription)"
