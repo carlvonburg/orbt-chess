@@ -1,6 +1,5 @@
 package org.orbtchess.orbt.ui.overview
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -117,18 +116,16 @@ fun RepertoireSettingsScreen(
             HorizontalDivider()
             FormSection("File") {
                 ListItem(
-                    headlineContent = { Text("PGN") },
                     trailingContent = { Text(document.pgnFile.name, style = MaterialTheme.typography.bodyMedium) },
-                )
+                ) { Text("PGN") }
                 val warnings = document.loadWarnings
                 if (warnings.isNotEmpty()) {
                     ListItem(
-                        headlineContent = { Text("${warnings.size} moves could not be read") },
+                        onClick = { showWarnings = !showWarnings },
                         trailingContent = {
                             Icon(if (showWarnings) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore, contentDescription = null)
                         },
-                        modifier = Modifier.clickable { showWarnings = !showWarnings },
-                    )
+                    ) { Text("${warnings.size} moves could not be read") }
                     if (showWarnings) {
                         for (warning in warnings) {
                             Text(warning, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
@@ -136,15 +133,13 @@ fun RepertoireSettingsScreen(
                     }
                 }
                 ListItem(
-                    headlineContent = { Text("Export") },
+                    onClick = { app.library.entry(document.entryId)?.let(export) },
                     leadingContent = { Icon(Symbols.share, contentDescription = null) },
-                    modifier = Modifier.clickable { app.library.entry(document.entryId)?.let(export) },
-                )
+                ) { Text("Export") }
                 ListItem(
-                    headlineContent = { Text("Delete Repertoire", color = ThemeColor.failure.color) },
+                    onClick = { confirmDelete = true },
                     leadingContent = { Icon(Symbols.delete, contentDescription = null, tint = ThemeColor.failure.color) },
-                    modifier = Modifier.clickable { confirmDelete = true },
-                )
+                ) { Text("Delete Repertoire", color = ThemeColor.failure.color) }
             }
         }
     }

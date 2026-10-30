@@ -1,7 +1,6 @@
 package org.orbtchess.orbt.ui.overview
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -202,9 +201,8 @@ private fun LazyListScope.coverageSection(app: AppModel, document: RepertoireDoc
     }
     item {
         ListItem(
-            headlineContent = { Text("Saved moves") },
             trailingContent = { Text(NumberFormat.getIntegerInstance().format(stats.savedMoves), style = tabularDigits(MaterialTheme.typography.bodyLarge)) },
-        )
+        ) { Text("Saved moves") }
     }
     item {
         ActionButton(
@@ -280,13 +278,13 @@ private fun LazyListScope.studySection(
     if (showStatisticsRow) {
         item {
             ListItem(
-                headlineContent = { Text("Statistics") },
-                leadingContent = { Icon(Symbols.statistics, contentDescription = null) },
-                trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
-                modifier = Modifier.padding(top = 8.dp).clickable {
+                onClick = {
                     navigate(Destination.Statistics(StatisticsScope.Repertoire(id)))
                 },
-            )
+                leadingContent = { Icon(Symbols.statistics, contentDescription = null) },
+                trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
+                modifier = Modifier.padding(top = 8.dp),
+            ) { Text("Statistics") }
         }
     }
 }

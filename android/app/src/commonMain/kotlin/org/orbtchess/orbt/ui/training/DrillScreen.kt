@@ -480,11 +480,10 @@ private fun StudyCountsList(counts: Counts, highlight: QueueKind?) {
 @Composable
 private fun CountRow(value: Long, meaning: ThemeColor, asked: Boolean, title: String, detail: String) {
     ListItem(
-        headlineContent = { Text(title) },
         supportingContent = { Text(detail) },
         leadingContent = {
             CountText(value, meaning, asked, tabularDigits(MaterialTheme.typography.headlineSmall))
         },
         modifier = Modifier.semantics(mergeDescendants = true) {},
-    )
+    ) { Text(title) }
 }

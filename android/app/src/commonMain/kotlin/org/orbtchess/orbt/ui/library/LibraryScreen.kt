@@ -291,11 +291,10 @@ private fun TodayRow(app: AppModel, selected: Boolean, onClick: () -> Unit) {
     val due = app.library.entries.sumOf { EntryStats.of(it, app).counts.total }
     SelectableRow(selected, onClick) {
         ListItem(
-            headlineContent = { Text("Today") },
             leadingContent = { Icon(Icons.Outlined.CalendarToday, contentDescription = null) },
             trailingContent = { if (due > 0) Text("$due", style = MaterialTheme.typography.labelLarge) },
             colors = rowColors(selected),
-        )
+        ) { Text("Today") }
     }
 }
 
@@ -336,7 +335,6 @@ private fun LibraryRow(
     Box {
         SelectableRow(selected, onClick, onLongClick = { showMenu = true }) {
             ListItem(
-                headlineContent = { Text(entry.name, maxLines = 1) },
                 supportingContent = {
                     when {
                         entry.needsSetup -> Text("New PGN. Tap to set it up.")
@@ -346,7 +344,7 @@ private fun LibraryRow(
                 },
                 trailingContent = if (entry.needsSetup) null else ({ DueStatus(stats) }),
                 colors = rowColors(selected),
-            )
+            ) { Text(entry.name, maxLines = 1) }
         }
         DropdownMenu(showMenu, onDismissRequest = { showMenu = false }) {
             menu { showMenu = false }

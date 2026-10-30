@@ -1,6 +1,5 @@
 package org.orbtchess.orbt.ui.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,14 +28,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
+import java.text.Collator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import orbt.app.generated.resources.Res
 import org.orbtchess.orbt.ui.components.Symbols
-import java.text.Collator
 
 /**
  * About ORBT Chess (`Acknowledgements.swift`, the Lichess app's About screen): the app's pages,
@@ -53,7 +54,11 @@ fun AcknowledgementsScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 .getOrDefault(Acknowledgements.empty)
         }
     }
-    BackHandler(enabled = page != Page.About) { page = page.parent }
+    NavigationBackHandler(
+        rememberNavigationEventState(NavigationEventInfo.None),
+        isBackEnabled = page != Page.About,
+        onBackCompleted = { page = page.parent },
+    )
     when (val current = page) {
         Page.About -> AboutPage(onBack, modifier) { page = Page.Licenses }
         Page.Licenses -> LicensesPage(acknowledgements, { page = Page.About }, modifier) { page = Page.Text(it) }
@@ -103,7 +108,9 @@ private fun AboutPage(onBack: () -> Unit, modifier: Modifier, openLicenses: () -
             }
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             LinkRow("Source Code") { uri.openUri(AppLinks.SOURCE) }
-            ListItem(headlineContent = { Text("Licenses") }, modifier = Modifier.clickable(onClick = openLicenses))
+            ListItem(
+                onClick = openLicenses,
+            ) { Text("Licenses") }
             Text(
                 "Version $version. ORBT Chess is free software: you can share and change it under the GNU AGPL 3.0 or later.",
                 style = MaterialTheme.typography.bodySmall,
@@ -117,10 +124,9 @@ private fun AboutPage(onBack: () -> Unit, modifier: Modifier, openLicenses: () -
 @Composable
 private fun LinkRow(title: String, onClick: () -> Unit) {
     ListItem(
-        headlineContent = { Text(title) },
+        onClick = onClick,
         trailingContent = { Icon(Symbols.openInBrowser, contentDescription = "Opens in the browser") },
-        modifier = Modifier.clickable(onClick = onClick),
-    )
+    ) { Text(title) }
 }
 
 /**
@@ -142,10 +148,14 @@ private fun LicensesPage(acknowledgements: Acknowledgements, onBack: () -> Unit,
     }
     Page("Licenses", onBack, modifier) { inner ->
         LazyColumn(inner) {
-            item { ListItem(headlineContent = { Text(app.name) }, modifier = Modifier.clickable { open(app) }) }
+            item { ListItem(
+                onClick = { open(app) },
+            ) { Text(app.name) } }
             item { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
             items(entries, key = { it.id }) { entry ->
-                ListItem(headlineContent = { Text(entry.name) }, modifier = Modifier.clickable { open(entry) })
+                ListItem(
+                    onClick = { open(entry) },
+                ) { Text(entry.name) }
             }
         }
     }

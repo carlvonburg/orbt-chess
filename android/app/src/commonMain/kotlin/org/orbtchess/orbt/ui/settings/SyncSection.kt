@@ -1,6 +1,5 @@
 package org.orbtchess.orbt.ui.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -61,22 +60,20 @@ internal fun SyncSection(app: AppModel) {
         if (provider != null) {
             val status = status(sync)
             ListItem(
-                headlineContent = { Text("Status") },
                 supportingContent = { Text(status.text, color = status.role?.color ?: MaterialTheme.colorScheme.onSurfaceVariant) },
                 leadingContent = { Icon(status.icon, contentDescription = null, tint = status.role?.color ?: MaterialTheme.colorScheme.onSurfaceVariant) },
-            )
+            ) { Text("Status") }
             if (sync.needsSignIn) {
                 ListItem(
-                    headlineContent = { Text("Sign In to ${provider.title}", color = MaterialTheme.colorScheme.primary) },
+                    onClick = { scope.launch { sync.signIn(provider) } },
+                    enabled = !sync.isSigningIn,
                     leadingContent = { Icon(Symbols.signIn, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                    modifier = Modifier.clickable(enabled = !sync.isSigningIn) { scope.launch { sync.signIn(provider) } },
-                )
+                ) { Text("Sign In to ${provider.title}", color = MaterialTheme.colorScheme.primary) }
             } else {
                 ListItem(
-                    headlineContent = { Text("Sync Now", color = MaterialTheme.colorScheme.primary) },
+                    onClick = { sync.syncNow() },
                     leadingContent = { Icon(Icons.Outlined.Sync, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-                    modifier = Modifier.clickable { sync.syncNow() },
-                )
+                ) { Text("Sync Now", color = MaterialTheme.colorScheme.primary) }
             }
         }
         sync.lastError?.let { error ->
