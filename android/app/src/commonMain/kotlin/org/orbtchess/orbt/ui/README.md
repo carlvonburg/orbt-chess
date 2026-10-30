@@ -1,23 +1,49 @@
 # The UI (Android and desktop)
 
-Compose Multiplatform with Material 3, ported screen by screen from `apple/ORBT/UI`. Each screen
-follows its Swift counterpart; the Swift file is named in each stub's doc comment.
+Compose Multiplatform with Material 3 Expressive (Google, 2025), ported screen by screen from
+`apple/ORBT/UI`. The layout is the iOS app's; the look is the platform's: Material 3 Expressive
+here as HIG and Liquid Glass there. Each screen follows its Swift counterpart; the Swift file is
+named in each stub's doc comment.
 
 ## Rules
 - **Native components only**, as the Swift app uses SwiftUI's own with no custom overrides: stock
-  Material 3 components and patterns as Google ships them — `NavigationSuiteScaffold`,
-  `ListDetailPaneScaffold`, `Scaffold` + `TopAppBar`, `ListItem`, `ModalBottomSheet`,
-  `AlertDialog`, `Switch`, `Slider`, `SegmentedButton` (choosing an option; tabs switch content),
-  `SearchBar`, plain tooltips on every icon-only action, Material
-  Symbols (`Icons.*`, `components/Symbols.kt`), the platform's back handling, dynamic color.
+  Material 3 Expressive components and patterns as Google ships them (`MaterialExpressiveTheme`
+  with the expressive motion scheme, `ui/theme/Theme.kt`; the Expressive API is opted into for
+  the module in `build.gradle.kts`). Where Expressive replaces a component, use its version:
+  - Tabs: `NavigationSuiteScaffold` with `NavigationSuiteItem` and
+    `NavigationSuiteScaffoldDefaults.navigationSuiteType` (the short navigation bar; the wide
+    navigation rail where a window would show one); panes: `ListDetailPaneScaffold`.
+  - Top app bars: where iOS has a large title, a flexible app bar that collapses on scroll
+    (`exitUntilCollapsedScrollBehavior`): `LargeFlexibleTopAppBar` on the tab roots
+    (Repertoires, Today, Statistics, Settings), `MediumFlexibleTopAppBar` on pushed screens;
+    `TopAppBar(title, subtitle)` where iOS's title is inline (the board screens).
+  - Choosing one of a few options: a connected button group (`components/ChoiceButtonGroup`:
+    `ToggleButton`s with `ButtonGroupDefaults.connected*ButtonShapes`), never `SegmentedButton`;
+    tabs switch content.
+  - Buttons morph when pressed: `shapes = ButtonDefaults.shapes()` on every button,
+    `IconButtonDefaults.shapes()` / `toggleableShapes()` on icon buttons (`TooltipIconButton`).
+  - Waiting: `LoadingIndicator` (and `PullToRefreshDefaults.LoadingIndicator` for pull to
+    refresh); progress of a task (downloads, Study's countdown): `LinearWavyProgressIndicator`,
+    `CircularWavyProgressIndicator`. A spinner of 12–16 dp inside a row stays
+    `CircularProgressIndicator` (a loading indicator's shapes don't read that small); the app's
+    data bars (coverage, studied, how much to learn) are values, not progress: plain
+    `LinearProgressIndicator` without stop indicator.
+  - Lists: `ListItem`; a pane's selectable rows use its `selected`/`onClick`/`onLongClick`
+    overload, inset 12 dp so the selected row shows its rounded shape.
+  - Board screens: `HorizontalFloatingToolbar` with its FAB (below).
+  - Also `ModalBottomSheet`, `AlertDialog`, `Switch`, `Slider`, the collapsed `SearchBar` (in
+    the outline sheet), plain tooltips on every icon-only action, Material Symbols (`Icons.*`,
+    `components/Symbols.kt`), the platform's back handling, dynamic color.
   Don't hand-roll what Material has, don't restyle Material components to look like iOS, and let
   containers supply titles, spacing and typography. Custom drawing only where no component
   exists: the board, Anki-style progress bars, charts.
 - **Meanings, not hues** (`Design/COLORS.md`, "Android and desktop"): a view colors something by
-  what it means — `ThemeColor.learned.color`, `ThemeColor.learned.lighter().color` — or uses a
-  Material role (`MaterialTheme.colorScheme.*`), or the board's colors (`OrbtTheme.board`). Hues
-  by name only in `ui/theme`; the commit hook blocks them elsewhere. Never color alone: with a
-  symbol, text or shape.
+  what it means — `ThemeColor.learned.color`, `ThemeColor.learned.lighter().color`, and where a
+  meaning fills a surface its tonal container and the content on it
+  (`ThemeColor.learned.container.color`, `.onContainer.color`) — or uses a Material role
+  (`MaterialTheme.colorScheme.*`), or the board's colors (`OrbtTheme.board`). Hues by name only
+  in `ui/theme`; the commit hook blocks them elsewhere. Never color alone: with a symbol, text or
+  shape.
 - **Rules live in the core** (`orbt-core`); models are thin wrappers that forward to it.
 - **Navigation goes through the shell.** A screen asks for a `Destination` with
   `navigate(destination)` and goes back with `onBack`; it never builds another screen or edits
@@ -68,7 +94,7 @@ follows its Swift counterpart; the Swift file is named in each stub's doc commen
 |---|---|---|
 | `ui` | the shell: destinations, back stack, panes, tabs, sheets, full-window screens | `Destination.kt`, `ShellModel.kt`, `AppShell.kt` (shell only); `Placeholder.kt` (temporary, delete once unused) |
 | `ui.theme` | Material theme, app color, meanings, board colors | `Theme.kt`, `AppColor.kt`, `BoardTheme.kt`, `Hues.kt`, `DynamicColor.*.kt` |
-| `ui.components` | coverage, studied and segmented bars, score bar, due counts, labels, status badge, empty state, board column and detail pane, `OpenDocument`, `Format`, `Symbols`, `BoardPane`, `BoardToolbar`, `MoveList`, `TooltipIconButton` | shared |
+| `ui.components` | coverage, studied and segmented bars, score bar, due counts, labels, status badge, empty state, connected button group (`ChoiceButtonGroup`), board column and detail pane, `OpenDocument`, `Format`, `Symbols`, `BoardPane`, `BoardToolbar`, `MoveList`, `TooltipIconButton` | shared |
 | `ui.library` | `LibraryScreen` (list pane / Repertoires tab), `TodayPane` (detail with no selection), `SetupScreen` | library |
 | `ui.overview` | `OverviewScreen`, `RepertoireSettingsScreen`, `StudyOptionsSheet` | overview |
 | `ui.builder` | `BuilderScreen`, `BuilderModel` | Build |

@@ -115,17 +115,23 @@ stands out by lightness and keeps the hue.
 | promotion | black 35% dim, pieces on a material | promoting |
 
 ## Android and desktop (`android/app/.../ui/theme`)
-The same meanings, rules and board, in Material 3's terms. Hues by name live only in
-`ui/theme` (`Hues.kt`; the commit hook blocks `Color(0x…)`, `Color.Red` … and `Hues.` in `ui/`
-outside it). Views take a meaning (`ThemeColor.learned.color`, `.lighter()`, `.opacity()`), a
-Material role (`MaterialTheme.colorScheme.*`) or the board's colors (`OrbtTheme.board`), and
-let stock Material components color themselves.
+The same meanings, rules and board, in Material 3 Expressive's terms (`MaterialExpressiveTheme`).
+Hues by name live only in `ui/theme` (`Hues.kt`; the commit hook blocks `Color(0x…)`,
+`Color.Red` … and `Hues.` in `ui/` outside it). Views take a meaning
+(`ThemeColor.learned.color`, `.lighter()`, `.opacity()`, `.container`, `.onContainer`), a
+Material role (`MaterialTheme.colorScheme.*`) or the board's colors (`OrbtTheme.board`), and let
+stock Material components color themselves.
 
 - **The app color is the scheme.** Multicolor is Material You on Android 12 and later (the
   system's dynamic color from the wallpaper); on the desktop and older Android, a scheme seeded
-  with blue. Every other app color seeds a Material scheme (tonal spot; Graphite monochrome),
-  from Apple's system color of that name. The primary is the accent: controls take it from
-  Material, as SwiftUI's take the tint.
+  with blue. Every other app color seeds a Material scheme from Apple's system color of that
+  name as Android 16's Expressive dynamic color makes one from a wallpaper: tonal spot (the
+  system's default style) on the 2025 color spec, whose primaries and containers are brighter
+  (Graphite: monochrome, on the 2021 spec). The primary is the accent: controls
+  take it from Material, as SwiftUI's take the tint; filled buttons, the selected option of a
+  button group and the FAB take the primary, tonal buttons and selected rows the secondary
+  container, as Expressive assigns them. Tertiary is not used: every accent in the app means
+  something, and a color is added only where something gets clearer.
 - **Meanings** resolve as on Apple, with Material's roles for the label colors:
 
 | Meaning | Multicolor | Tinted |
@@ -140,9 +146,17 @@ let stock Material components color themselves.
 | ahead | cyan | cyan |
 | inactive | `outline` | `onSurfaceVariant` at 40% |
 
-  A named hue (green, red, …) is used as Material asks for custom colors: tone 40 in light,
-  80 in dark, harmonized with the primary when the scheme is Material You's.
-- **Lighter shades** mix toward white by the same amounts (young, Anki's learning: 45%).
+  A named hue (green, red, …) is a Material custom color: harmonized with the primary (its hue
+  turned up to 15° toward it, in every scheme), then tones of its own palette.
+- **Containers.** Every meaning has Material's three roles, as a custom color group: the color
+  (text, symbols, bars), its container (a surface the meaning fills: a status badge, Study's
+  finished disc) and the content on that container. Custom colors: tones 40, 90, 10 in light
+  and 80, 30, 90 in dark. Scheme roles: built `primaryContainer`/`onPrimaryContainer`, the
+  tinted accent the tint scheme's, failure `errorContainer`/`onErrorContainer`, the label colors
+  (tinted learning and new, inactive) on `surfaceContainerHighest`. A saved candidate's row in
+  Build is the built container at 50%.
+- **Lighter shades** are higher tones of the same palette (HCT: hue and chroma kept), the same
+  share of the way to white as iOS mixes (young, Anki's learning: 45%).
 - **Selected rows.** Material selects a row with the secondary container, not the accent: inside
   one (`LocalSelectedRow provides true`) meanings take the row's content color, lighter shades
   at 75% and learning at 55%, as they turn white on the Mac.
