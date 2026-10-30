@@ -102,10 +102,16 @@ class CoverageTables(
             return result
         }
 
-    /** Loads local tables, then reads the server's list. */
+    /**
+     * Removes the partial downloads a killed process left, loads local tables, then reads the
+     * server's list.
+     */
     suspend fun setUp(appFolder: File?) {
         val manifest = withContext(Dispatchers.IO) {
             directory.mkdirs()
+            // Nothing is downloading yet: every partial file is left over.
+            directory.listFiles { file -> file.name.startsWith(".") && file.name.endsWith(".part") }
+                ?.forEach { it.delete() }
             runCatching { savedManifest.readBytes() }.getOrNull()
         }
         if (manifest != null) available = coverageManifestFiles(manifest) ?: emptyList()
