@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,6 +31,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -76,7 +78,7 @@ internal fun BuilderSheets(model: BuilderModel, onStudyBranch: (NodeId) -> Unit)
 @Composable
 private fun SheetTitle(title: String, actions: @Composable () -> Unit = {}) {
     Row(
-        Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp, bottom = 8.dp),
+        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -103,19 +105,28 @@ private fun OutlineSheet(model: BuilderModel, onStudyBranch: (NodeId) -> Unit, d
     }
     ModalBottomSheet(onDismissRequest = dismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         SheetTitle("Outline")
-        OutlinedTextField(
-            value = search,
-            onValueChange = { search = it },
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            placeholder = { Text("Find a move, e.g. Nf3") },
-            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-            trailingIcon = {
-                if (search.isNotEmpty()) {
-                    IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Clear, contentDescription = "Clear") }
-                }
+        // Material's search bar (docked: the results are the list below it, not a view of its own).
+        DockedSearchBar(
+            inputField = {
+                SearchBarDefaults.InputField(
+                    query = search,
+                    onQueryChange = { search = it },
+                    onSearch = {},
+                    expanded = false,
+                    onExpandedChange = {},
+                    placeholder = { Text("Find a move, e.g. Nf3") },
+                    leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (search.isNotEmpty()) {
+                            IconButton(onClick = { search = "" }) { Icon(Icons.Filled.Clear, contentDescription = "Clear") }
+                        }
+                    },
+                )
             },
-            singleLine = true,
-        )
+            expanded = false,
+            onExpandedChange = {},
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        ) {}
         Spacer(Modifier.size(8.dp))
         if (search.isNotEmpty()) {
             val matches = remember(search, document.revision) { document.core.search(search, 100u) }

@@ -64,6 +64,7 @@ import org.orbtchess.orbt.ui.components.CoverageBar
 import org.orbtchess.orbt.ui.components.DueCounts
 import org.orbtchess.orbt.ui.components.EmptyState
 import org.orbtchess.orbt.ui.components.StudiedBar
+import org.orbtchess.orbt.ui.components.TooltipIconButton
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.overview.DeleteRepertoireDialog
 import org.orbtchess.orbt.ui.overview.SecondaryLabel
@@ -138,7 +139,7 @@ fun LibraryScreen(
                     // An empty library offers these in its middle.
                     if (library.entries.isNotEmpty()) {
                         Box {
-                            IconButton(onClick = { addMenu = true }) { Icon(Symbols.add, contentDescription = "Add") }
+                            TooltipIconButton("Add", Symbols.add, { addMenu = true })
                             DropdownMenu(addMenu, onDismissRequest = { addMenu = false }) {
                                 DropdownMenuItem(
                                     text = { Text("New Repertoire") },
@@ -159,7 +160,7 @@ fun LibraryScreen(
                             }
                         }
                     }
-                    IconButton(onClick = { navigate(Destination.Settings) }) { Icon(Symbols.settings, contentDescription = "Settings") }
+                    TooltipIconButton("Settings", Symbols.settings, { navigate(Destination.Settings) })
                 },
             )
         },
