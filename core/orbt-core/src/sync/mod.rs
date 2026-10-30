@@ -71,6 +71,98 @@ pub fn file_kind(name: &str) -> Option<FileKind> {
 const SIDECAR_SUFFIX: &str = ".otrep.json";
 const REVLOG_SUFFIX: &str = ".otlog.jsonl";
 
+/// A provider's copy of a file it could not reconcile, beside the original.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConflictCopy {
+    pub copy: String,
+    pub original: String,
+}
+
+/// The file a provider's conflict copy in a synced folder stands for (computers sync through
+/// the providers' own apps), or None when `name` is no such copy of a file the sync handles:
+/// - Dropbox: `Najdorf (Carl's conflicted copy 2026-10-30).pgn`, with a number inside or after
+///   it when there are several (`… 2026-10-30 (1))`, `…) (1)`), and its other markers
+///   (`(Case Conflict)`, `(Selective Sync Conflict)`);
+/// - Google Drive for desktop and other numbered copies: `Najdorf (1).pgn`.
+///
+/// The marker sits before the whole extension (`Najdorf (1).otrep.json`) or before its last
+/// part (`Najdorf.otrep (1).json`). iCloud's conflicts are not names (the platform has them as
+/// file versions). A repertoire the user named `Najdorf (2)` reads as a copy too: use
+/// `conflict_copies`, which only pairs a copy with an original that exists.
+pub fn conflict_original(name: &str) -> Option<String> {
+    if name.contains(['/', '\\']) || name.starts_with('.') {
+        return None;
+    }
+    let suffixes = [".pgn", SIDECAR_SUFFIX, REVLOG_SUFFIX];
+    // Each place the marker may sit: before the suffix, or before one of its later parts.
+    let mut places = suffixes
+        .into_iter()
+        .flat_map(|suffix| suffix.match_indices('.').map(|(at, _)| suffix.split_at(at)));
+    places.find_map(|(head, tail)| {
+        let rest = name.strip_suffix(tail)?;
+        let (mut stem, marker) = strip_conflict_marker(rest)?;
+        // A numbered Dropbox copy: `(1)` after its marker.
+        if marker == Marker::Number
+            && let Some((inner, Marker::Conflict)) = strip_conflict_marker(stem)
+        {
+            stem = inner;
+        }
+        let original = format!("{stem}{tail}");
+        (stem.len() > head.len() && stem.ends_with(head) && file_kind(&original).is_some())
+            .then_some(original)
+    })
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Marker {
+    /// `(1)`
+    Number,
+    /// Dropbox's `(… conflicted copy …)`, `(Case Conflict)`.
+    Conflict,
+}
+
+/// The name without its last ` (…)`, when that is a conflict copy's marker.
+fn strip_conflict_marker(name: &str) -> Option<(&str, Marker)> {
+    let inner = name.strip_suffix(')')?;
+    // The matching parenthesis: device names may hold some.
+    let mut depth = 0;
+    let open = inner.char_indices().rev().find_map(|(i, c)| match c {
+        ')' => {
+            depth += 1;
+            None
+        }
+        '(' if depth == 0 => Some(i),
+        '(' => {
+            depth -= 1;
+            None
+        }
+        _ => None,
+    })?;
+    let stem = inner[..open].strip_suffix(' ').filter(|s| !s.is_empty())?;
+    let text = &inner[open + 1..];
+    if (1..=4).contains(&text.len()) && text.bytes().all(|b| b.is_ascii_digit()) {
+        Some((stem, Marker::Number))
+    } else if text.to_lowercase().contains("conflict") {
+        Some((stem, Marker::Conflict))
+    } else {
+        None
+    }
+}
+
+/// The conflict copies among a folder's file names whose original is there too, in name order.
+pub fn conflict_copies(names: &[String]) -> Vec<ConflictCopy> {
+    let all: std::collections::BTreeSet<&str> = names.iter().map(String::as_str).collect();
+    all.iter()
+        .filter_map(|&copy| {
+            let original = conflict_original(copy)?;
+            all.contains(original.as_str()).then(|| ConflictCopy {
+                copy: copy.to_owned(),
+                original,
+            })
+        })
+        .collect()
+}
+
 /// The content hash the engine compares versions by (hex SHA-256, first 16 bytes).
 pub fn content_hash(data: &[u8]) -> String {
     Sha256::digest(data)[..16]
@@ -103,7 +195,8 @@ pub fn merge(kind: FileKind, local: &[u8], remote: &[u8]) -> Vec<u8> {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AuthNeed {
-    /// Get a fresh access token and pass it to `set_credentials` (Drive: from the system).
+    /// Get a fresh access token and pass it to `set_credentials` (Drive on Android: from the
+    /// system).
     Token,
     /// The sign-in was revoked or expired for good: sign in again.
     SignIn,
@@ -121,6 +214,8 @@ pub enum SyncState {
         until: Millis,
     },
     NeedsToken,
+    /// Signed out by the provider (the refresh token was refused: revoked, unused too long,
+    /// or Dropbox never signed in): sign in again. Local edits upload after that.
     NeedsSignIn,
 }
 
@@ -341,8 +436,19 @@ impl SyncEngine {
         )
     }
 
+    /// Drive with tokens from the platform (Android's Play services): `AuthNeed::Token` asks
+    /// for a new one.
     pub fn drive(saved_state: &[u8]) -> SyncEngine {
-        SyncEngine::new(Box::new(drive::Drive), saved_state)
+        SyncEngine::new(Box::new(drive::Drive::default()), saved_state)
+    }
+
+    /// Drive signed in with the core's OAuth (`drive::authorize_url`): the core refreshes the
+    /// access token with the refresh token from `set_credentials`, and signing out revokes it.
+    pub fn drive_oauth(client: drive::Client, saved_state: &[u8]) -> SyncEngine {
+        let drive = drive::Drive {
+            client: Some(client),
+        };
+        SyncEngine::new(Box::new(drive), saved_state)
     }
 
     /// What to persist between launches (no secrets: tokens stay with the platform).
@@ -378,10 +484,10 @@ impl SyncEngine {
     // Events
 
     /// After signing in, or a fresh token from the system. `expires_at`: unix ms, or None when
-    /// unknown (Drive: the system does not say): the token is used until the provider refuses
-    /// it (401), and then the platform is asked for a new one (`AuthNeed::Token`).
-    /// `refresh_token`: Dropbox's, which the core uses to get new access tokens (None keeps
-    /// the one it has).
+    /// unknown (Drive's system tokens: the system does not say): the token is used until the
+    /// provider refuses it (401), and then the platform is asked for a new one
+    /// (`AuthNeed::Token`). `refresh_token`: Dropbox's, or Drive's own sign-in's (`drive_oauth`),
+    /// which the core uses to get new access tokens (None keeps the one it has).
     pub fn set_credentials(
         &mut self,
         access_token: Option<String>,
@@ -449,7 +555,7 @@ impl SyncEngine {
 
     // Requests
 
-    /// The core refreshes access tokens itself (Dropbox).
+    /// The core refreshes access tokens itself (Dropbox, Drive with `drive_oauth`).
     fn can_refresh(&self) -> bool {
         self.provider.refresh("").is_some()
     }
@@ -499,9 +605,9 @@ impl SyncEngine {
     }
 
     /// Signing out: the next request that revokes the sign-in on the provider's side, or None
-    /// when none is left (revoked, failed, or the platform revokes itself: Drive). Send it and
+    /// when none is left (revoked, failed, or the platform revokes itself: Drive on Android). Send it and
     /// pass the answer to `on_sign_out_response`; best effort, so stopping early (offline) is
-    /// fine. Dropbox refreshes an expired access token first (once): revoking it disables the
+    /// fine. An expired access token is refreshed first (once): revoking it disables the
     /// refresh token too. From the first call, `poll` hands out nothing.
     pub fn sign_out_request(&mut self, now: Millis) -> Option<HttpRequest> {
         let step = *self
@@ -652,7 +758,7 @@ impl SyncEngine {
                 .and_then(|t| self.provider.refresh(t));
             return match refresh {
                 Some(request) => Ok(Some(self.send(Pending::Refresh, None, request))),
-                // Dropbox without a refresh token: not signed in.
+                // Dropbox (or Drive's own sign-in) without a refresh token: not signed in.
                 None if self.can_refresh() => Err(AuthNeed::SignIn),
                 None => Err(AuthNeed::Token),
             };
@@ -791,7 +897,11 @@ impl SyncEngine {
                         expires_at: expires_in.map(|s| now + s.clamp(0, 1 << 31) * 1000),
                     });
                 }
-                Answer::Unauthorized => self.need(AuthNeed::SignIn, &mut outcome),
+                Answer::Unauthorized => {
+                    // Dead for good: signed out until the next sign-in, edits kept for then.
+                    self.refresh_token = None;
+                    self.need(AuthNeed::SignIn, &mut outcome);
+                }
                 other => self.retry_later(other, now, &mut outcome),
             },
             Pending::FindFolder => match self.provider.read_find_folder(r) {

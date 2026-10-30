@@ -2,10 +2,11 @@ use std::sync::{Arc, Mutex};
 
 use crate::stats::SignInError;
 use orbt_core::http::{HttpRequest, HttpResponse};
+use orbt_core::sync::drive;
 use orbt_core::sync::dropbox::{self, Dropbox};
 use orbt_core::sync::{
-    self, AuthNeed, FileKind, LocalWrite, SyncEngine, SyncOp, SyncOpKind, SyncOutcome, SyncPoll,
-    SyncState,
+    self, AuthNeed, ConflictCopy, FileKind, LocalWrite, SyncEngine, SyncOp, SyncOpKind,
+    SyncOutcome, SyncPoll, SyncState,
 };
 
 #[uniffi::remote(Enum)]
@@ -13,6 +14,12 @@ pub enum FileKind {
     Pgn,
     Sidecar,
     Revlog,
+}
+
+#[uniffi::remote(Record)]
+pub struct ConflictCopy {
+    pub copy: String,
+    pub original: String,
 }
 
 #[uniffi::remote(Enum)]
@@ -155,6 +162,92 @@ pub fn dropbox_parse_account(response: HttpResponse) -> Option<String> {
     dropbox::read_account(&response)
 }
 
+/// What signing in to Google Drive with the core's OAuth gives: keep the refresh
+/// token (the core refreshes with it).
+#[derive(uniffi::Record)]
+pub struct DriveSignIn {
+    pub access_token: String,
+    /// Unix ms; None when Google did not say.
+    pub expires_at: Option<i64>,
+    pub refresh_token: String,
+}
+
+/// The redirect Google allows the iOS client `client_id`: its reversed id as the URL scheme
+/// (a Desktop app client uses the loopback server instead).
+#[uniffi::export]
+pub fn drive_redirect_uri(client_id: String) -> String {
+    drive::redirect_uri(&client_id)
+}
+
+/// Google's sign-in page (PKCE, `drive.file`, for a refresh token), redirecting to
+/// `redirect_uri`. Read the redirect with `oauth_parse_redirect`.
+#[uniffi::export]
+pub fn drive_authorize_url(
+    client_id: String,
+    verifier: String,
+    state: String,
+    redirect_uri: String,
+) -> String {
+    drive::authorize_url(&client_id, &verifier, &state, &redirect_uri)
+}
+
+fn drive_client(client_id: String, client_secret: Option<String>) -> drive::Client {
+    drive::Client {
+        id: client_id,
+        secret: client_secret,
+    }
+}
+
+/// Exchanges the code from the redirect for the tokens (`redirect_uri`: the authorize URL's).
+/// `client_secret`: a Desktop app client's (Windows, Linux); None for an iOS client.
+#[uniffi::export]
+pub fn drive_token_request(
+    client_id: String,
+    client_secret: Option<String>,
+    code: String,
+    verifier: String,
+    redirect_uri: String,
+) -> HttpRequest {
+    let client = drive_client(client_id, client_secret);
+    drive::token_request(&client, &code, &verifier, &redirect_uri)
+}
+
+/// The token request's answer (`now_ms`: unix ms). Fails when Drive access was not allowed.
+#[uniffi::export]
+pub fn drive_parse_token(response: HttpResponse, now_ms: i64) -> Result<DriveSignIn, SignInError> {
+    let s = drive::read_token(&response, now_ms)?;
+    Ok(DriveSignIn {
+        access_token: s.access_token,
+        expires_at: s.expires_at,
+        refresh_token: s.refresh_token,
+    })
+}
+
+/// The signed-in account, for its email (`drive_parse_account`).
+#[uniffi::export]
+pub fn drive_account_request(access_token: String) -> HttpRequest {
+    drive::account_request(&access_token)
+}
+
+#[uniffi::export]
+pub fn drive_parse_account(response: HttpResponse) -> Option<String> {
+    drive::read_account(&response)
+}
+
+/// The file a provider's conflict copy stands for (`Najdorf (Carl's conflicted copy
+/// 2026-10-30).pgn`, `Najdorf (1).otrep.json`), or None. Prefer `sync_conflict_copies`.
+#[uniffi::export]
+pub fn sync_conflict_original(name: String) -> Option<String> {
+    sync::conflict_original(&name)
+}
+
+/// The conflict copies among a folder's file names whose original is there too: merge each
+/// into its original (as an iCloud conflict version), then remove it.
+#[uniffi::export]
+pub fn sync_conflict_copies(names: Vec<String>) -> Vec<ConflictCopy> {
+    sync::conflict_copies(&names)
+}
+
 /// The kind of a file the sync handles, or None for any other file.
 #[uniffi::export]
 pub fn sync_file_kind(name: String) -> Option<FileKind> {
@@ -197,10 +290,25 @@ impl RepertoireSync {
         RepertoireSync::with(SyncEngine::dropbox(&app_key, &saved_state))
     }
 
-    /// The "ORBT Chess" folder in Google Drive (`drive.file` scope).
+    /// The "ORBT Chess" folder in Google Drive (`drive.file` scope), with tokens from the
+    /// platform (Android's Play services): `AuthNeed::Token` asks for a new one.
     #[uniffi::constructor]
     pub fn drive(saved_state: Vec<u8>) -> Arc<RepertoireSync> {
         RepertoireSync::with(SyncEngine::drive(&saved_state))
+    }
+
+    /// Google Drive signed in with the core's OAuth (`drive_authorize_url`; Apple's platforms,
+    /// Windows, Linux): pass the refresh token to `set_credentials`, the core refreshes the
+    /// access token itself and signing out revokes it. `client_secret`: as for
+    /// `drive_token_request`.
+    #[uniffi::constructor]
+    pub fn drive_oauth(
+        client_id: String,
+        client_secret: Option<String>,
+        saved_state: Vec<u8>,
+    ) -> Arc<RepertoireSync> {
+        let client = drive_client(client_id, client_secret);
+        RepertoireSync::with(SyncEngine::drive_oauth(client, &saved_state))
     }
 
     pub fn set_listener(&self, listener: Arc<dyn SyncListener>) {
