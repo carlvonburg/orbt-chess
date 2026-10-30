@@ -66,6 +66,8 @@ kotlin {
             dependencies {
                 implementation(kotlin("test"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+                implementation(compose.desktop.uiTestJUnit4)
+                implementation(compose.desktop.currentOs)
             }
         }
     }

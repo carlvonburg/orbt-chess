@@ -1,11 +1,11 @@
 package org.orbtchess.orbt.ui.overview
 
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
-import org.orbtchess.orbt.ui.components.ListSection
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -21,29 +21,34 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import java.text.NumberFormat
+import java.util.UUID
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.ExplorerDatabase
 import org.orbtchess.orbt.core.ExplorerSpeed
@@ -59,11 +64,10 @@ import org.orbtchess.orbt.explorer.CoverageTables
 import org.orbtchess.orbt.platform.Settings
 import org.orbtchess.orbt.storage.RepertoireDocument
 import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
+import org.orbtchess.orbt.ui.components.ListSection
 import org.orbtchess.orbt.ui.components.SymbolLabel
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
-import java.text.NumberFormat
-import java.util.UUID
 
 // A repertoire's settings (`RepertoireSettingsForm.swift`): its side, where opponent move
 // frequencies come from and how much to learn. Repertoire Settings shows them on one page; the
@@ -284,14 +288,20 @@ private fun RatingPicker(app: AppModel, draft: RepertoireSettingsDraft, onChange
     val options = if (draft.rating in bins) bins else (bins + draft.rating).sorted()
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded, { expanded = it }, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-        OutlinedTextField(
-            value = ratingLabel(draft.rating),
-            onValueChange = {},
-            readOnly = true,
-            label = { Text(label) },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
-        )
+        // The anchor's own click handling never opens the menu on the desktop when the box comes
+        // after the screen's first frame (the setup's step 2; Compose Multiplatform material3
+        // 1.13.0-beta01), so a click target over the field opens it; the anchor still places it.
+        Box(Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = false)) {
+            OutlinedTextField(
+                value = ratingLabel(draft.rating),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(label) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.matchParentSize().clickable(role = Role.DropdownList) { expanded = !expanded })
+        }
         ExposedDropdownMenu(expanded, { expanded = false }) {
             for (bin in options) {
                 DropdownMenuItem(
