@@ -8,7 +8,7 @@
   <link rel="canonical" href="https://orbtchess.org/support/">
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="/assets/site.css?v=10">
+  <link rel="stylesheet" href="/assets/site.css?v=12">
 </head>
 <body>
   <header class="site-header">
@@ -18,6 +18,7 @@
         <a class="wide" href="/#how">How it works</a>
         <a class="wide" href="/#features">Features</a>
         <a class="wide" href="/#open-source">Open source</a>
+        <a href="/download/">Download</a>
         <a class="github" href="https://github.com/carlvonburg/orbt-chess" aria-label="ORBT Chess on GitHub">
           <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><use href="#gh"/></svg>
           <span>GitHub</span>
@@ -33,13 +34,23 @@
     <h2>Frequently asked questions</h2>
 
     <details>
+      <summary>How do you say ORBT, and what does it stand for?</summary>
+      <p>Like “orbit”. It stands for Opening Repertoire Builder &amp; Trainer.</p>
+    </details>
+
+    <details>
       <summary>Is ORBT Chess really free?</summary>
       <p>Yes. No subscription, no in-app purchases, no ads. It's open source under the AGPL-3.0.</p>
     </details>
 
     <details>
       <summary>Where are my repertoires stored?</summary>
-      <p>Each repertoire is a PGN file in iCloud Drive, in the <code>ORBT Chess</code> folder (Files app on iPhone and iPad, Finder on the Mac). Without iCloud they're in the app's Documents folder. Every edit is saved immediately. Settings and training progress are in files next to it (<code>.otrep.json</code> and <code>.otlog.jsonl</code>), never inside the PGN.</p>
+      <p>Each repertoire is a PGN file, and every edit is saved immediately. On iPhone, iPad and Mac it's in iCloud Drive, in the <code>ORBT Chess</code> folder (Files app, Finder), or in the app's Documents folder without iCloud. On Windows and Linux it's in the <code>ORBT Chess</code> folder in your home folder. On Android the app keeps it; turn on Dropbox or Google Drive to reach it from elsewhere. Settings and training progress are in files next to it (<code>.otrep.json</code> and <code>.otlog.jsonl</code>), never inside the PGN.</p>
+    </details>
+
+    <details>
+      <summary>Can I use it on an iPhone and an Android phone or a PC?</summary>
+      <p>Yes. iCloud Drive syncs only between Apple devices, so choose Dropbox or Google Drive in Settings › Sync on each device. Your repertoires, their settings and your training progress then stay the same everywhere. ORBT sees only its own folder there.</p>
     </details>
 
     <details>
@@ -74,7 +85,7 @@
 
     <details>
       <summary>My edits on two devices conflicted. What happens?</summary>
-      <p>When iCloud reports a conflict, ORBT merges both versions of the repertoire, its settings and its review history, so no line or review is lost.</p>
+      <p>When two devices changed the same repertoire, ORBT merges both versions of the repertoire, its settings and its review history, so no line or review is lost.</p>
     </details>
 
     <h2>Contact</h2>
@@ -85,6 +96,7 @@
     <div class="wrap">
       <a class="brand" href="/"><img src="/assets/icon.png" alt="" width="24" height="24">ORBT Chess</a>
       <nav aria-label="Footer">
+        <a href="/download/">Download</a>
         <a href="/support/">Support</a>
         <a href="/privacy/">Privacy</a>
         <a href="/contact/">Contact</a>

@@ -85,14 +85,14 @@ p { margin: 0 0 1em; }
   border-bottom: 1px solid var(--line);
 }
 .site-header .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 16px; }
-.brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-weight: 650; letter-spacing: -0.01em; }
+.brand { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; color: var(--text); font-weight: 650; letter-spacing: -0.01em; }
 .brand:hover { text-decoration: none; }
 .brand img { width: 28px; height: 28px; border-radius: 7px; }
 .site-nav { display: flex; align-items: center; gap: 24px; font-size: 15px; }
 .site-nav a { color: var(--text-2); display: inline-flex; align-items: center; gap: 7px; }
 .site-nav a:hover { color: var(--text); text-decoration: none; }
 .site-nav .github { color: var(--text); background: var(--surface); border: 1px solid var(--line); padding: 7px 14px; border-radius: 999px; }
-@media (max-width: 640px) { .site-nav .wide { display: none; } }
+@media (max-width: 640px) { .site-nav { gap: 16px; } .site-nav .wide { display: none; } }
 
 /* Buttons: capsules, as in the app */
 .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
@@ -105,6 +105,15 @@ p { margin: 0 0 1em; }
 }
 .button:hover { text-decoration: none; filter: brightness(1.08); transform: translateY(-1px); }
 .button.ghost { background: var(--surface); color: var(--text); border-color: var(--line); }
+/* Store buttons beside the App Store badge, in its shape: black, gray rim, two lines */
+.store {
+  display: inline-flex; flex-direction: column; justify-content: center; height: 52px; min-width: 156px;
+  padding: 0 18px; border-radius: 12px; background: #000; color: #fff; border: 1px solid #a6a6a6;
+  line-height: 1.1; text-align: left; transition: transform 0.15s ease;
+}
+.store:hover { text-decoration: none; transform: translateY(-1px); }
+.store small { font-size: 11px; font-weight: 500; }
+.store b { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; white-space: nowrap; }
 
 /* Hero: the app's board as a fading backdrop, two soft glows */
 .hero { position: relative; padding: 96px 0 0; isolation: isolate; }
@@ -129,6 +138,9 @@ p { margin: 0 0 1em; }
   display: inline-flex; align-items: center; font-size: 14px; font-weight: 600; color: var(--text-2);
   background: var(--surface); border: 1px solid var(--line); padding: 6px 14px; border-radius: 999px; margin-bottom: 28px;
 }
+.pill { flex-wrap: wrap; justify-content: center; gap: 0 8px; }
+.pill b { color: var(--text); font-weight: 750; }
+.pill .sep { color: var(--text-3); }
 
 .stage-wrap { perspective: 1600px; margin-top: 64px; }
 .stage { position: relative; max-width: 1000px; margin: 0 auto; padding-bottom: 6%; transform-origin: 50% 0; }
@@ -147,6 +159,8 @@ p { margin: 0 0 1em; }
 
 .section-head { text-align: center; margin-bottom: 56px; }
 .section-head h2 { margin: 0; }
+.section-head .lede { max-width: 640px; margin: 16px auto 0; }
+.section-head .lede b { color: var(--text); font-weight: 700; }
 
 /* Steps: numbered, in the app's meaning colors */
 .step { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; font-weight: 750; font-size: 15px; color: #fff; background: var(--blue); }
@@ -300,7 +314,7 @@ p { margin: 0 0 1em; }
 .platforms { padding-top: 140px; }
 .platforms-card {
   display: grid; gap: 28px; align-items: center; padding: 40px; border-radius: var(--radius);
-  background: var(--surface); border: 1px dashed color-mix(in srgb, var(--text-3) 60%, transparent);
+  background: var(--surface); border: 1px solid var(--line);
 }
 .platforms-card h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); }
 .platforms-card .lede { margin: 0; font-size: 1.1rem; }
@@ -314,6 +328,7 @@ p { margin: 0 0 1em; }
 .roadmap .state { margin-left: auto; font-size: 14px; color: var(--text-3); }
 .roadmap .done .state { color: var(--green); font-weight: 600; }
 .roadmap li:not(.done) > span:nth-child(2) { color: var(--text-2); }
+.roadmap .done a.state { color: var(--tint); font-weight: 600; }
 @media (max-width: 560px) { .platforms-card { padding: 28px 24px; } }
 
 /* Open source */
@@ -349,6 +364,15 @@ details { border-bottom: 1px solid var(--line); padding: 16px 0; }
 details summary { cursor: pointer; font-weight: 650; }
 details[open] summary { margin-bottom: 8px; }
 details p:last-child { margin-bottom: 0; }
+
+/* Download: one card per platform */
+.platform { background: var(--surface); border: 1px solid var(--line); border-radius: 24px; padding: 28px; margin: 20px 0; scroll-margin-top: 80px; }
+.platform h2 { margin-top: 0; }
+.platform .requires { color: var(--text-3); font-size: 15px; margin-top: -0.4em; }
+.platform .cta { margin: 20px 0; }
+.platform p:last-child { margin-bottom: 0; }
+.platform pre { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface-2); padding: 12px 16px; border-radius: 12px; overflow-x: auto; }
+@media (max-width: 560px) { .platform { padding: 22px 20px; border-radius: 20px; } }
 
 /* Motion. Transform only: nothing starts hidden, so if an animation never runs the content is
    simply in place. Off for people who ask for reduced motion. */
