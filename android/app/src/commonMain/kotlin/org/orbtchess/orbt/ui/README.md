@@ -38,7 +38,8 @@ named in each stub's doc comment.
   - Menus: `components/ExpressiveMenu` (Material's `DropdownMenuPopup` with `DropdownMenuGroup`s,
     group and item shapes by place, `MenuDefaults.GroupSpacing` between groups, group labels,
     selectable items for a choice, Delete `destructive`). Never `DropdownMenu`.
-  - Cards (statistics): Material's card on the grouped page, surface color, `shapes.large`.
+  - Cards (statistics, the library's dashboard): Material's card on the grouped page, surface
+    color, `shapes.large` (`statistics/SurfaceCard`; titled with a symbol: `StatCard`).
   - Type: Expressive's emphasized styles for key numbers and card titles
     (`headlineMediumEmphasized`, `titleSmallEmphasized`, …).
   - A screen's main actions (Browse / Edit, Study Now, Study All): Expressive's medium buttons
@@ -104,9 +105,19 @@ named in each stub's doc comment.
   as large as it fits, the floating toolbar under it; `components/BoardDetailPane`). The shell
   calls the screen once per pane with the same model. The panes are Material's
   (`calculatePaneScaffoldDirective`): one up to medium width, two or more on expanded; their
-  widths are Material's defaults. The library on a large window (three panes): the list 320 dp,
-  Today or the overview 380 dp (`preferredWidth`; iPad's ideal columns 260 and 380), the
-  statistics the rest, their cards in an adaptive grid (a column per 320 dp).
+  widths are Material's defaults.
+- **The library on wide windows is a list and a dashboard** (two panes, also on large windows:
+  the shell caps the library's directive at two). The list pane (`LibraryScreen`, 340 dp:
+  Today's row and the repertoires) and the detail pane, the rest: one scrolling page of cards
+  (`statistics/StatisticsDashboard`, a staggered grid of two columns where each gets 320 dp,
+  else one). Its first row is across the page: Today's card (`TodayDashboard`: `TodayCard` with
+  `wide`, what is left on the leading side, the streak and Study All on the trailing side; the
+  tour's card while it runs) or a repertoire's Coverage and Study cards (`OverviewDashboard`:
+  side by side at equal height, their buttons on one line; stacked on one column). Then
+  "Statistics · <scope>" with the period (its own per page) and the statistics' cards
+  (`statisticsCards`, the Statistics screen's). No Statistics tab there. One pane (a phone, a
+  tablet in portrait) keeps the phone's screens: Today in the library, the overview pushed
+  with its Statistics row, the Statistics tab.
 - **Shared components** (`components/`) only for what Material lacks; a component one screen uses
   stays in that screen's package.
 
@@ -116,12 +127,12 @@ named in each stub's doc comment.
 | `ui` | the shell: destinations, back stack, panes, tabs, sheets, full-window screens | `Destination.kt`, `ShellModel.kt`, `AppShell.kt` (shell only); `Placeholder.kt` (temporary, delete once unused) |
 | `ui.theme` | Material theme, app color, meanings, board colors | `Theme.kt`, `AppColor.kt`, `BoardTheme.kt`, `Hues.kt`, `DynamicColor.*.kt` |
 | `ui.components` | coverage, studied and segmented bars, score bar, due counts, labels, status badge, empty state, connected button group (`ChoiceButtonGroup`), board column and detail pane, `OpenDocument`, `Format`, `Symbols`, `BoardPane`, `BoardToolbar`, `MoveList`, `TooltipIconButton` | shared |
-| `ui.library` | `LibraryScreen` (list pane / Repertoires tab), `TodayPane` (detail with no selection), `SetupScreen` | library |
-| `ui.overview` | `OverviewScreen`, `RepertoireSettingsScreen`, `StudyOptionsSheet` | overview |
+| `ui.library` | `LibraryScreen` (list pane / Repertoires tab), `TodayCard`, `TodayDashboard` (detail with Today selected), `SetupScreen` | library |
+| `ui.overview` | `OverviewScreen` (one pane), `OverviewDashboard` (wide), `RepertoireSettingsScreen`, `StudyOptionsSheet` | overview |
 | `ui.builder` | `BuilderScreen`, `BuilderModel` | Build |
 | `ui.analysis` | `AnalysisScreen`, `AnalysisModel` | Analysis |
 | `ui.training` | `DrillScreen`, `DrillModel`, `StudyFinishedScreen` (shown by Drill in place), `StudyAllScreen`, `StudyAllModel` | Study |
-| `ui.statistics` | `StatisticsScreen`, `CardInfoSheet` | Statistics |
+| `ui.statistics` | `StatisticsScreen` (the tab), `StatisticsDashboard` (the wide library's detail pane), `CardInfoSheet` | Statistics |
 | `ui.settings` | `SettingsScreen`, `AcknowledgementsScreen` | Settings |
 | `ui.board` | `Board`, `BoardArrow`, `BoardBadge` | board |
 | `ui.tour` | `TourGuide` (steps, targets, `tourTarget`, `TourScreen`), `TourSpotlight` (scrim with cut-outs and a coach-mark card), `TourStudyCard`, `SkipTourButton`; the Tour section is `library/TourSection.kt` | tour |
@@ -130,15 +141,15 @@ A screen's agent owns its package; the model constructors and screen signatures 
 contract (add optional parameters freely; change required ones together with the shell).
 
 ## Destinations (`Destination.kt`) and where the shell shows them
-| Destination | Phone | Wide window (2–3 panes) |
+| Destination | Phone | Wide window (2+ panes) |
 |---|---|---|
-| `Library` | Repertoires tab (Today first) | list pane; detail is `TodayPane`, extra (large windows) the statistics |
-| `Overview(entryId)` | pushed | detail pane beside the list; on large windows the extra pane: its statistics (two panes: under the overview, `statisticsInline`) |
+| `Library` | Repertoires tab (Today first) | list pane; detail is `TodayDashboard` (Today's card, then all statistics) |
+| `Overview(entryId)` | pushed | detail pane beside the list: `OverviewDashboard` (Coverage and Study cards, then its statistics) |
 | `Builder(entryId, start, showGaps)` | pushed on its overview | the whole window: panel (list pane, left) + board (detail pane) |
 | `Drill(entryId, kind)` — Study, LearnMore, Practice, Branch(node) | pushed | panel + board |
 | `StudyAll(entryIds)` | pushed | panel + board |
 | `Analysis(entryId, startFen, moves, orientation, origin)` | pushed on the screen it came from | panel + board; popping calls `AnalysisModel.finish()` |
-| `Statistics(scope)` | All: the Statistics tab; one repertoire: its overview | beside Today / the overview |
+| `Statistics(scope)` | the Statistics tab with that scope (an overview's Statistics row) | in the dashboard: one repertoire's opens its overview |
 | `RepertoireSettings(entryId)`, `Setup(mode)`, `Settings`, `Acknowledgements` | full window | full window |
 | `CardInfo(entryId, node)`, `StudyOptions(entryId)` | bottom sheet | bottom sheet |
 
