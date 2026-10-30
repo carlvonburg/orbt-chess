@@ -23,27 +23,35 @@ follows its Swift counterpart; the Swift file is named in each stub's doc commen
   `navigate(destination)` and goes back with `onBack`; it never builds another screen or edits
   `AppShell.kt`/`ShellModel.kt`. A screen with `onBack == null` shows no back arrow (nothing to go
   back to in that pane).
+- **The iOS layout is the base.** Each board screen puts its actions where the Swift app does
+  (`BuilderView.swift`, `DrillView.swift`, `AnalysisView.swift`: the `!split` branch for a phone,
+  the split view's for two panes), in Material's terms.
 - **Board screens share one bar.** Build, Study and Analysis have a top app bar with the
-  screen's title over the repertoire's name (`TopAppBar(title, subtitle)`), back and the ⋮ menu;
-  on two panes it is the list pane's, over the panel, as on iPad. Their bottom actions: icon-only items named by a tooltip, back and forward kept together.
-  - One pane (a phone): Material's docked toolbar (`FlexibleBottomAppBar`), items spread evenly,
-    the main action (Save, Next Line) a labelled filled button in it, a secondary one (Discard) a
-    text button beside it.
-  - Two panes: no top app bar over the board; under it, as wide as it, Material 3 Expressive's
-    floating toolbar (`components/BoardToolbar`, `HorizontalFloatingToolbar`): back and forward,
-    the move list taking the width left, then the board's actions (Biggest Gap, Study Branch,
-    Analysis; Hint, Browse Repertoire), Discard a text button ending it. The main action is the
-    FAB beside it (`BoardToolbarFab`, Material's toolbar and FAB pairing).
-  - One symbol, one meaning: the analysis symbol only ever opens Analysis (Build's and Study's
-    toolbars, in the same place). Analysis turns its engine on and off with Material's `Switch` at
-    the end of the engine's header above the board ("Cloud · depth 54", named "Engine"); off,
-    only the header stays.
-- **One move list.** The moves of the line on the board are `components/MoveList` in every board
-  screen: under the board on a phone (except Analysis, where the Moves tab has them, as on
+  screen's title over the repertoire's name (`TopAppBar(title, subtitle)`; Analysis: over where
+  its lines come from, "Cloud · depth 50", nothing while the engine is off), back and the ⋮ menu;
+  on two panes it is the list pane's, over the panel, as on iPad. Their bottom bar is Material 3
+  Expressive's floating toolbar (`components/BoardToolbar`, `HorizontalFloatingToolbar`), on
+  phones as on tablets: icon-only items named by a tooltip, back and forward kept together,
+  Discard a text button; the main action (Save, Next Line) the FAB beside it (`BoardToolbarFab`,
+  Material's toolbar and FAB pairing).
+  - One pane (a phone, as iPhone's glass bar): the toolbar floats at the bottom over the content,
+    which scrolls under it (`FloatingToolbarScaffold`; lists take its bottom padding so their last
+    row scrolls clear). Build: back and forward, then Biggest Gap, Study Branch, Analysis (while a
+    line is being built: Analysis, Discard). Study: Hint, then Browse Repertoire, Analysis.
+    Analysis: back and forward only, centred.
+  - Two panes (as iPad): no top app bar over the board; under it, as wide as it, the toolbar with
+    back and forward, the move list, then Analysis (and Discard). The panel's actions are in the
+    list pane's top app bar, before ⋮: Biggest Gap and Study Branch in Build, Hint and Browse
+    Repertoire in Study.
+  - The engine: Analysis's top app bar has its toggle before ⋮ (Material's filled icon toggle,
+    filled while on, named "Engine"), on phones and tablets. Build's and Study's Analysis button is
+    in their bottom toolbar, so the engine's symbol up there reads as the engine.
+- **One move list.** The moves of the line on the board are `components/MoveList` where iOS has
+  them: under the board on a phone (Build and Study; Analysis has them in its Moves tab, as on
   iPhone), inside the floating toolbar on two panes (as iPad's bar under the board). A row of
   moves that scrolls sideways, the move on the board highlighted and kept in view, moves ahead
-  faint, unsaved ones in italics, the start position a button leading it; back and forward are
-  toolbar buttons.
+  faint, unsaved ones in italics, the start position a button leading it, its ends faded where it
+  scrolls on (iOS's soft scroll edge); back and forward are toolbar buttons.
 - **Board screens fill panes.** Build, Study, Study All and Analysis take a `pane: BoardPane`:
   `Whole` (one pane: a phone, a tablet in portrait), `List` (the list pane of Material's
   list-detail layout on wider windows, on the left: the top app bar over the panel, what you pick

@@ -38,10 +38,11 @@ import org.orbtchess.orbt.storage.RepertoireDocument
  * How a board screen (Build, Study, Study All, Analysis) is shown, which the shell decides from
  * the window's panes (Material's list-detail layout, as on iPad: what you pick from beside the
  * board that shows the pick):
- * - [Whole]: the whole screen, panel and board together, between the screen's top app bar and its
- *   docked toolbar (a phone, a tablet in portrait: one pane).
- * - [List]: the list pane, on the left: the screen's top app bar (back, title, menu) over the
- *   panel (replies, explorer, counts).
+ * - [Whole]: the whole screen, panel and board together, under the screen's top app bar and
+ *   scrolling under its floating toolbar ([FloatingToolbarScaffold]; a phone, a tablet in
+ *   portrait: one pane).
+ * - [List]: the list pane, on the left: the screen's top app bar (back, title, the panel's
+ *   actions, menu) over the panel (replies, explorer, counts).
  * - [Detail]: the detail pane, the rest of the window: the board as large as it fits, and under
  *   it the floating toolbar ([BoardToolbar]) as wide as the board, with the move list in it (as
  *   iPad's bar under the board); no top app bar.

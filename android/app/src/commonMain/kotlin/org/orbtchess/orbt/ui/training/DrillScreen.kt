@@ -29,7 +29,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -76,6 +75,7 @@ import org.orbtchess.orbt.ui.board.Board
 import org.orbtchess.orbt.ui.components.BoardDetailPane
 import org.orbtchess.orbt.ui.components.BoardToolbar
 import org.orbtchess.orbt.ui.components.BoardToolbarFab
+import org.orbtchess.orbt.ui.components.FloatingToolbarScaffold
 import org.orbtchess.orbt.ui.components.BoardPane
 import org.orbtchess.orbt.ui.components.SymbolLabel
 import org.orbtchess.orbt.ui.components.MoveList
@@ -96,11 +96,12 @@ class NextRepertoire(val name: String, val start: () -> Unit)
  * share [model].
  *
  * - [BoardPane.Whole] (a phone): the board, the moves played, the opening and what to do with
- *   the counts; Hint, Browse Repertoire, Analysis and Next Line in the docked toolbar.
- * - [BoardPane.List] (the list pane on wide windows): under the same top app bar, the counts with
- *   what each means, the opening and what to do; the finished screen when the session ends.
+ *   the counts; Hint, Browse Repertoire and Analysis in the floating toolbar, Next Line its FAB.
+ * - [BoardPane.List] (the list pane on wide windows): under the top app bar (with Hint and Browse
+ *   Repertoire, as iPad's panel bar), the counts with what each means, the opening and what to
+ *   do; the finished screen when the session ends.
  * - [BoardPane.Detail] (the detail pane): the board; under it the floating toolbar with the
- *   moves played, Hint, Browse Repertoire and Analysis, Next Line its FAB.
+ *   moves played and Analysis, Next Line its FAB.
  *
  * @param next the next repertoire when studying all of them (Study All), else null.
  * @param navigate [Destination.Analysis] (origin [AnalysisOrigin.Study]), [Destination.Builder]
@@ -135,7 +136,7 @@ fun DrillScreen(
     val actions = DrillActions(model, navigate)
     when (pane) {
         BoardPane.Whole -> PhoneLayout(app, model, actions, navigate, onBack, next, modifier)
-        BoardPane.List -> PanelLayout(app, model, navigate, onBack, next, modifier)
+        BoardPane.List -> PanelLayout(app, model, actions, navigate, onBack, next, modifier)
         BoardPane.Detail -> BoardLayout(model, actions, modifier)
     }
 }
@@ -170,10 +171,13 @@ private fun Haptics(model: DrillModel) {
 
 // MARK: Layouts
 
-/** The mode over the repertoire's name, and back. */
+/**
+ * The mode over the repertoire's name, and back; in the list pane beside the board (as iPad's
+ * panel bar, [actions] non-null), Hint and Browse Repertoire.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DrillTopBar(model: DrillModel, onBack: (() -> Unit)?) {
+private fun DrillTopBar(model: DrillModel, onBack: (() -> Unit)?, actions: DrillActions? = null) {
     TopAppBar(
         title = { Text(model.mode.title) },
         subtitle = { Text(model.document.name) },
@@ -182,25 +186,16 @@ private fun DrillTopBar(model: DrillModel, onBack: (() -> Unit)?) {
                 IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
             }
         },
+        actions = {
+            if (actions != null && !model.finished) {
+                HintButton(model, above = false)
+                BrowseButton(actions, above = false)
+            }
+        },
     )
 }
 
-/**
- * Build's docked toolbar: the actions, each named by its tooltip; Next Line, when a finished
- * line waits, is the toolbar's labelled primary action.
- */
-@Composable
-private fun DrillToolbar(model: DrillModel, actions: DrillActions) {
-    FlexibleBottomAppBar {
-        // Disabled at a line's end (no move to ask about), in its place.
-        HintButton(model)
-        BrowseButton(actions)
-        AnalysisButton(actions)
-        NextLineButton(model)
-    }
-}
-
-/** A phone: everything in one column, the actions in the bottom toolbar. */
+/** A phone: everything in one column, the actions in the floating toolbar over it. */
 @Composable
 private fun PhoneLayout(
     app: AppModel,
@@ -217,13 +212,13 @@ private fun PhoneLayout(
         }
         return
     }
-    Scaffold(
+    FloatingToolbarScaffold(
         modifier,
         topBar = { DrillTopBar(model, onBack) },
-        bottomBar = { DrillToolbar(model, actions) },
+        toolbar = { DrillFloatingToolbar(model, actions, phone = true) },
     ) { padding ->
         Column(
-            Modifier.padding(padding).fillMaxSize(),
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(padding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -253,12 +248,13 @@ private fun PhoneLayout(
 private fun PanelLayout(
     app: AppModel,
     model: DrillModel,
+    actions: DrillActions,
     navigate: (Destination) -> Unit,
     onBack: (() -> Unit)?,
     next: NextRepertoire?,
     modifier: Modifier,
 ) {
-    Scaffold(modifier, topBar = { DrillTopBar(model, onBack) }) { padding ->
+    Scaffold(modifier, topBar = { DrillTopBar(model, onBack, actions) }) { padding ->
         if (model.finished) {
             StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding), tourEnd = inTour(app, model))
         } else {
@@ -286,24 +282,34 @@ private fun inTour(app: AppModel, model: DrillModel): Boolean =
 private fun BoardLayout(model: DrillModel, actions: DrillActions, modifier: Modifier) {
     BoardDetailPane(
         modifier,
-        toolbar = { if (!model.finished) DrillFloatingToolbar(model, actions) },
+        toolbar = { if (!model.finished) DrillFloatingToolbar(model, actions, phone = false) },
     ) {
         DrillBoard(model)
     }
 }
 
-/** The detail pane's floating toolbar: the moves played, then the docked toolbar's actions; Next Line its FAB when a finished line waits. */
+/**
+ * The floating toolbar (iPhone's bottom bar; iPad's bar under the board). On a phone: Hint, then
+ * Browse Repertoire and Analysis. Beside the board: the moves played, then Analysis (Hint and
+ * Browse Repertoire are in the list pane's top app bar). Next Line, when a finished line waits,
+ * is its FAB.
+ */
 @Composable
-private fun DrillFloatingToolbar(model: DrillModel, actions: DrillActions) {
+private fun DrillFloatingToolbar(model: DrillModel, actions: DrillActions, phone: Boolean) {
     val next: (@Composable () -> Unit)? = if (waitsForNext(model)) {
         { BoardToolbarFab("Next Line", Symbols.nextLine, model::nextLine) }
     } else {
         null
     }
     BoardToolbar(mainAction = next) {
-        LineHistory(model.document.tree, model.playedNodes, Modifier.weight(1f))
-        HintButton(model)
-        BrowseButton(actions)
+        if (phone) {
+            // Disabled at a line's end (no move to ask about), in its place.
+            HintButton(model, above = true)
+            Spacer(Modifier.weight(1f))
+            BrowseButton(actions, above = true)
+        } else {
+            LineHistory(model.document.tree, model.playedNodes, Modifier.weight(1f))
+        }
         AnalysisButton(actions)
     }
 }
@@ -314,33 +320,18 @@ private fun waitsForNext(model: DrillModel): Boolean = model.phase == Phase.LINE
 // MARK: Bar items
 
 @Composable
-private fun HintButton(model: DrillModel) {
-    TooltipIconButton("Hint", Symbols.hint, model::hint, enabled = model.canMove, above = true)
+private fun HintButton(model: DrillModel, above: Boolean) {
+    TooltipIconButton("Hint", Symbols.hint, model::hint, enabled = model.canMove, above = above)
 }
 
 @Composable
-private fun BrowseButton(actions: DrillActions) {
-    TooltipIconButton("Browse Repertoire", Icons.AutoMirrored.Outlined.FormatIndentIncrease, actions::browse, above = true)
+private fun BrowseButton(actions: DrillActions, above: Boolean) {
+    TooltipIconButton("Browse Repertoire", Icons.AutoMirrored.Outlined.FormatIndentIncrease, actions::browse, above = above)
 }
 
 @Composable
 private fun AnalysisButton(actions: DrillActions) {
     TooltipIconButton("Analysis", Symbols.analysis, actions::analyze, above = true)
-}
-
-/**
- * Next, once a finished line waits (paused, or looked at): the one thing to do, so the filled
- * button, labelled, ending the toolbar (as Build's Save).
- */
-@Composable
-private fun NextLineButton(model: DrillModel) {
-    if (waitsForNext(model)) {
-        Button(onClick = model::nextLine) {
-            Icon(Symbols.nextLine, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-            Text("Next Line")
-        }
-    }
 }
 
 // MARK: Content

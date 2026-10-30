@@ -1,6 +1,7 @@
 package org.orbtchess.orbt.ui.components
 
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
@@ -34,7 +35,7 @@ fun TooltipIconButton(
     }
 }
 
-/** [TooltipIconButton] for an on/off action (the engine). */
+/** [TooltipIconButton] for an on/off action (the engine); [filled]: Material's filled toggle, filled while on. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TooltipIconToggleButton(
@@ -44,10 +45,17 @@ fun TooltipIconToggleButton(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     above: Boolean = false,
+    filled: Boolean = false,
 ) {
     Tooltip(label, above) {
-        IconToggleButton(checked = checked, onCheckedChange = onCheckedChange, modifier = modifier) {
-            Icon(icon, contentDescription = label)
+        if (filled) {
+            FilledIconToggleButton(checked = checked, onCheckedChange = onCheckedChange, modifier = modifier) {
+                Icon(icon, contentDescription = label)
+            }
+        } else {
+            IconToggleButton(checked = checked, onCheckedChange = onCheckedChange, modifier = modifier) {
+                Icon(icon, contentDescription = label)
+            }
         }
     }
 }

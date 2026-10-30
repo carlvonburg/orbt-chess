@@ -3,6 +3,7 @@ package org.orbtchess.orbt.ui.analysis
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +17,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FlexibleBottomAppBar
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -58,6 +58,8 @@ import org.orbtchess.orbt.ui.board.Board
 import org.orbtchess.orbt.ui.board.BoardArrow
 import org.orbtchess.orbt.ui.components.BoardDetailPane
 import org.orbtchess.orbt.ui.components.BoardToolbar
+import org.orbtchess.orbt.ui.components.FloatingToolbarScaffold
+import org.orbtchess.orbt.ui.components.TooltipIconToggleButton
 import org.orbtchess.orbt.ui.components.BoardPane
 import org.orbtchess.orbt.ui.components.MoveList
 import org.orbtchess.orbt.ui.components.MoveListItem
@@ -69,7 +71,7 @@ import org.orbtchess.orbt.ui.components.TooltipIconButton
  * the engine's lines above the board (Lichess's cloud eval, then Stockfish), and in the panel
  * the moves with their variations and evaluations, and the explorer's moves. On a phone the
  * panel shows the explorer or the moves under the board; in the list pane beside the board it
- * shows both, under the top app bar. The engine's switch is in its header above the board.
+ * shows both, under the top app bar. The engine's toggle is in the top app bar.
  * Going back (the shell calls [AnalysisModel.finish]) hands the line to Build or drops it.
  * Called once per pane it fills ([BoardPane]); both share [model].
  *
@@ -136,7 +138,10 @@ private fun reanalyse(app: AppModel, model: AnalysisModel) {
 
 private enum class PanelTab { Explorer, Moves }
 
-/** A phone: the board edge to edge under the engine's lines, the explorer or the moves below (as on iPhone, no history strip). */
+/**
+ * A phone: the board edge to edge under the engine's lines, the explorer or the moves below (as
+ * on iPhone, no history strip), scrolling under the floating toolbar: back and forward, centred.
+ */
 @Composable
 private fun WholeScreen(
     app: AppModel,
@@ -146,12 +151,14 @@ private fun WholeScreen(
     modifier: Modifier,
 ) {
     var tab by rememberSaveable { mutableStateOf(PanelTab.Explorer) }
-    Scaffold(
+    FloatingToolbarScaffold(
         modifier = modifier.arrowKeys(model),
         topBar = { AnalysisTopBar(app, model, onBack) },
-        bottomBar = { NavigationToolbar(model) },
+        toolbar = { BoardToolbar(fill = false) { NavigationButtons(model) } },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding)) {
+        // The lists scroll under the toolbar; the rest stays above.
+        val listPadding = PaddingValues(bottom = padding.calculateBottomPadding())
+        Column(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
             AnalysisEngineLines(app, model, Modifier.padding(horizontal = 16.dp))
             // The moves are the Moves tab's (the history is beside the board only on wide windows).
             AnalysisBoard(app, model, Modifier.fillMaxWidth())
@@ -163,8 +170,8 @@ private fun WholeScreen(
                 }
             }
             when (tab) {
-                PanelTab.Explorer -> ExplorerList(app, model, showsHeader = false, navigate, Modifier.weight(1f))
-                PanelTab.Moves -> MovesList(model, showsHeader = false, Modifier.weight(1f))
+                PanelTab.Explorer -> ExplorerList(app, model, showsHeader = false, navigate, Modifier.weight(1f), listPadding)
+                PanelTab.Moves -> MovesList(model, showsHeader = false, Modifier.weight(1f), listPadding)
             }
         }
     }
@@ -194,7 +201,7 @@ private fun BoardScreen(app: AppModel, model: AnalysisModel, modifier: Modifier)
     BoardDetailPane(
         modifier.arrowKeys(model),
         toolbar = {
-            // Back and forward, and the line. The engine's switch is in its header, above the board.
+            // Back and forward, and the line.
             BoardToolbar {
                 NavigationButtons(model)
                 PathStrip(model, Modifier.weight(1f))
@@ -207,18 +214,26 @@ private fun BoardScreen(app: AppModel, model: AnalysisModel, modifier: Modifier)
 }
 
 /**
- * "Analysis" over the repertoire's name, as Build and Study; back and the menu. The engine is
- * turned on and off in its header above the board ([AnalysisEngineLines]), so the analysis
- * symbol only ever means "open Analysis" (Build's and Study's toolbars).
+ * "Analysis" over where the lines come from ("Cloud · depth 50", or the local engine's; nothing
+ * while the engine is off), as on iPhone; back, the engine toggle (filled while on) and the menu.
+ * Build's and Study's Analysis button is in their bottom toolbar, so the engine's symbol up here
+ * reads as the engine, not as opening Analysis.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AnalysisTopBar(app: AppModel, model: AnalysisModel, onBack: (() -> Unit)?) {
+    val status = app.engine.status(model)
     TopAppBar(
         title = { Text("Analysis") },
-        subtitle = { Text(model.document.name) },
+        subtitle = { if (status.isNotEmpty()) Text(status) },
         navigationIcon = { BackButton(onBack) },
-        actions = { MoreMenu(app, model) },
+        actions = {
+            TooltipIconToggleButton(
+                "Engine", Symbols.analysis, checked = model.engineOn,
+                onCheckedChange = { model.engineOn = it }, filled = true,
+            )
+            MoreMenu(app, model)
+        },
     )
 }
 
@@ -255,16 +270,7 @@ private fun arrows(lines: List<PvLine>): List<BoardArrow> = lines.mapIndexedNotN
     )
 }
 
-/**
- * Material's docked toolbar: back and forward through the analysis (also ← and → on a
- * keyboard), centred, as nothing else is in it.
- */
-@Composable
-private fun NavigationToolbar(model: AnalysisModel) {
-    FlexibleBottomAppBar(horizontalArrangement = Arrangement.Center) { NavigationButtons(model) }
-}
-
-/** Back and forward through the analysis, kept together. */
+/** Back and forward through the analysis (also ← and → on a keyboard), kept together. */
 @Composable
 private fun NavigationButtons(model: AnalysisModel) {
     TooltipIconButton("Back", Symbols.previousMove, model::back, enabled = model.state.canBack, above = true)
@@ -358,6 +364,7 @@ private fun ExplorerList(
     showsHeader: Boolean,
     navigate: (Destination) -> Unit,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
 ) {
     val epd = model.state.position.epd()
     val stats = model.document.stats(epd)
@@ -367,14 +374,19 @@ private fun ExplorerList(
         eval = null
         eval = CloudEvalClient.fetch(epd)
     }
-    LazyColumn(modifier.fillMaxSize()) {
+    LazyColumn(modifier.fillMaxSize(), contentPadding = contentPadding) {
         analysisExplorer(app, model, stats, eval, showsHeader, navigate)
     }
 }
 
 /** The move list, scrolled so the move on the board stays in view. */
 @Composable
-private fun MovesList(model: AnalysisModel, showsHeader: Boolean, modifier: Modifier = Modifier) {
+private fun MovesList(
+    model: AnalysisModel,
+    showsHeader: Boolean,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
+) {
     val list = rememberLazyListState()
     val row = model.state.currentRow
     LaunchedEffect(row) {
@@ -387,7 +399,7 @@ private fun MovesList(model: AnalysisModel, showsHeader: Boolean, modifier: Modi
             item.offset + item.size <= info.viewportEndOffset
         if (!inView) list.animateScrollToItem(maxOf(0, index - 1))
     }
-    LazyColumn(modifier.fillMaxSize(), state = list) {
+    LazyColumn(modifier.fillMaxSize(), state = list, contentPadding = contentPadding) {
         if (showsHeader) item { Heading("Moves") }
         analysisMoveList(model, model.state.moveList)
     }

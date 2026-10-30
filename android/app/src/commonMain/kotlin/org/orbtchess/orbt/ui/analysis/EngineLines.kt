@@ -12,15 +12,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -40,8 +37,8 @@ internal fun EngineService.shownLines(model: AnalysisModel): List<PvLine> {
 }
 
 /**
- * Where the lines come from (the engine header's title): a Lichess cloud eval, or Stockfish at
- * some depth. Empty while the engine is off.
+ * Where the lines come from (Analysis's subtitle, as on iPhone): a Lichess cloud eval, or
+ * Stockfish at some depth. Empty while the engine is off.
  */
 internal fun EngineService.status(model: AnalysisModel): String {
     if (!model.engineOn) return ""
@@ -53,33 +50,11 @@ internal fun EngineService.status(model: AnalysisModel): String {
     return error ?: name ?: ""
 }
 
-/**
- * Above the board: the engine's header, where the lines come from and Material's switch that
- * turns the engine on or off (named "Engine"), then its lines while it is on; off, only the
- * header stays.
- */
+/** The engine's lines above the board while the engine is on. */
 @Composable
 internal fun AnalysisEngineLines(app: AppModel, model: AnalysisModel, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            val status = app.engine.status(model)
-            Text(
-                if (model.engineOn) status.ifEmpty { "Engine" } else "Engine off",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            Switch(
-                checked = model.engineOn,
-                onCheckedChange = { model.engineOn = it },
-                modifier = Modifier.semantics { contentDescription = "Engine" },
-            )
-        }
-        if (model.engineOn) {
-            EngineLinesView(app.engine.shownLines(model), app.engineDefaults.lines) { model.play(it) }
-        }
+    if (model.engineOn) {
+        EngineLinesView(app.engine.shownLines(model), app.engineDefaults.lines, modifier) { model.play(it) }
     }
 }
 
