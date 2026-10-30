@@ -6,6 +6,9 @@
 //! Stockfish 19 comes in two flavours (see `vendor/PATCHES.md`): `Light`, with its 1.1 MB net
 //! built in, and `Full`, with the 94 MB net the app downloads. Leela will be another
 //! `EngineBackend`.
+//!
+//! On Android's arm64 each flavour is in the library twice, for ARMv8 and for ARMv8.2 with the
+//! dot product (`build.rs`), and the engine starts the one the CPU runs best (`Simd`).
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
@@ -19,6 +22,71 @@ use sha2::{Digest, Sha256};
 unsafe extern "C" {
     fn orbt_sf_light_main(read_fd: libc::c_int, write_fd: libc::c_int) -> libc::c_int;
     fn orbt_sf_full_main(read_fd: libc::c_int, write_fd: libc::c_int) -> libc::c_int;
+}
+
+#[cfg(all(target_os = "android", target_arch = "aarch64"))]
+unsafe extern "C" {
+    fn orbt_sf_light_dotprod_main(read_fd: libc::c_int, write_fd: libc::c_int) -> libc::c_int;
+    fn orbt_sf_full_dotprod_main(read_fd: libc::c_int, write_fd: libc::c_int) -> libc::c_int;
+}
+
+/// A flavour's UCI loop on the descriptors it is given.
+type EngineMain = unsafe extern "C" fn(libc::c_int, libc::c_int) -> libc::c_int;
+
+/// Which copy of Stockfish runs: on Android's arm64 the library holds two (`build.rs`); every
+/// other target has one, compiled for what all its devices have.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Simd {
+    /// The only copy this target has.
+    Native,
+    /// Stockfish's `armv8`: any arm64 CPU.
+    Armv8,
+    /// Stockfish's `armv8-dotprod`: ARMv8.2 with the dot product (`asimddp`).
+    Armv8Dotprod,
+}
+
+impl Simd {
+    /// Linux's `HWCAP_ASIMDDP` on arm64 (`<asm/hwcap.h>`).
+    const HWCAP_ASIMDDP: u64 = 1 << 20;
+
+    /// The copy for Android arm64's hardware capabilities (`getauxval(AT_HWCAP)`), chosen as
+    /// upstream's `arm64-universal` build does: the dot product only when the kernel reports it.
+    pub fn for_arm64_hwcap(hwcap: u64) -> Simd {
+        if hwcap & Self::HWCAP_ASIMDDP != 0 {
+            Simd::Armv8Dotprod
+        } else {
+            Simd::Armv8
+        }
+    }
+
+    /// The copy this device runs.
+    pub fn current() -> Simd {
+        #[cfg(all(target_os = "android", target_arch = "aarch64"))]
+        {
+            // SAFETY: getauxval only reads the process's auxiliary vector.
+            let hwcap = unsafe { libc::getauxval(libc::AT_HWCAP) };
+            Simd::for_arm64_hwcap(hwcap)
+        }
+        #[cfg(not(all(target_os = "android", target_arch = "aarch64")))]
+        {
+            Simd::Native
+        }
+    }
+
+    fn entry(self, flavour: &Flavour) -> EngineMain {
+        #[cfg(all(target_os = "android", target_arch = "aarch64"))]
+        if self == Simd::Armv8Dotprod {
+            return match flavour {
+                Flavour::Light => orbt_sf_light_dotprod_main,
+                Flavour::Full(_) => orbt_sf_full_dotprod_main,
+            };
+        }
+        let _ = self;
+        match flavour {
+            Flavour::Light => orbt_sf_light_main,
+            Flavour::Full(_) => orbt_sf_full_main,
+        }
+    }
 }
 
 /// A flavour's engine state is global, so each runs once at a time.
@@ -112,6 +180,15 @@ impl Stockfish {
     /// quits.
     pub fn start(
         flavour: Flavour,
+        on_line: impl FnMut(&str) + Send + 'static,
+    ) -> Result<Stockfish, EngineError> {
+        Self::start_copy(flavour, Simd::current(), on_line)
+    }
+
+    /// Starts one copy of the flavour; `simd` must be one this device runs.
+    fn start_copy(
+        flavour: Flavour,
+        simd: Simd,
         mut on_line: impl FnMut(&str) + Send + 'static,
     ) -> Result<Stockfish, EngineError> {
         if let Flavour::Full(path) = &flavour
@@ -119,11 +196,11 @@ impl Stockfish {
         {
             return Err(EngineError::BadNetwork(path.clone()));
         }
-        let (running, main): (&'static AtomicBool, unsafe extern "C" fn(_, _) -> _) = match flavour
-        {
-            Flavour::Light => (&LIGHT_RUNNING, orbt_sf_light_main),
-            Flavour::Full(_) => (&FULL_RUNNING, orbt_sf_full_main),
+        let running: &'static AtomicBool = match flavour {
+            Flavour::Light => &LIGHT_RUNNING,
+            Flavour::Full(_) => &FULL_RUNNING,
         };
+        let main = simd.entry(&flavour);
         if running.swap(true, Ordering::AcqRel) {
             return Err(EngineError::AlreadyRunning);
         }
@@ -216,5 +293,113 @@ impl EngineBackend for Stockfish {
 impl Drop for Stockfish {
     fn drop(&mut self) {
         self.quit();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_dot_product_copy_runs_only_where_the_cpu_reports_it() {
+        // A Cortex-A53 (ARMv8.0): fp asimd evtstrm aes pmull sha1 sha2 crc32 cpuid.
+        let a53 = 0b1000_1111_1111;
+        assert_eq!(Simd::for_arm64_hwcap(a53), Simd::Armv8);
+        assert_eq!(Simd::for_arm64_hwcap(0), Simd::Armv8);
+        // Every capability but asimddp.
+        assert_eq!(Simd::for_arm64_hwcap(!(1 << 20)), Simd::Armv8);
+        // A Cortex-A55 adds atomics (bit 8) and asimddp (bit 20), among others.
+        assert_eq!(
+            Simd::for_arm64_hwcap(a53 | 1 << 8 | 1 << 20),
+            Simd::Armv8Dotprod
+        );
+    }
+
+    /// Runs on a phone or the emulator (`cargo test --target aarch64-linux-android`, the test
+    /// binary pushed with libc++_shared.so): both copies search the same tree, and how fast.
+    #[cfg(all(target_os = "android", target_arch = "aarch64"))]
+    #[test]
+    fn both_arm64_copies_search_the_same_tree() {
+        use std::sync::mpsc;
+        use std::time::{Duration, Instant};
+
+        fn send(engine: &mut Stockfish, line: &str) {
+            engine.write(line).unwrap();
+        }
+        fn until(lines: &mpsc::Receiver<String>, prefix: &str) -> Vec<String> {
+            let mut seen = Vec::new();
+            loop {
+                let line = lines.recv_timeout(Duration::from_secs(300)).unwrap();
+                let done = line.starts_with(prefix);
+                seen.push(line);
+                if done {
+                    return seen;
+                }
+            }
+        }
+        /// Nodes searched and milliseconds, over a few fixed-depth searches on one thread.
+        fn search(simd: Simd) -> (u64, u128, Vec<String>) {
+            let (tx, lines) = mpsc::channel();
+            let mut engine = Stockfish::start_copy(Flavour::Light, simd, move |line| {
+                let _ = tx.send(line.to_owned());
+            })
+            .unwrap();
+            send(&mut engine, "uci");
+            until(&lines, "uciok");
+            send(&mut engine, "compiler");
+            let compiler = until(&lines, "Compilation settings");
+            send(&mut engine, "setoption name Threads value 1");
+            send(&mut engine, "setoption name Hash value 16");
+            let positions = [
+                ("startpos", 20),
+                (
+                    "fen r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+                    16,
+                ),
+                ("fen 8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", 24),
+            ];
+            let (mut nodes, mut millis) = (0, 0);
+            for (position, depth) in positions {
+                send(&mut engine, "ucinewgame");
+                send(&mut engine, "isready");
+                until(&lines, "readyok");
+                send(&mut engine, &format!("position {position}"));
+                let started = Instant::now();
+                send(&mut engine, &format!("go depth {depth}"));
+                let output = until(&lines, "bestmove");
+                millis += started.elapsed().as_millis();
+                let last = output
+                    .iter()
+                    .rev()
+                    .find(|l| l.starts_with("info depth") && l.contains(" nodes "))
+                    .unwrap();
+                let mut words = last.split_whitespace();
+                words.find(|w| *w == "nodes");
+                nodes += words.next().unwrap().parse::<u64>().unwrap();
+            }
+            engine.quit();
+            (nodes, millis, compiler)
+        }
+
+        let simd = Simd::current();
+        eprintln!("this device runs {simd:?}");
+        let (nodes, millis, compiler) = search(Simd::Armv8);
+        eprintln!("{compiler:?}");
+        eprintln!(
+            "armv8: {nodes} nodes in {millis} ms, {} nps",
+            nodes as u128 * 1000 / millis
+        );
+        assert!(compiler.iter().all(|l| !l.contains("DOTPROD")));
+        if simd == Simd::Armv8Dotprod {
+            let (dot_nodes, dot_millis, compiler) = search(Simd::Armv8Dotprod);
+            eprintln!("{compiler:?}");
+            eprintln!(
+                "armv8-dotprod: {dot_nodes} nodes in {dot_millis} ms, {} nps",
+                dot_nodes as u128 * 1000 / dot_millis
+            );
+            assert!(compiler.iter().any(|l| l.contains("NEON_DOTPROD")));
+            // The same evaluations, so the same search.
+            assert_eq!(dot_nodes, nodes);
+        }
     }
 }
