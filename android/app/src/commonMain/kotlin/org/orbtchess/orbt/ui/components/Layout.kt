@@ -13,12 +13,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.storage.RepertoireDocument
+import org.orbtchess.orbt.ui.board.LocalBoardShape
 
 /**
  * How a board screen (Build, Study, Study All, Analysis) is shown, which the shell decides from
@@ -66,6 +69,7 @@ fun BoardDetailPane(
     Scaffold(modifier) { padding ->
         BoardColumn(
             Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp).padding(top = 16.dp),
+            inset = true,
             above = above,
             below = {
                 // Material's 16 dp around the floating toolbar, at the toolbar's height (with its
@@ -85,10 +89,13 @@ fun BoardDetailPane(
  * The board column (`BoardColumnLayout` in Swift): what belongs above the board, the board as
  * large as the column allows (square: the full width, or the height left by what is above and
  * under it), then what belongs under it; all three as wide as the board, centred in the column.
+ * The board's squares get Material's rounded corners ([LocalBoardShape]) where it sits inset:
+ * in a pane with margins ([inset]), or narrower than the column; edge to edge they stay square.
  */
 @Composable
 fun BoardColumn(
     modifier: Modifier = Modifier,
+    inset: Boolean = false,
     above: @Composable ColumnScope.() -> Unit = {},
     below: @Composable ColumnScope.() -> Unit = {},
     board: @Composable () -> Unit,
@@ -100,9 +107,10 @@ fun BoardColumn(
         var aboveHeight by remember { mutableStateOf(0.dp) }
         var belowHeight by remember { mutableStateOf(0.dp) }
         val side = minOf(maxWidth, maxHeight - aboveHeight - belowHeight).coerceAtLeast(0.dp)
+        val shape = if (inset || side < maxWidth) MaterialTheme.shapes.medium else RectangleShape
         Column(Modifier.width(side).wrapContentHeight(unbounded = true)) {
             Column(Modifier.fillMaxWidth().onSizeChanged { aboveHeight = with(density) { it.height.toDp() } }, content = above)
-            Box(Modifier.size(side)) { board() }
+            Box(Modifier.size(side)) { CompositionLocalProvider(LocalBoardShape provides shape) { board() } }
             Column(Modifier.fillMaxWidth().onSizeChanged { belowHeight = with(density) { it.height.toDp() } }, content = below)
         }
     }

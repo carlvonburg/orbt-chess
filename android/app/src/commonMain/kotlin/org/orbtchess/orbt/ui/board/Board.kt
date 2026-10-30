@@ -35,8 +35,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -46,6 +48,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -66,6 +70,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import kotlin.math.hypot
+import kotlin.math.max
+import kotlin.math.roundToInt
 import org.jetbrains.compose.resources.painterResource
 import org.orbtchess.orbt.core.Arrow
 import org.orbtchess.orbt.core.ArrowStyle
@@ -83,9 +90,6 @@ import org.orbtchess.orbt.core.to
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.theme.BoardTheme
 import org.orbtchess.orbt.ui.theme.OrbtTheme
-import kotlin.math.hypot
-import kotlin.math.max
-import kotlin.math.roundToInt
 
 /** An arrow on the board (`BoardArrow` in BoardView.swift), drawn in the board's ink (the engine's in graphite). */
 data class BoardArrow(
@@ -127,6 +131,13 @@ data class BoardBadge(val square: BoardSquare, val kind: Kind) {
 
 /** A move made by dragging: the piece stays where it was dropped instead of sliding there. */
 private class Drop(val from: BoardSquare, val to: BoardSquare, val side: Side, val fen: String)
+
+/**
+ * The shape of the board's squares: square edge to edge (a phone's full-width board), Material's
+ * rounded corners where the board sits inset in its pane ([BoardColumn] provides it). Only the
+ * squares are clipped: arrows, the promotion picker and a dragged piece may cross the edge.
+ */
+val LocalBoardShape = staticCompositionLocalOf<Shape> { RectangleShape }
 
 /**
  * The interactive chess board (`BoardView.swift`): tap-tap or drag to move, legal-move dots,
@@ -256,7 +267,7 @@ fun Board(
         ) {
             val legal = remember(fen, selected) { selected?.let { position.legalDestinations(it).toSet() } ?: emptySet() }
             val occupied = remember(fen) { position.pieces().map { it.square }.toSet() }
-            Canvas(Modifier.fillMaxSize()) {
+            Canvas(Modifier.fillMaxSize().clip(LocalBoardShape.current)) {
                 drawSquares(geometry, theme, lastMove, selected, legal, occupied)
             }
             Coordinates(geometry, theme)
