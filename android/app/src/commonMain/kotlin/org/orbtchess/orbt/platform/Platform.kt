@@ -1,5 +1,7 @@
 package org.orbtchess.orbt.platform
 
+import org.orbtchess.orbt.sync.NoSyncAuth
+import org.orbtchess.orbt.sync.SyncAuth
 import java.io.File
 
 /**
@@ -32,7 +34,7 @@ interface Settings {
 }
 
 /**
- * Secrets (the Keychain on Apple): the Lichess token, later the Dropbox and Drive tokens.
+ * Secrets (the Keychain on Apple): the Lichess token, Dropbox's refresh token.
  * Android encrypts them with a Keystore key; the desktop uses the user's private settings.
  */
 interface SecretStore {
@@ -50,4 +52,6 @@ class PlatformServices(
     val openUrl: (String) -> Unit,
     /** Logical processors, for the engine's threads. */
     val processors: Int = Runtime.getRuntime().availableProcessors(),
+    /** Dropbox and Google Drive sign-ins (Android); none on the desktop. */
+    val syncAuth: SyncAuth = NoSyncAuth,
 )

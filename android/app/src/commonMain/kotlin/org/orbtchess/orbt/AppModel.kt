@@ -14,6 +14,7 @@ import org.orbtchess.orbt.platform.PlatformServices
 import org.orbtchess.orbt.storage.Documents
 import org.orbtchess.orbt.storage.RepertoireLibrary
 import org.orbtchess.orbt.storage.TrainingDefaults
+import org.orbtchess.orbt.sync.SyncService
 import org.orbtchess.orbt.ui.tour.TourGuide
 import java.io.File
 
@@ -33,6 +34,10 @@ class AppModel(val platform: PlatformServices, private val scope: CoroutineScope
     val engineNetwork = EngineNetwork(platform.folders, scope)
     val engine = EngineService(engineNetwork, engineDefaults, scope)
     val tour = TourGuide(platform.settings)
+    val sync = SyncService(
+        platform.folders.repertoires, platform.folders.support, platform.settings, platform.secrets,
+        platform.syncAuth, documents, scope = scope,
+    )
 
     init {
         documents.onOpened = { coverage.want(it.sidecar.database) }
@@ -40,18 +45,24 @@ class AppModel(val platform: PlatformServices, private val scope: CoroutineScope
         scope.launch { explorer.tokenRejected.collect { auth.tokenRejected() } }
     }
 
-    /** At launch: the library and the offline coverage tables. */
+    /** At launch: the library, the offline coverage tables, the sync. */
     suspend fun setUp() {
         library.setUp()
         coverage.setUp(platform.folders.repertoires)
+        sync.start()
     }
 
-    /** Back in front: files added by hand, tables put in the "Coverage" subfolder. */
+    /** Back in front: files added by hand, tables put in the "Coverage" subfolder, changes
+     *  from other devices. */
     suspend fun resume() {
+        sync.resume()
         library.refresh()
         coverage.load(File(platform.folders.repertoires, "Coverage"))
     }
 
-    /** Leaving: write every pending change. */
-    suspend fun flush() = documents.flushAll()
+    /** Leaving: write every pending change (the sync uploads it while it can). */
+    suspend fun flush() {
+        documents.flushAll()
+        sync.background()
+    }
 }

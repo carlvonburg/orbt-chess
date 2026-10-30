@@ -37,8 +37,12 @@ object Http {
             HttpMethod.PATCH -> builder.patch(body ?: ByteArray(0).toRequestBody())
             HttpMethod.DELETE -> if (body != null) builder.delete(body) else builder.delete()
         }
+        // The read timeout too: Dropbox's long poll answers after minutes, not OkHttp's 10 s.
         val call = request.timeoutSecs?.let { secs ->
-            client.newBuilder().callTimeout(secs.toLong(), TimeUnit.SECONDS).build()
+            client.newBuilder()
+                .callTimeout(secs.toLong(), TimeUnit.SECONDS)
+                .readTimeout(secs.toLong(), TimeUnit.SECONDS)
+                .build()
         } ?: client
         try {
             call.newCall(builder.build()).execute().use { response ->
