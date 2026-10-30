@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -129,6 +130,7 @@ internal fun BuilderList(
     model: BuilderModel,
     navigate: (Destination) -> Unit,
     modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(),
     header: LazyListScope.() -> Unit = {},
 ) {
     val content = panelContent(model)
@@ -145,7 +147,7 @@ internal fun BuilderList(
     val node = model.node
     val stats = StatsNote(app, navigate)
 
-    LazyColumn(modifier) {
+    LazyColumn(modifier, contentPadding = contentPadding) {
         header()
         if (draft) {
             item("draftHeader") { DraftHeader(model) }

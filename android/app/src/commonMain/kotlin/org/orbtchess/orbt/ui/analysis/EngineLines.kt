@@ -37,8 +37,8 @@ internal fun EngineService.shownLines(model: AnalysisModel): List<PvLine> {
 }
 
 /**
- * Where the lines come from (the title's subtitle on a phone, above the lines beside a board):
- * a Lichess cloud eval, or Stockfish at some depth. Empty while the engine is off.
+ * Where the lines come from (Analysis's subtitle, as on iPhone): a Lichess cloud eval, or
+ * Stockfish at some depth. Empty while the engine is off.
  */
 internal fun EngineService.status(model: AnalysisModel): String {
     if (!model.engineOn) return ""

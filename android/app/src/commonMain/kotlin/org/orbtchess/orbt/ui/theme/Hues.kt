@@ -24,12 +24,6 @@ internal object Hues {
     val Cyan = Color(0xFF32ADE6)
     val Gray = Color(0xFF8E8E93)
 
-    /** The board's squares (`BoardLight` / `BoardDark` asset colors), light and dark appearance. */
-    val BoardLight = Color(0xFFE4E6E9)
-    val BoardDark = Color(0xFF8E959E)
-    val BoardLightDim = Color(0xFFC4C8CD)
-    val BoardDarkDim = Color(0xFF737A84)
-
     /** The engine's lines: graphite, quiet (there are often three). */
     val Engine = Color(0xFF2C2C2E)
 
