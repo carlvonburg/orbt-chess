@@ -1,5 +1,6 @@
 // The app: one Compose Multiplatform UI for Android and the desktop (Windows, Linux).
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.util.Properties
 
 plugins {
     kotlin("multiplatform")
@@ -41,8 +42,10 @@ kotlin {
         androidMain.dependencies {
             implementation("androidx.activity:activity-compose:1.10.1")
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-            // Lichess sign-in and Analyse on Lichess (Custom Tabs).
+            // Lichess and Dropbox sign-ins, Analyse on Lichess (Custom Tabs).
             implementation("androidx.browser:browser:1.8.0")
+            // Google Drive sign-in (Identity's AuthorizationClient, the drive.file scope).
+            implementation("com.google.android.gms:play-services-auth:21.4.0")
         }
         val desktopMain by getting {
             dependencies {
@@ -59,10 +62,23 @@ kotlin {
     }
 }
 
+// Dropbox's app key (the OAuth client id of the owner's Dropbox app): the Gradle property
+// `orbt.dropboxAppKey` (`-P`, ~/.gradle/gradle.properties) or the same key in local.properties.
+// Without it the Dropbox sign-in says the build has none.
+val dropboxAppKey: String = providers.gradleProperty("orbt.dropboxAppKey").orNull
+    ?: rootProject.file("local.properties").takeIf { it.exists() }?.let { file ->
+        Properties().apply { file.inputStream().use { load(it) } }.getProperty("orbt.dropboxAppKey")
+    }
+    ?: ""
+
 android {
     namespace = "org.orbtchess.orbt"
     compileSdk = 36
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
+        buildConfigField("String", "DROPBOX_APP_KEY", "\"$dropboxAppKey\"")
         applicationId = "org.orbtchess.orbt"
         minSdk = 29
         targetSdk = 36

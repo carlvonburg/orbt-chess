@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The sync resumes when the network comes back. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:name=".OrbtApplication"
@@ -14,15 +16,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- Lichess sign-in (org.orbtchess.orbt.lichess): opens the Custom Tab and waits. -->
+        <!-- Lichess and Dropbox sign-ins (org.orbtchess.orbt.lichess): opens the Custom Tab and waits. -->
         <activity
-            android:name=".lichess.LichessSignInActivity"
+            android:name=".lichess.SignInTabActivity"
             android:exported="false"
             android:launchMode="singleTask"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-        <!-- Lichess's redirect, the core's REDIRECT_URI (the Apple app's too). -->
+        <!-- Lichess's redirect, the core's REDIRECT_URI (the Apple app's too), and Dropbox's
+             (registered in Dropbox's app console). -->
         <activity
-            android:name=".lichess.LichessRedirectActivity"
+            android:name=".lichess.SignInRedirectActivity"
             android:exported="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>
@@ -30,7 +33,13 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="org.orbtchess.orbt" android:host="oauth-callback" />
+                <data android:scheme="org.orbtchess.orbt" android:host="dropbox-callback" />
             </intent-filter>
         </activity>
+        <!-- Google Drive's consent screen (org.orbtchess.orbt.sync): Play services' activity. -->
+        <activity
+            android:name=".sync.DriveConsentActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     </application>
 </manifest>

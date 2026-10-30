@@ -7,6 +7,8 @@ import android.net.Uri
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import org.orbtchess.orbt.BuildConfig
+import org.orbtchess.orbt.sync.AndroidSyncAuth
 import java.io.File
 import java.security.KeyStore
 import javax.crypto.Cipher
@@ -26,6 +28,7 @@ fun androidPlatform(context: Context): PlatformServices {
         openUrl = { url ->
             app.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         },
+        syncAuth = AndroidSyncAuth(app, BuildConfig.DROPBOX_APP_KEY),
     )
 }
 

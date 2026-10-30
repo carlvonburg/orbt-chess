@@ -9,26 +9,30 @@ import androidx.browser.customtabs.CustomTabsIntent
 import kotlinx.coroutines.CompletableDeferred
 
 /**
- * Android's sign-in: Lichess's page in a Custom Tab, and its redirect to the app's custom
- * scheme (`org.orbtchess.orbt://oauth-callback`, the core's and the Apple app's). As AppAuth
- * does, `LichessSignInActivity` opens the tab and waits: the redirect comes back to it through
- * `LichessRedirectActivity`; returning to it without one means the user closed the tab.
+ * Android's sign-in: the provider's page in a Custom Tab, and its redirect to the app's custom
+ * scheme (Lichess: `org.orbtchess.orbt://oauth-callback`, the core's and the Apple app's;
+ * Dropbox: `org.orbtchess.orbt://dropbox-callback`). As AppAuth does, `SignInTabActivity` opens
+ * the tab and waits: the redirect comes back to it through `SignInRedirectActivity`; returning
+ * to it without one means the user closed the tab.
  */
-class CustomTabAuthBrowser(private val context: Context) : AuthBrowser {
+class CustomTabAuthBrowser(
+    private val context: Context,
+    private val redirectUri: String = CORE_REDIRECT_URI,
+) : AuthBrowser {
     override suspend fun authenticate(authorizeUrl: (redirectUri: String) -> String): String? {
-        val url = authorizeUrl(CORE_REDIRECT_URI)
+        val url = authorizeUrl(redirectUri)
         val result = CompletableDeferred<String?>()
-        LichessSignInActivity.pending?.complete(null)
-        LichessSignInActivity.pending = result
+        SignInTabActivity.pending?.complete(null)
+        SignInTabActivity.pending = result
         context.startActivity(
-            Intent(context, LichessSignInActivity::class.java)
-                .putExtra(LichessSignInActivity.EXTRA_URL, url)
+            Intent(context, SignInTabActivity::class.java)
+                .putExtra(SignInTabActivity.EXTRA_URL, url)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         )
         try {
             return result.await()
         } finally {
-            if (LichessSignInActivity.pending === result) LichessSignInActivity.pending = null
+            if (SignInTabActivity.pending === result) SignInTabActivity.pending = null
         }
     }
 }
@@ -40,7 +44,7 @@ fun openInCustomTab(context: Context, url: String) {
 }
 
 /** Opens the Custom Tab and hands the redirect (or null when the tab was closed) to `pending`. */
-class LichessSignInActivity : Activity() {
+class SignInTabActivity : Activity() {
     private var launched = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,7 +66,7 @@ class LichessSignInActivity : Activity() {
         }
     }
 
-    /** The redirect, from `LichessRedirectActivity` (before `onResume`). */
+    /** The redirect, from `SignInRedirectActivity` (before `onResume`). */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -88,12 +92,13 @@ class LichessSignInActivity : Activity() {
     }
 }
 
-/** Receives `org.orbtchess.orbt://oauth-callback?...` and hands it to `LichessSignInActivity`. */
-class LichessRedirectActivity : Activity() {
+/** Receives `org.orbtchess.orbt://oauth-callback?...` (and `dropbox-callback`) and hands it to
+ *  `SignInTabActivity`. */
+class SignInRedirectActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         startActivity(
-            Intent(this, LichessSignInActivity::class.java)
+            Intent(this, SignInTabActivity::class.java)
                 .setData(intent.data)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         )
