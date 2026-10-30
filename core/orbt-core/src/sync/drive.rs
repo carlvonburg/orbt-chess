@@ -380,19 +380,26 @@ impl Provider for Drive {
         let fields = query_encode(FILE_FIELDS);
         match replacing {
             Some(r) => {
-                let etag = r.etag?;
+                let request = HttpRequest::new(
+                    HttpMethod::Patch,
+                    format!(
+                        "{UPLOAD}/files/{}?uploadType=media&fields={fields}",
+                        query_encode(&r.file.id)
+                    ),
+                )
+                .bearer(token);
+                // Drive v3 answers without an ETag, so most replacements are not conditional:
+                // the engine replaces a file only while the latest listing shows the version it
+                // last synced (`md5Checksum`), which leaves the moments between that listing and
+                // this upload. Waiting for an ETag instead downloaded the file forever.
+                let request = match r.etag {
+                    Some(etag) => request.header("If-Match", etag),
+                    None => request,
+                };
                 Some(
-                    HttpRequest::new(
-                        HttpMethod::Patch,
-                        format!(
-                            "{UPLOAD}/files/{}?uploadType=media&fields={fields}",
-                            query_encode(&r.file.id)
-                        ),
-                    )
-                    .bearer(token)
-                    .header("If-Match", etag)
-                    .body("application/octet-stream", data)
-                    .timeout(TIMEOUT_SECS),
+                    request
+                        .body("application/octet-stream", data)
+                        .timeout(TIMEOUT_SECS),
                 )
             }
             None => {

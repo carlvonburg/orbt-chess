@@ -192,7 +192,8 @@ impl Server for Dropbox {
     }
 }
 
-// A fake Google Drive: a folder, files by id, ETags counting up.
+// A fake Google Drive: a folder, files by id, ETags counting up (or none, as the real Drive v3
+// answers: `no_etags`).
 
 #[derive(Default)]
 struct Drive {
@@ -205,6 +206,8 @@ struct Drive {
     refresh: String,
     /// The secret a Desktop app client sends (Windows, Linux).
     secret: Option<String>,
+    /// Answers without ETags and replaces without preconditions, as Drive v3 does.
+    no_etags: bool,
 }
 
 fn percent_decode(s: &str) -> String {
@@ -237,6 +240,14 @@ impl Drive {
     fn tick(&mut self) -> String {
         self.next += 1;
         format!("\"e{}\"", self.next)
+    }
+
+    fn tagged(&self, r: HttpResponse, etag: String) -> HttpResponse {
+        if self.no_etags {
+            r
+        } else {
+            with_header(r, "ETag", etag)
+        }
     }
 
     fn file_json(&self, id: &str) -> String {
@@ -331,14 +342,14 @@ impl Server for Drive {
                 let name = metadata["name"].as_str().unwrap().to_owned();
                 self.files
                     .insert(id.clone(), (name, data.as_bytes().to_vec(), etag.clone()));
-                with_header(respond(200, self.file_json(&id)), "ETag", etag)
+                self.tagged(respond(200, self.file_json(&id)), etag)
             }
             (HttpMethod::Patch, p) if p.starts_with("/upload/drive/v3/files/") => {
                 let id = p.rsplit('/').next().unwrap().to_owned();
                 let Some(current) = self.files.get(&id).map(|f| f.2.clone()) else {
                     return respond(404, "{}");
                 };
-                if header(r, "If-Match") != Some(current.as_str()) {
+                if !self.no_etags && header(r, "If-Match") != Some(current.as_str()) {
                     return respond(
                         412,
                         r#"{"error": {"code": 412, "message": "Precondition Failed"}}"#,
@@ -348,15 +359,13 @@ impl Server for Drive {
                 let file = self.files.get_mut(&id).unwrap();
                 file.1 = r.body.clone();
                 file.2 = etag.clone();
-                with_header(respond(200, self.file_json(&id)), "ETag", etag)
+                self.tagged(respond(200, self.file_json(&id)), etag)
             }
             (HttpMethod::Get, p) if p.starts_with("/drive/v3/files/") => {
                 assert_eq!(q["alt"], "media");
                 let id = p.rsplit('/').next().unwrap();
                 match self.files.get(id) {
-                    Some((_, data, etag)) => {
-                        with_header(respond(200, data.clone()), "ETag", etag.clone())
-                    }
+                    Some((_, data, etag)) => self.tagged(respond(200, data.clone()), etag.clone()),
                     None => respond(404, "{}"),
                 }
             }
@@ -940,6 +949,54 @@ fn drive_makes_its_folder_and_uploads_conditionally() {
         .set_credentials(Some("access-2".into()), None, None);
     b.sync(&mut server);
     assert!(!b.local.contains_key("Najdorf.otrep.json"));
+}
+
+#[test]
+fn drive_without_etags_replaces_files_and_merges_edits() {
+    // Drive v3 sends no ETags: waiting for one to replace a file downloaded it forever.
+    let mut server = Drive {
+        access: TOKEN.into(),
+        no_etags: true,
+        ..Drive::default()
+    };
+    let mut a = Device::drive();
+    a.edit("Najdorf.pgn", E4);
+    a.sync(&mut server);
+    a.edit(
+        "Najdorf.pgn",
+        "[Event \"Najdorf\"]\n\n1. e4 c5 2. Nf3 d6 *\n",
+    );
+    let sent = a.sync(&mut server);
+    assert!(sent.contains(&SyncOpKind::Upload), "{sent:?}");
+    assert!(!sent.contains(&SyncOpKind::Download), "{sent:?}");
+    assert!(a.engine.unsynced_files().is_empty());
+    let stored = &server.files.values().next().unwrap().1;
+    assert_eq!(lines(stored), vec!["e4 c5 Nf3 d6".to_owned()]);
+
+    // Another device's edit, then this one's: listed as changed, downloaded once and merged.
+    let mut b = Device::drive();
+    b.sync(&mut server);
+    b.edit(
+        "Najdorf.pgn",
+        "[Event \"Najdorf\"]\n\n1. e4 c5 2. Nf3 Nc6 *\n",
+    );
+    b.sync(&mut server);
+    a.edit(
+        "Najdorf.pgn",
+        "[Event \"Najdorf\"]\n\n1. e4 c5 2. Nf3 d6 3. d4 *\n",
+    );
+    let sent = a.sync(&mut server);
+    assert_eq!(
+        sent.iter().filter(|k| **k == SyncOpKind::Download).count(),
+        1,
+        "{sent:?}"
+    );
+    b.sync(&mut server);
+    assert_eq!(a.local, b.local);
+    assert_eq!(
+        lines(&a.local["Najdorf.pgn"]),
+        vec!["e4 c5 Nf3 Nc6".to_owned(), "e4 c5 Nf3 d6 d4".to_owned()]
+    );
 }
 
 #[test]
