@@ -5824,12 +5824,30 @@ open class RepertoireSync: RepertoireSyncProtocol, @unchecked Sendable {
 
     
     /**
-     * The "ORBT Chess" folder in Google Drive (`drive.file` scope).
+     * The "ORBT Chess" folder in Google Drive (`drive.file` scope), with tokens from the
+     * platform (Android's Play services): `AuthNeed::Token` asks for a new one.
      */
 public static func drive(savedState: Data) -> RepertoireSync  {
     return try!  FfiConverterTypeRepertoireSync_lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_constructor_repertoiresync_drive(
+        FfiConverterData.lower(savedState),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Google Drive signed in with the core's OAuth (`drive_authorize_url`; Apple's platforms,
+     * Windows, Linux): pass the refresh token to `set_credentials`, the core refreshes the
+     * access token itself and signing out revokes it. `client_secret`: as for
+     * `drive_token_request`.
+     */
+public static func driveOauth(clientId: String, clientSecret: String?, savedState: Data) -> RepertoireSync  {
+    return try!  FfiConverterTypeRepertoireSync_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_constructor_repertoiresync_drive_oauth(
+        FfiConverterString.lower(clientId),
+        FfiConverterOptionString.lower(clientSecret),
         FfiConverterData.lower(savedState),uniffiCallStatus
     )
 })
@@ -7282,6 +7300,60 @@ public func FfiConverterTypeCloudEval_lower(_ value: CloudEval) -> RustBuffer {
 }
 
 
+public struct ConflictCopy: Equatable, Hashable {
+    public var copy: String
+    public var original: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(copy: String, original: String) {
+        self.copy = copy
+        self.original = original
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension ConflictCopy: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeConflictCopy: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> ConflictCopy {
+        return
+            try ConflictCopy(
+                copy: FfiConverterString.read(from: &buf), 
+                original: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: ConflictCopy, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.copy, into: &buf)
+        FfiConverterString.write(value.original, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeConflictCopy_lift(_ buf: RustBuffer) throws -> ConflictCopy {
+    return try FfiConverterTypeConflictCopy.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeConflictCopy_lower(_ value: ConflictCopy) -> RustBuffer {
+    return FfiConverterTypeConflictCopy.lower(value)
+}
+
+
 public struct Counts: Equatable, Hashable {
     public var new: Int64
     public var learning: Int64
@@ -7709,6 +7781,74 @@ public func FfiConverterTypeDeckStudyStats_lift(_ buf: RustBuffer) throws -> Dec
 #endif
 public func FfiConverterTypeDeckStudyStats_lower(_ value: DeckStudyStats) -> RustBuffer {
     return FfiConverterTypeDeckStudyStats.lower(value)
+}
+
+
+/**
+ * What signing in to Google Drive with the core's OAuth gives: keep the refresh
+ * token (the core refreshes with it).
+ */
+public struct DriveSignIn: Equatable, Hashable {
+    public var accessToken: String
+    /**
+     * Unix ms; None when Google did not say.
+     */
+    public var expiresAt: Int64?
+    public var refreshToken: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(accessToken: String, 
+        /**
+         * Unix ms; None when Google did not say.
+         */expiresAt: Int64?, refreshToken: String) {
+        self.accessToken = accessToken
+        self.expiresAt = expiresAt
+        self.refreshToken = refreshToken
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension DriveSignIn: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeDriveSignIn: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> DriveSignIn {
+        return
+            try DriveSignIn(
+                accessToken: FfiConverterString.read(from: &buf), 
+                expiresAt: FfiConverterOptionInt64.read(from: &buf), 
+                refreshToken: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: DriveSignIn, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.accessToken, into: &buf)
+        FfiConverterOptionInt64.write(value.expiresAt, into: &buf)
+        FfiConverterString.write(value.refreshToken, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDriveSignIn_lift(_ buf: RustBuffer) throws -> DriveSignIn {
+    return try FfiConverterTypeDriveSignIn.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeDriveSignIn_lower(_ value: DriveSignIn) -> RustBuffer {
+    return FfiConverterTypeDriveSignIn.lower(value)
 }
 
 
@@ -15549,6 +15689,31 @@ fileprivate struct FfiConverterSequenceTypeCard: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeConflictCopy: FfiConverterRustBuffer {
+    typealias SwiftType = [ConflictCopy]
+
+    public static func write(_ value: [ConflictCopy], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeConflictCopy.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [ConflictCopy] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [ConflictCopy]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeConflictCopy.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeCoverageFile: FfiConverterRustBuffer {
     typealias SwiftType = [CoverageFile]
 
@@ -16680,6 +16845,80 @@ public func weakestMoves(cards: [Epd: Card], nowSecs: Double, limit: UInt32) -> 
 })
 }
 /**
+ * The signed-in account, for its email (`drive_parse_account`).
+ */
+public func driveAccountRequest(accessToken: String) -> HttpRequest  {
+    return try!  FfiConverterTypeHttpRequest_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_drive_account_request(
+        FfiConverterString.lower(accessToken),uniffiCallStatus
+    )
+})
+}
+/**
+ * Google's sign-in page (PKCE, `drive.file`, for a refresh token), redirecting to
+ * `redirect_uri`. Read the redirect with `oauth_parse_redirect`.
+ */
+public func driveAuthorizeUrl(clientId: String, verifier: String, state: String, redirectUri: String) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_drive_authorize_url(
+        FfiConverterString.lower(clientId),
+        FfiConverterString.lower(verifier),
+        FfiConverterString.lower(state),
+        FfiConverterString.lower(redirectUri),uniffiCallStatus
+    )
+})
+}
+public func driveParseAccount(response: HttpResponse) -> String?  {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_drive_parse_account(
+        FfiConverterTypeHttpResponse_lower(response),uniffiCallStatus
+    )
+})
+}
+/**
+ * The token request's answer (`now_ms`: unix ms). Fails when Drive access was not allowed.
+ */
+public func driveParseToken(response: HttpResponse, nowMs: Int64)throws  -> DriveSignIn  {
+    return try  FfiConverterTypeDriveSignIn_lift(try rustCallWithError(FfiConverterTypeSignInError_lift) {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_drive_parse_token(
+        FfiConverterTypeHttpResponse_lower(response),
+        FfiConverterInt64.lower(nowMs),uniffiCallStatus
+    )
+})
+}
+/**
+ * The redirect Google allows the iOS client `client_id`: its reversed id as the URL scheme
+ * (a Desktop app client uses the loopback server instead).
+ */
+public func driveRedirectUri(clientId: String) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_drive_redirect_uri(
+        FfiConverterString.lower(clientId),uniffiCallStatus
+    )
+})
+}
+/**
+ * Exchanges the code from the redirect for the tokens (`redirect_uri`: the authorize URL's).
+ * `client_secret`: a Desktop app client's (Windows, Linux); None for an iOS client.
+ */
+public func driveTokenRequest(clientId: String, clientSecret: String?, code: String, verifier: String, redirectUri: String) -> HttpRequest  {
+    return try!  FfiConverterTypeHttpRequest_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_drive_token_request(
+        FfiConverterString.lower(clientId),
+        FfiConverterOptionString.lower(clientSecret),
+        FfiConverterString.lower(code),
+        FfiConverterString.lower(verifier),
+        FfiConverterString.lower(redirectUri),uniffiCallStatus
+    )
+})
+}
+/**
  * The signed-in account, for its email (`dropbox_parse_account`).
  */
 public func dropboxAccountRequest(accessToken: String) -> HttpRequest  {
@@ -16746,6 +16985,30 @@ public func dropboxTokenRequest(appKey: String, code: String, verifier: String, 
         FfiConverterString.lower(code),
         FfiConverterString.lower(verifier),
         FfiConverterString.lower(redirectUri),uniffiCallStatus
+    )
+})
+}
+/**
+ * The conflict copies among a folder's file names whose original is there too: merge each
+ * into its original (as an iCloud conflict version), then remove it.
+ */
+public func syncConflictCopies(names: [String]) -> [ConflictCopy]  {
+    return try!  FfiConverterSequenceTypeConflictCopy.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_sync_conflict_copies(
+        FfiConverterSequenceString.lower(names),uniffiCallStatus
+    )
+})
+}
+/**
+ * The file a provider's conflict copy stands for (`Najdorf (Carl's conflicted copy
+ * 2026-10-30).pgn`, `Najdorf (1).otrep.json`), or None. Prefer `sync_conflict_copies`.
+ */
+public func syncConflictOriginal(name: String) -> String?  {
+    return try!  FfiConverterOptionString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_sync_conflict_original(
+        FfiConverterString.lower(name),uniffiCallStatus
     )
 })
 }
@@ -17175,6 +17438,24 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_weakest_moves() != 51550) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_func_drive_account_request() != 55359) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_drive_authorize_url() != 20656) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_drive_parse_account() != 62163) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_drive_parse_token() != 46936) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_drive_redirect_uri() != 47269) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_drive_token_request() != 62284) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_func_dropbox_account_request() != 30709) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -17191,6 +17472,12 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_dropbox_token_request() != 25595) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_sync_conflict_copies() != 49393) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_func_sync_conflict_original() != 5119) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_func_sync_file_kind() != 2482) {
@@ -18096,7 +18383,10 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_constructor_graphs_new() != 61351) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_constructor_repertoiresync_drive() != 34283) {
+    if (uniffi_opening_core_checksum_constructor_repertoiresync_drive() != 51833) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_constructor_repertoiresync_drive_oauth() != 19241) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_constructor_repertoiresync_dropbox() != 18654) {
