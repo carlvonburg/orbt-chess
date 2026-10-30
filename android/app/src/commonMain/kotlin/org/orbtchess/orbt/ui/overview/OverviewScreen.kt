@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.NoAccounts
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.WifiOff
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -78,7 +79,6 @@ import org.orbtchess.orbt.ui.library.EntryStats
 import org.orbtchess.orbt.ui.library.isToday
 import org.orbtchess.orbt.ui.library.relativeDay
 import org.orbtchess.orbt.ui.library.shortTime
-import org.orbtchess.orbt.ui.statistics.StatisticsScreen
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
 import java.text.NumberFormat
@@ -87,13 +87,11 @@ import java.text.NumberFormat
  * A repertoire's overview (`RepertoireOverviewView.swift`, Anki's deck overview): coverage and
  * study progress and what is due today, each section ending with its action (Browse / Edit,
  * Study): the same buttons, the most likely one prominent, building while there are gaps, else
- * studying. Runs the background coverage check while shown. The detail pane on wide windows;
- * pushed on the library on a phone.
+ * studying. Runs the background coverage check while shown. Pushed on the library on one pane
+ * (a phone, a tablet in portrait); wide windows show [OverviewDashboard] instead.
  *
- * @param statisticsInline true on a two-pane window, where no pane beside shows this
- *   repertoire's statistics: show them under the overview.
  * @param navigate [Destination.Builder], [Destination.Drill], [Destination.RepertoireSettings],
- *   [Destination.StudyOptions], [Destination.Statistics] (a phone's Statistics row).
+ *   [Destination.StudyOptions], [Destination.Statistics] (the Statistics row).
  * @param onBack null where the overview is beside the library (nothing to go back to).
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,120 +99,148 @@ import java.text.NumberFormat
 fun OverviewScreen(
     app: AppModel,
     document: RepertoireDocument,
-    statisticsInline: Boolean,
     navigate: (Destination) -> Unit,
     onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val id = document.entryId
-    // The background coverage check, while the overview is on screen (the core counts viewers).
-    DisposableEffect(document) {
-        document.startCoverageCheck()
-        onDispose { document.stopCoverageCheck() }
-    }
+    OverviewEffects(app, document)
     val stats = EntryStats.of(document)
-    var menu by remember { mutableStateOf(false) }
-    // The tour on the sample begins here, at Browse / Edit.
-    val isSample = TourGuide.isSample(document.pgnFile)
-    TourScreen(running = isSample)
-    LaunchedEffect(isSample) { if (isSample) app.tour.advance(from = TourGuide.Step.Ready, to = TourGuide.Step.Browse) }
-
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = GroupedBackground,
-        topBar = {
-            MediumFlexibleTopAppBar(
-                title = { Text(document.name, maxLines = 1) },
-                scrollBehavior = scrollBehavior,
-                colors = groupedTopAppBarColors(),
-                navigationIcon = {
-                    if (onBack != null) {
-                        IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
-                    }
-                },
-                actions = {
-                    Box {
-                        TooltipIconButton("More options", Symbols.more, { menu = true })
-                        ExpressiveMenu(menu, onDismissRequest = { menu = false }) {
-                            group {
-                                item("Repertoire Settings…", Symbols.settings) { navigate(Destination.RepertoireSettings(id)) }
-                                item("Study Options…", Symbols.options) { navigate(Destination.StudyOptions(id)) }
-                            }
-                        }
-                    }
-                },
-            )
-        },
+        topBar = { OverviewTopBar(document, scrollBehavior, navigate, onBack) },
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding)) {
             item("coverage") { CoverageSection(app, document, stats) { navigate(Destination.Builder(id)) } }
             item("study") { StudySection(document, stats, navigate) }
-            // Wide windows show the statistics beside the overview, or under it.
-            if (onBack != null && !statisticsInline) {
-                item("statistics") {
-                    ListSection(null) {
-                        ListItem(
-                            onClick = { navigate(Destination.Statistics(StatisticsScope.Repertoire(id))) },
-                            leadingContent = { Icon(Symbols.statistics, contentDescription = null) },
-                            trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
-                        ) { Text("Statistics") }
-                    }
+            // The repertoire's statistics: the Statistics tab, filtered to it.
+            item("statistics") {
+                ListSection(null) {
+                    ListItem(
+                        onClick = { navigate(Destination.Statistics(StatisticsScope.Repertoire(id))) },
+                        leadingContent = { Icon(Symbols.statistics, contentDescription = null) },
+                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
+                    ) { Text("Statistics") }
                 }
-            }
-            if (statisticsInline) {
-                // A pane of its own height, scrolled within (the statistics are a screen).
-                item { StatisticsScreen(app, StatisticsScope.Repertoire(id), inline = true, navigate = navigate, modifier = Modifier.fillParentMaxHeight()) }
             }
         }
     }
 }
 
+/**
+ * What an overview does while on screen, as a list or a dashboard: the background coverage
+ * check (the core counts viewers) and, on the sample, the tour, which begins at Browse / Edit.
+ */
+@Composable
+internal fun OverviewEffects(app: AppModel, document: RepertoireDocument) {
+    DisposableEffect(document) {
+        document.startCoverageCheck()
+        onDispose { document.stopCoverageCheck() }
+    }
+    val isSample = TourGuide.isSample(document.pgnFile)
+    TourScreen(running = isSample)
+    LaunchedEffect(isSample) { if (isSample) app.tour.advance(from = TourGuide.Step.Ready, to = TourGuide.Step.Browse) }
+}
+
+/** The overview's top app bar: the repertoire's name, back where there is one, and ⋮. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun OverviewTopBar(
+    document: RepertoireDocument,
+    scrollBehavior: TopAppBarScrollBehavior,
+    navigate: (Destination) -> Unit,
+    onBack: (() -> Unit)?,
+) {
+    val id = document.entryId
+    var menu by remember { mutableStateOf(false) }
+    MediumFlexibleTopAppBar(
+        title = { Text(document.name, maxLines = 1) },
+        scrollBehavior = scrollBehavior,
+        colors = groupedTopAppBarColors(),
+        navigationIcon = {
+            if (onBack != null) {
+                IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+            }
+        },
+        actions = {
+            Box {
+                TooltipIconButton("More options", Symbols.more, { menu = true })
+                ExpressiveMenu(menu, onDismissRequest = { menu = false }) {
+                    group {
+                        item("Repertoire Settings…", Symbols.settings) { navigate(Destination.RepertoireSettings(id)) }
+                        item("Study Options…", Symbols.options) { navigate(Destination.StudyOptions(id)) }
+                    }
+                }
+            }
+        },
+    )
+}
+
 /** While there are gaps (or nothing of yours to study), building is the main action. */
-private fun buildFirst(stats: EntryStats): Boolean = stats.gaps > 0 || stats.progress.cards == 0L
+internal fun buildFirst(stats: EntryStats): Boolean = stats.gaps > 0 || stats.progress.cards == 0L
 
 // MARK: Coverage
 
 /**
- * Coverage, as one group of Material's segmented list: how complete and the gaps (the
- * percentage in the emphasized type Material 3 Expressive gives a key number), the saved
+ * Coverage, as one group of Material's segmented list: how complete and the gaps, the saved
  * moves, then Browse / Edit.
  */
 @Composable
 private fun CoverageSection(app: AppModel, document: RepertoireDocument, stats: EntryStats, browse: () -> Unit) {
     ListSection("Coverage") {
-        Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    Format.percent(stats.completion),
-                    style = tabularDigits(MaterialTheme.typography.headlineMediumEmphasized),
-                )
-                Text(
-                    " complete",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f).padding(bottom = 3.dp),
-                )
-                if (stats.gaps > 0) {
-                    Text(
-                        if (stats.gaps == 1) "1 gap" else "${NumberFormat.getIntegerInstance().format(stats.gaps)} gaps",
-                        style = tabularDigits(MaterialTheme.typography.titleSmallEmphasized),
-                        color = ThemeColor.todo.color,
-                        modifier = Modifier.padding(bottom = 3.dp),
-                    )
-                }
-            }
-            CoverageBar(stats.completion)
-            CoverageCheckStatus(app, document)
-        }
-        ListItem(
-            trailingContent = { Text(NumberFormat.getIntegerInstance().format(stats.savedMoves), style = tabularDigits(MaterialTheme.typography.bodyLarge)) },
-        ) { Text("Saved moves") }
-        ActionButton(
-            "Browse / Edit", prominent = buildFirst(stats), onClick = browse,
-            modifier = Modifier.padding(16.dp).tourTarget(TourGuide.Target.BrowseButton),
-        )
+        CoverageSummary(app, document, stats, Modifier.fillMaxWidth().padding(16.dp))
+        ListItem(trailingContent = { SavedMovesCount(stats) }) { Text("Saved moves") }
+        BrowseButton(stats, browse, Modifier.padding(16.dp))
     }
+}
+
+/**
+ * How complete (the percentage in the emphasized type Material 3 Expressive gives a key number)
+ * and the gaps, the coverage bar and the background check.
+ */
+@Composable
+internal fun CoverageSummary(app: AppModel, document: RepertoireDocument, stats: EntryStats, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                Format.percent(stats.completion),
+                style = tabularDigits(MaterialTheme.typography.headlineMediumEmphasized),
+            )
+            Text(
+                " complete",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f).padding(bottom = 3.dp),
+            )
+            if (stats.gaps > 0) {
+                Text(
+                    if (stats.gaps == 1) "1 gap" else "${NumberFormat.getIntegerInstance().format(stats.gaps)} gaps",
+                    style = tabularDigits(MaterialTheme.typography.titleSmallEmphasized),
+                    color = ThemeColor.todo.color,
+                    modifier = Modifier.padding(bottom = 3.dp),
+                )
+            }
+        }
+        CoverageBar(stats.completion)
+        CoverageCheckStatus(app, document)
+    }
+}
+
+/** The number of saved moves, for the "Saved moves" row. */
+@Composable
+internal fun SavedMovesCount(stats: EntryStats) {
+    Text(NumberFormat.getIntegerInstance().format(stats.savedMoves), style = tabularDigits(MaterialTheme.typography.bodyLarge))
+}
+
+/** Browse / Edit, prominent while building comes first; where the tour begins. */
+@Composable
+internal fun BrowseButton(stats: EntryStats, browse: () -> Unit, modifier: Modifier = Modifier) {
+    ActionButton(
+        "Browse / Edit", prominent = buildFirst(stats), onClick = browse,
+        modifier = modifier.tourTarget(TourGuide.Target.BrowseButton),
+    )
 }
 
 /** The background coverage check while it runs (`CoverageCheckStatus` in BuilderView.swift). */
@@ -247,43 +273,59 @@ private fun StudySection(
     stats: EntryStats,
     navigate: (Destination) -> Unit,
 ) {
-    val id = document.entryId
     ListSection("Study") {
         if (stats.progress.cards == 0L) {
             // Nothing to count yet: only what to do.
-            SecondaryLabel("Add moves of yours to study them.", Icons.Outlined.CheckCircle, Modifier.fillMaxWidth().padding(16.dp))
+            NothingToStudy(Modifier.fillMaxWidth().padding(16.dp))
             return@ListSection
         }
-        StudyProgress(stats)
-        Column(Modifier.fillMaxWidth().padding(16.dp)) {
-            if (stats.counts.total > 0) {
-                DueToday(stats.counts)
+        StudyProgress(stats, Modifier.fillMaxWidth().padding(16.dp))
+        StudyToday(document, stats, Modifier.fillMaxWidth().padding(16.dp))
+        StudyAction(document, stats, navigate, Modifier.padding(16.dp))
+    }
+}
+
+/** A repertoire with no moves of yours yet: what to do. */
+@Composable
+internal fun NothingToStudy(modifier: Modifier = Modifier) {
+    SecondaryLabel("Add moves of yours to study them.", Icons.Outlined.CheckCircle, modifier)
+}
+
+/** What is due today, or when the next move is. */
+@Composable
+internal fun StudyToday(document: RepertoireDocument, stats: EntryStats, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        if (stats.counts.total > 0) {
+            DueToday(stats.counts)
+        } else {
+            val studied = stats.progress.studied > 0
+            if (studied) {
+                SymbolLabel(doneText(document, stats), Icons.Filled.CheckCircle, meaning = ThemeColor.learned)
             } else {
-                val studied = stats.progress.studied > 0
-                if (studied) {
-                    SymbolLabel(doneText(document, stats), Icons.Filled.CheckCircle, meaning = ThemeColor.learned)
-                } else {
-                    SecondaryLabel(doneText(document, stats), Icons.Outlined.CheckCircle)
-                }
+                SecondaryLabel(doneText(document, stats), Icons.Outlined.CheckCircle)
             }
         }
-        val prominent = !buildFirst(stats)
-        val modifier = Modifier.padding(16.dp)
-        if (stats.counts.total > 0) {
-            ActionButton("Study Now", prominent, { navigate(Destination.Drill(id, DrillKind.Study)) }, modifier)
-        } else {
-            StudyMoreMenu(document, stats, prominent, navigate, modifier)
-        }
+    }
+}
+
+/** Study Now while moves are due, else Study More Today; prominent unless building comes first. */
+@Composable
+internal fun StudyAction(document: RepertoireDocument, stats: EntryStats, navigate: (Destination) -> Unit, modifier: Modifier = Modifier) {
+    val prominent = !buildFirst(stats)
+    if (stats.counts.total > 0) {
+        ActionButton("Study Now", prominent, { navigate(Destination.Drill(document.entryId, DrillKind.Study)) }, modifier)
+    } else {
+        StudyMoreMenu(document, stats, prominent, navigate, modifier)
     }
 }
 
 /** Like Coverage: how far along, then the numbers in Anki's groups. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StudyProgress(stats: EntryStats) {
+internal fun StudyProgress(stats: EntryStats, modifier: Modifier = Modifier) {
     val progress = stats.progress
     val number = NumberFormat.getIntegerInstance()
-    Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(number.format(progress.studied), style = tabularDigits(MaterialTheme.typography.headlineMediumEmphasized))
             Text(

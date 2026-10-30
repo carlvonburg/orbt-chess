@@ -2,34 +2,24 @@ package org.orbtchess.orbt.ui.library
 
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
-import org.orbtchess.orbt.ui.components.ListSection
-import org.orbtchess.orbt.ui.components.groupedTopAppBarColors
-import org.orbtchess.orbt.ui.components.GroupedBackground
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.LargeFlexibleTopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
@@ -46,55 +36,15 @@ import org.orbtchess.orbt.storage.RepertoireEntry
 import org.orbtchess.orbt.storage.TrainingDefaults
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.DrillKind
-import org.orbtchess.orbt.ui.StatisticsScope
 import org.orbtchess.orbt.ui.components.Format
 import org.orbtchess.orbt.ui.components.SymbolLabel
 import org.orbtchess.orbt.ui.components.countColor
 import org.orbtchess.orbt.ui.components.tabularDigits
 import org.orbtchess.orbt.ui.overview.SecondaryLabel
-import org.orbtchess.orbt.ui.statistics.StatisticsScreen
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
 import java.text.NumberFormat
 import kotlin.math.roundToLong
-
-/**
- * Today across every repertoire (the Today column in LibraryView.swift): what is left to do
- * today and Study All. The detail pane on wide windows while no repertoire is selected (on a
- * phone Today is the library's first section).
- *
- * @param statisticsInline true when no pane beside shows the statistics (a two-pane window):
- *   show every repertoire's statistics under Today.
- * @param navigate [Destination.StudyAll], [Destination.Drill], [Destination.Builder].
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TodayPane(
-    app: AppModel,
-    statisticsInline: Boolean,
-    navigate: (Destination) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        containerColor = GroupedBackground,
-        topBar = {
-            LargeFlexibleTopAppBar(title = { Text("Today") }, scrollBehavior = scrollBehavior, colors = groupedTopAppBarColors())
-        },
-    ) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding)) {
-            // While the tour runs, its card instead.
-            item { ListSection(null) { if (tourRunning(app)) TourSection(app, navigate) else TodayCard(app, navigate) } }
-            if (statisticsInline) {
-                // A pane of its own height, scrolled within (the statistics are a screen).
-                item {
-                    StatisticsScreen(app, StatisticsScope.All, inline = true, navigate = navigate, modifier = Modifier.fillParentMaxHeight())
-                }
-            }
-        }
-    }
-}
 
 /** A repertoire and its progress, for Today. */
 private class TodayItem(val entry: RepertoireEntry, val stats: EntryStats)
@@ -117,9 +67,13 @@ private sealed interface Phase {
  * nothing studied yet) and offers what can still be done: Anki's custom study (more new moves,
  * practice) or filling gaps. Its actions are the same buttons, the most likely one prominent; a
  * menu when several repertoires could take one.
+ *
+ * @param wide across a wide dashboard ([TodayDashboard]): what is left on the leading side, the
+ *   streak and the actions on the trailing side. Else one column, the streak by the title (the
+ *   phone's library).
  */
 @Composable
-fun TodayCard(app: AppModel, navigate: (Destination) -> Unit, modifier: Modifier = Modifier) {
+fun TodayCard(app: AppModel, navigate: (Destination) -> Unit, modifier: Modifier = Modifier, wide: Boolean = false) {
     val items = app.library.entries.filter { !it.needsSetup }.map { TodayItem(it, EntryStats.of(it, app)) }
     val counts = Counts(items.sumOf { it.stats.counts.new }, items.sumOf { it.stats.counts.learning }, items.sumOf { it.stats.counts.review })
 
@@ -160,11 +114,12 @@ fun TodayCard(app: AppModel, navigate: (Destination) -> Unit, modifier: Modifier
         )
     }
 
+    // Wide, the streak heads the actions' side instead.
     @Composable
     fun header(title: @Composable () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) { title() }
-            streakBadge()
+            if (!wide) streakBadge()
         }
     }
 
@@ -226,7 +181,8 @@ fun TodayCard(app: AppModel, navigate: (Destination) -> Unit, modifier: Modifier
         detail = { if (it.gaps == 1) "1 gap" else "${it.gaps} gaps" },
     ) { Destination.Builder(it, showGaps = true) }
 
-    Column(modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    @Composable
+    fun summary() {
         when (phase) {
             Phase.Due -> {
                 // What is left first, then what was studied (Anki's line under its deck list).
@@ -284,7 +240,10 @@ fun TodayCard(app: AppModel, navigate: (Destination) -> Unit, modifier: Modifier
                 nextLine()
             }
         }
+    }
 
+    @Composable
+    fun actions() {
         when (phase) {
             Phase.Due -> ActionButton("Study All", prominent = true, onClick = { navigate(Destination.StudyAll(studyAllEntries(app))) })
             Phase.Empty -> action("Add Moves", items, main = true, detail = { null }) { Destination.Builder(it) }
@@ -306,6 +265,22 @@ fun TodayCard(app: AppModel, navigate: (Destination) -> Unit, modifier: Modifier
                     if (withGaps.isNotEmpty()) gapsAction()
                 }
             }
+        }
+    }
+
+    val spacing = Arrangement.spacedBy(8.dp)
+    if (wide) {
+        Row(modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = spacing) { summary() }
+            Column(Modifier.weight(1f), verticalArrangement = spacing, horizontalAlignment = Alignment.End) {
+                streakBadge()
+                actions()
+            }
+        }
+    } else {
+        Column(modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = spacing) {
+            summary()
+            actions()
         }
     }
 }

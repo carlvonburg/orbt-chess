@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -49,9 +50,8 @@ import kotlin.math.roundToLong
 // subject with a symbol, leads with one number and shows the chart that answers it.
 
 /**
- * A card of the Statistics grid: Material's card on the grouped page's container color, in the
- * surface color with the large shape (as the segments of the app's grouped lists), titled with
- * its subject in Material 3 Expressive's emphasized title.
+ * A card of the Statistics grid (a [SurfaceCard]), titled with its subject in Material 3
+ * Expressive's emphasized title.
  */
 @Composable
 internal fun StatCard(
@@ -61,12 +61,10 @@ internal fun StatCard(
     color: ThemeColor? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Card(
-        modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    SurfaceCard(modifier) {
+        // Fills a card stretched to its row's height (the dashboard's first row), so content can
+        // push its action to the bottom with a weighted spacer.
+        Column(Modifier.fillMaxHeight().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             val tint = color?.color ?: MaterialTheme.colorScheme.primary
             Row(
                 Modifier.semantics(mergeDescendants = true) { heading() },
@@ -79,6 +77,21 @@ internal fun StatCard(
             content()
         }
     }
+}
+
+/**
+ * Material's card on the grouped page's container color, in the surface color with the large
+ * shape (as the segments of the app's grouped lists): every card of the statistics grid and of
+ * the library's dashboard.
+ */
+@Composable
+internal fun SurfaceCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        content = content,
+    )
 }
 
 /** A number with its unit smaller and secondary (Health's style in the Swift app). */

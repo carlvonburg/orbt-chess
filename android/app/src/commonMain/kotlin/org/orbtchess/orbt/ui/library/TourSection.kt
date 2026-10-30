@@ -2,6 +2,7 @@ package org.orbtchess.orbt.ui.library
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -51,9 +52,12 @@ suspend fun startTour(app: AppModel) {
  * The tour in Today's place (`tourSection` in LibraryView.swift), laid out like Today's card:
  * what it is, how far it got, or, once the sample's gap is studied, the user's own repertoire;
  * its one main action first.
+ *
+ * @param wide across a wide dashboard, as Today's card: the text on the leading side, the actions
+ *   on the trailing side.
  */
 @Composable
-internal fun TourSection(app: AppModel, navigate: (Destination) -> Unit, modifier: Modifier = Modifier) {
+internal fun TourSection(app: AppModel, navigate: (Destination) -> Unit, modifier: Modifier = Modifier, wide: Boolean = false) {
     val step = app.tour.step
     val yourTurn = step == TourGuide.Step.Studying || step == TourGuide.Step.Finish
     val (title, detail) = when {
@@ -65,9 +69,14 @@ internal fun TourSection(app: AppModel, navigate: (Destination) -> Unit, modifie
     // Open, so its row shows its moves and gaps (an unopened new sidecar has none yet).
     LaunchedEffect(Unit) { sampleEntry(app)?.let { app.documents.open(it) } }
 
-    Column(modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    @Composable
+    fun text() {
         Text(title, style = MaterialTheme.typography.titleMedium)
         Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+
+    @Composable
+    fun actions() {
         if (yourTurn) {
             ActionButton("Create Your Repertoire", prominent = true, onClick = {
                 // The tour's end: New Repertoire, for the user's own.
@@ -83,6 +92,19 @@ internal fun TourSection(app: AppModel, navigate: (Destination) -> Unit, modifie
                 if (step >= TourGuide.Step.BiggestGap) navigate(Destination.Builder(sample.id))
             })
             SkipTourButton { ActionButton("Skip Tour", prominent = false, onClick = it) }
+        }
+    }
+
+    val spacing = Arrangement.spacedBy(8.dp)
+    if (wide) {
+        Row(modifier.padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = spacing) { text() }
+            Column(Modifier.weight(1f), verticalArrangement = spacing) { actions() }
+        }
+    } else {
+        Column(modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = spacing) {
+            text()
+            actions()
         }
     }
 }

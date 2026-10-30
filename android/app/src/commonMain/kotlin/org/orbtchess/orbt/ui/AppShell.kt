@@ -14,7 +14,6 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.AnimatedContent
 import org.orbtchess.orbt.ui.components.GroupedBackground
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -61,7 +60,8 @@ import org.orbtchess.orbt.ui.components.OpenDocument
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.library.LibraryScreen
 import org.orbtchess.orbt.ui.library.SetupScreen
-import org.orbtchess.orbt.ui.library.TodayPane
+import org.orbtchess.orbt.ui.library.TodayDashboard
+import org.orbtchess.orbt.ui.overview.OverviewDashboard
 import org.orbtchess.orbt.ui.overview.OverviewScreen
 import org.orbtchess.orbt.ui.overview.RepertoireSettingsScreen
 import org.orbtchess.orbt.ui.overview.StudyOptionsSheet
@@ -78,8 +78,8 @@ import org.orbtchess.orbt.ui.training.StudyAllScreen
 // The navigation shell (RootView.swift and LibraryView.swift's navigation): Material's
 // navigation suite (the bottom bar on a phone: Repertoires, Statistics) around Material's
 // list-detail scaffold. On a phone one pane at a time: the library, an overview, a screen pushed
-// on it. On wide windows (tablets, the desktop) the library is the list pane, the overview the
-// detail pane and, on large windows, the statistics the extra pane beside it; Build, Study and
+// on it. On wide windows (tablets, the desktop) the library is the list pane and the detail pane
+// a dashboard: Today or the selected repertoire's overview, then its statistics; Build, Study and
 // Analysis fill the window as their own list-detail layout, their panel the list pane and the
 // board the detail pane. Every screen's wiring is here; screens only call `navigate(destination)`.
 
@@ -154,7 +154,6 @@ fun AppShell(app: AppModel) {
                     StatisticsScreen(
                         app,
                         shell.statisticsScope,
-                        inline = false,
                         navigate = shell::navigate,
                         onScopeChange = { shell.statisticsScope = it },
                     )
@@ -222,25 +221,29 @@ fun AppShell(app: AppModel) {
 }
 
 /**
- * The library's panes: list (the library), detail (Today or an overview), extra (the statistics).
- * A board screen (Build, Study, Analysis) is the one pane on a phone; on wide windows it leaves
- * the list and fills the window as its own list-detail layout ([BoardPanes]).
+ * The library's panes: list (the library) and detail (Today or an overview). On wide windows
+ * Material's list-detail layout in two panes, the detail a dashboard of cards with the
+ * statistics ([TodayDashboard], [OverviewDashboard]); on one pane the phone's screens. A board
+ * screen (Build, Study, Analysis) is the one pane on a phone (the extra pane's role); on wide
+ * windows it leaves the list and fills the window as its own list-detail layout ([BoardPanes]).
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 private fun LibraryPanes(
     app: AppModel,
     shell: ShellModel,
-    directive: androidx.compose.material3.adaptive.layout.PaneScaffoldDirective,
+    windowDirective: androidx.compose.material3.adaptive.layout.PaneScaffoldDirective,
     backProgress: Float?,
 ) {
     val top = shell.top
     val back: () -> Unit = shell::back
     val navigate: (Destination) -> Unit = shell::navigate
-    if (top != null && top.role == ListDetailPaneScaffoldRole.Extra && directive.maxHorizontalPartitions > 1) {
-        BoardPanes(app, top, directive, navigate, back)
+    if (top != null && top.role == ListDetailPaneScaffoldRole.Extra && windowDirective.maxHorizontalPartitions > 1) {
+        BoardPanes(app, top, windowDirective, navigate, back)
         return
     }
+    // Two panes at most: the statistics are in the detail pane's dashboard, not a third.
+    val directive = windowDirective.copy(maxHorizontalPartitions = windowDirective.maxHorizontalPartitions.coerceAtMost(2))
 
     val history = listOf(ThreePaneScaffoldDestinationItem<Long>(ListDetailPaneScaffoldRole.List)) +
         shell.stack.map { ThreePaneScaffoldDestinationItem(it.role, it.id) }
@@ -270,20 +273,15 @@ private fun LibraryPanes(
     }
     val listShown = value[ListDetailPaneScaffoldRole.List] == PaneAdaptedValue.Expanded
     val detailShown = value[ListDetailPaneScaffoldRole.Detail] == PaneAdaptedValue.Expanded
-    val extraShown = value[ListDetailPaneScaffoldRole.Extra] == PaneAdaptedValue.Expanded
+    // Side by side: the list at a sidebar's width, the dashboard the rest of the window.
+    val twoPanes = listShown && detailShown
 
-    // Three panes (a large window): the list and the overview at preferred widths near the
-    // iPad's columns, the statistics the rest of the window, so its cards have room. Material
-    // gives the space left to the detail pane (the overview), so the extra pane asks for it.
-    val threePanes = listShown && detailShown && extraShown
-    BoxWithConstraints(Modifier.fillMaxSize().background(GroupedBackground)) {
-    val spacer = directive.horizontalPartitionSpacerSize
-    val extraWidth = (maxWidth - LibraryListWidth - LibraryDetailWidth - spacer * 2).coerceAtLeast(directive.defaultPanePreferredWidth)
     ListDetailPaneScaffold(
         directive = directive,
         scaffoldState = scaffoldState,
+        modifier = Modifier.fillMaxSize().background(GroupedBackground),
         listPane = {
-            AnimatedPane(if (threePanes) Modifier.preferredWidth(LibraryListWidth) else Modifier) {
+            AnimatedPane(if (twoPanes) Modifier.preferredWidth(LibraryListWidth) else Modifier) {
                 LibraryScreen(
                     app,
                     selectedEntryId = if (detailShown) shell.selectedEntryId else null,
@@ -293,41 +291,28 @@ private fun LibraryPanes(
             }
         },
         detailPane = {
-            AnimatedPane(if (threePanes) Modifier.preferredWidth(LibraryDetailWidth) else Modifier) {
+            AnimatedPane {
                 when {
-                    top == null -> TodayPane(app, statisticsInline = !extraShown, navigate = navigate)
-                    else -> Screen(app, top, BoardPane.Whole, navigate, if (listShown) null else back, statisticsInline = shell.wide && !extraShown)
+                    top == null -> TodayDashboard(app, navigate)
+                    twoPanes && top.screen is Screen.Overview -> OpenDocument(app, top.screen.entryId) { doc ->
+                        OverviewDashboard(app, doc, navigate, onBack = null)
+                    }
+                    else -> Screen(app, top, BoardPane.Whole, navigate, if (listShown) null else back)
                 }
             }
         },
         extraPane = {
-            AnimatedPane(if (threePanes) Modifier.preferredWidth(extraWidth) else Modifier) {
-                when {
-                    top == null -> StatisticsScreen(app, StatisticsScope.All, inline = true, navigate = navigate, paneTitle = true)
-                    top.role == ListDetailPaneScaffoldRole.Detail -> StatisticsScreen(
-                        app,
-                        top.screen.entryId?.let { StatisticsScope.Repertoire(it) } ?: StatisticsScope.All,
-                        inline = true,
-                        navigate = navigate,
-                        paneTitle = true,
-                    )
-                    // A phone: the board screen alone.
-                    else -> Screen(app, top, BoardPane.Whole, navigate, back)
-                }
-            }
+            // A phone: the board screen alone.
+            AnimatedPane { if (top != null && top.role == ListDetailPaneScaffoldRole.Extra) Screen(app, top, BoardPane.Whole, navigate, back) }
         },
     )
-    }
 }
 
 /** Material's predictive back easing (the navigator's), for the gesture's progress. */
 private val PredictiveBackEasing = CubicBezierEasing(0.1f, 0.1f, 0f, 1f)
 
-/** The library's list pane on a large window (iPad's sidebar is 260). */
-private val LibraryListWidth = 320.dp
-
-/** The overview or Today beside it (iPad's middle column is 380); the statistics take the rest. */
-private val LibraryDetailWidth = 380.dp
+/** The library's list pane beside the dashboard (iPad's sidebar is 260; Material's list pane 360). */
+private val LibraryListWidth = 340.dp
 
 /**
  * A board screen on a wide window: Material's list-detail layout, as on iPad. The panel (what you
@@ -368,11 +353,10 @@ private fun Screen(
     pane: BoardPane,
     navigate: (Destination) -> Unit,
     onBack: (() -> Unit)?,
-    statisticsInline: Boolean = false,
 ) {
     when (val screen = entry.screen) {
         is Screen.Overview -> OpenDocument(app, screen.entryId) { doc ->
-            OverviewScreen(app, doc, statisticsInline, navigate, onBack)
+            OverviewScreen(app, doc, navigate, onBack)
         }
         is Screen.Builder -> BuilderScreen(app, screen.model, pane, navigate, onBack)
         is Screen.Drill -> DrillScreen(app, screen.model, pane, navigate, onBack)
