@@ -1,5 +1,21 @@
 package org.orbtchess.orbt.ui
 
+import androidx.navigationevent.NavigationEventTransitionState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.material3.adaptive.layout.MutableThreePaneScaffoldState
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.AnimatedContent
+import org.orbtchess.orbt.ui.components.GroupedBackground
+import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ButtonDefaults
@@ -86,11 +102,14 @@ fun AppShell(app: AppModel) {
     // The bottom bar on a phone's top-level screens; a pushed board screen has its own actions.
     val showBar = !wide && (shell.tab == Tab.Statistics || top == null || top.role == ListDetailPaneScaffoldRole.Detail)
 
+    val backState = rememberNavigationEventState(NavigationEventInfo.None)
     NavigationBackHandler(
-        rememberNavigationEventState(NavigationEventInfo.None),
+        backState,
         isBackEnabled = shell.canGoBack && shell.sheet == null,
         onBackCompleted = { shell.back() },
     )
+    // Predictive back: how far the back gesture has gone (0 to 1) while it is in progress.
+    val backProgress = (backState.transitionState as? NavigationEventTransitionState.InProgress)?.latestEvent?.progress
 
     // The tour's turns that change screens: started (Settings › Show Tour), its card is in
     // Today's place, so show Today; its end, from Study's: back to the library, at New Repertoire.
@@ -140,13 +159,37 @@ fun AppShell(app: AppModel) {
                         onScopeChange = { shell.statisticsScope = it },
                     )
                 } else {
-                    LibraryPanes(app, shell, directive)
+                    LibraryPanes(app, shell, directive, if (shell.overlays.isEmpty()) backProgress else null)
                 }
             }
 
-            // Full-window screens over everything (Android's settings screens, the setup flow).
-            shell.overlays.lastOrNull()?.let { overlay ->
-                Surface(Modifier.fillMaxSize()) { Overlay(app, shell, overlay) }
+            // Full-window screens over everything (Android's settings screens, the setup flow),
+            // coming and going with Material's shared axis on the expressive motion scheme's
+            // springs; the back gesture shrinks the one on top, as Android's predictive back does
+            // a full-screen surface.
+            val motion = MaterialTheme.motionScheme
+            AnimatedContent(
+                targetState = shell.overlays.lastOrNull(),
+                transitionSpec = {
+                    val forward = targetState != null && (initialState == null || shell.overlays.size > 1)
+                    val shift = if (forward) 1 else -1
+                    (slideInHorizontally(motion.defaultSpatialSpec()) { it / 10 * shift } + fadeIn(motion.defaultEffectsSpec()))
+                        .togetherWith(slideOutHorizontally(motion.defaultSpatialSpec()) { -it / 10 * shift } + fadeOut(motion.fastEffectsSpec()))
+                },
+                label = "overlay",
+            ) { overlay ->
+                if (overlay != null) {
+                    val progress = if (overlay == shell.overlays.lastOrNull()) backProgress ?: 0f else 0f
+                    Surface(
+                        Modifier.fillMaxSize().graphicsLayer {
+                            val scale = 1f - 0.1f * PredictiveBackEasing.transform(progress)
+                            scaleX = scale
+                            scaleY = scale
+                            shape = RoundedCornerShape(32.dp * progress)
+                            clip = progress > 0f
+                        },
+                    ) { Overlay(app, shell, overlay) }
+                }
             }
 
             // The tour's spotlight over the tour's screens, bars included; not over a screen or
@@ -155,7 +198,8 @@ fun AppShell(app: AppModel) {
         }
 
         shell.sheet?.let { sheet ->
-            ModalBottomSheet(onDismissRequest = { shell.sheet = null }) {
+            // On the grouped pages' color, so the sheets' segmented lists and cards show.
+            ModalBottomSheet(onDismissRequest = { shell.sheet = null }, containerColor = GroupedBackground) {
                 when (sheet) {
                     is Destination.CardInfo -> OpenDocument(app, sheet.entryId) { CardInfoSheet(app, it, sheet.node) }
                     is Destination.StudyOptions -> OpenDocument(app, sheet.entryId) {
@@ -188,6 +232,7 @@ private fun LibraryPanes(
     app: AppModel,
     shell: ShellModel,
     directive: androidx.compose.material3.adaptive.layout.PaneScaffoldDirective,
+    backProgress: Float?,
 ) {
     val top = shell.top
     val back: () -> Unit = shell::back
@@ -204,15 +249,41 @@ private fun LibraryPanes(
         adaptStrategies = ListDetailPaneScaffoldDefaults.adaptStrategies(),
         destinationHistory = history,
     )
+    // Material's predictive back for the panes: while the back gesture is in progress the
+    // scaffold seeks toward the panes under the top screen (a fraction of the way, eased, as
+    // Material's navigator seeks), animates there when it completes and back when cancelled.
+    val previous = if (shell.stack.isEmpty()) null else calculateThreePaneScaffoldValue(
+        maxHorizontalPartitions = directive.maxHorizontalPartitions,
+        adaptStrategies = ListDetailPaneScaffoldDefaults.adaptStrategies(),
+        destinationHistory = history.dropLast(1),
+    )
+    val scaffoldState = remember { MutableThreePaneScaffoldState(value) }
+    LaunchedEffect(value) { scaffoldState.animateTo(value) }
+    LaunchedEffect(backProgress, previous) {
+        when {
+            backProgress != null && previous != null && previous != value -> {
+                val fraction = PredictiveBackEasing.transform(backProgress) * if (directive.maxHorizontalPartitions == 1) 1f / 8f else 1f / 10f
+                scaffoldState.seekTo(fraction, previous, isPredictiveBackInProgress = true)
+            }
+            backProgress == null && scaffoldState.targetState != value -> scaffoldState.animateTo(value)
+        }
+    }
     val listShown = value[ListDetailPaneScaffoldRole.List] == PaneAdaptedValue.Expanded
     val detailShown = value[ListDetailPaneScaffoldRole.Detail] == PaneAdaptedValue.Expanded
     val extraShown = value[ListDetailPaneScaffoldRole.Extra] == PaneAdaptedValue.Expanded
 
+    // Three panes (a large window): the list and the overview at preferred widths near the
+    // iPad's columns, the statistics the rest of the window, so its cards have room. Material
+    // gives the space left to the detail pane (the overview), so the extra pane asks for it.
+    val threePanes = listShown && detailShown && extraShown
+    BoxWithConstraints(Modifier.fillMaxSize().background(GroupedBackground)) {
+    val spacer = directive.horizontalPartitionSpacerSize
+    val extraWidth = (maxWidth - LibraryListWidth - LibraryDetailWidth - spacer * 2).coerceAtLeast(directive.defaultPanePreferredWidth)
     ListDetailPaneScaffold(
         directive = directive,
-        value = value,
+        scaffoldState = scaffoldState,
         listPane = {
-            AnimatedPane {
+            AnimatedPane(if (threePanes) Modifier.preferredWidth(LibraryListWidth) else Modifier) {
                 LibraryScreen(
                     app,
                     selectedEntryId = if (detailShown) shell.selectedEntryId else null,
@@ -222,7 +293,7 @@ private fun LibraryPanes(
             }
         },
         detailPane = {
-            AnimatedPane {
+            AnimatedPane(if (threePanes) Modifier.preferredWidth(LibraryDetailWidth) else Modifier) {
                 when {
                     top == null -> TodayPane(app, statisticsInline = !extraShown, navigate = navigate)
                     else -> Screen(app, top, BoardPane.Whole, navigate, if (listShown) null else back, statisticsInline = shell.wide && !extraShown)
@@ -230,7 +301,7 @@ private fun LibraryPanes(
             }
         },
         extraPane = {
-            AnimatedPane {
+            AnimatedPane(if (threePanes) Modifier.preferredWidth(extraWidth) else Modifier) {
                 when {
                     top == null -> StatisticsScreen(app, StatisticsScope.All, inline = true, navigate = navigate, paneTitle = true)
                     top.role == ListDetailPaneScaffoldRole.Detail -> StatisticsScreen(
@@ -246,7 +317,17 @@ private fun LibraryPanes(
             }
         },
     )
+    }
 }
+
+/** Material's predictive back easing (the navigator's), for the gesture's progress. */
+private val PredictiveBackEasing = CubicBezierEasing(0.1f, 0.1f, 0f, 1f)
+
+/** The library's list pane on a large window (iPad's sidebar is 260). */
+private val LibraryListWidth = 320.dp
+
+/** The overview or Today beside it (iPad's middle column is 380); the statistics take the rest. */
+private val LibraryDetailWidth = 380.dp
 
 /**
  * A board screen on a wide window: Material's list-detail layout, as on iPad. The panel (what you
