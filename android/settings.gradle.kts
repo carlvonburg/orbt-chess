@@ -1,5 +1,5 @@
 // ORBT Chess for Android, Windows and Linux: one Compose Multiplatform app over the Rust core
-// (see FUTURE.md). `core` holds the generated Kotlin bindings; `app` is the app's shared code
+// (see docs/PLATFORMS.md). `core` holds the generated Kotlin bindings; `app` is the app's shared code
 // (a Kotlin Multiplatform library) and the desktop app; `androidApp` is the Android app.
 pluginManagement {
     repositories {

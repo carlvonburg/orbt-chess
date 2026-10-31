@@ -6,8 +6,8 @@ Users see "ORBT Chess" (display and bundle name); code, folders and identifiers 
 
 Open-source (AGPL-3.0), subscription-free alternative to Chessbook for iPhone, iPad and Mac.
 A Rust core shared by every platform, with a SwiftUI app (iOS/iPadOS 26 and native macOS 26,
-Liquid Glass) on top. Repertoires are PGN files in iCloud Drive; opponent statistics come from
-the Lichess opening explorer. Later platforms and sync are in `FUTURE.md`.
+Liquid Glass) on top. Repertoires are PGN files in iCloud Drive (or synced with Dropbox or Google Drive); opponent
+statistics come from the Lichess opening explorer. Platforms and sync: `docs/PLATFORMS.md`.
 
 ## How the owner uses the app (product guidance — every feature serves this)
 1. Read a book or watch a video on an opening.
@@ -104,8 +104,8 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   - `OpeningCoreRust/` — Swift package over the Rust core: the xcframework (built, not
     committed), the generated `opening_core.swift` (never edit by hand) and `Additions.swift`
     (hand-written conveniences: names, conformances; no rules).
-- `android/` — Gradle project for Android, Windows and Linux (Compose Multiplatform; the app
-  itself comes in step 3 of `FUTURE.md`), in AGP 9's layout for Kotlin Multiplatform: `core/`
+- `android/` — Gradle project for Android, Windows and Linux (Compose Multiplatform,
+  `docs/PLATFORMS.md`), in AGP 9's layout for Kotlin Multiplatform: `core/`
   and `app/` are KMP libraries (`com.android.kotlin.multiplatform.library`), `androidApp/` the
   Android app. `core/` holds the generated `opening_core.kt` (committed, never edited by hand)
   and `jvmTest/SmokeTest.kt`, the parallel of the Swift smoke test. `app/` is the shared app
@@ -144,7 +144,7 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   (how: `android/app/build.gradle.kts`). Change them with the icon.
 - `testData/` — ignored by git: personal repertoires for testing by hand and timing
   (`ORBT_LARGE_PGN`). Never committed.
-- `FUTURE.md` — native only: Compose for Android, Windows and Linux; Google Drive and Dropbox; why no web app.
+- `docs/PLATFORMS.md` — native only: Compose for Android, Windows and Linux; storage and the Google Drive and Dropbox connectors; why no web app.
 
 ## Transpositions (see `repertoire::tree`, `RepertoireTree::merge`)
 Each position's lines are stored once. When a PGN move order reaches a position whose

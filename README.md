@@ -53,7 +53,8 @@ request.
 - `android/`: the Android, Windows and Linux app (Compose Multiplatform).
 - `website/`: orbtchess.org.
 - `Design/`: the app icon, colors and App Store material.
-- `FUTURE.md`: what could come next (Android, Windows and Linux; Google Drive and Dropbox).
+- `docs/PLATFORMS.md`: why native apps only, where each platform keeps the repertoires, and how
+  Google Drive and Dropbox sync.
 
 `CLAUDE.md` describes the design in detail: the rules, where each one lives, and the
 conventions.
