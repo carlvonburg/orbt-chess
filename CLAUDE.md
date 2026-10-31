@@ -10,8 +10,10 @@ Liquid Glass) on top. Repertoires are PGN files in iCloud Drive (or synced with 
 statistics come from the Lichess opening explorer. Platforms and sync: `docs/PLATFORMS.md`.
 
 ## How the owner uses the app (product guidance — every feature serves this)
-1. Read a book or watch a video on an opening.
-2. Enter its moves, including the opponent responses and the branches it explains.
+1. Build an opening, from scratch or from any source: the explorer shows what people play,
+   how it scores and the engine's evaluation, so a repertoire can be built in the app alone;
+   a book, a video or an imported PGN is one way in, not the way.
+2. Enter the moves, including the opponent responses and the branches that matter.
 3. When unsure why a move fails for the opponent, open the position on the analysis board
    (one tap, keeps the move history; Stockfish on the device, Lichess one more tap away).
 4. Come back and add the crucial lines they personally want to cover.
