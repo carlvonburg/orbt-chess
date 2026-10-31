@@ -1,5 +1,6 @@
 package org.orbtchess.orbt.platform
 
+import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
@@ -28,6 +29,7 @@ fun androidPlatform(context: Context): PlatformServices {
         openUrl = { url -> openInCustomTab(app, url) },
         authBrowser = CustomTabAuthBrowser(app),
         syncAuth = AndroidSyncAuth(app, BuildConfig.DROPBOX_APP_KEY),
+        storeReview = PlayReview(app as Application),
     )
 }
 

@@ -60,4 +60,18 @@ class PlatformServices(
     val processors: Int = Runtime.getRuntime().availableProcessors(),
     /** Dropbox and Google Drive sign-ins (Android, the desktop). */
     val syncAuth: SyncAuth = NoSyncAuth,
+    /** The store's rating prompt (Google Play's In-App Review); null where there is none (the desktop). */
+    val storeReview: StoreReview? = null,
 )
+
+/** The store the app came from, to ask for a rating (`requestReview` in the Swift app). */
+interface StoreReview {
+    /** The app's version: a rating is asked once per version. */
+    val version: String
+
+    /** The store's page of the app, where Settings' Rate ORBT Chess goes. */
+    val pageUrl: String
+
+    /** Shows the store's prompt; the store decides whether it appears. */
+    fun request()
+}

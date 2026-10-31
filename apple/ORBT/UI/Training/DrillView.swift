@@ -249,6 +249,7 @@ struct DrillView: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @Environment(\.openScreen) private var openScreen
     @Environment(\.openAnalysis) private var openAnalysis
+    @Environment(\.requestReview) private var requestReview
     let model: DrillModel
     @State private var browsing: BrowseRequest?
 
@@ -281,6 +282,13 @@ struct DrillView: View {
                 model.start()
             }
             .onChange(of: voiceOver) { model.autoAdvance = !voiceOver }
+            .onChange(of: model.answeredCount) { ReviewPrompt.studied() }
+            // At a line's end, which then waits for Next rather than starting under the prompt.
+            .onChange(of: model.phase) {
+                guard model.phase == .lineDone, ReviewPrompt.isDue else { return }
+                model.pause()
+                ReviewPrompt.ask(requestReview)
+            }
         // Browsing or Analysis pushed on top stops the opponent's moves; training goes on (or
         // waits for Next at a line's end) when it's popped, as the task runs again.
         .onDisappear { if browsing == nil { model.stop() } }

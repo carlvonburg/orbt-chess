@@ -60,4 +60,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     // Google Drive sign-in (Identity's AuthorizationClient, the drive.file scope).
     implementation("com.google.android.gms:play-services-auth:21.4.0")
+    // Asking for a rating in the Play Store (In-App Review).
+    implementation("com.google.android.play:review:2.0.2")
 }

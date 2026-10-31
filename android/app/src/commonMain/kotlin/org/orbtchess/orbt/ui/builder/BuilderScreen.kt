@@ -59,6 +59,7 @@ import org.orbtchess.orbt.ui.components.FloatingToolbarScaffold
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.Tooltip
 import org.orbtchess.orbt.ui.components.TooltipIconButton
+import org.orbtchess.orbt.ui.components.ReviewPrompt
 import org.orbtchess.orbt.ui.tour.TourGuide
 import org.orbtchess.orbt.ui.tour.TourScreen
 import org.orbtchess.orbt.ui.tour.tourTarget
@@ -90,7 +91,7 @@ fun BuilderScreen(
     onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val actions = BuilderActions(model, navigate, app.tour)
+    val actions = BuilderActions(model, navigate, app.tour, app.reviewPrompt)
     when (pane) {
         BoardPane.Whole -> WholeScreen(app, model, actions, onBack, modifier)
         BoardPane.List -> PanelScreen(app, model, actions, onBack, modifier)
@@ -105,7 +106,12 @@ fun BuilderScreen(
 }
 
 /** What the bars and menus do, the same in every pane. */
-private class BuilderActions(val model: BuilderModel, val navigate: (Destination) -> Unit, val tour: TourGuide) {
+private class BuilderActions(
+    val model: BuilderModel,
+    val navigate: (Destination) -> Unit,
+    val tour: TourGuide,
+    private val reviewPrompt: ReviewPrompt,
+) {
     private val document get() = model.document
 
     /** The bundled sample, where the tour's tips show. */
@@ -127,6 +133,7 @@ private class BuilderActions(val model: BuilderModel, val navigate: (Destination
             // `start`, it would also train the rest of the repertoire).
             model.go(first?.let { model.tree.childByUci(start, it) } ?: start)
         }
+        reviewPrompt.ask()
     }
 
     /** The analysis board on the position on the board; going back puts its line here as a draft. */

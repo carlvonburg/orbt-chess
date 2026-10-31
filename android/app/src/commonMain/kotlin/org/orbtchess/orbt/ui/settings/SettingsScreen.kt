@@ -24,7 +24,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
@@ -69,14 +72,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.PracticeMode
-import org.orbtchess.orbt.core.ROLLOVER_HOUR
 import org.orbtchess.orbt.core.practiceModeTitle
 import org.orbtchess.orbt.engine.EngineDefaults
 import org.orbtchess.orbt.engine.EngineNetwork
-import org.orbtchess.orbt.storage.TrainingDefaults
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
-import org.orbtchess.orbt.ui.components.Format
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.tabularDigits
 import org.orbtchess.orbt.ui.library.startTour
@@ -89,8 +89,8 @@ import org.orbtchess.orbt.ui.theme.color
 import org.orbtchess.orbt.ui.theme.systemDynamicColorScheme
 
 /**
- * The app's settings (`SettingsView.swift`): Lichess account, sync, study defaults, scheduling, app
- * color, engine (search time, lines, cloud evals, the full network), data, about. Full window,
+ * The app's settings (`SettingsView.swift`): Lichess account, sync, study defaults, app color,
+ * engine (search time, lines, cloud evals, the full network), data, rating and starring, about. Full window,
  * as Android's settings screens: sections of list items, choices in dialogs.
  *
  * @param navigate [Destination.Acknowledgements] (About ORBT Chess).
@@ -122,7 +122,6 @@ fun SettingsScreen(
             LichessSection(app)
             if (app.sync.auth.providers.isNotEmpty()) SyncSection(app)
             StudyDefaultsSection(app)
-            SchedulingSection()
             Section("Appearance", footer = "Buttons, selection and the board.") { AppColorRow() }
             EngineSettingsSection(app)
             DataSection(app)
@@ -130,6 +129,7 @@ fun SettingsScreen(
                 onBack()
                 navigate(Destination.Library)
             })
+            SupportSection(app)
             Section(null) {
                 ListItem(
                     onClick = { navigate(Destination.Acknowledgements) },
@@ -270,15 +270,21 @@ private fun practiceDetail(mode: PracticeMode): String = when (mode) {
     PracticeMode.COMPLETE_LINES_ONCE_PER_SESSION -> "You play your moves the first time they come up; after that the app does."
 }
 
+/** Rate ORBT Chess in the store it came from (none on the desktop) and star it on GitHub. */
 @Composable
-private fun SchedulingSection() {
-    val preset = TrainingDefaults.preset
-    fun steps(minutes: List<Double>) = minutes.joinToString(" ") { if (it < 60) "${it.toInt()}m" else "${(it / 60).toInt()}h" }
-    Section("Scheduling", footer = "Anki's defaults with FSRS.") {
-        ValueRow("Learning steps", steps(preset.learnSteps))
-        ValueRow("Relearning steps", steps(preset.relearnSteps))
-        ValueRow("Desired retention", Format.percent(preset.desiredRetention))
-        ValueRow("Next day starts at", "$ROLLOVER_HOUR AM")
+private fun SupportSection(app: AppModel) {
+    val uri = LocalUriHandler.current
+    Section(null, footer = "ORBT Chess is free and open source. A rating or a star helps other players find it.") {
+        app.platform.storeReview?.let { store ->
+            ListItem(
+                onClick = { uri.openUri(store.pageUrl) },
+                leadingContent = { Icon(Icons.Outlined.StarOutline, contentDescription = null) },
+            ) { Text("Rate ORBT Chess") }
+        }
+        ListItem(
+            onClick = { uri.openUri(AppLinks.SOURCE) },
+            leadingContent = { Icon(Icons.Outlined.Code, contentDescription = null) },
+        ) { Text("Star on GitHub") }
     }
 }
 

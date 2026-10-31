@@ -10,6 +10,7 @@ struct BuilderView: View {
     @Environment(\.undoManager) private var undoManager
     @Environment(\.openScreen) private var openScreen
     @Environment(\.openAnalysis) private var openAnalysis
+    @Environment(\.requestReview) private var requestReview
     let model: BuilderModel
     let presentation: BuilderPresentation
 
@@ -174,6 +175,7 @@ struct BuilderView: View {
                         // (from `start`, it would also train the rest of the repertoire).
                         model.go(to: first.flatMap { model.tree.child(of: start, uci: $0) } ?? start)
                     }
+                    ReviewPrompt.ask(requestReview)
                 } label: {
                     Label(model.draft.count == 1 ? "Save" : "Save \(model.draft.count)", systemImage: "checkmark")
                 }

@@ -6,6 +6,8 @@ enum AppLinks {
     static let privacy = URL(string: "https://orbtchess.org/privacy")!
     static let support = URL(string: "https://orbtchess.org/support")!
     static let source = URL(string: "https://github.com/carlvonburg/orbt-chess")!
+    /// The App Store's page for writing a review (every platform: one app).
+    static let review = URL(string: "https://apps.apple.com/app/id6828347828?action=write-review")!
 
     static var version: String {
         let info = Bundle.main.infoDictionary

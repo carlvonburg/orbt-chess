@@ -48,17 +48,6 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    LabeledContent("Learning steps", value: steps(TrainingDefaults.preset.learnSteps))
-                    LabeledContent("Relearning steps", value: steps(TrainingDefaults.preset.relearnSteps))
-                    LabeledContent("Desired retention", value: Format.percent(TrainingDefaults.preset.desiredRetention))
-                    LabeledContent("Next day starts at", value: "\(SchedTiming.rolloverHour) AM")
-                } header: {
-                    Text("Scheduling")
-                } footer: {
-                    Text("Anki's defaults with FSRS.")
-                }
-
-                Section {
                     AppColorPicker()
                 } header: {
                     Text("Appearance")
@@ -102,6 +91,15 @@ struct SettingsView: View {
                     Text("Fills the gaps of a sample repertoire, adding it again if you deleted it.")
                 }
 
+                Section {
+                    Link(destination: AppLinks.review) { Label("Rate ORBT Chess", systemImage: "star") }
+                    Link(destination: AppLinks.source) {
+                        Label("Star on GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                    }
+                } footer: {
+                    Text("ORBT Chess is free and open source. A rating or a star helps other players find it.")
+                }
+
                 AboutSection()
             }
             .formStyle(.grouped)
@@ -121,10 +119,6 @@ struct SettingsView: View {
     private var storage: String {
         if let provider = model.sync.provider { return "On this device, synced with \(provider.title)" }
         return model.library.usesICloud ? "iCloud Drive › ORBT Chess" : "On this device"
-    }
-
-    private func steps(_ minutes: [Double]) -> String {
-        minutes.map { $0 < 60 ? "\(Int($0))m" : "\(Int($0 / 60))h" }.joined(separator: " ")
     }
 }
 

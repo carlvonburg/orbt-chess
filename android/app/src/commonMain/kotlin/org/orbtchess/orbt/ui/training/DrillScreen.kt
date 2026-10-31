@@ -132,6 +132,7 @@ fun DrillScreen(
             }
         }
         Haptics(model)
+        ReviewEffects(app, model)
     }
 
     val actions = DrillActions(model, navigate)
@@ -166,6 +167,23 @@ private fun Haptics(model: DrillModel) {
             is Feedback.Correct -> haptics.performHapticFeedback(HapticFeedbackType.Confirm)
             is Feedback.Wrong -> haptics.performHapticFeedback(HapticFeedbackType.Reject)
             else -> Unit
+        }
+    }
+}
+
+/**
+ * Days studied count towards asking for a rating ([org.orbtchess.orbt.ui.components.ReviewPrompt]),
+ * asked at a line's end, which then waits for Next rather than starting under the prompt.
+ */
+@Composable
+private fun ReviewEffects(app: AppModel, model: DrillModel) {
+    val answered = model.answeredCount
+    LaunchedEffect(answered) { if (answered > 0) app.reviewPrompt.studied() }
+    val phase = model.phase
+    LaunchedEffect(phase) {
+        if (phase == Phase.LINE_DONE && app.reviewPrompt.isDue) {
+            model.pause()
+            app.reviewPrompt.ask()
         }
     }
 }
