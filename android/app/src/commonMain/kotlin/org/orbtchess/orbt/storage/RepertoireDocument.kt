@@ -11,6 +11,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.orbtchess.orbt.core.BranchPoint
 import org.orbtchess.orbt.core.Card
 import org.orbtchess.orbt.core.Changes
 import org.orbtchess.orbt.core.CoverageGap
@@ -305,7 +306,10 @@ class RepertoireDocument private constructor(
         return core.suspendedCardEpds(node).toSet()
     }
 
-    fun openingBranches(): List<NodeId> = core.openingBranches()
+    fun branchPoint(from: NodeId = ROOT_NODE): BranchPoint {
+        revision
+        return core.branchPoint(from)
+    }
 
     /** How often each node is reached. */
     val reach: Map<NodeId, Double> get() { revision; return core.reach() }

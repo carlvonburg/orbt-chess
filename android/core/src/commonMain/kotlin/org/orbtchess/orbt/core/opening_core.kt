@@ -997,6 +997,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiredoc_all_nodes(
     ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiredoc_branch_point(
+    ): Int
     external fun uniffi_opening_core_checksum_method_repertoiredoc_can_undo(
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiredoc_card(
@@ -1066,8 +1068,6 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_opening_core_checksum_method_repertoiredoc_node_following(
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiredoc_nodes_at(
-    ): Int
-    external fun uniffi_opening_core_checksum_method_repertoiredoc_opening_branches(
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiredoc_opening_name(
     ): Int
@@ -1570,6 +1570,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiredoc_all_nodes(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_method_repertoiredoc_branch_point(`ptr`: Long,`from`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiredoc_can_undo(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
     external fun uniffi_opening_core_fn_method_repertoiredoc_card(`ptr`: Long,`epd`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -1639,8 +1641,6 @@ internal object UniffiLib {
     external fun uniffi_opening_core_fn_method_repertoiredoc_node_following(`ptr`: Long,`ucis`: RustBuffer.ByValue,`start`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiredoc_nodes_at(`ptr`: Long,`epd`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
-    ): RustBuffer.ByValue
-    external fun uniffi_opening_core_fn_method_repertoiredoc_opening_branches(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiredoc_opening_name(`ptr`: Long,`id`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -2698,6 +2698,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_all_nodes() and 0xFFFF) != 37426) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_branch_point() and 0xFFFF) != 20440) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_can_undo() and 0xFFFF) != 38298) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2801,9 +2804,6 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_nodes_at() and 0xFFFF) != 16352) {
-        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
-    }
-    if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_opening_branches() and 0xFFFF) != 25907) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_opening_name() and 0xFFFF) != 9062) {
@@ -10064,6 +10064,11 @@ public interface RepertoireDocInterface {
      */
     fun `allNodes`(): List<Node>
     
+    /**
+     * Where the line from `from` branches, for per-branch statistics.
+     */
+    fun `branchPoint`(`from`: kotlin.UInt): BranchPoint
+    
     fun `canUndo`(): kotlin.Boolean
     
     fun `card`(`epd`: Epd): Card?
@@ -10158,11 +10163,6 @@ public interface RepertoireDocInterface {
     fun `nodeFollowing`(`ucis`: List<kotlin.String>, `start`: kotlin.UInt): kotlin.UInt?
     
     fun `nodesAt`(`epd`: Epd): List<kotlin.UInt>
-    
-    /**
-     * The opening branches for per-branch statistics.
-     */
-    fun `openingBranches`(): List<kotlin.UInt>
     
     /**
      * The opening name of a node, or of its nearest ancestor, from stats already loaded.
@@ -10439,6 +10439,23 @@ open class RepertoireDoc: Disposable, AutoCloseable, RepertoireDocInterface
     UniffiLib.uniffi_opening_core_fn_method_repertoiredoc_all_nodes(
         it,
         _status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * Where the line from `from` branches, for per-branch statistics.
+     */override fun `branchPoint`(`from`: kotlin.UInt): BranchPoint {
+            return FfiConverterTypeBranchPoint.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiredoc_branch_point(
+        it,
+        
+        FfiConverterUInt.lower(`from`),_status)
 }
     }
     )
@@ -10952,22 +10969,6 @@ open class RepertoireDoc: Disposable, AutoCloseable, RepertoireDocInterface
         it,
         
         FfiConverterTypeEpd.lower(`epd`),_status)
-}
-    }
-    )
-    }
-    
-
-    
-    /**
-     * The opening branches for per-branch statistics.
-     */override fun `openingBranches`(): List<kotlin.UInt> {
-            return FfiConverterSequenceUInt.lift(
-    callWithHandle {
-    uniffiRustCall() { _status ->
-    UniffiLib.uniffi_opening_core_fn_method_repertoiredoc_opening_branches(
-        it,
-        _status)
 }
     }
     )
@@ -13143,6 +13144,82 @@ public object FfiConverterTypeBoardSquare: FfiConverterRustBuffer<BoardSquare> {
 
     override fun write(value: BoardSquare, buf: ByteBuffer) {
             FfiConverterUByte.write(value.`index`, buf)
+    }
+}
+
+
+
+data class Branch (
+    var `id`: kotlin.UInt
+    , 
+    var `text`: kotlin.String
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeBranch: FfiConverterRustBuffer<Branch> {
+    override fun read(buf: ByteBuffer): Branch {
+        return Branch(
+            FfiConverterUInt.read(buf),
+            FfiConverterString.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: Branch) = (
+            FfiConverterUInt.allocationSize(value.`id`) +
+            FfiConverterString.allocationSize(value.`text`)
+    )
+
+    override fun write(value: Branch, buf: ByteBuffer) {
+            FfiConverterUInt.write(value.`id`, buf)
+            FfiConverterString.write(value.`text`, buf)
+    }
+}
+
+
+
+data class BranchPoint (
+    var `point`: kotlin.UInt
+    , 
+    var `branches`: List<Branch>
+    
+){
+    
+
+    
+
+    
+    companion object
+}
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeBranchPoint: FfiConverterRustBuffer<BranchPoint> {
+    override fun read(buf: ByteBuffer): BranchPoint {
+        return BranchPoint(
+            FfiConverterUInt.read(buf),
+            FfiConverterSequenceTypeBranch.read(buf),
+        )
+    }
+
+    override fun allocationSize(value: BranchPoint) = (
+            FfiConverterUInt.allocationSize(value.`point`) +
+            FfiConverterSequenceTypeBranch.allocationSize(value.`branches`)
+    )
+
+    override fun write(value: BranchPoint, buf: ByteBuffer) {
+            FfiConverterUInt.write(value.`point`, buf)
+            FfiConverterSequenceTypeBranch.write(value.`branches`, buf)
     }
 }
 
@@ -20537,6 +20614,34 @@ public object FfiConverterSequenceTypeBoardSquare: FfiConverterRustBuffer<List<B
         buf.putInt(value.size)
         value.iterator().forEach {
             FfiConverterTypeBoardSquare.write(it, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterSequenceTypeBranch: FfiConverterRustBuffer<List<Branch>> {
+    override fun read(buf: ByteBuffer): List<Branch> {
+        val len = buf.getInt()
+        return List<Branch>(len) {
+            FfiConverterTypeBranch.read(buf)
+        }
+    }
+
+    override fun allocationSize(value: List<Branch>): ULong {
+        val sizeForLength = 4UL
+        val sizeForItems = value.map { FfiConverterTypeBranch.allocationSize(it) }.sum()
+        return sizeForLength + sizeForItems
+    }
+
+    override fun write(value: List<Branch>, buf: ByteBuffer) {
+        buf.putInt(value.size)
+        value.iterator().forEach {
+            FfiConverterTypeBranch.write(it, buf)
         }
     }
 }

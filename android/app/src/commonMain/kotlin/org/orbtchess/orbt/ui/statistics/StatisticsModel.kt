@@ -12,10 +12,12 @@ import org.orbtchess.orbt.core.Epd
 import org.orbtchess.orbt.core.GraphParts
 import org.orbtchess.orbt.core.GraphRange
 import org.orbtchess.orbt.core.Graphs
+import org.orbtchess.orbt.core.Progress
 import org.orbtchess.orbt.core.RetentionPeriod
 import org.orbtchess.orbt.core.TrueRetention
 import org.orbtchess.orbt.core.WeakMove
 import org.orbtchess.orbt.core.count
+import org.orbtchess.orbt.core.emptyTrueRetention
 import org.orbtchess.orbt.core.expectedRecall
 import org.orbtchess.orbt.core.retentionTable
 import org.orbtchess.orbt.core.schedTiming
@@ -122,13 +124,35 @@ class StatisticsModel {
         return document.tree.lineText(id).ifEmpty { "Starting position" }
     }
 
-    /** True retention for each opening branch, all time. */
-    fun retentionByBranch(): List<Pair<String, TrueRetention>> {
-        val document = document ?: return emptyList()
-        val graphs = graphs ?: return emptyList()
-        return document.openingBranches().mapNotNull { id ->
-            val r = graphs.retentionTable(document.cardEpds(id).toList())[RetentionPeriod.ALL_TIME]
-            if (r != null && r.count > 0) document.tree.lineText(id) to r else null
+    /**
+     * A reply where the line branches: its moves by Anki's groups and their true retention, all
+     * time; [branches] when the line branches again below it.
+     */
+    data class BranchRow(
+        val id: NodeId,
+        val text: String,
+        val progress: Progress,
+        val retention: TrueRetention,
+        val branches: Boolean,
+    )
+
+    /**
+     * Where the line from [from] branches (the core follows a single line until the opponent has
+     * more than one reply), and each reply's progress.
+     */
+    fun branches(from: NodeId): Pair<NodeId, List<BranchRow>> {
+        val document = document ?: return from to emptyList()
+        val graphs = graphs ?: return from to emptyList()
+        val point = document.branchPoint(from)
+        return point.point to point.branches.map { branch ->
+            BranchRow(
+                id = branch.id,
+                text = branch.text,
+                progress = document.learningProgress(branch.id),
+                retention = graphs.retentionTable(document.cardEpds(branch.id).toList())[RetentionPeriod.ALL_TIME]
+                    ?: emptyTrueRetention(),
+                branches = document.branchPoint(branch.id).branches.isNotEmpty(),
+            )
         }
     }
 

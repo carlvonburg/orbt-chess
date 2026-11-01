@@ -337,7 +337,10 @@ final class RepertoireDocument {
         return Set(core.suspendedCardEpds(root: node))
     }
 
-    func openingBranches() -> [NodeID] { core.openingBranches() }
+    func branchPoint(from node: NodeID = RepertoireTree.rootID) -> BranchPoint {
+        _ = revision
+        return core.branchPoint(from: node)
+    }
 
     /// How often each node is reached.
     var reach: [NodeID: Double] { _ = revision; return core.reach() }
