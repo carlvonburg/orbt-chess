@@ -61,6 +61,9 @@ One folder per platform around a shared core (Android, Windows and Linux would b
     dotprod and AVX2 on Apple, Stockfish's armv8 and x86-64-sse41-popcnt elsewhere; Android's
     arm64 also gets an armv8-dotprod copy of each flavour, started when `getauxval(AT_HWCAP)`
     has the dot product (`Simd`; upstream's arm64-universal build, see `vendor/PATCHES.md`).
+    Windows builds with MinGW (`x86_64-pc-windows-gnu`, as Stockfish's own Windows releases;
+    `core/.cargo/config.toml` links its runtime statically): the pipes are handles there,
+    and `bridge.cpp` opens the C runtime's descriptors on them.
   - `orbt-ffi/` — the UniFFI 0.32 bindings: objects (`RepertoireDoc`, `BuilderSession`,
     `DrillSession`, `Explorer`, `Engine`, `AnalysisSession`, `Position`, `Graphs`,
     `LibrarySidecar`, `RepertoireSync`) and the core's records and enums as remote types. Thin:
@@ -268,6 +271,10 @@ in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palett
      (`:androidApp:assembleDebug` builds the APK). It also builds
      the host's library, which `:app:run` and the packaged desktop app load from the app's
      resources (`copyHostLibrary`), and writes Android's `Acknowledgements.json`.
+  5. Windows and Linux packages: `.github/workflows/release.yml` on GitHub's machines (a
+     package is built on its own OS). A version tag (`v1.0.0`; `v1.0.1-beta.1` is a pre-release)
+     makes a draft release with the MSI, the .deb and their SHA-256 sums; pull requests build and
+     test both. The sync keys are repository secrets.
   A Claude Code hook (`.claude/hooks/check-before-commit.sh`) runs the ones a commit needs before
   every `git commit` and blocks it on failure: check.sh for `core/`, build-apple.sh for
   `core/orbt-ffi/` or Cargo.lock (the committed bindings must be up to date), the simulator build

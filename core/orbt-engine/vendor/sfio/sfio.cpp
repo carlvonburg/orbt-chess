@@ -6,7 +6,11 @@
 #include <cstring>
 #include <streambuf>
 
-#include <fcntl.h>
+#ifdef _WIN32
+  #include <io.h>
+#else
+  #include <fcntl.h>
+#endif
 #include <unistd.h>
 
 namespace SFIO_NAMESPACE {
@@ -174,8 +178,13 @@ bool bind(int read_fd, int write_fd) {
 
   // A closed descriptor would send this engine's output to whatever the process
   // opens on that number next, so refuse before committing to it.
+#ifdef _WIN32
+  if (::_get_osfhandle(read_fd) == -1 || ::_get_osfhandle(write_fd) == -1)
+      return false;
+#else
   if (::fcntl(read_fd, F_GETFD) == -1 || ::fcntl(write_fd, F_GETFD) == -1)
       return false;
+#endif
 
   Channel& c = channel();
 

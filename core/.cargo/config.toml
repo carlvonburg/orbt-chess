@@ -1,0 +1,5 @@
+# Windows builds with MinGW, as Stockfish's own Windows releases do (MSVC cannot embed the light
+# net with `.incbin`). The core's DLL must load on a PC without MinGW: orbt-engine's build.rs
+# links MinGW's C++ runtime statically, and crt-static does the same for libgcc's unwinder.
+[target.x86_64-pc-windows-gnu]
+rustflags = ["-C", "target-feature=+crt-static"]

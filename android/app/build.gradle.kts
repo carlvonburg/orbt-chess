@@ -124,16 +124,38 @@ compose.desktop {
             // The loopback redirect of the Lichess sign-in.
             modules("jdk.httpserver")
             packageName = "ORBT Chess"
-            packageVersion = "0.1.0"
+            // The same version as the Apple and Android apps (androidApp's versionName).
+            packageVersion = "1.0.0"
+            description = "Opening repertoire builder and trainer"
+            vendor = "ORBT Chess"
+            copyright = "© 2026 ORBT contributors, AGPL-3.0-or-later"
             // The app icon, Design/AppIcon-light.svg clipped to a rounded square (rx 224 of 1024):
             // rsvg-convert to 512 px for Linux (also the window's, Main.kt) and to 16-256 px,
             // joined by ImageMagick (`magick i16.png … i256.png orbt.ico`), for Windows.
-            linux { iconFile.set(project.file("src/desktopMain/resources/orbt-icon.png")) }
-            windows { iconFile.set(project.file("icons/orbt.ico")) }
+            linux {
+                iconFile.set(project.file("src/desktopMain/resources/orbt-icon.png"))
+                // Debian's package names have no spaces or capitals; its section, and the menu's
+                // freedesktop.org categories.
+                packageName = "orbt-chess"
+                debMaintainer = "hello@orbtchess.org"
+                appCategory = "games"
+                menuGroup = "Game;BoardGame;Education;"
+            }
+            windows {
+                iconFile.set(project.file("icons/orbt.ico"))
+                // Fixed for good: an MSI with another upgrade code installs next to the old
+                // version instead of replacing it.
+                upgradeUuid = "6C639E66-96EC-4A95-AB45-C4660E572E00"
+                // For the user who installs it, without an administrator; in the Start menu and
+                // on the desktop.
+                perUserInstall = true
+                menu = true
+                menuGroup = "ORBT Chess"
+                shortcut = true
+            }
             // On a Mac only to try the Windows and Linux app (the Mac's own is the SwiftUI app):
-            // its packager wants a version from 1, and a bundle id apart from the Mac app's.
+            // a bundle id apart from the Mac app's.
             macOS {
-                packageVersion = "1.0.0"
                 bundleID = "org.orbtchess.orbt.desktop"
             }
         }

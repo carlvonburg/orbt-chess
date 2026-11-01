@@ -12,8 +12,15 @@
   GPL-3.0-or-later, see ../vendor/stockfish/Copying.txt.
 */
 
+#include <cstdint>
 #include <mutex>
 #include <utility>
+
+#ifdef _WIN32
+    #include <fcntl.h>
+    #include <io.h>
+    #include <windows.h>
+#endif
 
 #include "attacks.h"
 #include "bitboard.h"
@@ -47,7 +54,7 @@ static void run_static_initializers() {
 
 // Runs the engine's UCI loop on the calling thread until it reads "quit" or the end of its
 // input. Returns 0, or -1 if the descriptors cannot be used.
-extern "C" int ORBT_SF_MAIN(int read_fd, int write_fd) {
+static int orbt_sf_run(int read_fd, int write_fd) {
     using namespace SFIO_NAMESPACE;
 
 #ifdef ORBT_SF_INIT
@@ -65,6 +72,11 @@ extern "C" int ORBT_SF_MAIN(int read_fd, int write_fd) {
     char  name[] = "stockfish";
     char* argv[] = {name, nullptr};
     auto  cli    = CommandLine(1, argv);
+    // On Windows the constructor reads the host process's own command line instead (the app's,
+    // or java's with all its arguments), which the UCI loop would run as a one-shot command and
+    // then quit. This engine has no command line.
+    cli.argc = 1;
+    cli.argv = argv;
     {
         UCIEngine uci(std::move(cli));
         Tune::init(uci.engine_options());
@@ -73,3 +85,31 @@ extern "C" int ORBT_SF_MAIN(int read_fd, int write_fd) {
     sfio::out() << std::flush;
     return 0;
 }
+
+#ifdef _WIN32
+// Windows hands over the two pipe handles (orbt-engine's lib.rs): this C runtime opens its own
+// descriptors on them, so they are the ones the engine's read() and write() know, and closes
+// them (and so the handles) when the loop returns.
+extern "C" int ORBT_SF_MAIN(intptr_t read_handle, intptr_t write_handle) {
+    const int read_fd = _open_osfhandle(read_handle, _O_RDONLY | _O_BINARY);
+    if (read_fd == -1)
+    {
+        CloseHandle(reinterpret_cast<HANDLE>(read_handle));
+        CloseHandle(reinterpret_cast<HANDLE>(write_handle));
+        return -1;
+    }
+    const int write_fd = _open_osfhandle(write_handle, _O_WRONLY | _O_BINARY);
+    if (write_fd == -1)
+    {
+        _close(read_fd);
+        CloseHandle(reinterpret_cast<HANDLE>(write_handle));
+        return -1;
+    }
+    const int result = orbt_sf_run(read_fd, write_fd);
+    _close(read_fd);
+    _close(write_fd);
+    return result;
+}
+#else
+extern "C" int ORBT_SF_MAIN(int read_fd, int write_fd) { return orbt_sf_run(read_fd, write_fd); }
+#endif

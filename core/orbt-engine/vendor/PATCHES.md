@@ -22,7 +22,14 @@ is given, and `../build.rs`.
 
 ## Our change to the trees
 
-There are none. One thing to keep in mind: the full flavour calls `exit()` when its net
+One, for Windows (MinGW): `sfio/sfio.cpp` checks that a descriptor is open with
+`_get_osfhandle` there instead of `fcntl`, which Windows lacks. On Windows the app passes pipe
+handles, and `bridge.cpp` opens this C runtime's descriptors on them (`_open_osfhandle`).
+Also on Windows, `CommandLine`'s constructor (`misc.cpp`) replaces the arguments it is given with
+the process's own command line, which the UCI loop runs as a one-shot command before quitting;
+`bridge.cpp` sets `argc` and `argv` back after it, so the trees stay as they are.
+
+One thing to keep in mind: the full flavour calls `exit()` when its net
 fails to load (`Network::verify`). That would end the app, so `orbt_engine::network_is_valid`
 checks the file's SHA-256 against its name before the full flavour starts.
 

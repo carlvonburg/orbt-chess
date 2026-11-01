@@ -218,7 +218,8 @@ class RepertoireLibrary(folder: File, private val scope: CoroutineScope) {
             if (!sameFile && (newPgn.exists() || newSidecar.exists())) {
                 throw RepertoireFileException(RepertoireFileException.Reason.EXISTS)
             }
-            if (newPgn != pgn) {
+            // As written: File equality ignores case on Windows.
+            if (newPgn.path != pgn.path) {
                 FileAccess.move(pgn, newPgn)
                 try {
                     FileAccess.move(sidecar, newSidecar)

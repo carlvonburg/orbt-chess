@@ -13,6 +13,7 @@ import org.orbtchess.orbt.core.defaultStudyDefaults
 import org.orbtchess.orbt.core.newSidecar
 import org.orbtchess.orbt.core.nowTimestamp
 import java.io.File
+import java.nio.file.FileSystems
 import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -56,6 +57,14 @@ class FolderWatcherTest {
 
     private fun sidecar(): ByteArray =
         newSidecar("test", Side.WHITE, databaseDefaultLichess(), 100, nowTimestamp())
+
+    /** The file's inode where the system has one (not on Windows, whose Java has no file id). */
+    private fun inode(file: File): Any? =
+        if ("unix" in FileSystems.getDefault().supportedFileAttributeViews()) {
+            Files.getAttribute(file.toPath(), "unix:ino")
+        } else {
+            null
+        }
 
     private suspend fun CoroutineScope.watched(): Pair<Documents, FolderWatcher> {
         val docs = Documents(RepertoireLibrary(folder, this), explorer, { defaultStudyDefaults() }, this)
@@ -118,11 +127,11 @@ class FolderWatcherTest {
     fun savesInPlace() {
         val file = File(folder, "Italian.pgn")
         FileAccess.write(E4.toByteArray(), file)
-        val id = Files.getAttribute(file.toPath(), "unix:ino")
+        val id = inode(file)
         FileAccess.write("short".toByteArray(), file)
         assertEquals("short", file.readText())
         // The same file, not a new one renamed over it: Google Drive keeps its id.
-        assertEquals(id, Files.getAttribute(file.toPath(), "unix:ino"))
+        assertEquals(id, inode(file))
         assertTrue(journal.listFiles().orEmpty().isEmpty())
         assertFalse(folder.listFiles().orEmpty().any { it.name.startsWith(".") })
     }

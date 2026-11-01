@@ -49,13 +49,15 @@ class SmokeTest {
             threads = 1u
         }
         engine.analyse(Position.start().fen(), listOf("e2e4"), settings, System.currentTimeMillis().toULong())
-        repeat(40) {
+        // Until the search is done; CI's Windows machines start the engine slowly.
+        val deadline = System.currentTimeMillis() + 15_000
+        while (System.currentTimeMillis() < deadline) {
             val lines = engine.lines()
-            if (lines.lines.size >= 3 && !lines.searching) return@repeat
+            if (lines.lines.size >= 3 && !lines.searching) break
             Thread.sleep(100)
         }
         val shown = engine.lines()
-        assertEquals(3, shown.lines.size)
+        assertEquals(3, shown.lines.size, "after the search: $shown")
         assertEquals(EvalSource.LOCAL, shown.source)
         assertEquals("SF 19 · 1 MB", engine.name())
         engine.quit()

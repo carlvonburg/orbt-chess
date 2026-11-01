@@ -9,29 +9,42 @@
 //!
 //! On Android's arm64 each flavour is in the library twice, for ARMv8 and for ARMv8.2 with the
 //! dot product (`build.rs`), and the engine starts the one the CPU runs best (`Simd`).
+//!
+//! On Windows (MinGW) the pipes are Windows handles, and the engine's C runtime opens its own
+//! descriptors on them (`bridge.cpp`).
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read, Write};
+#[cfg(unix)]
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
+#[cfg(windows)]
+use std::os::windows::io::{FromRawHandle, IntoRawHandle, OwnedHandle, RawHandle};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::JoinHandle;
 
 use sha2::{Digest, Sha256};
 
+/// What a flavour's UCI loop reads and writes: a descriptor, or on Windows a handle
+/// (`intptr_t`).
+#[cfg(unix)]
+type Endpoint = libc::c_int;
+#[cfg(windows)]
+type Endpoint = isize;
+
 unsafe extern "C" {
-    fn orbt_sf_light_main(read_fd: libc::c_int, write_fd: libc::c_int) -> libc::c_int;
-    fn orbt_sf_full_main(read_fd: libc::c_int, write_fd: libc::c_int) -> libc::c_int;
+    fn orbt_sf_light_main(read: Endpoint, write: Endpoint) -> libc::c_int;
+    fn orbt_sf_full_main(read: Endpoint, write: Endpoint) -> libc::c_int;
 }
 
 #[cfg(all(target_os = "android", target_arch = "aarch64"))]
 unsafe extern "C" {
-    fn orbt_sf_light_dotprod_main(read_fd: libc::c_int, write_fd: libc::c_int) -> libc::c_int;
-    fn orbt_sf_full_dotprod_main(read_fd: libc::c_int, write_fd: libc::c_int) -> libc::c_int;
+    fn orbt_sf_light_dotprod_main(read: Endpoint, write: Endpoint) -> libc::c_int;
+    fn orbt_sf_full_dotprod_main(read: Endpoint, write: Endpoint) -> libc::c_int;
 }
 
-/// A flavour's UCI loop on the descriptors it is given.
-type EngineMain = unsafe extern "C" fn(libc::c_int, libc::c_int) -> libc::c_int;
+/// A flavour's UCI loop on the pipe ends it is given.
+type EngineMain = unsafe extern "C" fn(Endpoint, Endpoint) -> libc::c_int;
 
 /// Which copy of Stockfish runs: on Android's arm64 the library holds two (`build.rs`); every
 /// other target has one, compiled for what all its devices have.
@@ -165,6 +178,7 @@ pub struct Stockfish {
     reader: Option<JoinHandle<()>>,
 }
 
+#[cfg(unix)]
 fn pipe() -> Result<(OwnedFd, OwnedFd), EngineError> {
     let mut fds = [0 as libc::c_int; 2];
     // SAFETY: `fds` has room for the two descriptors pipe() writes.
@@ -173,6 +187,52 @@ fn pipe() -> Result<(OwnedFd, OwnedFd), EngineError> {
     }
     // SAFETY: pipe() succeeded, so both descriptors are open and owned by nobody else.
     Ok(unsafe { (OwnedFd::from_raw_fd(fds[0]), OwnedFd::from_raw_fd(fds[1])) })
+}
+
+/// An anonymous pipe: synchronous handles, which the engine's C runtime can read and write.
+#[cfg(windows)]
+fn pipe() -> Result<(OwnedHandle, OwnedHandle), EngineError> {
+    unsafe extern "system" {
+        fn CreatePipe(
+            read: *mut RawHandle,
+            write: *mut RawHandle,
+            attributes: *const std::ffi::c_void,
+            size: u32,
+        ) -> i32;
+    }
+    let mut read: RawHandle = std::ptr::null_mut();
+    let mut write: RawHandle = std::ptr::null_mut();
+    // SAFETY: CreatePipe writes the two handles it creates; no attributes, the default size.
+    if unsafe { CreatePipe(&mut read, &mut write, std::ptr::null(), 0) } == 0 {
+        return Err(std::io::Error::last_os_error().into());
+    }
+    // SAFETY: CreatePipe succeeded, so both handles are open and owned by nobody else.
+    Ok(unsafe {
+        (
+            OwnedHandle::from_raw_handle(read),
+            OwnedHandle::from_raw_handle(write),
+        )
+    })
+}
+
+/// Runs the UCI loop on the engine's ends of the pipes, and closes them when it returns, which
+/// ends the reader with an end of file.
+#[cfg(unix)]
+fn run_engine(main: EngineMain, input: OwnedFd, output: OwnedFd) {
+    // SAFETY: both descriptors stay open until the loop returns; they are dropped after it.
+    unsafe { main(input.as_raw_fd(), output.as_raw_fd()) };
+}
+
+#[cfg(windows)]
+fn run_engine(main: EngineMain, input: OwnedHandle, output: OwnedHandle) {
+    // SAFETY: the handles are open and passed on: the engine opens descriptors on them and
+    // closes them when the loop returns (bridge.cpp).
+    unsafe {
+        main(
+            input.into_raw_handle() as Endpoint,
+            output.into_raw_handle() as Endpoint,
+        )
+    };
 }
 
 impl Stockfish {
@@ -217,11 +277,7 @@ impl Stockfish {
             .name("stockfish".into())
             .stack_size(ENGINE_STACK)
             .spawn(move || {
-                // SAFETY: both descriptors stay open until the loop returns; they are closed
-                // below, which ends the reader with an end of file.
-                unsafe { main(command_read.as_raw_fd(), output_write.as_raw_fd()) };
-                drop(command_read);
-                drop(output_write);
+                run_engine(main, command_read, output_write);
                 running.store(false, Ordering::Release);
             });
         let engine = match engine {

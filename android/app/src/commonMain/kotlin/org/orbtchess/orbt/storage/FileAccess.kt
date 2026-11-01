@@ -140,11 +140,12 @@ object FileAccess {
 
     /** Moves a file; fails when `destination` exists, unless it is the same file under another
      *  case (a case-only rename on a case-insensitive volume, done through a temporary name:
-     *  `Files.move` does nothing when both paths are the same file). */
+     *  `Files.move` does nothing when both paths are the same file). Paths are compared as
+     *  written: Windows' path equality ignores case, which would skip a case-only rename. */
     fun move(file: File, destination: File) {
         val from = file.toPath()
         val to = destination.toPath()
-        if (from == to) return
+        if (file.path == destination.path) return
         if (Files.exists(to) && Files.isSameFile(from, to)) {
             val temp = File(file.parentFile, ".${file.name}.${System.nanoTime()}.moving").toPath()
             Files.move(from, temp)

@@ -152,8 +152,10 @@ class SyncServiceTest {
         assertEquals("me@example.com", app.sync.account)
         assertContentEquals(local("Italian.pgn"), server.files.getValue("Italian.pgn").data)
         assertContentEquals(local("Italian.otrep.json"), server.files.getValue("Italian.otrep.json").data)
-        // The state names what was uploaded.
-        assertTrue(File(root, "Sync-dropbox.json").readText().contains("Italian.pgn"))
+        // The state names what was uploaded; it is saved once the last answer is applied, a
+        // moment after the server is done.
+        val state = File(root, "Sync-dropbox.json")
+        until("the state is saved") { state.exists() && state.readText().contains("Italian.pgn") }
     }
 
     @Test

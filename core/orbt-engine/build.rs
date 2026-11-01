@@ -45,6 +45,10 @@ fn configure(dir: &str, function: &str, embedded_net: bool, isa: Isa) -> cc::Bui
     sources(&root.join("src"), &mut files);
 
     let mut build = cc::Build::new();
+    if windows_gnu() {
+        // Linked statically in main(): cc's own directive would link it as a DLL.
+        build.cpp_link_stdlib(None);
+    }
     build
         .cpp(true)
         .std("c++17")
@@ -124,6 +128,12 @@ fn isa() -> Isa {
         Ok("x86_64") => Isa::X86Sse41,
         _ => Isa::Generic,
     }
+}
+
+/// Windows with MinGW (`x86_64-pc-windows-gnu`).
+fn windows_gnu() -> bool {
+    std::env::var("CARGO_CFG_TARGET_OS").is_ok_and(|os| os == "windows")
+        && std::env::var("CARGO_CFG_TARGET_ENV").is_ok_and(|env| env == "gnu")
 }
 
 /// Android's arm64: both copies in one library, chosen at run time.
@@ -222,6 +232,16 @@ fn flavour(name: &str, dir: &str, function: &str, embedded_net: bool) {
 fn main() {
     println!("cargo:rerun-if-changed=vendor");
     println!("cargo:rerun-if-changed=bridge");
+    // Stockfish on Windows (misc.cpp): large pages adjust the process token's privileges, and
+    // the command line is split with CommandLineToArgvW.
+    if std::env::var("CARGO_CFG_TARGET_OS").is_ok_and(|os| os == "windows") {
+        println!("cargo:rustc-link-lib=advapi32");
+        println!("cargo:rustc-link-lib=shell32");
+    }
+    // MinGW's C++ runtime goes into the core's DLL: Windows PCs have no libstdc++-6.dll.
+    if windows_gnu() {
+        println!("cargo:rustc-link-lib=static:-bundle=stdc++");
+    }
     flavour(
         "orbt_stockfish_light",
         "stockfish-light",

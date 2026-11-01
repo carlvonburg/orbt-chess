@@ -1,0 +1,205 @@
+# The Windows and Linux app, built on GitHub's machines: Compose packages only for the OS it runs
+# on, and the core's library is built per OS. A version tag (v1.0.0; v1.0.1-beta.1 is a
+# pre-release) builds both packages into a draft release with their SHA-256 sums; a pull request
+# or a manual run builds and tests them without a release (the packages are the run's artifacts).
+# The sync keys come from repository secrets (ORBT_DROPBOX_APP_KEY, ORBT_DRIVE_DESKTOP_CLIENT_ID,
+# ORBT_DRIVE_DESKTOP_CLIENT_SECRET); without them the app offers no Dropbox or Google Drive.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths: ["core/**", "android/**", ".github/workflows/release.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Core checks
+    # Apple silicon, where the snapshots are recorded (the commit hook runs check.sh there):
+    # glibc's and Windows' math differ from Apple's in f32's last digit, which the scheduler
+    # snapshots print. Linux and Windows run the engine's and the JVM tests below.
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+      # fmt, clippy, the tests, the wasm32 check, cargo deny.
+      - run: core/scripts/check.sh
+
+  linux:
+    name: Linux (.deb)
+    needs: core
+    # glibc 2.35: the package runs on Ubuntu 22.04, Debian 12 and later.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v5
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+      - name: The core's library
+        working-directory: core
+        run: |
+          cargo build --release -p orbt-ffi
+          mkdir -p ../android/core/build/host
+          cp target/release/libopening_core.so ../android/core/build/host/
+      - name: JVM tests
+        working-directory: android
+        run: xvfb-run -a ./gradlew --no-daemon :core:jvmTest :app:desktopTest
+      - name: Test reports
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-reports-linux
+          path: android/*/build/reports/tests/
+      - name: Package
+        working-directory: android
+        env:
+          DROPBOX_APP_KEY: ${{ secrets.ORBT_DROPBOX_APP_KEY }}
+          DRIVE_CLIENT_ID: ${{ secrets.ORBT_DRIVE_DESKTOP_CLIENT_ID }}
+          DRIVE_CLIENT_SECRET: ${{ secrets.ORBT_DRIVE_DESKTOP_CLIENT_SECRET }}
+        run: |
+          ./gradlew --no-daemon :app:packageDeb \
+            "-Porbt.dropboxAppKey=$DROPBOX_APP_KEY" \
+            "-Porbt.driveDesktopClientId=$DRIVE_CLIENT_ID" \
+            "-Porbt.driveDesktopClientSecret=$DRIVE_CLIENT_SECRET"
+          mkdir -p ../dist
+          # A fixed name, so releases/latest/download/… links never change.
+          cp app/build/compose/binaries/main/deb/*.deb ../dist/orbt-chess_amd64.deb
+      - uses: actions/upload-artifact@v6
+        with:
+          name: linux
+          path: dist/
+
+  windows:
+    name: Windows (MSI)
+    needs: core
+    runs-on: windows-2022
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+      # MinGW, as Stockfish's own Windows builds (core/.cargo/config.toml links it statically):
+      # MSYS2's MINGW64, whose C runtime (msvcrt) is the one Rust's x86_64-pc-windows-gnu
+      # links, named by absolute path (the image's own C:\mingw64 is another build).
+      - uses: msys2/setup-msys2@v2
+        id: msys2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-gdb
+      - name: MinGW
+        run: |
+          bin="$(cygpath -u '${{ steps.msys2.outputs.msys2-location }}')/mingw64/bin"
+          # GITHUB_PATH takes Windows paths: cargo and the compiler are Windows programs.
+          cygpath -w "$bin" >> "$GITHUB_PATH"
+          {
+            echo "CARGO_TARGET_X86_64_PC_WINDOWS_GNU_LINKER=$(cygpath -w "$bin/gcc.exe")"
+            echo "CC_x86_64_pc_windows_gnu=$(cygpath -w "$bin/gcc.exe")"
+            echo "CXX_x86_64_pc_windows_gnu=$(cygpath -w "$bin/g++.exe")"
+            echo "AR_x86_64_pc_windows_gnu=$(cygpath -w "$bin/ar.exe")"
+          } >> "$GITHUB_ENV"
+          "$bin/gcc.exe" -v 2>&1 | tail -3
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v5
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+          key: windows-gnu-msys2
+      - name: The core's library
+        working-directory: core
+        run: |
+          # The MSYS2 compiler runs and comes first: fail here, in seconds, if not.
+          which gcc g++ objdump
+          echo "int main() {}" | "$CXX_x86_64_pc_windows_gnu" -x c++ -fsyntax-only -
+          rustup target add x86_64-pc-windows-gnu
+          cargo clippy -p orbt-engine -p orbt-ffi --target x86_64-pc-windows-gnu -- -D warnings
+          # Stockfish over Windows' pipes, for real; a crash is run again under gdb for its stack.
+          # Arguments of its own, as the app's process has: Stockfish reads the process's command
+          # line on Windows (bridge.cpp).
+          if ! cargo test --release -p orbt-engine --target x86_64-pc-windows-gnu -- --test-threads=1; then
+            for test in target/x86_64-pc-windows-gnu/release/deps/stockfish-*.exe; do
+              gdb -batch -ex run -ex 'thread apply all bt 30' --args "$test" --nocapture --test-threads=1
+            done
+            exit 1
+          fi
+          cargo build --release -p orbt-ffi --target x86_64-pc-windows-gnu
+          dll=target/x86_64-pc-windows-gnu/release/opening_core.dll
+          # Only Windows' own DLLs, nothing of MinGW's: a PC without it must load the library.
+          objdump -p "$dll" | grep 'DLL Name'
+          if objdump -p "$dll" | grep -iE 'DLL Name: (libstdc|libgcc|libwinpthread)'; then exit 1; fi
+          mkdir -p ../android/core/build/host
+          cp "$dll" ../android/core/build/host/
+      - name: JVM tests
+        working-directory: android
+        run: ./gradlew --no-daemon :core:jvmTest :app:desktopTest
+      - name: Test reports
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-reports-windows
+          path: android/*/build/reports/tests/
+      - name: Package
+        working-directory: android
+        env:
+          DROPBOX_APP_KEY: ${{ secrets.ORBT_DROPBOX_APP_KEY }}
+          DRIVE_CLIENT_ID: ${{ secrets.ORBT_DRIVE_DESKTOP_CLIENT_ID }}
+          DRIVE_CLIENT_SECRET: ${{ secrets.ORBT_DRIVE_DESKTOP_CLIENT_SECRET }}
+        run: |
+          ./gradlew --no-daemon :app:packageMsi \
+            "-Porbt.dropboxAppKey=$DROPBOX_APP_KEY" \
+            "-Porbt.driveDesktopClientId=$DRIVE_CLIENT_ID" \
+            "-Porbt.driveDesktopClientSecret=$DRIVE_CLIENT_SECRET"
+          mkdir -p ../dist
+          cp app/build/compose/binaries/main/msi/*.msi ../dist/ORBT-Chess-windows-x64.msi
+      - uses: actions/upload-artifact@v6
+        with:
+          name: windows
+          path: dist/
+
+  release:
+    name: Draft release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, windows]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS.txt
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=()
+          [[ "$GITHUB_REF_NAME" == *-* ]] && prerelease=(--prerelease)
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" \
+            --draft --verify-tag --generate-notes "${prerelease[@]}" \
+            --title "ORBT Chess ${GITHUB_REF_NAME#v}"
