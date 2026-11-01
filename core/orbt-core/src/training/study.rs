@@ -5,8 +5,9 @@
 //!   the first move you play;
 //! - one line answers every queued card on it;
 //! - moves you play that aren't due are reviews ahead (filtered deck);
-//! - new cards are introduced a line at a time (most reached first), and a started line is
-//!   finished past the daily limit;
+//! - new cards are introduced a line at a time, each to its end with the most reached reply
+//!   at every opponent move: the most likely line anywhere next, or depth first (the new move
+//!   order); a started line is finished past the daily limit;
 //! - reviews due the same day are ordered by reach.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -48,6 +49,32 @@ impl PracticeMode {
             PracticeMode::IndividualMoves => "Individual moves",
             PracticeMode::CompleteLinesEveryTime => "Complete lines (every time)",
             PracticeMode::CompleteLinesOncePerSession => "Complete lines (once per session)",
+        }
+    }
+}
+
+/// Which line of new moves comes next (like Anki's new card gather order). Either way a line
+/// is learned to its end, the most reached reply at each opponent move.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum NewMoveOrder {
+    /// The line starting with the most reached opponent reply not learned yet, anywhere.
+    #[default]
+    MostLikelyFirst,
+    /// Depth first: every line below a branch before the next branch.
+    OneOpeningAtATime,
+}
+
+impl NewMoveOrder {
+    pub const ALL: [NewMoveOrder; 2] = [
+        NewMoveOrder::MostLikelyFirst,
+        NewMoveOrder::OneOpeningAtATime,
+    ];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            NewMoveOrder::MostLikelyFirst => "Most likely first",
+            NewMoveOrder::OneOpeningAtATime => "One opening at a time",
         }
     }
 }
@@ -190,16 +217,18 @@ fn daily_queue(
 
 impl StudySession {
     /// A daily session over the whole repertoire.
+    #[allow(clippy::too_many_arguments)]
     pub fn daily(
         trainer: Arc<Trainer>,
         mode: PracticeMode,
+        new_move_order: NewMoveOrder,
         cards: &HashMap<Epd, Card>,
         limits: RemainingLimits,
         timing: &SchedTiming,
         learn_ahead_secs: i64,
         reach: HashMap<NodeId, f64>,
     ) -> StudySession {
-        let order = trainer.new_card_order(RepertoireTree::ROOT, &reach);
+        let order = trainer.new_card_order(RepertoireTree::ROOT, &reach, new_move_order);
         let queue = daily_queue(
             &trainer,
             cards,
@@ -223,16 +252,18 @@ impl StudySession {
     }
 
     /// A branch session: every card under `root`, in random order, without limits.
+    #[allow(clippy::too_many_arguments)]
     pub fn branch(
         trainer: Arc<Trainer>,
         mode: PracticeMode,
+        new_move_order: NewMoveOrder,
         root: NodeId,
         cards: &HashMap<Epd, Card>,
         timing: &SchedTiming,
         learn_ahead_secs: i64,
         reach: HashMap<NodeId, f64>,
     ) -> StudySession {
-        let order = trainer.new_card_order(root, &reach);
+        let order = trainer.new_card_order(root, &reach, new_move_order);
         let queue = CardQueues::filtered(&order, cards, timing, learn_ahead_secs);
         StudySession {
             new_index: index_of(&order),

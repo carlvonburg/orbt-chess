@@ -71,7 +71,9 @@ import java.time.format.FormatStyle
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.orbtchess.orbt.AppModel
+import org.orbtchess.orbt.core.NewMoveOrder
 import org.orbtchess.orbt.core.PracticeMode
+import org.orbtchess.orbt.core.newMoveOrderTitle
 import org.orbtchess.orbt.core.practiceModeTitle
 import org.orbtchess.orbt.engine.EngineDefaults
 import org.orbtchess.orbt.engine.EngineNetwork
@@ -80,6 +82,7 @@ import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.tabularDigits
 import org.orbtchess.orbt.ui.library.startTour
+import org.orbtchess.orbt.ui.overview.detail
 import org.orbtchess.orbt.ui.theme.AppColor
 import org.orbtchess.orbt.ui.theme.LocalAppColorSetting
 import org.orbtchess.orbt.ui.theme.OrbtTheme
@@ -227,6 +230,7 @@ private fun StudyDefaultsSection(app: AppModel) {
     var newPerDay by remember { mutableIntStateOf(training.newPerDay) }
     var reviewsPerDay by remember { mutableIntStateOf(training.reviewsPerDay) }
     var practiceMode by remember { mutableStateOf(training.practiceMode) }
+    var newMoveOrder by remember { mutableStateOf(training.newMoveOrder) }
     var editing by remember { mutableStateOf<String?>(null) }
     Section(
         "Study defaults",
@@ -234,6 +238,7 @@ private fun StudyDefaultsSection(app: AppModel) {
     ) {
         ValueRow("New moves/day", "$newPerDay") { editing = "new" }
         ValueRow("Maximum reviews/day", "$reviewsPerDay") { editing = "reviews" }
+        ValueRow("New lines", newMoveOrderTitle(newMoveOrder)) { editing = "order" }
         ValueRow("Practice", practiceModeTitle(practiceMode)) { editing = "practice" }
     }
     when (editing) {
@@ -244,6 +249,21 @@ private fun StudyDefaultsSection(app: AppModel) {
         "reviews" -> NumberDialog("Maximum reviews/day", reviewsPerDay, 0..9999, onDismiss = { editing = null }) {
             reviewsPerDay = it
             training.reviewsPerDay = it
+        }
+        "order" -> ChoiceDialog(
+            title = "New lines",
+            options = NewMoveOrder.entries,
+            selected = newMoveOrder,
+            onDismiss = { editing = null },
+            onSelect = {
+                newMoveOrder = it
+                training.newMoveOrder = it
+            },
+        ) { order ->
+            Column {
+                Text(newMoveOrderTitle(order), style = MaterialTheme.typography.bodyLarge)
+                Text(order.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         "practice" -> ChoiceDialog(
             title = "Practice",

@@ -11,7 +11,7 @@ use orbt_core::statistics::GraphParts;
 use orbt_core::training::anki::{
     Card, Counts, DeckLimits, RemainingLimits, RevlogEntry, SchedTiming,
 };
-use orbt_core::training::{PracticeMode, Progress};
+use orbt_core::training::{NewMoveOrder, PracticeMode, Progress};
 
 use crate::explorer::Explorer;
 use crate::position::Position;
@@ -169,6 +169,15 @@ impl RepertoireDoc {
 
     pub fn practice_mode(&self) -> PracticeMode {
         self.lock().practice_mode()
+    }
+
+    /// The repertoire's own new move order, if it overrides the default.
+    pub fn own_new_move_order(&self) -> Option<NewMoveOrder> {
+        self.lock().sidecar().new_move_order
+    }
+
+    pub fn new_move_order(&self) -> NewMoveOrder {
+        self.lock().new_move_order()
     }
 
     pub fn limits(&self) -> Option<DeckLimits> {
@@ -425,9 +434,10 @@ impl RepertoireDoc {
         &self,
         limits: DeckLimits,
         practice_mode: Option<PracticeMode>,
+        new_move_order: Option<NewMoveOrder>,
         now: Timestamp,
     ) -> Changes {
-        self.change(|doc, _| doc.update_study_settings(limits, practice_mode, now))
+        self.change(|doc, _| doc.update_study_settings(limits, practice_mode, new_move_order, now))
     }
 
     pub fn set_defaults(&self, defaults: StudyDefaults) -> Changes {

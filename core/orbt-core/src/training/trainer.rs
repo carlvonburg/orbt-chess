@@ -1,6 +1,8 @@
-use std::collections::{HashMap, HashSet};
+use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::sync::Arc;
 
+use super::NewMoveOrder;
 use super::anki::{Card, CardQueue, CardType};
 use crate::chess::{Epd, PlayedMove, Side};
 use crate::repertoire::{NodeId, RepertoireTree};
@@ -220,9 +222,71 @@ impl Trainer {
         nodes
     }
 
-    /// New-card order: depth first, the most reached continuation first, so a line is
-    /// learned before the next one.
-    pub fn new_card_order(&self, root: NodeId, reach: &HashMap<NodeId, f64>) -> Vec<Epd> {
+    /// New-card order: a line at a time, each to its end with the most reached reply at every
+    /// opponent move. The next line is the most reached reply not taken yet anywhere
+    /// (`MostLikelyFirst`), or the next one depth first (`OneOpeningAtATime`).
+    pub fn new_card_order(
+        &self,
+        root: NodeId,
+        reach: &HashMap<NodeId, f64>,
+        order: NewMoveOrder,
+    ) -> Vec<Epd> {
+        match order {
+            NewMoveOrder::MostLikelyFirst => self.most_likely_first(root, reach),
+            NewMoveOrder::OneOpeningAtATime => self.depth_first(root, reach),
+        }
+    }
+
+    /// Lines by the reach of the reply they start with: the line through the most reached
+    /// reply is followed to its end, and the other replies on it wait with the rest. Equal
+    /// reach keeps the order replies were met in (the stored order at one position).
+    fn most_likely_first(&self, root: NodeId, reach: &HashMap<NodeId, f64>) -> Vec<Epd> {
+        let r = |n: &NodeId| reach.get(n).copied().unwrap_or(0.0);
+        let mut order = Vec::new();
+        let mut seen: HashSet<Epd> = HashSet::new();
+        let mut visited: HashSet<NodeId> = HashSet::new();
+        let mut waiting = BinaryHeap::from([Waiting {
+            reach: r(&root),
+            seq: 0,
+            node: root,
+        }]);
+        let mut seq = 1;
+        while let Some(Waiting { node, .. }) = waiting.pop() {
+            let mut cursor = Some(node);
+            while let Some(id) = cursor.take() {
+                if !self.trainable.contains(&id) || !visited.insert(id) {
+                    break;
+                }
+                let Some(node) = self.tree.get(id) else {
+                    break;
+                };
+                let mut nexts = self.next_after(id);
+                if node.side_to_move() == self.color {
+                    if !nexts.is_empty() && seen.insert(node.epd.clone()) {
+                        order.push(node.epd.clone());
+                    }
+                } else {
+                    // Stable: equal reach keeps the stored move order.
+                    nexts.sort_by(|a, b| r(b).total_cmp(&r(a)));
+                }
+                let mut nexts = nexts.into_iter();
+                cursor = nexts.next();
+                for other in nexts {
+                    waiting.push(Waiting {
+                        reach: r(&other),
+                        seq,
+                        node: other,
+                    });
+                    seq += 1;
+                }
+            }
+        }
+        order
+    }
+
+    /// Depth first, the most reached continuation first: a branch is finished before the
+    /// next one.
+    fn depth_first(&self, root: NodeId, reach: &HashMap<NodeId, f64>) -> Vec<Epd> {
         let mut order = Vec::new();
         let mut seen: HashSet<Epd> = HashSet::new();
         let mut visited: HashSet<NodeId> = HashSet::new();
@@ -261,6 +325,36 @@ impl Trainer {
         result
     }
 }
+
+/// A line not learned yet, by the reply it starts with: the most reached first, then the
+/// first met.
+struct Waiting {
+    reach: f64,
+    seq: usize,
+    node: NodeId,
+}
+
+impl Ord for Waiting {
+    fn cmp(&self, other: &Waiting) -> Ordering {
+        self.reach
+            .total_cmp(&other.reach)
+            .then(other.seq.cmp(&self.seq))
+    }
+}
+
+impl PartialOrd for Waiting {
+    fn partial_cmp(&self, other: &Waiting) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for Waiting {
+    fn eq(&self, other: &Waiting) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
+}
+
+impl Eq for Waiting {}
 
 /// Nodes a line continues to: your main move, every opponent reply, or for a position
 /// whose moves are stored elsewhere, that node's continuations.

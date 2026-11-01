@@ -213,6 +213,23 @@ extension PracticeMode: CaseIterable, RawRepresentable, Identifiable {
     public var title: String { practiceModeTitle(mode: self) }
 }
 
+extension NewMoveOrder: CaseIterable, RawRepresentable, Identifiable {
+    public static var allCases: [NewMoveOrder] { [.mostLikelyFirst, .oneOpeningAtATime] }
+    public static var `default`: NewMoveOrder { .mostLikelyFirst }
+    public init?(rawValue: String) {
+        guard let order = Self.allCases.first(where: { $0.rawValue == rawValue }) else { return nil }
+        self = order
+    }
+    public var rawValue: String {
+        switch self {
+        case .mostLikelyFirst: "mostLikelyFirst"
+        case .oneOpeningAtATime: "oneOpeningAtATime"
+        }
+    }
+    public var id: String { rawValue }
+    public var title: String { newMoveOrderTitle(order: self) }
+}
+
 extension GraphRange: CaseIterable, Identifiable {
     public static var allCases: [GraphRange] { [.week, .month, .threeMonths, .year, .all] }
     public var id: Self { self }

@@ -3,7 +3,7 @@ source: orbt-core/tests/snapshot_study.rs
 expression: text
 ---
 daily:
-+0s Counts { new: 5, learning: 16, review: 3 } e4 d5 exd5 Qxd5 Nc3 Qa5 d4 e5 dxe5 Nc6 Nf3 Bb4
++0s Counts { new: 5, learning: 15, review: 3 } e4 d5 exd5 Qxd5 Nc3 Qa5 d4 e5 dxe5 Nc6 Nf3 Bb4
   roles: 1 introduce, 3 queued, 5 introduce, 7 introduce, 9 introduce, 11 queued
   1 Good: Learn/Learn due +702s ivl 0
   3 Good: Review/Review due 101 ivl 1
@@ -11,60 +11,60 @@ daily:
   7 Good: Learn/Learn due +661s ivl 0
   9 Good: Learn/Learn due +715s ivl 0
   11 Good: Review/Review due 101 ivl 1
-+42s Counts { new: 5, learning: 18, review: 3 } Nf3 c5 d4 cxd4 b4 e5
++42s Counts { new: 5, learning: 17, review: 3 } Nf3 c5 d4 cxd4 b4 e5
   roles: 1 auto, 3 auto, 5 queued
   5 Again: Learn/Learn due +135s ivl 0
-+63s Counts { new: 5, learning: 18, review: 3 } g3 Nc6 Nc3 d5 d4 e5 dxe5 d4 Ne4 f5
++63s Counts { new: 5, learning: 17, review: 3 } g3 Nc6 Nc3 d5 d4 e5 dxe5 d4 Ne4 f5
   roles: 1 queued, 3 introduce, 5 introduce, 7 queued, 9 queued
   1 Again: Relearn/Learn due +790s ivl 1
   3 Good: Learn/Learn due +750s ivl 0
   5 Good: Learn/Learn due +754s ivl 0
   7 Good: Review/Review due 111 ivl 11
   9 Good: Review/Review due 101 ivl 1
-+98s Counts { new: 5, learning: 19, review: 3 } d4 Nf6 g4 Nxg4 e4 d6 Be2 Nf6
++98s Counts { new: 5, learning: 18, review: 3 } d4 Nf6 g4 Nxg4 e4 d6 Be2 Nf6
   roles: 1 introduce, 3 introduce, 5 introduce, 7 queued
   1 Good: Learn/Learn due +815s ivl 0
   3 Good: Learn/Learn due +767s ivl 0
   5 Good: Learn/Learn due +773s ivl 0
-  7 Good: Review/Review due 116 ivl 16
-+126s Counts { new: 5, learning: 23, review: 2 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3
+  7 Good: Review/Review due 145 ivl 45
++126s Counts { new: 5, learning: 21, review: 2 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3
   roles: 1 queued, 3 queued, 5 introduce, 7 auto, 9 introduce
   1 Again: Learn/Learn due +200s ivl 0
   3 Good: Review/Review due 101 ivl 1
   5 Again: Learn/Learn due +216s ivl 0
   9 Again: Learn/Learn due +235s ivl 0
-+161s Counts { new: 3, learning: 24, review: 2 } Nf3 c5 d4 cxd4 b4 e5
++161s Counts { new: 3, learning: 23, review: 2 } Nf3 c5 d4 cxd4 b4 e5
   roles: 1 auto, 3 auto, 5 queued
   5 Again: Learn/Learn due +251s ivl 0
-+182s Counts { new: 3, learning: 24, review: 2 } Nf3 c5 e3 g6 d4 Bg7 dxc5 Qa5+
++182s Counts { new: 3, learning: 23, review: 2 } Nf3 c5 e3 g6 d4 Bg7 dxc5 Qa5+
   roles: 1 auto, 3 auto, 5 introduce, 7 queued
   5 Good: Learn/Learn due +875s ivl 0
-  7 Again: Relearn/Learn due +819s ivl 2
-+210s Counts { new: 3, learning: 26, review: 1 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3
+  7 Again: Relearn/Learn due +819s ivl 1
++210s Counts { new: 3, learning: 25, review: 1 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3
   roles: 1 queued, 3 auto, 5 queued, 7 auto, 9 queued
   1 Again: Learn/Learn due +280s ivl 0
   5 Good: Learn/Learn due +834s ivl 0
   9 Good: Learn/Learn due +922s ivl 0
-+245s Counts { new: 3, learning: 27, review: 1 } e3 e5 c4 d6 Nc3 Nc6 b3 Nf6
++245s Counts { new: 3, learning: 25, review: 1 } e3 e5 c4 d6 Nc3 Nc6 b3 Nf6
   roles: 1 auto, 3 introduce, 5 auto, 7 queued
   3 Good: Learn/Learn due +996s ivl 0
   7 Again: Learn/Learn due +345s ivl 0
-+273s Counts { new: 2, learning: 28, review: 1 } Nf3 c5 d4 cxd4 b4 e5
++273s Counts { new: 2, learning: 27, review: 1 } Nf3 c5 d4 cxd4 b4 e5
   roles: 1 auto, 3 auto, 5 queued
   5 Again: Learn/Learn due +366s ivl 0
-+294s Counts { new: 2, learning: 28, review: 1 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3
++294s Counts { new: 2, learning: 27, review: 1 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3
   roles: 1 queued, 3 auto, 5 queued, 7 auto, 9 queued
   1 Good: Learn/Learn due +987s ivl 0
   5 Good: Review/Review due 101 ivl 1
   9 Good: Review/Review due 101 ivl 1
-+329s Counts { new: 2, learning: 27, review: 1 } e4 d5 Nf3 dxe4 Ng5 Nf6 Nc3 Bf5 Qe2 Qd4
++329s Counts { new: 2, learning: 25, review: 1 } e4 d5 Nf3 dxe4 Ng5 Nf6 Nc3 Bf5 Qe2 Qd4
   roles: 1 queued, 3 introduce, 5 queued, 7 introduce, 9 introduce
   1 Good: Review/Review due 102 ivl 2
   3 Good: Learn/Learn due +1015s ivl 0
   5 Good: Review/Review due 107 ivl 7
   7 Good: Learn/Learn due +1070s ivl 0
   9 Good: Learn/Learn due +1024s ivl 0
-37 answers, 28 positions answered, 28 played; counts Counts { new: 2, learning: 28, review: 1 }
+37 answers, 28 positions answered, 28 played; counts Counts { new: 2, learning: 27, review: 1 }
 
 branch [Nh3]:
 +0s Counts { new: 2, learning: 2, review: 0 } Nh3 d5 g3 e5 f4 Bxh3 Bxh3 exf4 O-O fxg3

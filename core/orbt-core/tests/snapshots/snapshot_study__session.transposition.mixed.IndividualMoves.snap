@@ -43,7 +43,7 @@ branch [d4]:
 +49s Counts { new: 0, learning: 3, review: 1 } d4 d5 c4 c6 Nf3 Nf6 e3 Bf5
   roles: 1 auto, 3 queued, 5 auto, 7 queued
   3 Again filtered: Learn/Learn due +131s ivl 0
-  7 Good filtered: Review/Review due 125 ivl 25
+  7 Good filtered: Review/Review due 127 ivl 27
 +77s Counts { new: 0, learning: 3, review: 0 } d4 d5 c4 c6
   roles: 1 auto, 3 queued
   3 Good filtered: Learn/Learn due +758s ivl 0

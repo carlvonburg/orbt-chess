@@ -1256,7 +1256,8 @@ struct RepertoireSettingsSheet: View {
     }
 }
 
-/// Anki's deck options: this repertoire's daily limits (or the defaults) and practice mode.
+/// Anki's deck options: this repertoire's daily limits (or the defaults), new move order and
+/// practice mode.
 struct StudyOptionsSheet: View {
     @Environment(\.dismiss) private var dismiss
     let document: RepertoireDocument
@@ -1280,7 +1281,8 @@ struct StudyOptionsSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", systemImage: "checkmark") {
-                        document.updateStudySettings(limits: practice.limits, practiceMode: practice.practiceMode)
+                        document.updateStudySettings(limits: practice.limits, practiceMode: practice.practiceMode,
+                                                     newMoveOrder: practice.newMoveOrder)
                         dismiss()
                     }
                 }

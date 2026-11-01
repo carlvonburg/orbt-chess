@@ -11,7 +11,7 @@ use crate::training::anki::{
     Card, CardQueue, Counts, DeckConfig, DeckLimits, Rating, RemainingLimits, RevlogEntry,
     SchedTiming, Scheduler,
 };
-use crate::training::{PracticeMode, Progress, StudySession, Trainer};
+use crate::training::{NewMoveOrder, PracticeMode, Progress, StudySession, Trainer};
 
 /// The study defaults from the app's settings; a repertoire's options override them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -19,6 +19,7 @@ pub struct StudyDefaults {
     pub new_per_day: i64,
     pub reviews_per_day: i64,
     pub practice_mode: PracticeMode,
+    pub new_move_order: NewMoveOrder,
 }
 
 impl Default for StudyDefaults {
@@ -28,6 +29,7 @@ impl Default for StudyDefaults {
             new_per_day: config.new_per_day,
             reviews_per_day: config.reviews_per_day,
             practice_mode: PracticeMode::default(),
+            new_move_order: NewMoveOrder::default(),
         }
     }
 }
@@ -441,15 +443,17 @@ impl Repertoire {
         doc_changes(self)
     }
 
-    /// Daily limits ("This deck") and practice mode for this repertoire.
+    /// Daily limits ("This deck"), practice mode and new move order for this repertoire.
     pub fn update_study_settings(
         &mut self,
         limits: DeckLimits,
         practice_mode: Option<PracticeMode>,
+        new_move_order: Option<NewMoveOrder>,
         now: Timestamp,
     ) -> Changes {
         self.sidecar.limits = (!limits.is_empty()).then_some(limits);
         self.sidecar.practice_mode = practice_mode;
+        self.sidecar.new_move_order = new_move_order;
         self.sidecar.settings_modified = now;
         self.bump();
         self.request_sidecar_save(save_delay::SIDECAR_AFTER_SETTINGS_MS);
@@ -495,6 +499,12 @@ impl Repertoire {
         self.sidecar
             .practice_mode
             .unwrap_or(self.defaults.practice_mode)
+    }
+
+    pub fn new_move_order(&self) -> NewMoveOrder {
+        self.sidecar
+            .new_move_order
+            .unwrap_or(self.defaults.new_move_order)
     }
 
     pub fn remaining_limits(&self, timing: &SchedTiming) -> RemainingLimits {
@@ -560,6 +570,7 @@ impl Repertoire {
             Some(root) => StudySession::branch(
                 trainer,
                 self.practice_mode(),
+                self.new_move_order(),
                 root,
                 &cards,
                 timing,
@@ -569,6 +580,7 @@ impl Repertoire {
             None => StudySession::daily(
                 trainer,
                 self.practice_mode(),
+                self.new_move_order(),
                 &cards,
                 self.remaining_limits(timing),
                 timing,

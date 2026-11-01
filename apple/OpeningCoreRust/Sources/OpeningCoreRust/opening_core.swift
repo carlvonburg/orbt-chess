@@ -4558,6 +4558,8 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     
     func moves(id: UInt32)  -> [PlayedMove]
     
+    func newMoveOrder()  -> NewMoveOrder
+    
     /**
      * Unix seconds when the next card falls due after today's are done.
      */
@@ -4583,6 +4585,11 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
      * The outline rows below `id`: one per child, each a chain of moves without branching.
      */
     func outlineChildren(id: UInt32)  -> [OutlineItem]
+    
+    /**
+     * The repertoire's own new move order, if it overrides the default.
+     */
+    func ownNewMoveOrder()  -> NewMoveOrder?
     
     /**
      * The repertoire's own practice mode, if it overrides the default.
@@ -4700,7 +4707,7 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
      */
     func updateSettings(color: Side, database: ExplorerDatabase, targetGames: Int64, now: Timestamp)  -> Changes
     
-    func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?, now: Timestamp)  -> Changes
+    func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?, newMoveOrder: NewMoveOrder?, now: Timestamp)  -> Changes
     
 }
 /**
@@ -5122,6 +5129,15 @@ open func moves(id: UInt32) -> [PlayedMove]  {
 })
 }
     
+open func newMoveOrder() -> NewMoveOrder  {
+    return try!  FfiConverterTypeNewMoveOrder_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_new_move_order(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
     /**
      * Unix seconds when the next card falls due after today's are done.
      */
@@ -5200,6 +5216,18 @@ open func outlineChildren(id: UInt32) -> [OutlineItem]  {
     uniffi_opening_core_fn_method_repertoiredoc_outline_children(
             self.uniffiCloneHandle(),
         FfiConverterUInt32.lower(id),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * The repertoire's own new move order, if it overrides the default.
+     */
+open func ownNewMoveOrder() -> NewMoveOrder?  {
+    return try!  FfiConverterOptionTypeNewMoveOrder.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_own_new_move_order(
+            self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
 }
@@ -5627,13 +5655,14 @@ open func updateSettings(color: Side, database: ExplorerDatabase, targetGames: I
 })
 }
     
-open func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?, now: Timestamp) -> Changes  {
+open func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?, newMoveOrder: NewMoveOrder?, now: Timestamp) -> Changes  {
     return try!  FfiConverterTypeChanges_lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_repertoiredoc_update_study_settings(
             self.uniffiCloneHandle(),
         FfiConverterTypeDeckLimits_lower(limits),
         FfiConverterOptionTypePracticeMode.lower(practiceMode),
+        FfiConverterOptionTypeNewMoveOrder.lower(newMoveOrder),
         FfiConverterTypeTimestamp_lower(now),uniffiCallStatus
     )
 })
@@ -10728,13 +10757,15 @@ public struct StudyDefaults: Equatable, Hashable {
     public var newPerDay: Int64
     public var reviewsPerDay: Int64
     public var practiceMode: PracticeMode
+    public var newMoveOrder: NewMoveOrder
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(newPerDay: Int64, reviewsPerDay: Int64, practiceMode: PracticeMode) {
+    public init(newPerDay: Int64, reviewsPerDay: Int64, practiceMode: PracticeMode, newMoveOrder: NewMoveOrder) {
         self.newPerDay = newPerDay
         self.reviewsPerDay = reviewsPerDay
         self.practiceMode = practiceMode
+        self.newMoveOrder = newMoveOrder
     }
 
     
@@ -10755,7 +10786,8 @@ public struct FfiConverterTypeStudyDefaults: FfiConverterRustBuffer {
             try StudyDefaults(
                 newPerDay: FfiConverterInt64.read(from: &buf), 
                 reviewsPerDay: FfiConverterInt64.read(from: &buf), 
-                practiceMode: FfiConverterTypePracticeMode.read(from: &buf)
+                practiceMode: FfiConverterTypePracticeMode.read(from: &buf), 
+                newMoveOrder: FfiConverterTypeNewMoveOrder.read(from: &buf)
         )
     }
 
@@ -10763,6 +10795,7 @@ public struct FfiConverterTypeStudyDefaults: FfiConverterRustBuffer {
         FfiConverterInt64.write(value.newPerDay, into: &buf)
         FfiConverterInt64.write(value.reviewsPerDay, into: &buf)
         FfiConverterTypePracticeMode.write(value.practiceMode, into: &buf)
+        FfiConverterTypeNewMoveOrder.write(value.newMoveOrder, into: &buf)
     }
 }
 
@@ -13258,6 +13291,72 @@ public func FfiConverterTypeMoveToken_lower(_ value: MoveToken) -> RustBuffer {
 
 
 
+public enum NewMoveOrder: Equatable, Hashable {
+    
+    case mostLikelyFirst
+    case oneOpeningAtATime
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension NewMoveOrder: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeNewMoveOrder: FfiConverterRustBuffer {
+    typealias SwiftType = NewMoveOrder
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> NewMoveOrder {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .mostLikelyFirst
+        
+        case 2: return .oneOpeningAtATime
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: NewMoveOrder, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .mostLikelyFirst:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .oneOpeningAtATime:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeNewMoveOrder_lift(_ buf: RustBuffer) throws -> NewMoveOrder {
+    return try FfiConverterTypeNewMoveOrder.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeNewMoveOrder_lower(_ value: NewMoveOrder) -> RustBuffer {
+    return FfiConverterTypeNewMoveOrder.lower(value)
+}
+
+
+
+
 public enum Phase: Equatable, Hashable {
     
     case idle
@@ -15263,6 +15362,30 @@ fileprivate struct FfiConverterOptionTypeFileKind: FfiConverterRustBuffer {
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeFileKind.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeNewMoveOrder: FfiConverterRustBuffer {
+    typealias SwiftType = NewMoveOrder?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeNewMoveOrder.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeNewMoveOrder.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -17279,6 +17402,14 @@ public func moveList(moves: [PlayedMove], startPly: UInt32) -> String  {
     )
 })
 }
+public func newMoveOrderTitle(order: NewMoveOrder) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_func_new_move_order_title(
+        FfiConverterTypeNewMoveOrder_lower(order),uniffiCallStatus
+    )
+})
+}
 public func practiceModeTitle(mode: PracticeMode) -> String  {
     return try!  FfiConverterString.lift(try! rustCall() {
         uniffiCallStatus in
@@ -17582,6 +17713,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_func_move_list() != 58467) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_func_new_move_order_title() != 7370) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_func_practice_mode_title() != 10971) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -17780,6 +17914,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_moves() != 45470) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_new_move_order() != 25803) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_repertoiredoc_next_due() != 58239) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -17799,6 +17936,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_outline_children() != 36768) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_own_new_move_order() != 463) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_own_practice_mode() != 38388) {
@@ -17921,7 +18061,7 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_update_settings() != 46430) {
         return InitializationResult.apiChecksumMismatch
     }
-    if (uniffi_opening_core_checksum_method_repertoiredoc_update_study_settings() != 40186) {
+    if (uniffi_opening_core_checksum_method_repertoiredoc_update_study_settings() != 64320) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_engine_analyse() != 38538) {

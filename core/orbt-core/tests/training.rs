@@ -13,8 +13,8 @@ use orbt_core::training::anki::{
     Card, CardQueue, CardType, DeckStudyStats, Rating, RemainingLimits, SchedTiming, Scheduler,
 };
 use orbt_core::training::{
-    AnswerKind, LineOutcome, LineRun, MoveRole, PracticeMode, Progress, StudyLine, StudySession,
-    Trainer,
+    AnswerKind, LineOutcome, LineRun, MoveRole, NewMoveOrder, PracticeMode, Progress, StudyLine,
+    StudySession, Trainer,
 };
 
 const ROOT: NodeId = RepertoireTree::ROOT;
@@ -288,16 +288,90 @@ fn new_card_order_is_a_line_at_a_time() {
         (tree.find("e4 c5 Nf3 Nc6").unwrap(), 0.1),
     ]);
     let epd = |line: &str| tree[tree.find(line).unwrap()].epd.clone();
+    for order in NewMoveOrder::ALL {
+        assert_eq!(
+            t.new_card_order(ROOT, &reach, order),
+            [
+                start(),
+                epd("e4 e5"),
+                epd("e4 c5"),
+                epd("e4 c5 Nf3 d6"),
+                epd("e4 c5 Nf3 Nc6")
+            ]
+        );
+    }
+}
+
+#[test]
+fn new_lines_most_likely_first_or_one_opening_at_a_time() {
+    let mut tree = RepertoireTree::default();
+    tree.add("e4 e5 Nf3 Nc6 Bb5");
+    tree.add("e4 e5 Nf3 Nf6 Nxe5");
+    tree.add("e4 c5 Nf3");
+    let t = trainer(&tree, Side::White);
+    let reach = HashMap::from([
+        (tree.find("e4 e5").unwrap(), 0.6),
+        (tree.find("e4 c5").unwrap(), 0.4),
+        (tree.find("e4 e5 Nf3 Nc6").unwrap(), 0.55),
+        (tree.find("e4 e5 Nf3 Nf6").unwrap(), 0.05),
+    ]);
+    let epd = |line: &str| tree[tree.find(line).unwrap()].epd.clone();
+    // the top e5 line, then c5 (40%) before e5's Petroff (5%)
     assert_eq!(
-        t.new_card_order(ROOT, &reach),
+        t.new_card_order(ROOT, &reach, NewMoveOrder::MostLikelyFirst),
         [
             start(),
             epd("e4 e5"),
+            epd("e4 e5 Nf3 Nc6"),
             epd("e4 c5"),
-            epd("e4 c5 Nf3 d6"),
-            epd("e4 c5 Nf3 Nc6")
+            epd("e4 e5 Nf3 Nf6")
         ]
     );
+    // depth first: every e5 line before c5
+    assert_eq!(
+        t.new_card_order(ROOT, &reach, NewMoveOrder::OneOpeningAtATime),
+        [
+            start(),
+            epd("e4 e5"),
+            epd("e4 e5 Nf3 Nc6"),
+            epd("e4 e5 Nf3 Nf6"),
+            epd("e4 c5")
+        ]
+    );
+    // a session introduces them in that order, each line to its end
+    let none = HashMap::new();
+    let limits = RemainingLimits {
+        review: 200,
+        new: 20,
+        cap_new_to_review: true,
+    };
+    let mut session = StudySession::daily(
+        t,
+        PracticeMode::IndividualMoves,
+        NewMoveOrder::MostLikelyFirst,
+        &none,
+        limits,
+        &timing(),
+        1200,
+        reach,
+    );
+    let mut lines = Vec::new();
+    while let Some(line) = session.next_line(&none) {
+        for (&i, role) in &line.roles {
+            if role.is_asked() {
+                session.queue.remove(&tree[line.nodes[i]].epd);
+            }
+        }
+        lines.push(
+            tree[*line.nodes.last().unwrap()]
+                .mv
+                .as_ref()
+                .unwrap()
+                .san
+                .clone(),
+        );
+    }
+    assert_eq!(lines, ["Bb5", "Nf3", "Nxe5"]);
 }
 
 fn timing() -> SchedTiming {
@@ -319,6 +393,7 @@ fn new_line_introduces_every_new_move() {
     let mut session = StudySession::daily(
         t,
         PracticeMode::CompleteLinesOncePerSession,
+        NewMoveOrder::default(),
         &none,
         limits,
         &timing(),
@@ -367,6 +442,7 @@ fn review_line_roles_by_practice_mode() {
         StudySession::daily(
             trainer(&tree, Side::White),
             mode,
+            NewMoveOrder::default(),
             &cards,
             limits,
             &t,

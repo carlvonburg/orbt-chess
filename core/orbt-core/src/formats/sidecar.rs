@@ -10,7 +10,7 @@ use crate::training::anki::{
     Card, CardQueue, Counts, DeckConfig, DeckLimits, DeckStudyStats, RemainingLimits, SECS_PER_DAY,
     SchedTiming,
 };
-use crate::training::{PracticeMode, Progress};
+use crate::training::{NewMoveOrder, PracticeMode, Progress};
 
 pub const FILE_EXTENSION: &str = "otrep.json";
 
@@ -54,6 +54,9 @@ pub struct Sidecar {
     /// "This deck" and "Today only" daily limits; None uses the default preset.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limits: Option<DeckLimits>,
+    /// Overrides the default new move order.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub new_move_order: Option<NewMoveOrder>,
     /// Overrides the default practice mode.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub practice_mode: Option<PracticeMode>,
@@ -81,6 +84,7 @@ impl Sidecar {
             id,
             last_line: None,
             limits: None,
+            new_move_order: None,
             practice_mode: None,
             settings_modified: now,
             study_cards: BTreeMap::new(),

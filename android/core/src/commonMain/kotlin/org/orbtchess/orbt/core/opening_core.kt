@@ -927,6 +927,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_func_move_list(
     ): Int
+    external fun uniffi_opening_core_checksum_func_new_move_order_title(
+    ): Int
     external fun uniffi_opening_core_checksum_func_practice_mode_title(
     ): Int
     external fun uniffi_opening_core_checksum_func_range_days(
@@ -1059,6 +1061,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiredoc_moves(
     ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiredoc_new_move_order(
+    ): Int
     external fun uniffi_opening_core_checksum_method_repertoiredoc_next_due(
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiredoc_node(
@@ -1072,6 +1076,8 @@ internal object IntegrityCheckingUniffiLib {
     external fun uniffi_opening_core_checksum_method_repertoiredoc_opening_name(
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiredoc_outline_children(
+    ): Int
+    external fun uniffi_opening_core_checksum_method_repertoiredoc_own_new_move_order(
     ): Int
     external fun uniffi_opening_core_checksum_method_repertoiredoc_own_practice_mode(
     ): Int
@@ -1632,6 +1638,8 @@ internal object UniffiLib {
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiredoc_moves(`ptr`: Long,`id`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_method_repertoiredoc_new_move_order(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiredoc_next_due(`ptr`: Long,`timing`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiredoc_node(`ptr`: Long,`id`: Int,uniffi_out_err: UniffiRustCallStatus, 
@@ -1645,6 +1653,8 @@ internal object UniffiLib {
     external fun uniffi_opening_core_fn_method_repertoiredoc_opening_name(`ptr`: Long,`id`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiredoc_outline_children(`ptr`: Long,`id`: Int,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_method_repertoiredoc_own_new_move_order(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_repertoiredoc_own_practice_mode(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -1726,7 +1736,7 @@ internal object UniffiLib {
     ): Int
     external fun uniffi_opening_core_fn_method_repertoiredoc_update_settings(`ptr`: Long,`color`: RustBuffer.ByValue,`database`: RustBuffer.ByValue,`targetGames`: Long,`now`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
-    external fun uniffi_opening_core_fn_method_repertoiredoc_update_study_settings(`ptr`: Long,`limits`: RustBuffer.ByValue,`practiceMode`: RustBuffer.ByValue,`now`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    external fun uniffi_opening_core_fn_method_repertoiredoc_update_study_settings(`ptr`: Long,`limits`: RustBuffer.ByValue,`practiceMode`: RustBuffer.ByValue,`newMoveOrder`: RustBuffer.ByValue,`now`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_clone_engine(`handle`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Long
@@ -2250,6 +2260,8 @@ internal object UniffiLib {
     ): Int
     external fun uniffi_opening_core_fn_func_move_list(`moves`: RustBuffer.ByValue,`startPly`: Int,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
+    external fun uniffi_opening_core_fn_func_new_move_order_title(`order`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
+    ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_practice_mode_title(`mode`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_func_range_days(`range`: RustBuffer.ByValue,uniffi_out_err: UniffiRustCallStatus, 
@@ -2593,6 +2605,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_func_move_list() and 0xFFFF) != 58467) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if ((lib.uniffi_opening_core_checksum_func_new_move_order_title() and 0xFFFF) != 7370) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if ((lib.uniffi_opening_core_checksum_func_practice_mode_title() and 0xFFFF) != 10971) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2791,6 +2806,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_moves() and 0xFFFF) != 45470) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_new_move_order() and 0xFFFF) != 25803) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
     if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_next_due() and 0xFFFF) != 58239) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
@@ -2810,6 +2828,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_outline_children() and 0xFFFF) != 36768) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_own_new_move_order() and 0xFFFF) != 463) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_own_practice_mode() and 0xFFFF) != 38388) {
@@ -2932,7 +2953,7 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
     if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_update_settings() and 0xFFFF) != 46430) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
-    if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_update_study_settings() and 0xFFFF) != 40186) {
+    if ((lib.uniffi_opening_core_checksum_method_repertoiredoc_update_study_settings() and 0xFFFF) != 64320) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_method_engine_analyse() and 0xFFFF) != 38538) {
@@ -10148,6 +10169,8 @@ public interface RepertoireDocInterface {
     
     fun `moves`(`id`: kotlin.UInt): List<PlayedMove>
     
+    fun `newMoveOrder`(): NewMoveOrder
+    
     /**
      * Unix seconds when the next card falls due after today's are done.
      */
@@ -10173,6 +10196,11 @@ public interface RepertoireDocInterface {
      * The outline rows below `id`: one per child, each a chain of moves without branching.
      */
     fun `outlineChildren`(`id`: kotlin.UInt): List<OutlineItem>
+    
+    /**
+     * The repertoire's own new move order, if it overrides the default.
+     */
+    fun `ownNewMoveOrder`(): NewMoveOrder?
     
     /**
      * The repertoire's own practice mode, if it overrides the default.
@@ -10290,7 +10318,7 @@ public interface RepertoireDocInterface {
      */
     fun `updateSettings`(`color`: Side, `database`: ExplorerDatabase, `targetGames`: kotlin.Long, `now`: Timestamp): Changes
     
-    fun `updateStudySettings`(`limits`: DeckLimits, `practiceMode`: PracticeMode?, `now`: Timestamp): Changes
+    fun `updateStudySettings`(`limits`: DeckLimits, `practiceMode`: PracticeMode?, `newMoveOrder`: NewMoveOrder?, `now`: Timestamp): Changes
     
     companion object
 }
@@ -10898,6 +10926,19 @@ open class RepertoireDoc: Disposable, AutoCloseable, RepertoireDocInterface
     }
     
 
+    override fun `newMoveOrder`(): NewMoveOrder {
+            return FfiConverterTypeNewMoveOrder.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiredoc_new_move_order(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
     
     /**
      * Unix seconds when the next card falls due after today's are done.
@@ -11002,6 +11043,22 @@ open class RepertoireDoc: Disposable, AutoCloseable, RepertoireDocInterface
         it,
         
         FfiConverterUInt.lower(`id`),_status)
+}
+    }
+    )
+    }
+    
+
+    
+    /**
+     * The repertoire's own new move order, if it overrides the default.
+     */override fun `ownNewMoveOrder`(): NewMoveOrder? {
+            return FfiConverterOptionalTypeNewMoveOrder.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_repertoiredoc_own_new_move_order(
+        it,
+        _status)
 }
     }
     )
@@ -11591,7 +11648,7 @@ open class RepertoireDoc: Disposable, AutoCloseable, RepertoireDocInterface
     }
     
 
-    override fun `updateStudySettings`(`limits`: DeckLimits, `practiceMode`: PracticeMode?, `now`: Timestamp): Changes {
+    override fun `updateStudySettings`(`limits`: DeckLimits, `practiceMode`: PracticeMode?, `newMoveOrder`: NewMoveOrder?, `now`: Timestamp): Changes {
             return FfiConverterTypeChanges.lift(
     callWithHandle {
     uniffiRustCall() { _status ->
@@ -11600,6 +11657,7 @@ open class RepertoireDoc: Disposable, AutoCloseable, RepertoireDocInterface
         
         FfiConverterTypeDeckLimits.lower(`limits`),
         FfiConverterOptionalTypePracticeMode.lower(`practiceMode`),
+        FfiConverterOptionalTypeNewMoveOrder.lower(`newMoveOrder`),
         FfiConverterTypeTimestamp.lower(`now`),_status)
 }
     }
@@ -16169,6 +16227,8 @@ data class StudyDefaults (
     var `reviewsPerDay`: kotlin.Long
     , 
     var `practiceMode`: PracticeMode
+    , 
+    var `newMoveOrder`: NewMoveOrder
     
 ){
     
@@ -16188,19 +16248,22 @@ public object FfiConverterTypeStudyDefaults: FfiConverterRustBuffer<StudyDefault
             FfiConverterLong.read(buf),
             FfiConverterLong.read(buf),
             FfiConverterTypePracticeMode.read(buf),
+            FfiConverterTypeNewMoveOrder.read(buf),
         )
     }
 
     override fun allocationSize(value: StudyDefaults) = (
             FfiConverterLong.allocationSize(value.`newPerDay`) +
             FfiConverterLong.allocationSize(value.`reviewsPerDay`) +
-            FfiConverterTypePracticeMode.allocationSize(value.`practiceMode`)
+            FfiConverterTypePracticeMode.allocationSize(value.`practiceMode`) +
+            FfiConverterTypeNewMoveOrder.allocationSize(value.`newMoveOrder`)
     )
 
     override fun write(value: StudyDefaults, buf: ByteBuffer) {
             FfiConverterLong.write(value.`newPerDay`, buf)
             FfiConverterLong.write(value.`reviewsPerDay`, buf)
             FfiConverterTypePracticeMode.write(value.`practiceMode`, buf)
+            FfiConverterTypeNewMoveOrder.write(value.`newMoveOrder`, buf)
     }
 }
 
@@ -18120,6 +18183,40 @@ public object FfiConverterTypeMoveToken : FfiConverterRustBuffer<MoveToken>{
                 Unit
             }
         }.let { /* this makes the `when` an expression, which ensures it is exhaustive */ }
+    }
+}
+
+
+
+
+
+
+enum class NewMoveOrder {
+    
+    MOST_LIKELY_FIRST,
+    ONE_OPENING_AT_A_TIME;
+
+    
+
+
+    companion object
+}
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterTypeNewMoveOrder: FfiConverterRustBuffer<NewMoveOrder> {
+    override fun read(buf: ByteBuffer) = try {
+        NewMoveOrder.values()[buf.getInt() - 1]
+    } catch (e: IndexOutOfBoundsException) {
+        throw RuntimeException("invalid enum value, something is very wrong!!", e)
+    }
+
+    override fun allocationSize(value: NewMoveOrder) = 4UL
+
+    override fun write(value: NewMoveOrder, buf: ByteBuffer) {
+        buf.putInt(value.ordinal + 1)
     }
 }
 
@@ -20061,6 +20158,38 @@ public object FfiConverterOptionalTypeFileKind: FfiConverterRustBuffer<FileKind?
         } else {
             buf.put(1)
             FfiConverterTypeFileKind.write(value, buf)
+        }
+    }
+}
+
+
+
+
+/**
+ * @suppress
+ */
+public object FfiConverterOptionalTypeNewMoveOrder: FfiConverterRustBuffer<NewMoveOrder?> {
+    override fun read(buf: ByteBuffer): NewMoveOrder? {
+        if (buf.get().toInt() == 0) {
+            return null
+        }
+        return FfiConverterTypeNewMoveOrder.read(buf)
+    }
+
+    override fun allocationSize(value: NewMoveOrder?): ULong {
+        if (value == null) {
+            return 1UL
+        } else {
+            return 1UL + FfiConverterTypeNewMoveOrder.allocationSize(value)
+        }
+    }
+
+    override fun write(value: NewMoveOrder?, buf: ByteBuffer) {
+        if (value == null) {
+            buf.put(0)
+        } else {
+            buf.put(1)
+            FfiConverterTypeNewMoveOrder.write(value, buf)
         }
     }
 }
@@ -22452,6 +22581,17 @@ public typealias FfiConverterTypeTimestamp = FfiConverterLong fun `coreVersion`(
         
         FfiConverterSequenceTypePlayedMove.lower(`moves`),
         FfiConverterUInt.lower(`startPly`),_status)
+}
+    )
+    }
+    
+ fun `newMoveOrderTitle`(`order`: NewMoveOrder): kotlin.String {
+            return FfiConverterString.lift(
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_func_new_move_order_title(
+    
+        
+        FfiConverterTypeNewMoveOrder.lower(`order`),_status)
 }
     )
     }

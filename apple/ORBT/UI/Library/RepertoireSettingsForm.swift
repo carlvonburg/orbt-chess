@@ -395,13 +395,16 @@ struct ChipGrid<Item: Hashable>: View {
     }
 }
 
-/// A repertoire's daily limits and practice mode: the defaults from Settings, or its own
+/// A repertoire's daily limits, new move order and practice mode: the defaults from Settings, or its own
 /// (Anki's "This deck" limits). One-day changes are custom study, from the overview.
 struct DailyPracticeDraft: Equatable {
     let presetNew = TrainingDefaults.newPerDay
     let presetReviews = TrainingDefaults.reviewsPerDay
     let presetPracticeMode = TrainingDefaults.practiceMode
+    let presetNewMoveOrder = TrainingDefaults.newMoveOrder
     var limits = DeckLimits()
+    /// This repertoire's new move order; nil uses the default.
+    var newMoveOrder: NewMoveOrder?
     /// This repertoire's practice mode; nil uses the default.
     var practiceMode: PracticeMode?
 
@@ -411,6 +414,7 @@ struct DailyPracticeDraft: Equatable {
         limits.newLimitToday = nil
         limits.reviewLimitToday = nil
         practiceMode = sidecar.practiceMode
+        newMoveOrder = sidecar.newMoveOrder
     }
 
     /// Off: this repertoire's own limits, starting from the defaults.
@@ -440,9 +444,14 @@ struct DailyPracticeDraft: Equatable {
         get { practiceMode ?? presetPracticeMode }
         set { practiceMode = newValue }
     }
+
+    var order: NewMoveOrder {
+        get { newMoveOrder ?? presetNewMoveOrder }
+        set { newMoveOrder = newValue }
+    }
 }
 
-/// A repertoire's options: the default limits or its own, and its practice mode.
+/// A repertoire's options: the default limits or its own, its new move order and practice mode.
 struct DailyPracticeSection: View {
     @Binding var draft: DailyPracticeDraft
 
@@ -464,12 +473,61 @@ struct DailyPracticeSection: View {
         }
 
         Section {
+            NewMoveOrderPicker(order: $draft.order)
+            if draft.newMoveOrder != nil {
+                Button("Use Default (\(draft.presetNewMoveOrder.title))") { draft.newMoveOrder = nil }
+            }
+        } footer: {
+            Text(draft.newMoveOrder == nil ? "The default, set in Settings." : "Only for this repertoire.")
+        }
+
+        Section {
             PracticeModePicker(mode: $draft.mode)
             if draft.practiceMode != nil {
                 Button("Use Default (\(draft.presetPracticeMode.title))") { draft.practiceMode = nil }
             }
         } footer: {
             Text(draft.practiceMode == nil ? "The default, set in Settings." : "Only for this repertoire.")
+        }
+    }
+}
+
+/// Which line of new moves comes next, each with what it does.
+struct NewMoveOrderPicker: View {
+    @Binding var order: NewMoveOrder
+
+    var body: some View {
+        NavigationLink {
+            List {
+                ForEach(NewMoveOrder.allCases) { option in
+                    Button { order = option } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(option.title)
+                                Text(option.detail).font(.footnote).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if option == order { Image(systemName: "checkmark").foregroundStyle(.tint) }
+                        }
+                    }
+                    .tint(.primary)
+                .formRowButton()
+                    .accessibilityAddTraits(option == order ? .isSelected : [])
+                }
+            }
+            .navigationTitle("New Lines")
+        } label: {
+            LabeledContent("New lines", value: order.title)
+        }
+    }
+}
+
+extension NewMoveOrder {
+    /// Which line of new moves comes next. Either way a line is learned to its end.
+    var detail: String {
+        switch self {
+        case .mostLikelyFirst: "The line you're most likely to meet next, in any opening."
+        case .oneOpeningAtATime: "Every line of an opening before the next opening."
         }
     }
 }

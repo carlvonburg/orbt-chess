@@ -17,13 +17,22 @@ cards and their expected moves:
   12 [e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6] -> Be3; line through it: e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3
   14 [e4 e5] -> Nf3; line through it: e4 e5 Nf3
 new cards in tree order: ["[]", "[e4 c5]", "[e4 c5 Nf3 d6]", "[e4 c5 Nf3 d6 d4 cxd4]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6]", "[e4 e5]"]
-branch [e4]: 3 lines, cards [2, 4, 6, 8, 10, 12, 14], new by reach ["[e4 c5]", "[e4 c5 Nf3 d6]", "[e4 c5 Nf3 d6 d4 cxd4]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6]", "[e4 e5]"]
+branch [e4]: 3 lines, cards [2, 4, 6, 8, 10, 12, 14], new by reach ["[e4 c5]", "[e4 c5 Nf3 d6]", "[e4 c5 Nf3 d6 d4 cxd4]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6]", "[e4 e5]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6]"]
 branch [e4 c5]: 2 lines, cards [2, 4, 6, 8, 10, 12], new by reach ["[e4 c5]", "[e4 c5 Nf3 d6]", "[e4 c5 Nf3 d6 d4 cxd4]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6]", "[e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6]"]
 branch [e4 e5]: 1 lines, cards [14], new by reach ["[e4 e5]"]
 branch [d4]: 0 lines, cards [], new by reach []
 branch [d4 d5]: 0 lines, cards [], new by reach []
 branch [d4 Nf6]: 0 lines, cards [], new by reach []
 new cards by reach:
+  []
+  [e4 c5]
+  [e4 c5 Nf3 d6]
+  [e4 c5 Nf3 d6 d4 cxd4]
+  [e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6]
+  [e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6]
+  [e4 e5]
+  [e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6]
+new cards one opening at a time:
   []
   [e4 c5]
   [e4 c5 Nf3 d6]

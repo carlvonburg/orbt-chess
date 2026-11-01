@@ -17,7 +17,7 @@ use orbt_core::training::anki::{
     Card, CardQueue, CardQueues, CardType, MemoryState, QueueKind, Rating, RemainingLimits,
     SchedTiming, Scheduler,
 };
-use orbt_core::training::{MoveRole, PracticeMode, StudySession, Trainer};
+use orbt_core::training::{MoveRole, NewMoveOrder, PracticeMode, StudySession, Trainer};
 
 const T0: i64 = 1_700_000_000;
 const DAY: i64 = 86_400;
@@ -193,7 +193,8 @@ fn trainers() {
         let t = Trainer::new(Arc::new(tree.clone()), color);
         let root = RepertoireTree::ROOT;
         let card_nodes = t.card_nodes(root);
-        let order = t.new_card_order(root, &reach);
+        let order = t.new_card_order(root, &reach, NewMoveOrder::MostLikelyFirst);
+        let depth_first = t.new_card_order(root, &reach, NewMoveOrder::OneOpeningAtATime);
         let lines = t.all_lines(root);
         let cards = mixed_cards(&order, &start());
         let limit = if small { usize::MAX } else { 20 };
@@ -245,7 +246,7 @@ fn trainers() {
             writeln!(
                 out,
                 "new cards in tree order: {:?}",
-                t.new_card_order(root, &HashMap::new())
+                t.new_card_order(root, &HashMap::new(), NewMoveOrder::OneOpeningAtATime)
                     .iter()
                     .map(|e| epd_name(&tree, e))
                     .collect::<Vec<_>>()
@@ -258,7 +259,7 @@ fn trainers() {
                     line_san(&tree, &tree.path(b)),
                     t.all_lines(b).len(),
                     t.card_nodes(b),
-                    t.new_card_order(b, &reach)
+                    t.new_card_order(b, &reach, NewMoveOrder::MostLikelyFirst)
                         .iter()
                         .map(|e| epd_name(&tree, e))
                         .collect::<Vec<_>>()
@@ -268,6 +269,10 @@ fn trainers() {
         }
         writeln!(out, "new cards by reach:").unwrap();
         for epd in order.iter().take(limit) {
+            writeln!(out, "  {}", epd_name(&tree, epd)).unwrap();
+        }
+        writeln!(out, "new cards one opening at a time:").unwrap();
+        for epd in depth_first.iter().take(limit) {
             writeln!(out, "  {}", epd_name(&tree, epd)).unwrap();
         }
         writeln!(out, "lines:").unwrap();
@@ -306,7 +311,7 @@ fn queues() {
     let (tree, color) = training_tree("openings");
     let reach = common::reach(&tree, color);
     let t = Trainer::new(Arc::new(tree.clone()), color);
-    let order = t.new_card_order(RepertoireTree::ROOT, &reach);
+    let order = t.new_card_order(RepertoireTree::ROOT, &reach, NewMoveOrder::default());
     let priority = t.reach_by_epd(&reach);
     let cards = mixed_cards(&order, &start());
     let scheduler = Scheduler::default();
@@ -521,7 +526,7 @@ fn sessions() {
         let (tree, color) = training_tree(name);
         let reach = common::reach(&tree, color);
         let trainer = Arc::new(Trainer::new(Arc::new(tree.clone()), color));
-        let order = trainer.new_card_order(RepertoireTree::ROOT, &reach);
+        let order = trainer.new_card_order(RepertoireTree::ROOT, &reach, NewMoveOrder::default());
         let branch = tree[RepertoireTree::ROOT].children[0];
         for cards in ["empty", "mixed"] {
             let initial = if cards == "mixed" {
@@ -537,6 +542,7 @@ fn sessions() {
                 let daily = StudySession::daily(
                     trainer.clone(),
                     mode,
+                    NewMoveOrder::default(),
                     &initial,
                     RemainingLimits {
                         review: 30,
@@ -550,6 +556,7 @@ fn sessions() {
                 let drill = StudySession::branch(
                     trainer.clone(),
                     mode,
+                    NewMoveOrder::default(),
                     branch,
                     &initial,
                     &start(),

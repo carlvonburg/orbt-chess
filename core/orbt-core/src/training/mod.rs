@@ -4,5 +4,5 @@ pub mod anki;
 mod study;
 mod trainer;
 
-pub use study::{AnswerKind, MoveRole, PracticeMode, StudyLine, StudySession};
+pub use study::{AnswerKind, MoveRole, NewMoveOrder, PracticeMode, StudyLine, StudySession};
 pub use trainer::{LineOutcome, LineRun, MATURE_INTERVAL, Progress, Trainer};

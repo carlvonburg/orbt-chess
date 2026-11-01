@@ -187,7 +187,9 @@ edited in Settings; a repertoire's options set its own limits; one-day changes a
 (or take back to where they part from the last line, when shorter; else, when the line was
 already shown this session, five half-moves before the first move you play) and the practice mode
 decides who plays your earlier moves; one line answers every queued card on it; moves you play that aren't due are reviews ahead (filtered deck); new cards are
-introduced a line at a time (most reached first) and a started line is finished past the
+introduced a line at a time, each to its end with the most reached reply at every opponent move
+(the new move order, a setting: the most likely line not learned yet anywhere, by the reach of
+the reply it starts with, or one opening at a time, depth first) and a started line is finished past the
 daily limit; reviews due the same day are ordered by reach. Grading is Again/Good only
 (wrong, hint or browsing = Again). Files ported from Anki (or another project) keep its AGPL
 copyright header naming the source files, in Rust as before in Swift (see `training/anki/*.rs`,
