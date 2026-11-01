@@ -30,6 +30,14 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
+      - name: The tag is the version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version="$(sed -n 's/^MARKETING_VERSION *= *//p' Version.xcconfig)"
+          if [[ "$GITHUB_REF_NAME" != "v$version" && "$GITHUB_REF_NAME" != "v$version"-* ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME is not version $version (Version.xcconfig)"
+            exit 1
+          fi
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-deny

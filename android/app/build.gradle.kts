@@ -124,8 +124,8 @@ compose.desktop {
             // The loopback redirect of the Lichess sign-in.
             modules("jdk.httpserver")
             packageName = "ORBT Chess"
-            // The same version as the Apple and Android apps (androidApp's versionName).
-            packageVersion = "1.0.0"
+            // Version.xcconfig, through the root build (the Apple and Android apps' too).
+            packageVersion = rootProject.extra["orbtVersionName"] as String
             description = "Opening repertoire builder and trainer"
             vendor = "ORBT Chess"
             copyright = "© 2026 ORBT contributors, AGPL-3.0-or-later"

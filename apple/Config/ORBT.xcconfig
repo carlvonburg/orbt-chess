@@ -16,4 +16,7 @@ ORBT_DROPBOX_APP_KEY =
 ORBT_GOOGLE_IOS_CLIENT_ID =
 ORBT_GOOGLE_REVERSED_CLIENT_ID =
 
+// The version and build number, shared with Android and the desktop.
+#include "../../Version.xcconfig"
+
 #include? "Secrets.xcconfig"

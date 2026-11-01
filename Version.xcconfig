@@ -1,0 +1,12 @@
+// The version of ORBT Chess on every platform, set here and nowhere else: Xcode reads this file
+// through apple/Config/ORBT.xcconfig, Gradle through android/build.gradle.kts (the Android app's
+// versionName and versionCode, the desktop app's packageVersion). A release's tag is
+// v<MARKETING_VERSION> (v1.0.1, or v1.0.1-beta.1 for a beta); the release workflow checks it.
+//
+// MARKETING_VERSION: the version users see. The desktop's MSI replaces an installed one only
+// when one of its three numbers goes up.
+// CURRENT_PROJECT_VERSION: the build number, one counter for every store (Apple's build, Play's
+// versionCode): one more for every upload, even of the same version, and never back.
+
+MARKETING_VERSION = 1.0.0
+CURRENT_PROJECT_VERSION = 1

@@ -28,8 +28,9 @@ android {
         applicationId = "org.orbtchess.orbt"
         minSdk = 29
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0.0"
+        // Version.xcconfig, through the root build.
+        versionCode = rootProject.extra["orbtVersionCode"] as Int
+        versionName = rootProject.extra["orbtVersionName"] as String
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
