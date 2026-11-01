@@ -7,7 +7,7 @@ use orbt_core::document::{Changes, OutlineItem, Repertoire, StudyDefaults};
 use orbt_core::explorer::{ExplorerDatabase, ExplorerStats};
 use orbt_core::formats::Timestamp;
 use orbt_core::repertoire::{NodeId, RepertoireTree};
-use orbt_core::statistics::GraphParts;
+use orbt_core::statistics::{BranchPoint, GraphParts};
 use orbt_core::training::anki::{
     Card, Counts, DeckLimits, RemainingLimits, RevlogEntry, SchedTiming,
 };
@@ -476,10 +476,10 @@ impl RepertoireDoc {
             .collect()
     }
 
-    /// The opening branches for per-branch statistics.
-    pub fn opening_branches(&self) -> Vec<NodeId> {
+    /// Where the line from `from` branches, for per-branch statistics.
+    pub fn branch_point(&self, from: NodeId) -> BranchPoint {
         let trainer = self.lock().trainer();
-        orbt_core::statistics::opening_branches(&trainer)
+        orbt_core::statistics::branch_point(&trainer, from)
     }
 
     pub fn learning_progress(&self, node: NodeId) -> Progress {

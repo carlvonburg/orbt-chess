@@ -4474,6 +4474,11 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
      */
     func allNodes()  -> [Node]
     
+    /**
+     * Where the line from `from` branches, for per-branch statistics.
+     */
+    func branchPoint(from: UInt32)  -> BranchPoint
+    
     func canUndo()  -> Bool
     
     func card(epd: Epd)  -> Card?
@@ -4570,11 +4575,6 @@ public protocol RepertoireDocProtocol: AnyObject, Sendable {
     func nodeFollowing(ucis: [String], start: UInt32)  -> UInt32?
     
     func nodesAt(epd: Epd)  -> [UInt32]
-    
-    /**
-     * The opening branches for per-branch statistics.
-     */
-    func openingBranches()  -> [UInt32]
     
     /**
      * The opening name of a node, or of its nearest ancestor, from stats already loaded.
@@ -4796,6 +4796,19 @@ open func allNodes() -> [Node]  {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_repertoiredoc_all_nodes(
             self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+    /**
+     * Where the line from `from` branches, for per-branch statistics.
+     */
+open func branchPoint(from: UInt32) -> BranchPoint  {
+    return try!  FfiConverterTypeBranchPoint_lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_repertoiredoc_branch_point(
+            self.uniffiCloneHandle(),
+        FfiConverterUInt32.lower(from),uniffiCallStatus
     )
 })
 }
@@ -5178,18 +5191,6 @@ open func nodesAt(epd: Epd) -> [UInt32]  {
     uniffi_opening_core_fn_method_repertoiredoc_nodes_at(
             self.uniffiCloneHandle(),
         FfiConverterTypeEpd_lower(epd),uniffiCallStatus
-    )
-})
-}
-    
-    /**
-     * The opening branches for per-branch statistics.
-     */
-open func openingBranches() -> [UInt32]  {
-    return try!  FfiConverterSequenceUInt32.lift(try! rustCall() {
-        uniffiCallStatus in
-    uniffi_opening_core_fn_method_repertoiredoc_opening_branches(
-            self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
 }
@@ -6872,6 +6873,114 @@ public func FfiConverterTypeBoardSquare_lift(_ buf: RustBuffer) throws -> BoardS
 #endif
 public func FfiConverterTypeBoardSquare_lower(_ value: BoardSquare) -> RustBuffer {
     return FfiConverterTypeBoardSquare.lower(value)
+}
+
+
+public struct Branch: Equatable, Hashable {
+    public var id: UInt32
+    public var text: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(id: UInt32, text: String) {
+        self.id = id
+        self.text = text
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension Branch: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBranch: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> Branch {
+        return
+            try Branch(
+                id: FfiConverterUInt32.read(from: &buf), 
+                text: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: Branch, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.id, into: &buf)
+        FfiConverterString.write(value.text, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBranch_lift(_ buf: RustBuffer) throws -> Branch {
+    return try FfiConverterTypeBranch.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBranch_lower(_ value: Branch) -> RustBuffer {
+    return FfiConverterTypeBranch.lower(value)
+}
+
+
+public struct BranchPoint: Equatable, Hashable {
+    public var point: UInt32
+    public var branches: [Branch]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(point: UInt32, branches: [Branch]) {
+        self.point = point
+        self.branches = branches
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension BranchPoint: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBranchPoint: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BranchPoint {
+        return
+            try BranchPoint(
+                point: FfiConverterUInt32.read(from: &buf), 
+                branches: FfiConverterSequenceTypeBranch.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: BranchPoint, into buf: inout [UInt8]) {
+        FfiConverterUInt32.write(value.point, into: &buf)
+        FfiConverterSequenceTypeBranch.write(value.branches, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBranchPoint_lift(_ buf: RustBuffer) throws -> BranchPoint {
+    return try FfiConverterTypeBranchPoint.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBranchPoint_lower(_ value: BranchPoint) -> RustBuffer {
+    return FfiConverterTypeBranchPoint.lower(value)
 }
 
 
@@ -15787,6 +15896,31 @@ fileprivate struct FfiConverterSequenceTypeBoardSquare: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterSequenceTypeBranch: FfiConverterRustBuffer {
+    typealias SwiftType = [Branch]
+
+    public static func write(_ value: [Branch], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeBranch.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [Branch] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [Branch]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeBranch.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterSequenceTypeCard: FfiConverterRustBuffer {
     typealias SwiftType = [Card]
 
@@ -17821,6 +17955,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_opening_core_checksum_method_repertoiredoc_all_nodes() != 37426) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_opening_core_checksum_method_repertoiredoc_branch_point() != 20440) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_opening_core_checksum_method_repertoiredoc_can_undo() != 38298) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -17927,9 +18064,6 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_nodes_at() != 16352) {
-        return InitializationResult.apiChecksumMismatch
-    }
-    if (uniffi_opening_core_checksum_method_repertoiredoc_opening_branches() != 25907) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_repertoiredoc_opening_name() != 9062) {

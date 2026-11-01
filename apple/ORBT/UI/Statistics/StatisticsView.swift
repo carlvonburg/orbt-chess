@@ -112,11 +112,9 @@ struct StatisticsSummary: View {
         UpcomingCard(graphs: graphs, range: range)
         ReviewsCard(graphs: graphs, range: range)
         RetentionCard(graphs: graphs)
-        if model.document != nil {
-            let branches = model.retentionByBranch().map { (model.document?.tree.lineText(to: $0.0) ?? "", $0.1) }
-            if !branches.isEmpty {
-                RetentionRowsCard(title: "Retention by Opening", systemImage: "arrow.triangle.branch", rows: branches,
-                                  footnote: "All time, for each reply to your first move: the share of reviews after a day or more answered correctly, and how many.")
+        if let document = model.document {
+            if !document.branchPoint().branches.isEmpty {
+                BranchProgressCard(model: model).id(document.entryID)
             }
         } else if !model.repertoireRetention.isEmpty {
             RetentionRowsCard(title: "Retention by Repertoire", systemImage: "books.vertical.fill", rows: model.repertoireRetention,
@@ -487,7 +485,7 @@ private struct RetentionCard: View {
     }
 }
 
-/// True retention, all time, for each opening (one repertoire) or each repertoire (all).
+/// True retention, all time, for each repertoire.
 private struct RetentionRowsCard: View {
     let title: String
     let systemImage: String
@@ -507,6 +505,87 @@ private struct RetentionRowsCard: View {
             .chartXAxis(.hidden)
             .frame(height: CGFloat(rows.count) * 32 + 8)
             Footnote(text: footnote)
+        }
+    }
+}
+
+/// How far each branch is learned: its moves as the studied bar (mature, young, learning, and
+/// the empty track not studied yet), how many are not studied and true retention. A branch
+/// that branches again opens its replies in place; the line above goes back.
+private struct BranchProgressCard: View {
+    let model: StatisticsModel
+    /// The branches opened, outermost first.
+    @State private var path: [NodeID] = []
+
+    var body: some View {
+        let (point, rows) = model.branches(from: path.last ?? RepertoireTree.rootID)
+        let line = model.document?.tree.lineText(to: point) ?? ""
+        StatCard(title: "Progress by Branch", systemImage: "arrow.triangle.branch", color: .learned) {
+            if !path.isEmpty {
+                Button { path.removeLast() } label: {
+                    Label(line.isEmpty ? "Starting position" : line, systemImage: "chevron.backward")
+                        .multilineTextAlignment(.leading)
+                }
+                .font(.subheadline)
+                .buttonStyle(.borderless)
+            } else if !line.isEmpty {
+                Text(line).font(.subheadline).foregroundStyle(.secondary)
+            }
+            VStack(spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                    if index > 0 { Divider() }
+                    if row.branches {
+                        Button { path.append(row.id) } label: { label(row, chevron: true) }
+                            .buttonStyle(.plain)
+                    } else {
+                        label(row, chevron: false)
+                    }
+                }
+            }
+            if rows.isEmpty {
+                Footnote(text: "This line doesn't branch.")
+            }
+            FlowLayout {
+                legend("Mature", .learned)
+                legend("Young", ThemeColor.learned.lighter())
+                legend("Learning", .learning)
+                HStack(spacing: 4) {
+                    Circle().fill(.quaternary).frame(width: 7, height: 7)
+                    Text("Not studied").foregroundStyle(.secondary)
+                }
+            }
+            .font(.caption)
+            Footnote(text: "Your moves in each branch, then the share of reviews after a day or more answered correctly (all time).")
+        }
+    }
+
+    private func label(_ row: StatisticsModel.BranchRow, chevron: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(row.text)
+                Spacer()
+                Text(row.progress.notStudied > 0 ? "\(row.progress.notStudied.formatted()) of \(row.progress.cards.formatted()) not studied" : movesText(Int(row.progress.cards)))
+                    .font(.caption).foregroundStyle(.secondary)
+                Text(percent(row.retention.total))
+                    .frame(minWidth: 36, alignment: .trailing)
+                if chevron {
+                    Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                }
+            }
+            .monospacedDigit()
+            StudiedBar(progress: row.progress, height: 8)
+        }
+        .font(.subheadline)
+        .padding(.vertical, 8)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(chevron ? "Shows its replies" : "")
+    }
+
+    private func legend(_ title: String, _ color: ThemeColor) -> some View {
+        HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 7, height: 7)
+            Text(title).foregroundStyle(.secondary)
         }
     }
 }

@@ -1,5 +1,18 @@
 package org.orbtchess.orbt.ui.statistics
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material3.TextButton
+import org.orbtchess.orbt.core.notStudied
+import org.orbtchess.orbt.storage.NodeId
+import org.orbtchess.orbt.storage.ROOT_NODE
+import org.orbtchess.orbt.ui.components.StudiedBar
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -413,7 +426,7 @@ private fun RetentionRow(
     }
 }
 
-/** True retention, all time, for each opening (one repertoire) or each repertoire (all). */
+/** True retention, all time, for each repertoire. */
 @Composable
 internal fun RetentionRowsCard(
     title: String,
@@ -444,6 +457,88 @@ internal fun RetentionRowsCard(
             }
         }
         Footnote(footnote)
+    }
+}
+
+// MARK: Progress by branch
+
+/**
+ * How far each branch is learned: its moves as the studied bar (mature, young, learning, and the
+ * empty track not studied yet), how many are not studied and true retention. A branch that
+ * branches again opens its replies in place; the line above goes back.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun BranchProgressCard(model: StatisticsModel, graphs: Graphs) {
+    val document = model.document ?: return
+    // Nothing when the repertoire is a single line.
+    if (remember(graphs) { document.branchPoint().branches.isEmpty() }) return
+    // The branches opened, outermost first.
+    var path by remember(document.entryId) { mutableStateOf(listOf<NodeId>()) }
+    val (point, rows) = remember(graphs, path) { model.branches(path.lastOrNull() ?: ROOT_NODE) }
+    val line = document.tree.lineText(point)
+    StatCard("Progress by Branch", RetentionIcons.branches, color = ThemeColor.learned) {
+        if (path.isNotEmpty()) {
+            TextButton(onClick = { path = path.dropLast(1) }, contentPadding = PaddingValues(0.dp)) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = null)
+                Text(line.ifEmpty { "Starting position" }, style = MaterialTheme.typography.bodyMedium)
+            }
+        } else if (line.isNotEmpty()) {
+            Text(line, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Column {
+            rows.forEachIndexed { index, row ->
+                if (index > 0) HorizontalDivider()
+                BranchRow(row, onClick = if (row.branches) ({ path = path + row.id }) else null)
+            }
+        }
+        if (rows.isEmpty()) Footnote("This line doesn't branch.")
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            BranchLegend("Mature", ThemeColor.learned.color)
+            BranchLegend("Young", ThemeColor.learned.lighter().color)
+            BranchLegend("Learning", ThemeColor.learning.color)
+            BranchLegend("Not studied", MaterialTheme.colorScheme.surfaceContainerHighest)
+        }
+        Footnote("Your moves in each branch, then the share of reviews after a day or more answered correctly (all time).")
+    }
+}
+
+@Composable
+private fun BranchRow(row: StatisticsModel.BranchRow, onClick: (() -> Unit)?) {
+    val progress = row.progress
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(vertical = 8.dp)
+            .semantics(mergeDescendants = true) {},
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(row.text, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Note(
+                if (progress.notStudied > 0) "${number(progress.notStudied)} of ${number(progress.cards)} not studied"
+                else movesText(progress.cards),
+            )
+            Text(
+                percent(row.retention.total),
+                Modifier.widthIn(min = 36.dp),
+                style = tabularDigits(MaterialTheme.typography.bodyMedium),
+                textAlign = TextAlign.End,
+            )
+            if (onClick != null) {
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Shows its replies")
+            }
+        }
+        StudiedBar(progress, height = 8.dp)
+    }
+}
+
+@Composable
+private fun BranchLegend(title: String, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Canvas(Modifier.size(7.dp)) { drawCircle(color) }
+        Text(title, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

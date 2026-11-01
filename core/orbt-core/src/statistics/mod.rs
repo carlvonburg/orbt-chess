@@ -8,7 +8,9 @@ mod scope;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
-pub use chess_stats::{WeakMove, expected_recall, opening_branches, weakest_moves};
+pub use chess_stats::{
+    Branch, BranchPoint, WeakMove, branch_point, expected_recall, weakest_moves,
+};
 pub use scope::{GraphParts, card_reach, repertoire_cards};
 
 use crate::chess::Epd;

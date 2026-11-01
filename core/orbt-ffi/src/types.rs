@@ -20,8 +20,9 @@ use orbt_core::http::{Header, HttpMethod, HttpRequest, HttpResponse};
 use orbt_core::lichess::cloud_eval::{CloudEval, CloudEvalLookup, Pv};
 use orbt_core::repertoire::{NodeId, RepertoireNode, RepertoireTree};
 use orbt_core::statistics::{
-    CardCounts, CardInfo, FutureDueSummary, GraphParts, GraphRange, Hour, RetentionPeriod,
-    ReviewCounts, ReviewsSummary, StageCounts, Streak, Today, TrueRetention, WeakMove,
+    Branch, BranchPoint, CardCounts, CardInfo, FutureDueSummary, GraphParts, GraphRange, Hour,
+    RetentionPeriod, ReviewCounts, ReviewsSummary, StageCounts, Streak, Today, TrueRetention,
+    WeakMove,
 };
 use orbt_core::training::anki::{
     Card, CardQueue, CardType, Counts, DayLimit, DeckLimits, DeckStudyStats, MemoryState,
@@ -618,6 +619,18 @@ pub struct Streak {
     pub current: i64,
     pub longest: i64,
     pub studied_today: bool,
+}
+
+#[uniffi::remote(Record)]
+pub struct BranchPoint {
+    pub point: NodeId,
+    pub branches: Vec<Branch>,
+}
+
+#[uniffi::remote(Record)]
+pub struct Branch {
+    pub id: NodeId,
+    pub text: String,
 }
 
 #[uniffi::remote(Record)]

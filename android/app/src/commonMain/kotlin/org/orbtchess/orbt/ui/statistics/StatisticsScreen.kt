@@ -211,15 +211,7 @@ internal fun LazyStaggeredGridScope.statisticsCards(
     item("reviews") { ReviewsCard(graphs, model.range) }
     item("retention") { RetentionCard(graphs) }
     if (model.document != null) {
-        item("byOpening") {
-            val rows = remember(graphs) { model.retentionByBranch() }
-            if (rows.isNotEmpty()) {
-                RetentionRowsCard(
-                    "Retention by Opening", RetentionIcons.branches, rows,
-                    "All time, for each reply to your first move: the share of reviews after a day or more answered correctly, and how many.",
-                )
-            }
-        }
+        item("byBranch") { BranchProgressCard(model, graphs) }
     } else if (model.repertoireRetention.isNotEmpty()) {
         item("byRepertoire") {
             RetentionRowsCard(

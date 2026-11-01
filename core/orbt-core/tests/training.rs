@@ -629,3 +629,58 @@ fn each_transposed_continuation_is_drilled_once() {
     assert_eq!(through_nc3, 1);
     assert_eq!(lines.len(), 3);
 }
+
+// Per-branch statistics
+
+#[test]
+fn branch_point_follows_a_single_line() {
+    use orbt_core::statistics::branch_point;
+    // Against 1. e4 only: the branches are where White's second moves part. Replies with no
+    // move of yours (1. d4, 2. f4) have nothing to learn.
+    let tree =
+        RepertoireTree::from_pgn("1. e4 (1. d4) e5 2. Nf3 (2. Bc4 Nf6) (2. f4) Nc6 3. Bb5 Nf6 *");
+    let t = trainer(&tree, Side::Black);
+    let p = branch_point(&t, ROOT);
+    assert_eq!(p.point, tree.find("e4 e5").unwrap());
+    let ids: Vec<NodeId> = p.branches.iter().map(|b| b.id).collect();
+    assert_eq!(
+        ids,
+        vec![
+            tree.find("e4 e5 Nf3").unwrap(),
+            tree.find("e4 e5 Bc4").unwrap()
+        ]
+    );
+    assert_eq!(p.branches[1].text, "2. Bc4");
+    // A branch that never parts again has none.
+    assert!(branch_point(&t, p.branches[0].id).branches.is_empty());
+
+    // Several first moves branch at the start; your alternatives are not branches.
+    let tree = RepertoireTree::from_pgn("1. d4 (1. c4 c6 2. d4) d5 (1... Nf6 2. c4) 2. c4 *");
+    let p = branch_point(&trainer(&tree, Side::Black), ROOT);
+    assert_eq!(p.point, ROOT);
+    assert_eq!(p.branches.len(), 2);
+    let p = branch_point(&trainer(&tree, Side::White), ROOT);
+    assert_eq!(p.point, tree.find("d4").unwrap());
+    let ids: Vec<NodeId> = p.branches.iter().map(|b| b.id).collect();
+    assert_eq!(
+        ids,
+        vec![tree.find("d4 d5").unwrap(), tree.find("d4 Nf6").unwrap()]
+    );
+    assert_eq!(p.branches[1].text, "1... Nf6");
+}
+
+#[test]
+fn branch_point_continues_through_transposition() {
+    use orbt_core::statistics::branch_point;
+    let tree = RepertoireTree::from_pgn(
+        "1. d4 d5 2. c4 (2. Nf3 Nf6 3. c4 c6 4. Nc3 (4. e3 Bf5) e6) c6 3. Nf3 Nf6 4. Nc3 e6 *",
+    );
+    let t = trainer(&tree, Side::Black);
+    let p = branch_point(&t, tree.find("d4 d5 Nf3").unwrap());
+    // The position's lines are stored once, wherever the merge put them.
+    assert_eq!(
+        tree[p.point].epd,
+        tree[tree.find("d4 d5 c4 c6 Nf3 Nf6").unwrap()].epd
+    );
+    assert_eq!(p.branches.len(), 2);
+}

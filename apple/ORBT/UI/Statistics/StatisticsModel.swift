@@ -85,14 +85,28 @@ final class StatisticsModel {
         return text.isEmpty ? "Starting position" : text
     }
 
-    var branches: [NodeID] { document?.openingBranches() ?? [] }
+    /// A reply where the line branches: its moves by Anki's groups and their true retention,
+    /// all time.
+    struct BranchRow: Identifiable {
+        let id: NodeID
+        let text: String
+        let progress: Progress
+        let retention: TrueRetention
+        /// The line branches again below it.
+        let branches: Bool
+    }
 
-    /// True retention for each opening branch, all time.
-    func retentionByBranch() -> [(NodeID, TrueRetention)] {
-        guard let document, let graphs else { return [] }
-        return branches.compactMap { id in
-            let retention = graphs.retentionTable(positions: Array(document.cardEPDs(under: id)))[.allTime] ?? TrueRetention()
-            return retention.count > 0 ? (id, retention) : nil
+    /// Where the line from `node` branches (the core follows a single line until the opponent
+    /// has more than one reply), and each reply's progress.
+    func branches(from node: NodeID) -> (point: NodeID, rows: [BranchRow]) {
+        guard let document, let graphs else { return (node, []) }
+        let point = document.branchPoint(from: node)
+        let rows = point.branches.map { branch in
+            BranchRow(id: branch.id, text: branch.text,
+                      progress: document.learningProgress(under: branch.id),
+                      retention: graphs.retentionTable(positions: Array(document.cardEPDs(under: branch.id)))[.allTime] ?? TrueRetention(),
+                      branches: !document.branchPoint(from: branch.id).branches.isEmpty)
         }
+        return (point.point, rows)
     }
 }

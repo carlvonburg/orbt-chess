@@ -1,9 +1,9 @@
 //! Statistics that combine Anki's memory model with the repertoire tree (not in Anki).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::chess::Epd;
-use crate::repertoire::{NodeId, RepertoireTree};
+use crate::repertoire::NodeId;
 use crate::training::Trainer;
 use crate::training::anki::Card;
 
@@ -66,24 +66,63 @@ pub fn weakest_moves(cards: &HashMap<Epd, Card>, now: f64, limit: usize) -> Vec<
     moves
 }
 
-/// The opening branches for per-branch statistics: the positions after the opponent's first
-/// move (for White, after your first move and their reply).
-pub fn opening_branches(trainer: &Trainer) -> Vec<NodeId> {
-    let tree = &trainer.tree;
-    let mut result = Vec::new();
-    let mut stack = vec![RepertoireTree::ROOT];
-    while let Some(id) = stack.pop() {
-        let Some(node) = tree.get(id) else { continue };
-        if node.mv.is_some() && node.side_to_move() == trainer.color {
-            result.push(id);
-            continue;
+/// Where a line branches, for per-branch statistics: `point` is the first position from
+/// `from` where the opponent has more than one reply, and `branches` the positions after
+/// each reply. A single line is followed until then (your main move, an only reply, through
+/// transpositions), so a repertoire against one first move branches where it really does.
+/// Replies with no move of yours below (gaps) have nothing to learn and are left out. No
+/// branches when the line ends first.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BranchPoint {
+    pub point: NodeId,
+    pub branches: Vec<Branch>,
+}
+
+/// A reply where a line branches, e.g. "2. Nf3" or "4... Nf6".
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Branch {
+    pub id: NodeId,
+    pub text: String,
+}
+
+pub fn branch_point(trainer: &Trainer, from: NodeId) -> BranchPoint {
+    let mut id = from;
+    let mut seen = HashSet::new();
+    while seen.insert(id) {
+        let Some(node) = trainer.tree.get(id) else {
+            break;
+        };
+        let next: Vec<NodeId> = trainer
+            .next_after(id)
+            .into_iter()
+            .filter(|&n| trainer.trainable.contains(&n) && !trainer.card_nodes(n).is_empty())
+            .collect();
+        match next.as_slice() {
+            [only] => id = *only,
+            [_, _, ..] if node.side_to_move() != trainer.color => {
+                let branches = next
+                    .into_iter()
+                    .filter_map(|n| {
+                        let node = trainer.tree.get(n)?;
+                        let ply = node.ply as i64 - 1;
+                        let number = ply / 2 + 1;
+                        let dots = if ply % 2 == 0 { "." } else { "..." };
+                        Some(Branch {
+                            id: n,
+                            text: format!("{number}{dots} {}", node.mv.as_ref()?.san),
+                        })
+                    })
+                    .collect();
+                return BranchPoint {
+                    point: id,
+                    branches,
+                };
+            }
+            _ => break,
         }
-        stack.extend(
-            trainer
-                .next_after(id)
-                .into_iter()
-                .filter(|n| trainer.trainable.contains(n)),
-        );
     }
-    result
+    BranchPoint {
+        point: id,
+        branches: Vec::new(),
+    }
 }
