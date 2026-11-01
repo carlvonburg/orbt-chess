@@ -26,6 +26,7 @@ import org.orbtchess.orbt.core.Node
 import org.orbtchess.orbt.core.NodeCoverage
 import org.orbtchess.orbt.core.PlayedMove
 import org.orbtchess.orbt.core.Position
+import org.orbtchess.orbt.core.NewMoveOrder
 import org.orbtchess.orbt.core.PracticeMode
 import org.orbtchess.orbt.core.Progress
 import org.orbtchess.orbt.core.RemainingLimits
@@ -263,6 +264,8 @@ class RepertoireDocument private constructor(
 
     val practiceMode: PracticeMode get() { revision; return core.practiceMode() }
 
+    val newMoveOrder: NewMoveOrder get() { revision; return core.newMoveOrder() }
+
     fun remainingLimits(timing: SchedTiming): RemainingLimits = core.remainingLimits(timing)
 
     /** Today's New / Learning / To Review counts, as on Anki's deck overview. */
@@ -285,9 +288,9 @@ class RepertoireDocument private constructor(
         return core.reviewsBeyondLimit(timing).toInt()
     }
 
-    /** Daily limits ("This deck") and practice mode for this repertoire. */
-    fun updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?) =
-        apply(core.updateStudySettings(limits, practiceMode, nowTimestamp()))
+    /** Daily limits ("This deck"), practice mode and new move order for this repertoire. */
+    fun updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?, newMoveOrder: NewMoveOrder?) =
+        apply(core.updateStudySettings(limits, practiceMode, newMoveOrder, nowTimestamp()))
 
     /** Your-turn positions under `node` where cards are asked. */
     fun cardEpds(node: NodeId = ROOT_NODE): Set<Epd> {
@@ -563,6 +566,7 @@ class RepertoireDocument private constructor(
         val targetGames: Int get() { document.revision; return document.core.targetGames().toInt() }
         val limits: DeckLimits? get() { document.revision; return document.core.limits() }
         val practiceMode: PracticeMode? get() { document.revision; return document.core.ownPracticeMode() }
+        val newMoveOrder: NewMoveOrder? get() { document.revision; return document.core.ownNewMoveOrder() }
         val lastLine: List<String>? get() = document.core.lastLine()
 
         /** When the next card falls due after today's are done (unix seconds). */

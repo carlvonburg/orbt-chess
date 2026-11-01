@@ -291,6 +291,7 @@ final class RepertoireDocument {
     var savedMoveCount: Int { _ = revision; return Int(core.savedMoveCount()) }
 
     var practiceMode: PracticeMode { _ = revision; return core.practiceMode() }
+    var newMoveOrder: NewMoveOrder { _ = revision; return core.newMoveOrder() }
 
     func remainingLimits(_ timing: SchedTiming) -> RemainingLimits { core.remainingLimits(timing: timing) }
 
@@ -316,9 +317,10 @@ final class RepertoireDocument {
         return Int(core.reviewsBeyondLimit(timing: timing))
     }
 
-    /// Daily limits ("This deck") and practice mode for this repertoire.
-    func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?) {
-        apply(core.updateStudySettings(limits: limits, practiceMode: practiceMode, now: .of(.now)))
+    /// Daily limits ("This deck"), practice mode and new move order for this repertoire.
+    func updateStudySettings(limits: DeckLimits, practiceMode: PracticeMode?, newMoveOrder: NewMoveOrder?) {
+        apply(core.updateStudySettings(limits: limits, practiceMode: practiceMode, newMoveOrder: newMoveOrder,
+                                       now: .of(.now)))
     }
 
     /// Your-turn positions under `node` where cards are asked.
@@ -673,6 +675,7 @@ extension RepertoireDocument {
         var targetGames: Int { _ = document.revision; return Int(document.core.targetGames()) }
         var limits: DeckLimits? { _ = document.revision; return document.core.limits() }
         var practiceMode: PracticeMode? { _ = document.revision; return document.core.ownPracticeMode() }
+        var newMoveOrder: NewMoveOrder? { _ = document.revision; return document.core.ownNewMoveOrder() }
         var lastLine: [String]? { document.core.lastLine() }
 
         /// When the next card falls due after today's are done.

@@ -27,7 +27,9 @@ use orbt_core::training::anki::{
     Card, CardQueue, CardType, Counts, DayLimit, DeckLimits, DeckStudyStats, MemoryState,
     QueueKind, Rating, RemainingLimits, RevlogEntry, RevlogReviewKind, SchedTiming,
 };
-use orbt_core::training::{AnswerKind, LineOutcome, MoveRole, PracticeMode, Progress, StudyLine};
+use orbt_core::training::{
+    AnswerKind, LineOutcome, MoveRole, NewMoveOrder, PracticeMode, Progress, StudyLine,
+};
 
 // Custom types
 
@@ -408,6 +410,12 @@ pub enum PracticeMode {
 }
 
 #[uniffi::remote(Enum)]
+pub enum NewMoveOrder {
+    MostLikelyFirst,
+    OneOpeningAtATime,
+}
+
+#[uniffi::remote(Enum)]
 pub enum AnswerKind {
     Queued,
     Introduce,
@@ -433,6 +441,7 @@ pub struct StudyDefaults {
     pub new_per_day: i64,
     pub reviews_per_day: i64,
     pub practice_mode: PracticeMode,
+    pub new_move_order: NewMoveOrder,
 }
 
 #[uniffi::remote(Record)]
@@ -834,6 +843,11 @@ pub fn explorer_speed_title(speed: ExplorerSpeed) -> String {
 #[uniffi::export]
 pub fn practice_mode_title(mode: PracticeMode) -> String {
     mode.title().to_owned()
+}
+
+#[uniffi::export]
+pub fn new_move_order_title(order: NewMoveOrder) -> String {
+    order.title().to_owned()
 }
 
 #[uniffi::export]

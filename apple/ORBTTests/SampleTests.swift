@@ -12,7 +12,7 @@ import Testing
         let sidecar = newSidecar(id: "sample", color: .white, database: .lichess(ratings: [1600], speeds: [.blitz]),
                                  targetGames: 20, now: .of(.now))
         let opened = try openRepertoire(pgnText: text, sidecar: sidecar,
-                                        defaults: StudyDefaults(newPerDay: 20, reviewsPerDay: 200, practiceMode: .default),
+                                        defaults: StudyDefaults(newPerDay: 20, reviewsPerDay: 200, practiceMode: .default, newMoveOrder: .default),
                                         explorer: Explorer(store: EmptyStore(), bannedUntil: nil, baseIntervalMs: nil))
         #expect(opened.document.loadWarnings().isEmpty)
         #expect(opened.document.savedMoveCount() == 57)

@@ -10,6 +10,7 @@ struct SettingsView: View {
     @AppStorage(TrainingDefaults.newPerDayKey) private var newPerDay = Int(TrainingDefaults.preset.newPerDay)
     @AppStorage(TrainingDefaults.reviewsPerDayKey) private var reviewsPerDay = Int(TrainingDefaults.preset.reviewsPerDay)
     @AppStorage(TrainingDefaults.practiceModeKey) private var practiceMode = PracticeMode.default
+    @AppStorage(TrainingDefaults.newMoveOrderKey) private var newMoveOrder = NewMoveOrder.default
 
     var body: some View {
         NavigationStack {
@@ -40,6 +41,7 @@ struct SettingsView: View {
                 Section {
                     Stepper("New moves/day: \(newPerDay)", value: $newPerDay, in: 0...9999)
                     Stepper("Maximum reviews/day: \(reviewsPerDay)", value: $reviewsPerDay, in: 0...9999, step: 10)
+                    NewMoveOrderPicker(order: $newMoveOrder)
                     PracticeModePicker(mode: $practiceMode)
                 } header: {
                     Text("Study defaults")

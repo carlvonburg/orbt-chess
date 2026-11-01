@@ -32,13 +32,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.DeckLimits
+import org.orbtchess.orbt.core.NewMoveOrder
 import org.orbtchess.orbt.core.PracticeMode
+import org.orbtchess.orbt.core.newMoveOrderTitle
 import org.orbtchess.orbt.core.practiceModeTitle
 import org.orbtchess.orbt.storage.RepertoireDocument
 
 /**
  * A repertoire's study options (`StudyOptionsSheet` in LibraryView.swift, Anki's deck options):
- * the default daily limits or its own, and its practice mode. One-day changes are custom study,
+ * the default daily limits or its own, its new move order and practice mode. One-day changes are custom study,
  * from the overview. The content of a Material bottom sheet the shell shows.
  *
  * @param onDone closes the sheet.
@@ -61,7 +63,7 @@ fun StudyOptionsSheet(
             Text("${document.name} Options", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
             TextButton(onClick = onDone, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
             Button(shapes = ButtonDefaults.shapes(), onClick = {
-                document.updateStudySettings(draft.limits, draft.practiceMode)
+                document.updateStudySettings(draft.limits, draft.practiceMode, draft.newMoveOrder)
                 onDone()
             }) { Text("Save") }
         }
@@ -87,6 +89,29 @@ fun StudyOptionsSheet(
                 }
                 LimitField("Maximum reviews/day", draft.limits.reviewLimit?.toInt() ?: preset.reviewsPerDay, !useDefaults) {
                     draft = draft.copy(limits = draft.limits.copy(reviewLimit = it.toLong()))
+                }
+            }
+        }
+
+        val order = draft.newMoveOrder ?: preset.newMoveOrder
+        FormSection(
+            "New lines",
+            footer = if (draft.newMoveOrder == null) "The default, set in Settings." else "Only for this repertoire.",
+        ) {
+            Column(Modifier.selectableGroup()) {
+                for (option in NewMoveOrder.entries) {
+                    ListItem(
+                        selected = option == order,
+                        onClick = { draft = draft.copy(newMoveOrder = option) },
+                        supportingContent = { Text(option.detail) },
+                        leadingContent = { RadioButton(selected = option == order, onClick = null) },
+                        colors = rowColors,
+                    ) { Text(newMoveOrderTitle(option)) }
+                }
+            }
+            if (draft.newMoveOrder != null) {
+                TextButton(onClick = { draft = draft.copy(newMoveOrder = null) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(horizontal = 8.dp)) {
+                    Text("Use Default (${newMoveOrderTitle(preset.newMoveOrder)})")
                 }
             }
         }
@@ -136,10 +161,11 @@ private fun LimitField(label: String, value: Int, enabled: Boolean, onChange: (I
 }
 
 /**
- * A repertoire's daily limits and practice mode (`DailyPracticeDraft`): the defaults from
- * Settings, or its own (Anki's "This deck" limits). [practiceMode] null uses the default.
+ * A repertoire's daily limits, new move order and practice mode (`DailyPracticeDraft`): the
+ * defaults from Settings, or its own (Anki's "This deck" limits). [newMoveOrder] and
+ * [practiceMode] null use the default.
  */
-private data class DailyPracticeDraft(val limits: DeckLimits, val practiceMode: PracticeMode?) {
+private data class DailyPracticeDraft(val limits: DeckLimits, val newMoveOrder: NewMoveOrder?, val practiceMode: PracticeMode?) {
     /** On: no limits of its own. Off: this repertoire's own limits, starting from the defaults. */
     val useDefaultLimits: Boolean get() = limits.newLimit == null && limits.reviewLimit == null
 
@@ -151,10 +177,17 @@ private data class DailyPracticeDraft(val limits: DeckLimits, val practiceMode: 
         fun of(sidecar: RepertoireDocument.SidecarValues): DailyPracticeDraft {
             // Limits for one day only are no longer offered; drop any left over.
             val limits = (sidecar.limits ?: DeckLimits(null, null, null, null)).copy(newLimitToday = null, reviewLimitToday = null)
-            return DailyPracticeDraft(limits, sidecar.practiceMode)
+            return DailyPracticeDraft(limits, sidecar.newMoveOrder, sidecar.practiceMode)
         }
     }
 }
+
+/** Which line of new moves comes next. Either way a line is learned to its end. */
+internal val NewMoveOrder.detail: String
+    get() = when (this) {
+        NewMoveOrder.MOST_LIKELY_FIRST -> "The line you're most likely to meet next, in any opening."
+        NewMoveOrder.ONE_OPENING_AT_A_TIME -> "Every line of an opening before the next opening."
+    }
 
 /** Who plays your moves on the way to the ones you're asked. */
 internal val PracticeMode.detail: String
