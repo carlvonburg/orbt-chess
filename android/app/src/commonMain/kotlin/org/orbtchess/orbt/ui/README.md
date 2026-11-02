@@ -23,7 +23,8 @@ named in each stub's doc comment.
   - Buttons morph when pressed: `shapes = ButtonDefaults.shapes()` on every button,
     `IconButtonDefaults.shapes()` / `toggleableShapes()` on icon buttons (`TooltipIconButton`).
   - Waiting: `LoadingIndicator` (and `PullToRefreshDefaults.LoadingIndicator` for pull to
-    refresh); progress of a task (downloads, Study's countdown): `LinearWavyProgressIndicator`,
+    refresh, through `components/Refreshable`: Android only, a mouse wheel leaves it stuck);
+    progress of a task (downloads, Study's countdown): `LinearWavyProgressIndicator`,
     `CircularWavyProgressIndicator`. A spinner of 12–16 dp inside a row stays
     `CircularProgressIndicator` (a loading indicator's shapes don't read that small); the app's
     data bars (coverage, studied, how much to learn) are values, not progress: plain
