@@ -2,6 +2,7 @@ package org.orbtchess.orbt.ui.builder
 
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.AdaptiveSheet
 import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import org.orbtchess.orbt.ui.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -33,14 +34,11 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
@@ -110,7 +108,7 @@ private fun OutlineSheet(model: BuilderModel, onStudyBranch: (NodeId) -> Unit, d
         model.go(id)
         dismiss()
     }
-    ModalBottomSheet(onDismissRequest = dismiss, sheetState = rememberBottomSheetState(SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))) {
+    AdaptiveSheet(onDismissRequest = dismiss, expandedOnly = true) {
         SheetTitle("Outline")
         // Material's search bar, collapsed: the results are the list below it, not a view of its own.
         val searchBar = rememberSearchBarState()
@@ -240,7 +238,7 @@ private fun OutlineRow(
 private fun GapsSheet(model: BuilderModel, dismiss: () -> Unit) {
     val document = model.document
     val gaps = document.coverage.gaps()
-    ModalBottomSheet(onDismissRequest = dismiss) {
+    AdaptiveSheet(onDismissRequest = dismiss) {
         SheetTitle("${gaps.size} Gaps")
         if (gaps.isEmpty()) {
             val loading = (document.coverage.root?.pendingCount ?: 0) > 0
@@ -295,7 +293,7 @@ private fun NoteSheet(model: BuilderModel, node: NodeId, dismiss: () -> Unit) {
     var text by remember(node) { mutableStateOf(document.tree[node]?.note.orEmpty()) }
     // The last move or two: "4. Bb5 a6".
     val title = document.tree.lineText(node).split(" ").takeLast(2).joinToString(" ").ifEmpty { "Note" }
-    ModalBottomSheet(onDismissRequest = dismiss) {
+    AdaptiveSheet(onDismissRequest = dismiss) {
         SheetTitle(title) {
             TextButton(onClick = dismiss, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
             Button(shapes = ButtonDefaults.shapes(), onClick = {

@@ -22,6 +22,7 @@ import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldPaneScope
 import androidx.compose.material3.adaptive.layout.calculateDefaultEnterTransition
 import androidx.compose.material3.adaptive.layout.calculateDefaultExitTransition
 import androidx.compose.animation.AnimatedContent
+import org.orbtchess.orbt.ui.components.AdaptiveSheet
 import org.orbtchess.orbt.ui.components.GroupedBackground
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
@@ -31,7 +32,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,6 +73,9 @@ import org.orbtchess.orbt.ui.analysis.AnalysisScreen
 import org.orbtchess.orbt.ui.builder.BuilderScreen
 import org.orbtchess.orbt.ui.components.BoardPane
 import org.orbtchess.orbt.ui.components.LocalInDialog
+import org.orbtchess.orbt.ui.components.LocalSheetHost
+import org.orbtchess.orbt.ui.components.LocalWideWindow
+import org.orbtchess.orbt.ui.components.SheetHost
 import org.orbtchess.orbt.ui.components.OpenDocument
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.library.LibraryScreen
@@ -144,7 +147,8 @@ fun AppShell(app: AppModel) {
     }
 
     val suiteType = if (showBar) NavigationSuiteScaffoldDefaults.navigationSuiteType(adaptiveInfo) else NavigationSuiteType.None
-    CompositionLocalProvider(LocalTourGuide provides app.tour) {
+    val sheets = remember { SheetHost() }
+    CompositionLocalProvider(LocalTourGuide provides app.tour, LocalWideWindow provides wide, LocalSheetHost provides sheets) {
         Box(Modifier.fillMaxSize()) {
             // Material 3 Expressive's navigation for the window: the short navigation bar (on a
             // tablet in portrait its items side by side); wide windows show the tabs as panes.
@@ -206,10 +210,12 @@ fun AppShell(app: AppModel) {
                 targetState = shell.overlays.lastOrNull(),
                 transitionSpec = {
                     if (wide) {
-                        fadeIn(motion.defaultEffectsSpec()) togetherWith fadeOut(motion.defaultEffectsSpec())
+                        // Without a size transform: the overlay is the window's size from its first frame (a
+                        // size animated from zero grows the dimmed window and the dialog from its corner).
+                        (fadeIn(motion.defaultEffectsSpec()) togetherWith fadeOut(motion.defaultEffectsSpec())).using(null)
                     } else {
                         val forward = targetState != null && (initialState == null || shell.overlays.size > 1)
-                        sharedAxisEnter(motion, forward) togetherWith sharedAxisExit(motion, forward)
+                        (sharedAxisEnter(motion, forward) togetherWith sharedAxisExit(motion, forward)).using(null)
                     }
                 },
                 label = "overlay",
@@ -232,11 +238,14 @@ fun AppShell(app: AppModel) {
             // The tour's spotlight over the tour's screens, bars included; not over a screen or
             // sheet that covers them.
             if (shell.overlays.isEmpty() && shell.sheet == null) TourSpotlight(app.tour)
+
+            // A wide window's sheets, as dialogs over all of it.
+            sheets.Dialogs()
         }
 
         shell.sheet?.let { sheet ->
             // On the grouped pages' color, so the sheets' segmented lists and cards show.
-            ModalBottomSheet(onDismissRequest = { shell.sheet = null }, containerColor = GroupedBackground) {
+            AdaptiveSheet(onDismissRequest = { shell.sheet = null }, containerColor = GroupedBackground) {
                 when (sheet) {
                     is Destination.CardInfo -> OpenDocument(app, sheet.entryId) { CardInfoSheet(app, it, sheet.node) }
                     is Destination.StudyOptions -> OpenDocument(app, sheet.entryId) {
