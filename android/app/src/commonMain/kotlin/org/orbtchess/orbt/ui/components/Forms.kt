@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,7 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 // Settings pages on a wide window, as Windows' Settings and the Mac's grouped forms lay them
-// out: no wider than a page reads well, from the start of the window, each setting's control
+// out: no wider than a page reads well, centered, each setting's control
 // beside its title (a number field, a menu, a short slider) instead of under it or in a dialog,
 // a phone's way. Phones keep theirs: a page narrower than [WideForm] has no wide rows.
 
@@ -47,10 +48,10 @@ private val FormMaxWidth = 760.dp
 /** Whether this settings page is wide: its rows' controls beside their titles ([FormColumn]). */
 val LocalWideForm = compositionLocalOf { false }
 
-/** A settings page's content: at most [FormMaxWidth] from the start, wide ([LocalWideForm]) when there is room. */
+/** A settings page's content: at most [FormMaxWidth], centered, wide ([LocalWideForm]) when there is room. On a wide window the shell shows these pages as dialogs. */
 @Composable
 fun FormColumn(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
-    BoxWithConstraints(modifier.fillMaxWidth()) {
+    BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
         CompositionLocalProvider(LocalWideForm provides (maxWidth >= WideForm)) {
             Column(Modifier.widthIn(max = FormMaxWidth).fillMaxWidth(), content = content)
         }
@@ -123,3 +124,6 @@ fun <T> ChoiceMenuButton(
         }
     }
 }
+
+/** Whether this screen is shown as a dialog (a wide window's settings): it closes with ✕, not back. */
+val LocalInDialog = compositionLocalOf { false }

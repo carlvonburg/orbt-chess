@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Download
@@ -81,6 +82,7 @@ import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
 import org.orbtchess.orbt.ui.components.ChoiceMenuButton
 import org.orbtchess.orbt.ui.components.FormColumn
+import org.orbtchess.orbt.ui.components.LocalInDialog
 import org.orbtchess.orbt.ui.components.LocalWideForm
 import org.orbtchess.orbt.ui.components.NumberField
 import org.orbtchess.orbt.ui.components.WideRow
@@ -121,7 +123,13 @@ fun SettingsScreen(
                 title = { Text("Settings") },
                 colors = groupedTopAppBarColors(),
                 navigationIcon = {
-                    IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) {
+                        if (LocalInDialog.current) {
+                            Icon(Icons.Filled.Close, contentDescription = "Close")
+                        } else {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
                 },
                 scrollBehavior = scrollBehavior,
             )
