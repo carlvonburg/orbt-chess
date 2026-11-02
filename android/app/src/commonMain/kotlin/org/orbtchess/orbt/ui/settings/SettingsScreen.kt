@@ -79,6 +79,11 @@ import org.orbtchess.orbt.engine.EngineDefaults
 import org.orbtchess.orbt.engine.EngineNetwork
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
+import org.orbtchess.orbt.ui.components.ChoiceMenuButton
+import org.orbtchess.orbt.ui.components.FormColumn
+import org.orbtchess.orbt.ui.components.LocalWideForm
+import org.orbtchess.orbt.ui.components.NumberField
+import org.orbtchess.orbt.ui.components.WideRow
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.tabularDigits
 import org.orbtchess.orbt.ui.library.startTour
@@ -94,7 +99,8 @@ import org.orbtchess.orbt.ui.theme.systemDynamicColorScheme
 /**
  * The app's settings (`SettingsView.swift`): Lichess account, sync, study defaults, app color,
  * engine (search time, lines, cloud evals, the full network), data, rating and starring, about. Full window,
- * as Android's settings screens: sections of list items, choices in dialogs.
+ * as Android's settings screens: sections of list items, choices in dialogs; on a wide window
+ * ([FormColumn]) each control beside its setting, as Windows' and the Mac's settings.
  *
  * @param navigate [Destination.Acknowledgements] (About ORBT Chess).
  */
@@ -121,7 +127,7 @@ fun SettingsScreen(
             )
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+        FormColumn(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             LichessSection(app)
             if (app.sync.auth.providers.isNotEmpty()) SyncSection(app)
             StudyDefaultsSection(app)
@@ -176,16 +182,54 @@ internal fun Section(title: String?, footer: String? = null, content: @Composabl
     ListSection(title, footer = footer, content = content)
 }
 
-/** A setting shown with its value (SwiftUI's `LabeledContent`), opening its choice when tapped. */
+/** A setting shown with its value (SwiftUI's `LabeledContent`), opening its choice when tapped; the value at the end on a wide page. */
 @Composable
 internal fun ValueRow(title: String, value: String, onClick: (() -> Unit)? = null) {
-    val supporting: @Composable () -> Unit = { Text(value, style = tabularDigits(MaterialTheme.typography.bodyMedium)) }
+    val text: @Composable () -> Unit = { Text(value, style = tabularDigits(MaterialTheme.typography.bodyMedium)) }
+    val wide = LocalWideForm.current
+    val supporting = if (wide) null else text
+    val trailing = if (wide) text else null
     if (onClick != null) {
-        ListItem(onClick = onClick, supportingContent = supporting) { Text(title) }
+        ListItem(onClick = onClick, supportingContent = supporting, trailingContent = trailing) { Text(title) }
     } else {
-        ListItem(supportingContent = supporting) { Text(title) }
+        ListItem(supportingContent = supporting, trailingContent = trailing) { Text(title) }
     }
 }
+
+/** A whole number setting: typed in place on a wide page, else its value opening a dialog. */
+@Composable
+private fun NumberRow(title: String, value: Int, range: IntRange, onChange: (Int) -> Unit) {
+    if (LocalWideForm.current) {
+        WideRow(title, NumberWidth) { NumberField(value, range, onChange, it) }
+    } else {
+        var editing by remember { mutableStateOf(false) }
+        ValueRow(title, "$value") { editing = true }
+        if (editing) NumberDialog(title, value, range, onDismiss = { editing = false }, onSave = onChange)
+    }
+}
+
+/** One of several options: a menu in place on a wide page, else its value opening a dialog of radio buttons; each with its [detail]. */
+@Composable
+private fun <T> ChoiceRow(title: String, options: List<T>, selected: T, label: (T) -> String, detail: (T) -> String, onSelect: (T) -> Unit) {
+    if (LocalWideForm.current) {
+        WideRow(title, ControlWidth) { ChoiceMenuButton(options, selected, onSelect, label, it, detail) }
+    } else {
+        var choosing by remember { mutableStateOf(false) }
+        ValueRow(title, label(selected)) { choosing = true }
+        if (choosing) {
+            ChoiceDialog(title, options, selected, onDismiss = { choosing = false }, onSelect = onSelect) { option ->
+                Column {
+                    Text(label(option), style = MaterialTheme.typography.bodyLarge)
+                    Text(detail(option), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+/** The width of a menu or button group beside its setting, and of a number field. */
+private val ControlWidth = 240.dp
+private val NumberWidth = 120.dp
 
 @Composable
 private fun LichessSection(app: AppModel) {
@@ -231,54 +275,25 @@ private fun StudyDefaultsSection(app: AppModel) {
     var reviewsPerDay by remember { mutableIntStateOf(training.reviewsPerDay) }
     var practiceMode by remember { mutableStateOf(training.practiceMode) }
     var newMoveOrder by remember { mutableStateOf(training.newMoveOrder) }
-    var editing by remember { mutableStateOf<String?>(null) }
     Section(
         "Study defaults",
         footer = "For every repertoire. A repertoire's options can set its own. A line of new moves that has started is always finished.",
     ) {
-        ValueRow("New moves/day", "$newPerDay") { editing = "new" }
-        ValueRow("Maximum reviews/day", "$reviewsPerDay") { editing = "reviews" }
-        ValueRow("New lines", newMoveOrderTitle(newMoveOrder)) { editing = "order" }
-        ValueRow("Practice", practiceModeTitle(practiceMode)) { editing = "practice" }
-    }
-    when (editing) {
-        "new" -> NumberDialog("New moves/day", newPerDay, 0..9999, onDismiss = { editing = null }) {
+        NumberRow("New moves/day", newPerDay, 0..9999) {
             newPerDay = it
             training.newPerDay = it
         }
-        "reviews" -> NumberDialog("Maximum reviews/day", reviewsPerDay, 0..9999, onDismiss = { editing = null }) {
+        NumberRow("Maximum reviews/day", reviewsPerDay, 0..9999) {
             reviewsPerDay = it
             training.reviewsPerDay = it
         }
-        "order" -> ChoiceDialog(
-            title = "New lines",
-            options = NewMoveOrder.entries,
-            selected = newMoveOrder,
-            onDismiss = { editing = null },
-            onSelect = {
-                newMoveOrder = it
-                training.newMoveOrder = it
-            },
-        ) { order ->
-            Column {
-                Text(newMoveOrderTitle(order), style = MaterialTheme.typography.bodyLarge)
-                Text(order.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+        ChoiceRow("New lines", NewMoveOrder.entries, newMoveOrder, ::newMoveOrderTitle, { it.detail }) {
+            newMoveOrder = it
+            training.newMoveOrder = it
         }
-        "practice" -> ChoiceDialog(
-            title = "Practice",
-            options = PracticeMode.entries,
-            selected = practiceMode,
-            onDismiss = { editing = null },
-            onSelect = {
-                practiceMode = it
-                training.practiceMode = it
-            },
-        ) { mode ->
-            Column {
-                Text(practiceModeTitle(mode), style = MaterialTheme.typography.bodyLarge)
-                Text(practiceDetail(mode), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+        ChoiceRow("Practice", PracticeMode.entries, practiceMode, ::practiceModeTitle, ::practiceDetail) {
+            practiceMode = it
+            training.practiceMode = it
         }
     }
 }
@@ -345,35 +360,34 @@ fun EngineSettingsSection(app: AppModel, heading: String? = "Analysis engine") {
             "Where Lichess has a deep cloud evaluation of a position, it is shown and the engine does not run.",
     ) {
         val times = EngineDefaults.searchTimes
-        ListItem(
-            trailingContent = { Text("$searchTime s", style = tabularDigits(MaterialTheme.typography.bodyMedium)) },
-            supportingContent = {
-                // Whole seconds, without a tick for each of the 30.
-                val slider = rememberSliderState(searchTime.toFloat(), trackRange = times.first.toFloat()..times.last.toFloat())
-                Slider(
-                    state = slider,
-                    onValueChange = {
-                        slider.value = it
-                        searchTime = Math.round(it)
-                        defaults.searchTime = searchTime
-                    },
-                )
-            },
-        ) { Text("Search time") }
-        ListItem(
-            supportingContent = {
-                val counts = EngineDefaults.lineCounts.toList()
-                ChoiceButtonGroup(
-                    counts, lines,
-                    onSelect = {
-                        lines = it
-                        defaults.lines = it
-                    },
-                    label = { "$it" },
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            },
-        ) { Text("Lines") }
+        val onSearchTime: (Int) -> Unit = {
+            searchTime = it
+            defaults.searchTime = it
+        }
+        val onLines: (Int) -> Unit = {
+            lines = it
+            defaults.lines = it
+        }
+        val lineCounts = EngineDefaults.lineCounts.toList()
+        if (LocalWideForm.current) {
+            WideRow("Search time", ControlWidth + 80.dp) { modifier ->
+                Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SearchTimeSlider(times, searchTime, onSearchTime, Modifier.weight(1f))
+                    Text("$searchTime s", style = tabularDigits(MaterialTheme.typography.bodyMedium), modifier = Modifier.width(40.dp))
+                }
+            }
+            WideRow("Lines", ControlWidth) { ChoiceButtonGroup(lineCounts, lines, onLines, label = { "$it" }, modifier = it) }
+        } else {
+            ListItem(
+                trailingContent = { Text("$searchTime s", style = tabularDigits(MaterialTheme.typography.bodyMedium)) },
+                supportingContent = { SearchTimeSlider(times, searchTime, onSearchTime) },
+            ) { Text("Search time") }
+            ListItem(
+                supportingContent = {
+                    ChoiceButtonGroup(lineCounts, lines, onLines, label = { "$it" }, modifier = Modifier.padding(top = 8.dp))
+                },
+            ) { Text("Lines") }
+        }
         SwitchRow("Lichess cloud evaluations", cloud) {
             cloud = it
             defaults.cloud = it
@@ -383,6 +397,20 @@ fun EngineSettingsSection(app: AppModel, heading: String? = "Analysis engine") {
             defaults.fullNetwork = it
         }
     }
+}
+
+/** The engine's search time, in whole seconds, without a tick for each of the 30. */
+@Composable
+private fun SearchTimeSlider(times: IntRange, searchTime: Int, onChange: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val slider = rememberSliderState(searchTime.toFloat(), trackRange = times.first.toFloat()..times.last.toFloat())
+    Slider(
+        state = slider,
+        onValueChange = {
+            slider.value = it
+            onChange(Math.round(it))
+        },
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -435,6 +463,15 @@ private fun DownloadRow(network: EngineNetwork, error: String?) {
 @Composable
 private fun AppColorRow() {
     val setting = LocalAppColorSetting.current
+    if (LocalWideForm.current) {
+        WideRow("Color", ControlWidth + 48.dp) { modifier ->
+            Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BoardStrip(setting.appColor, squares = 2, Modifier.width(36.dp).height(18.dp))
+                ChoiceMenuButton(AppColor.entries, setting.appColor, { setting.select(it) }, { it.title }, Modifier.weight(1f))
+            }
+        }
+        return
+    }
     var choosing by remember { mutableStateOf(false) }
     ListItem(
         onClick = { choosing = true },

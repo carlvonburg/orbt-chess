@@ -37,6 +37,10 @@ import org.orbtchess.orbt.core.PracticeMode
 import org.orbtchess.orbt.core.newMoveOrderTitle
 import org.orbtchess.orbt.core.practiceModeTitle
 import org.orbtchess.orbt.storage.RepertoireDocument
+import org.orbtchess.orbt.ui.components.FormColumn
+import org.orbtchess.orbt.ui.components.LocalWideForm
+import org.orbtchess.orbt.ui.components.NumberField
+import org.orbtchess.orbt.ui.components.WideRow
 
 /**
  * A repertoire's study options (`StudyOptionsSheet` in LibraryView.swift, Anki's deck options):
@@ -58,7 +62,7 @@ fun StudyOptionsSheet(
     // Rows on the sheet's own surface.
     val rowColors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f))
 
-    Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
+    FormColumn(modifier.verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text("${document.name} Options", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
             TextButton(onClick = onDone, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
@@ -83,12 +87,17 @@ fun StudyOptionsSheet(
                     draft = draft.useDefaults(on, preset.newPerDay, preset.reviewsPerDay)
                 },
             ) { Text("Use Default Limits") }
-            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                LimitField("New moves/day", draft.limits.newLimit?.toInt() ?: preset.newPerDay, !useDefaults) {
-                    draft = draft.copy(limits = draft.limits.copy(newLimit = it.toLong()))
-                }
-                LimitField("Maximum reviews/day", draft.limits.reviewLimit?.toInt() ?: preset.reviewsPerDay, !useDefaults) {
-                    draft = draft.copy(limits = draft.limits.copy(reviewLimit = it.toLong()))
+            val newLimit = draft.limits.newLimit?.toInt() ?: preset.newPerDay
+            val reviewLimit = draft.limits.reviewLimit?.toInt() ?: preset.reviewsPerDay
+            val onNew: (Int) -> Unit = { draft = draft.copy(limits = draft.limits.copy(newLimit = it.toLong())) }
+            val onReviews: (Int) -> Unit = { draft = draft.copy(limits = draft.limits.copy(reviewLimit = it.toLong())) }
+            if (LocalWideForm.current) {
+                WideRow("New moves/day", 120.dp, colors = rowColors) { NumberField(newLimit, 0..9999, onNew, it, enabled = !useDefaults) }
+                WideRow("Maximum reviews/day", 120.dp, colors = rowColors) { NumberField(reviewLimit, 0..9999, onReviews, it, enabled = !useDefaults) }
+            } else {
+                Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LimitField("New moves/day", newLimit, !useDefaults, onNew)
+                    LimitField("Maximum reviews/day", reviewLimit, !useDefaults, onReviews)
                 }
             }
         }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -43,7 +46,10 @@ import kotlinx.coroutines.launch
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.storage.RepertoireDocument
 import org.orbtchess.orbt.storage.RepertoireLibrary
+import org.orbtchess.orbt.ui.components.FormColumn
+import org.orbtchess.orbt.ui.components.LocalWideForm
 import org.orbtchess.orbt.ui.components.Symbols
+import org.orbtchess.orbt.ui.components.WideRow
 import org.orbtchess.orbt.ui.library.rememberPgnExport
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
@@ -109,17 +115,24 @@ fun RepertoireSettingsScreen(
             )
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
-            FormSection("Name") {
+        FormColumn(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+            val nameField: @Composable (Modifier, Shape) -> Unit = { fieldModifier, shape ->
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = RepertoireLibrary.safeRepertoireName(it) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = shape,
+                    modifier = fieldModifier,
                 )
             }
-            RepertoireSettingsForm(app, draft) { draft = it }
+            RepertoireSettingsForm(app, draft, onChange = { draft = it }, nameRow = {
+                if (LocalWideForm.current) {
+                    WideRow("Name", 320.dp) { nameField(it.fillMaxWidth(), RoundedCornerShape(percent = 50)) }
+                } else {
+                    FormSection("Name") { nameField(Modifier.fillMaxWidth().padding(horizontal = 16.dp), OutlinedTextFieldDefaults.shape) }
+                }
+            })
             error?.let {
                 Text(it, color = ThemeColor.failure.color, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }

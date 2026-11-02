@@ -71,6 +71,7 @@ import org.orbtchess.orbt.core.Side
 import org.orbtchess.orbt.storage.RepertoireEntry
 import org.orbtchess.orbt.storage.RepertoireLibrary
 import org.orbtchess.orbt.ui.SetupMode
+import org.orbtchess.orbt.ui.components.FormColumn
 import org.orbtchess.orbt.ui.overview.CoverageSourceSection
 import org.orbtchess.orbt.ui.overview.DepthSection
 import org.orbtchess.orbt.ui.overview.FormSection
@@ -189,7 +190,7 @@ fun SetupScreen(
             )
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+        FormColumn(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             when (step) {
                 1 -> {
                     FormSection("Name") {
