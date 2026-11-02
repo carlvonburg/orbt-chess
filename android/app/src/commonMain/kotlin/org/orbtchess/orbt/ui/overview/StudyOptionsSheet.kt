@@ -37,7 +37,10 @@ import org.orbtchess.orbt.core.PracticeMode
 import org.orbtchess.orbt.core.newMoveOrderTitle
 import org.orbtchess.orbt.core.practiceModeTitle
 import org.orbtchess.orbt.storage.RepertoireDocument
+import org.orbtchess.orbt.ui.components.DialogButtons
 import org.orbtchess.orbt.ui.components.FormColumn
+import org.orbtchess.orbt.ui.components.LocalWideWindow
+import org.orbtchess.orbt.ui.components.defaultAction
 import org.orbtchess.orbt.ui.components.LocalWideForm
 import org.orbtchess.orbt.ui.components.NumberField
 import org.orbtchess.orbt.ui.components.WideRow
@@ -62,91 +65,100 @@ fun StudyOptionsSheet(
     // Rows on the sheet's own surface.
     val rowColors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0f))
 
-    FormColumn(modifier.verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("${document.name} Options", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            TextButton(onClick = onDone, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
-            Button(shapes = ButtonDefaults.shapes(), onClick = {
-                document.updateStudySettings(draft.limits, draft.practiceMode, draft.newMoveOrder)
-                onDone()
-            }) { Text("Save") }
-        }
+    // A dialog (a wide window): Cancel and Save at its bottom, Enter saves; a phone's sheet has
+    // them beside its title.
+    val wide = LocalWideWindow.current
+    val save = {
+        document.updateStudySettings(draft.limits, draft.practiceMode, draft.newMoveOrder)
+        onDone()
+    }
+    Column(modifier.defaultAction(wide, save)) {
+        FormColumn(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("${document.name} Options", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                if (!wide) {
+                    TextButton(onClick = onDone, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
+                    Button(shapes = ButtonDefaults.shapes(), onClick = save) { Text("Save") }
+                }
+            }
 
-        FormSection(
-            "Daily limits",
-            footer = if (useDefaults) {
-                "From Settings. Turn off to set limits for this repertoire."
-            } else {
-                "Every day, for this repertoire only. To study more just today, use Study More Today in the overview."
-            },
-        ) {
-            ListItem(
-                trailingContent = { Switch(checked = useDefaults, onCheckedChange = null) },
-                colors = rowColors,
-                modifier = Modifier.toggleable(useDefaults, role = Role.Switch) { on ->
-                    draft = draft.useDefaults(on, preset.newPerDay, preset.reviewsPerDay)
+            FormSection(
+                "Daily limits",
+                footer = if (useDefaults) {
+                    "From Settings. Turn off to set limits for this repertoire."
+                } else {
+                    "Every day, for this repertoire only. To study more just today, use Study More Today in the overview."
                 },
-            ) { Text("Use Default Limits") }
-            val newLimit = draft.limits.newLimit?.toInt() ?: preset.newPerDay
-            val reviewLimit = draft.limits.reviewLimit?.toInt() ?: preset.reviewsPerDay
-            val onNew: (Int) -> Unit = { draft = draft.copy(limits = draft.limits.copy(newLimit = it.toLong())) }
-            val onReviews: (Int) -> Unit = { draft = draft.copy(limits = draft.limits.copy(reviewLimit = it.toLong())) }
-            if (LocalWideForm.current) {
-                WideRow("New moves/day", 120.dp, colors = rowColors) { NumberField(newLimit, 0..9999, onNew, it, enabled = !useDefaults) }
-                WideRow("Maximum reviews/day", 120.dp, colors = rowColors) { NumberField(reviewLimit, 0..9999, onReviews, it, enabled = !useDefaults) }
-            } else {
-                Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    LimitField("New moves/day", newLimit, !useDefaults, onNew)
-                    LimitField("Maximum reviews/day", reviewLimit, !useDefaults, onReviews)
+            ) {
+                ListItem(
+                    trailingContent = { Switch(checked = useDefaults, onCheckedChange = null) },
+                    colors = rowColors,
+                    modifier = Modifier.toggleable(useDefaults, role = Role.Switch) { on ->
+                        draft = draft.useDefaults(on, preset.newPerDay, preset.reviewsPerDay)
+                    },
+                ) { Text("Use Default Limits") }
+                val newLimit = draft.limits.newLimit?.toInt() ?: preset.newPerDay
+                val reviewLimit = draft.limits.reviewLimit?.toInt() ?: preset.reviewsPerDay
+                val onNew: (Int) -> Unit = { draft = draft.copy(limits = draft.limits.copy(newLimit = it.toLong())) }
+                val onReviews: (Int) -> Unit = { draft = draft.copy(limits = draft.limits.copy(reviewLimit = it.toLong())) }
+                if (LocalWideForm.current) {
+                    WideRow("New moves/day", 120.dp, colors = rowColors) { NumberField(newLimit, 0..9999, onNew, it, enabled = !useDefaults) }
+                    WideRow("Maximum reviews/day", 120.dp, colors = rowColors) { NumberField(reviewLimit, 0..9999, onReviews, it, enabled = !useDefaults) }
+                } else {
+                    Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LimitField("New moves/day", newLimit, !useDefaults, onNew)
+                        LimitField("Maximum reviews/day", reviewLimit, !useDefaults, onReviews)
+                    }
                 }
             }
-        }
 
-        val order = draft.newMoveOrder ?: preset.newMoveOrder
-        FormSection(
-            "New lines",
-            footer = if (draft.newMoveOrder == null) "The default, set in Settings." else "Only for this repertoire.",
-        ) {
-            Column(Modifier.selectableGroup()) {
-                for (option in NewMoveOrder.entries) {
-                    ListItem(
-                        selected = option == order,
-                        onClick = { draft = draft.copy(newMoveOrder = option) },
-                        supportingContent = { Text(option.detail) },
-                        leadingContent = { RadioButton(selected = option == order, onClick = null) },
-                        colors = rowColors,
-                    ) { Text(newMoveOrderTitle(option)) }
+            val order = draft.newMoveOrder ?: preset.newMoveOrder
+            FormSection(
+                "New lines",
+                footer = if (draft.newMoveOrder == null) "The default, set in Settings." else "Only for this repertoire.",
+            ) {
+                Column(Modifier.selectableGroup()) {
+                    for (option in NewMoveOrder.entries) {
+                        ListItem(
+                            selected = option == order,
+                            onClick = { draft = draft.copy(newMoveOrder = option) },
+                            supportingContent = { Text(option.detail) },
+                            leadingContent = { RadioButton(selected = option == order, onClick = null) },
+                            colors = rowColors,
+                        ) { Text(newMoveOrderTitle(option)) }
+                    }
+                }
+                if (draft.newMoveOrder != null) {
+                    TextButton(onClick = { draft = draft.copy(newMoveOrder = null) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(horizontal = 8.dp)) {
+                        Text("Use Default (${newMoveOrderTitle(preset.newMoveOrder)})")
+                    }
                 }
             }
-            if (draft.newMoveOrder != null) {
-                TextButton(onClick = { draft = draft.copy(newMoveOrder = null) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(horizontal = 8.dp)) {
-                    Text("Use Default (${newMoveOrderTitle(preset.newMoveOrder)})")
-                }
-            }
-        }
 
-        val mode = draft.practiceMode ?: preset.practiceMode
-        FormSection(
-            "Practice",
-            footer = if (draft.practiceMode == null) "The default, set in Settings." else "Only for this repertoire.",
-        ) {
-            Column(Modifier.selectableGroup()) {
-                for (option in PracticeMode.entries) {
-                    ListItem(
-                        selected = option == mode,
-                        onClick = { draft = draft.copy(practiceMode = option) },
-                        supportingContent = { Text(option.detail) },
-                        leadingContent = { RadioButton(selected = option == mode, onClick = null) },
-                        colors = rowColors,
-                    ) { Text(practiceModeTitle(option)) }
+            val mode = draft.practiceMode ?: preset.practiceMode
+            FormSection(
+                "Practice",
+                footer = if (draft.practiceMode == null) "The default, set in Settings." else "Only for this repertoire.",
+            ) {
+                Column(Modifier.selectableGroup()) {
+                    for (option in PracticeMode.entries) {
+                        ListItem(
+                            selected = option == mode,
+                            onClick = { draft = draft.copy(practiceMode = option) },
+                            supportingContent = { Text(option.detail) },
+                            leadingContent = { RadioButton(selected = option == mode, onClick = null) },
+                            colors = rowColors,
+                        ) { Text(practiceModeTitle(option)) }
+                    }
                 }
-            }
-            if (draft.practiceMode != null) {
-                TextButton(onClick = { draft = draft.copy(practiceMode = null) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(horizontal = 8.dp)) {
-                    Text("Use Default (${practiceModeTitle(preset.practiceMode)})")
+                if (draft.practiceMode != null) {
+                    TextButton(onClick = { draft = draft.copy(practiceMode = null) }, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(horizontal = 8.dp)) {
+                        Text("Use Default (${practiceModeTitle(preset.practiceMode)})")
+                    }
                 }
             }
         }
+        if (wide) DialogButtons("Save", save, onCancel = onDone)
     }
 }
 

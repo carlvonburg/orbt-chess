@@ -10,8 +10,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
@@ -67,6 +72,8 @@ val LocalSheetHost = staticCompositionLocalOf<SheetHost?> { null }
  * way. The dialog is centered on the dimmed window, at most 640 by 880 dp, and closes with Esc
  * (back) or a click outside, as the sheet does with a swipe or a tap outside.
  * [expandedOnly]: the sheet opens fully, never half way (long lists, a search).
+ * [closeButton]: the dialog has ✕ at its top end; false for a sheet with its own Cancel and Save
+ * ([DialogButtons] at its bottom on a wide window).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,14 +81,16 @@ fun AdaptiveSheet(
     onDismissRequest: () -> Unit,
     containerColor: Color = BottomSheetDefaults.ContainerColor,
     expandedOnly: Boolean = false,
+    closeButton: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val host = LocalSheetHost.current
     if (LocalWideWindow.current && host != null) {
         val dismiss by rememberUpdatedState(onDismissRequest)
         val latest by rememberUpdatedState(content)
+        val close by rememberUpdatedState(closeButton)
         val dialog: @Composable () -> Unit = remember {
-            { SheetDialog(onDismiss = { dismiss() }, containerColor) { latest() } }
+            { SheetDialog(onDismiss = { dismiss() }, containerColor, close) { latest() } }
         }
         DisposableEffect(host) {
             host.show(dialog)
@@ -99,7 +108,7 @@ fun AdaptiveSheet(
 
 /** A sheet as a dialog over the dimmed window, as the shell's dialogs; back (Esc) closes it. */
 @Composable
-private fun SheetDialog(onDismiss: () -> Unit, containerColor: Color, content: @Composable ColumnScope.() -> Unit) {
+private fun SheetDialog(onDismiss: () -> Unit, containerColor: Color, closeButton: Boolean, content: @Composable ColumnScope.() -> Unit) {
     NavigationBackHandler(rememberNavigationEventState(NavigationEventInfo.None), onBackCompleted = onDismiss)
     Box(
         Modifier.fillMaxSize()
@@ -115,8 +124,15 @@ private fun SheetDialog(onDismiss: () -> Unit, containerColor: Color, content: @
             color = containerColor,
             shadowElevation = 6.dp,
         ) {
-            // The room a sheet's drag handle takes above its title.
-            Column(Modifier.padding(top = 16.dp, bottom = 8.dp), content = content)
+            Box {
+                // The room a sheet's drag handle takes above its title.
+                Column(Modifier.padding(top = 16.dp, bottom = 8.dp), content = content)
+                if (closeButton) {
+                    IconButton(onClick = onDismiss, shapes = IconButtonDefaults.shapes(), modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)) {
+                        Icon(Icons.Filled.Close, contentDescription = "Close")
+                    }
+                }
+            }
         }
     }
 }

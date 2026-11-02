@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
@@ -46,8 +47,11 @@ import kotlinx.coroutines.launch
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.storage.RepertoireDocument
 import org.orbtchess.orbt.storage.RepertoireLibrary
+import org.orbtchess.orbt.ui.components.DialogButtons
 import org.orbtchess.orbt.ui.components.FormColumn
+import org.orbtchess.orbt.ui.components.LocalInDialog
 import org.orbtchess.orbt.ui.components.LocalWideForm
+import org.orbtchess.orbt.ui.components.defaultAction
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.WideRow
 import org.orbtchess.orbt.ui.library.rememberPgnExport
@@ -98,21 +102,31 @@ fun RepertoireSettingsScreen(
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    // A dialog (a wide window): Cancel and Save at its bottom; else Material's full-screen dialog.
+    val inDialog = LocalInDialog.current
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection).defaultAction(inDialog && name.isNotBlank(), ::save),
         containerColor = GroupedBackground,
         topBar = {
-            MediumFlexibleTopAppBar(
-                title = { Text("Repertoire Settings") },
-                colors = groupedTopAppBarColors(),
-                scrollBehavior = scrollBehavior,
-                navigationIcon = {
-                    IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.Filled.Close, contentDescription = "Cancel") }
-                },
-                actions = {
-                    TextButton(onClick = ::save, shapes = ButtonDefaults.shapes(), enabled = name.isNotBlank()) { Text("Save") }
-                },
-            )
+            if (inDialog) {
+                // A dialog's title, at its top.
+                TopAppBar(title = { Text("Repertoire Settings") }, colors = groupedTopAppBarColors())
+            } else {
+                MediumFlexibleTopAppBar(
+                    title = { Text("Repertoire Settings") },
+                    colors = groupedTopAppBarColors(),
+                    scrollBehavior = scrollBehavior,
+                    navigationIcon = {
+                        IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.Filled.Close, contentDescription = "Cancel") }
+                    },
+                    actions = {
+                        TextButton(onClick = ::save, shapes = ButtonDefaults.shapes(), enabled = name.isNotBlank()) { Text("Save") }
+                    },
+                )
+            }
+        },
+        bottomBar = {
+            if (inDialog) DialogButtons("Save", ::save, onCancel = onBack, confirmEnabled = name.isNotBlank())
         },
     ) { padding ->
         FormColumn(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {

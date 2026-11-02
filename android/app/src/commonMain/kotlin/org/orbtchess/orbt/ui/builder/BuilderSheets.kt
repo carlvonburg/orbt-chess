@@ -3,6 +3,8 @@ package org.orbtchess.orbt.ui.builder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import org.orbtchess.orbt.ui.components.AdaptiveSheet
+import org.orbtchess.orbt.ui.components.DialogButtons
+import org.orbtchess.orbt.ui.components.LocalWideWindow
 import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import org.orbtchess.orbt.ui.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -293,13 +295,18 @@ private fun NoteSheet(model: BuilderModel, node: NodeId, dismiss: () -> Unit) {
     var text by remember(node) { mutableStateOf(document.tree[node]?.note.orEmpty()) }
     // The last move or two: "4. Bb5 a6".
     val title = document.tree.lineText(node).split(" ").takeLast(2).joinToString(" ").ifEmpty { "Note" }
-    AdaptiveSheet(onDismissRequest = dismiss) {
+    val save = {
+        document.setNote(text, node)
+        dismiss()
+    }
+    // A dialog (a wide window): Cancel and Save at its bottom; a phone's sheet has them beside its title.
+    val wide = LocalWideWindow.current
+    AdaptiveSheet(onDismissRequest = dismiss, closeButton = false) {
         SheetTitle(title) {
-            TextButton(onClick = dismiss, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
-            Button(shapes = ButtonDefaults.shapes(), onClick = {
-                document.setNote(text, node)
-                dismiss()
-            }) { Text("Save") }
+            if (!wide) {
+                TextButton(onClick = dismiss, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
+                Button(shapes = ButtonDefaults.shapes(), onClick = save) { Text("Save") }
+            }
         }
         OutlinedTextField(
             value = text,
@@ -308,5 +315,7 @@ private fun NoteSheet(model: BuilderModel, node: NodeId, dismiss: () -> Unit) {
             placeholder = { Text("Note") },
             minLines = 6,
         )
+        // No Enter to save: a note's Enter is a new line.
+        if (wide) DialogButtons("Save", save, onCancel = dismiss)
     }
 }

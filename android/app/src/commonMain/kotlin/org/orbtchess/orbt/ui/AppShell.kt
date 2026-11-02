@@ -245,7 +245,8 @@ fun AppShell(app: AppModel) {
 
         shell.sheet?.let { sheet ->
             // On the grouped pages' color, so the sheets' segmented lists and cards show.
-            AdaptiveSheet(onDismissRequest = { shell.sheet = null }, containerColor = GroupedBackground) {
+            // Study Options has Cancel and Save; Move Info only closes.
+            AdaptiveSheet(onDismissRequest = { shell.sheet = null }, containerColor = GroupedBackground, closeButton = sheet !is Destination.StudyOptions) {
                 when (sheet) {
                     is Destination.CardInfo -> OpenDocument(app, sheet.entryId) { CardInfoSheet(app, it, sheet.node) }
                     is Destination.StudyOptions -> OpenDocument(app, sheet.entryId) {
