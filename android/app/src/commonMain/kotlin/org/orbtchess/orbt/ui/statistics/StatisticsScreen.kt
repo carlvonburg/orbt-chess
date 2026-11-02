@@ -23,9 +23,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +43,7 @@ import org.orbtchess.orbt.core.total
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.StatisticsScope
 import org.orbtchess.orbt.ui.components.EmptyState
+import org.orbtchess.orbt.ui.components.Refreshable
 import org.orbtchess.orbt.ui.components.Symbols
 
 /**
@@ -148,7 +146,6 @@ private fun StatisticsSummary(
 ) {
     val graphs = model.graphs
     val coroutines = rememberCoroutineScope()
-    val refreshState = rememberPullToRefreshState()
     val hasData = model.hasData()
     when {
         graphs == null && model.isLoading -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -160,12 +157,8 @@ private fun StatisticsSummary(
             modifier,
             description = "Study a repertoire to see your progress here.",
         )
-        else -> PullToRefreshBox(
+        else -> Refreshable(
             isRefreshing = model.isLoading,
-            state = refreshState,
-            indicator = {
-                PullToRefreshDefaults.LoadingIndicator(refreshState, model.isLoading, Modifier.align(Alignment.TopCenter))
-            },
             onRefresh = { coroutines.launch { model.load(app, scope) } },
             modifier = modifier.fillMaxSize(),
         ) {
