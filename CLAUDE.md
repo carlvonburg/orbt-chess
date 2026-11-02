@@ -287,9 +287,9 @@ in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palett
      MSI. Its identity is Partner Center's, in `android/gradle.properties` (`orbt.msix*`); its
      version is `<major>.<minor>.<build>.0` (the Store's last part is 0). Locally on Windows:
      `./gradlew :app:packageMsix`, then `app/msix/sign-for-testing.ps1` signs a copy with a
-     self-signed certificate (never committed) for `Add-AppxPackage`. In the package `APPDATA` and
-     the Preferences registry are redirected into the package's own storage (removed with it, not
-     shared with an MSI install); `~/ORBT Chess` is not. The sync keys are repository secrets. A release: raise `Version.xcconfig`, merge,
+     self-signed certificate (never committed) for `Add-AppxPackage`. In the package, what the app
+     creates in `APPDATA` goes into the package's storage (removed with it), but an `APPDATA\ORBT Chess`
+     an MSI install made is written in place, and `~/ORBT Chess` is never redirected. The sync keys are repository secrets. A release: raise `Version.xcconfig`, merge,
      tag `v<MARKETING_VERSION>` (the workflow stops on a tag that differs), publish the draft.
   A Claude Code hook (`.claude/hooks/check-before-commit.sh`) runs the ones a commit needs before
   every `git commit` and blocks it on failure: check.sh for `core/`, build-apple.sh for

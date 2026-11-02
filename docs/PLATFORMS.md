@@ -32,8 +32,9 @@ leaves room for a browser demo (data in the browser only, no sync, every browser
 ## Windows distribution
 - The Microsoft Store, as an MSIX (`android/app/msix/`): Microsoft signs it for free and the
   Store updates it. A full-trust desktop app, so the Lichess sign-in's loopback server works as
-  outside the package; `APPDATA` and the Java Preferences registry are redirected into the
-  package's storage (gone on uninstall, not shared with an MSI install), `~/ORBT Chess` is not.
+  outside the package (checked); what the app creates in `APPDATA` goes into the package's
+  storage (gone on uninstall), but an `APPDATA\ORBT Chess` an MSI install made is written in
+  place and shared, and `~/ORBT Chess` is never redirected.
 - The MSI on GitHub's releases for everyone else, unsigned (SmartScreen warns once).
 
 ## Storage on each platform
