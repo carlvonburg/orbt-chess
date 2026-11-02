@@ -9,17 +9,29 @@ import java.io.File
 import java.net.URI
 import java.util.logging.Logger
 import java.util.prefs.Preferences
+import javax.swing.filechooser.FileSystemView
 
 /**
- * The desktop's folders: the repertoires in `~/ORBT Chess` (`FolderWatcher` follows changes made
- * outside the app; other devices through Settings › Sync), the app's data in the OS's per-user
- * application folder. Saves overwrite the files in place (`FileAccess.journal`).
+ * The desktop's folders, where each system keeps them: the repertoires, the user's files, in
+ * `ORBT Chess` in the user's documents (Windows' Documents folder wherever it is, ~/Documents on
+ * the Mac, XDG's documents folder on Linux; `FolderWatcher` follows changes made outside the app,
+ * other devices through Settings › Sync), the app's own data in the per-user application data
+ * folder (Windows' local, not roaming, AppData: a cache and downloads that need not follow the
+ * user to other PCs; the program itself is in AppData\Local\Programs). Saves overwrite the files
+ * in place (`FileAccess.journal`).
  */
 fun desktopPlatform(): PlatformServices {
     val home = File(System.getProperty("user.home"))
     val os = System.getProperty("os.name").lowercase()
+    val windows = os.contains("win")
+    val documents = when {
+        windows -> FileSystemView.getFileSystemView().defaultDirectory
+        os.contains("mac") -> File(home, "Documents")
+        else -> xdgDocuments(home)
+    }
+    val repertoires = File(documents, "ORBT Chess")
     val support = when {
-        os.contains("win") -> File(System.getenv("APPDATA") ?: home.path, "ORBT Chess")
+        windows -> File(System.getenv("LOCALAPPDATA") ?: home.path, "ORBT Chess")
         os.contains("mac") -> File(home, "Library/Application Support/ORBT Chess")
         else -> File(System.getenv("XDG_DATA_HOME") ?: File(home, ".local/share").path, "orbt-chess")
     }
@@ -34,16 +46,30 @@ fun desktopPlatform(): PlatformServices {
     FileAccess.journal = journal
     val authBrowser = LoopbackAuthBrowser(openUrl)
     return PlatformServices(
-        folders = AppFolders(repertoires = File(home, "ORBT Chess"), support = support),
+        folders = AppFolders(repertoires = repertoires, support = support),
         settings = settings,
         secrets = KeyringSecrets.open(PrefsSecrets(prefs.node("secrets"))),
         openUrl = openUrl,
         authBrowser = authBrowser,
         syncAuth = DesktopSyncAuth(authBrowser),
+        folderOpener = FolderOpener(
+            label = when {
+                os.contains("win") -> "Show in File Explorer"
+                os.contains("mac") -> "Show in Finder"
+                else -> "Open Folder"
+            },
+            open = { folder -> if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(folder) },
+        ),
     )
 }
 
 private val log = Logger.getLogger("org.orbtchess.orbt.platform")
+
+/** XDG's documents folder (`xdg-user-dir DOCUMENTS`, ~/Documents by default; the home folder when it is unset). */
+private fun xdgDocuments(home: File): File = runCatching {
+    val process = ProcessBuilder("xdg-user-dir", "DOCUMENTS").redirectErrorStream(true).start()
+    process.inputStream.bufferedReader().readText().trim().takeIf { process.waitFor() == 0 && it.isNotEmpty() }
+}.getOrNull()?.let(::File) ?: File(home, "Documents")
 
 private class PrefsSettings(private val prefs: Preferences) : Settings {
     private fun has(key: String) = prefs.get(key, null) != null

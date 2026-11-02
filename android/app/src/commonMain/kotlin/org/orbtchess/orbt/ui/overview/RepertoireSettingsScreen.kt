@@ -102,7 +102,9 @@ fun RepertoireSettingsScreen(
     // A dialog (a wide window): Cancel and Save at its bottom; else Material's full-screen dialog.
     val inDialog = LocalInDialog.current
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection).defaultAction(inDialog && name.isNotBlank(), ::save),
+        // The page's collapsing title bar takes the scroll first; a dialog has none (unattached,
+        // its scroll behavior would take every scroll and the content none).
+        modifier = modifier.then(if (LocalInDialog.current) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)).defaultAction(inDialog && name.isNotBlank(), ::save),
         containerColor = GroupedBackground,
         topBar = {
             if (inDialog) {

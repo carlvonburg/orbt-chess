@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import java.io.File
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -77,6 +78,7 @@ import org.orbtchess.orbt.core.newMoveOrderTitle
 import org.orbtchess.orbt.core.practiceModeTitle
 import org.orbtchess.orbt.engine.EngineDefaults
 import org.orbtchess.orbt.engine.EngineNetwork
+import org.orbtchess.orbt.platform.FolderOpener
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
 import org.orbtchess.orbt.ui.components.ChoiceDropdown
@@ -118,7 +120,9 @@ fun SettingsScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        // The page's collapsing title bar takes the scroll first; a dialog has none (unattached,
+        // its scroll behavior would take every scroll and the content none).
+        modifier = modifier.then(if (LocalInDialog.current) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)),
         containerColor = GroupedBackground,
         topBar = {
             if (LocalInDialog.current) {
@@ -333,17 +337,37 @@ private fun SupportSection(app: AppModel) {
     }
 }
 
+/**
+ * Where the data is: on the desktop the repertoires' folder and the app's own, each shown in the
+ * system's file manager; on Android inside the app, where Files does not reach them, so the way
+ * out is Export or the sync.
+ */
 @Composable
 private fun DataSection(app: AppModel) {
     var cacheCount by remember { mutableIntStateOf(app.stats.entryCount) }
     val provider = app.sync.provider
+    val folders = app.platform.folders
+    val opener = app.platform.folderOpener
+    val synced = provider?.let { "They are also in the ORBT Chess folder of ${it.title}. " } ?: ""
     Section(
         "Data",
-        footer = (if (provider == null) "Repertoires are stored on this device only. " else "") +
-            "Repertoires are PGN files you can open in any chess program. " +
-            "Statistics are cached on this device and fetched again when needed.",
+        footer = if (opener != null) {
+            "Repertoires are PGN files you can open in any chess program, each with its training progress " +
+                "beside it. $synced" +
+                "The statistics cache, coverage tables and the engine's network are fetched again when needed."
+        } else {
+            "Repertoires are PGN files kept inside the app, where Files and other apps do not reach them. " +
+                "To use one elsewhere, export it from its settings" +
+                (if (provider == null) " or sync with Dropbox or Google Drive. " else ". $synced") +
+                "Statistics are cached in the app and fetched again when needed."
+        },
     ) {
-        ValueRow("Storage", if (provider == null) "On this device" else "On this device and in ${provider.title}")
+        if (opener != null) {
+            FolderRow("Repertoires", folders.repertoires, opener)
+            FolderRow("Statistics and downloads", folders.support, opener)
+        } else {
+            ValueRow("Repertoires", "Inside ORBT Chess")
+        }
         ValueRow("Cached positions", NumberFormat.getIntegerInstance().format(cacheCount))
         ListItem(
             onClick = {
@@ -352,6 +376,17 @@ private fun DataSection(app: AppModel) {
             },
         ) { Text("Clear Statistics Cache", color = ThemeColor.failure.color) }
     }
+}
+
+/** A folder: its name, its path, and a button that shows it in the system's file manager. */
+@Composable
+private fun FolderRow(title: String, folder: File, opener: FolderOpener) {
+    ListItem(
+        supportingContent = { Text(folder.absolutePath) },
+        trailingContent = {
+            TextButton(onClick = { opener.open(folder) }, shapes = ButtonDefaults.shapes()) { Text(opener.label) }
+        },
+    ) { Text(title) }
 }
 
 // MARK: Engine

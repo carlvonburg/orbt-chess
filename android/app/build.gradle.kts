@@ -149,6 +149,9 @@ compose.desktop {
                 // For the user who installs it, without an administrator; in the Start menu and
                 // on the desktop.
                 perUserInstall = true
+                // Windows' place for a user's programs, AppData\Local\Programs (jpackage's
+                // default is AppData\Local itself, where the app keeps its data).
+                installationPath = "Programs/ORBT Chess"
                 menu = true
                 menuGroup = "ORBT Chess"
                 shortcut = true

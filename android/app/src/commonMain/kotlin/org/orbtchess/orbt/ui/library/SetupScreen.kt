@@ -173,7 +173,9 @@ fun SetupScreen(
     val inDialog = LocalInDialog.current
     val next = { if (step < 3) step += 1 else finish() }
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection).defaultAction(inDialog && canContinue, next),
+        // The page's collapsing title bar takes the scroll first; a dialog has none (unattached,
+        // its scroll behavior would take every scroll and the content none).
+        modifier = modifier.then(if (LocalInDialog.current) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)).defaultAction(inDialog && canContinue, next),
         containerColor = GroupedBackground,
         topBar = {
             if (inDialog) {

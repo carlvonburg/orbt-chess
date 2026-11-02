@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 /**
- * The desktop's repertoire folder (`~/ORBT Chess`), changed outside the app: files added or
+ * The desktop's repertoire folder (`ORBT Chess` in the user's documents), changed outside the app: files added or
  * edited by hand or by another program, or by a provider's client if the user keeps the folder
  * in one (other devices' edits, deletes, conflict copies). This hands those changes to the
  * library and the open documents, as `SyncService` does with what it downloads.

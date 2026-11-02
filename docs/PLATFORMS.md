@@ -33,7 +33,7 @@ leaves room for a browser demo (data in the browser only, no sync, every browser
 | Platform | Storage |
 |---|---|
 | iPhone, iPad, Mac | iCloud Drive, or the device's folder with the Drive or Dropbox connector (one of them) |
-| Windows, Linux | `~/ORBT Chess` with the Drive and Dropbox connectors |
+| Windows, Linux | `ORBT Chess` in the user's Documents, with the Drive and Dropbox connectors |
 | Android | Drive and Dropbox connectors, or a local folder without sync |
 
 - Why connectors on phones: Drive and Dropbox on Android don't sync a folder (files stay online,
@@ -48,7 +48,7 @@ leaves room for a browser demo (data in the browser only, no sync, every browser
 - No folder of the user's choosing on computers (it was built, then removed): a folder that
   only computers see (OneDrive, a NAS) never reaches the phones, one inside Dropbox or Drive
   next to the connector syncs twice, and Drive's client hides its files from the phones. The
-  desktop still watches `~/ORBT Chess` for files added or edited outside the app.
+  desktop still watches `Documents/ORBT Chess` for files added or edited outside the app.
 - Linux has no Google Drive client (rclone, Insync); Dropbox has one.
 
 ## Connectors: Google Drive, Dropbox

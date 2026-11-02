@@ -117,7 +117,9 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   and the desktop app (`android`, `jvm("desktop")`; `:app:run`): `commonMain` holds the UI and the
   platform layer ported from the Swift side, by package — `platform` (HTTP for the core's
   requests, `AppFolders`, `Settings`, `SecretStore`), `storage` (library, documents, saves; the desktop's `FolderWatcher` follows changes made to
-  `~/ORBT Chess` outside the app, and its saves overwrite in place),
+  `ORBT Chess` in the user's documents outside the app, and its saves overwrite in place; the app's
+  own data in the per-user app data folder, on Windows AppData\Local, where the program is in
+  AppData\Local\Programs),
   `explorer` (queue, SQLite stats cache, coverage tables), `engine`, `lichess` (PKCE: Custom
   Tabs on Android, a loopback redirect on the desktop), `sync` (`SyncService` runs the core's
   `RepertoireSync` with Dropbox or Google Drive; the sign-ins are Android's) — wired by

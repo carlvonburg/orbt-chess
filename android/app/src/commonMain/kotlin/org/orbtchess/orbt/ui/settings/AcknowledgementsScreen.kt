@@ -93,7 +93,9 @@ private data class LicenseEntry(val id: String, val name: String, val text: Stri
 private fun Page(title: String, onBack: () -> Unit, modifier: Modifier, content: @Composable (Modifier) -> Unit) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        // The page's collapsing title bar takes the scroll first; a dialog has none (unattached,
+        // its scroll behavior would take every scroll and the content none).
+        modifier = modifier.then(if (LocalInDialog.current) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)),
         containerColor = GroupedBackground,
         topBar = {
             // In Settings' dialog (a wide window), its title and the way back to Settings.
