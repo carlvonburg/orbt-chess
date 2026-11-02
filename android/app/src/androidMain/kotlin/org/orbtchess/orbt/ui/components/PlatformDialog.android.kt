@@ -1,6 +1,6 @@
 package org.orbtchess.orbt.ui.components
 
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -28,12 +28,13 @@ actual fun PlatformDialog(
 ) {
     BasicAlertDialog(
         onDismissRequest = onDismissRequest,
-        // As wide as the content asks, up to [width]: a basic dialog's 560 dp is a phone's.
+        // Up to [width] wide (Material caps a basic dialog at 560 dp).
         properties = DialogProperties(dismissOnClickOutside = dismissOnClickOutside, usePlatformDefaultWidth = false),
     ) {
         Surface(
-            // Material's margin around a dialog on a large screen.
-            Modifier.padding(24.dp).widthIn(max = width).heightIn(max = height).fillMaxSize(),
+            // Material's margin on a large screen; as tall as its content, up to [height] (a page
+            // with a scaffold, Settings, takes all of it).
+            Modifier.padding(24.dp).widthIn(max = width).heightIn(max = height).fillMaxWidth(),
             shape = AlertDialogDefaults.shape,
             color = containerColor,
             tonalElevation = AlertDialogDefaults.TonalElevation,
