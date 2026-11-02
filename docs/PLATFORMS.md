@@ -29,6 +29,13 @@ leaves room for a browser demo (data in the browser only, no sync, every browser
 - The core and `orbt-engine` (Stockfish) are built for Android (arm64, x86_64 for the emulator),
   Windows and Linux by `core/scripts/build-android.sh`.
 
+## Windows distribution
+- The Microsoft Store, as an MSIX (`android/app/msix/`): Microsoft signs it for free and the
+  Store updates it. A full-trust desktop app, so the Lichess sign-in's loopback server works as
+  outside the package; `APPDATA` and the Java Preferences registry are redirected into the
+  package's storage (gone on uninstall, not shared with an MSI install), `~/ORBT Chess` is not.
+- The MSI on GitHub's releases for everyone else, unsigned (SmartScreen warns once).
+
 ## Storage on each platform
 | Platform | Storage |
 |---|---|

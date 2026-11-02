@@ -146,7 +146,8 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   (the board; the cards and knight in the icon's 1024 units, its square the visible 72dp; the
   themed icon's one-color layer), also the splash's icon; the desktop's `android/app/icons/orbt.ico`
   and `app/src/desktopMain/resources/orbt-icon.png` are rendered from `Design/AppIcon-light.svg`
-  (how: `android/app/build.gradle.kts`). Change them with the icon.
+  (how: `android/app/build.gradle.kts`), and the MSIX's tiles `android/app/msix/Assets/*.png` from
+  `orbt.ico` (`android/app/msix/assets.ps1`). Change them with the icon.
 - `Version.xcconfig` — the version and build number of every platform, nowhere else: Xcode
   includes it (`apple/Config/ORBT.xcconfig`), Gradle reads it (`android/build.gradle.kts`: the
   Android app's versionName/versionCode, the desktop's packageVersion). One build counter for
@@ -280,7 +281,15 @@ in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palett
   5. Windows and Linux packages: `.github/workflows/release.yml` on GitHub's machines (a
      package is built on its own OS). A version tag (`v1.0.0`; `v1.0.1-beta.1` is a pre-release)
      makes a draft release with the MSI, the .deb and their SHA-256 sums; pull requests build and
-     test both. The sync keys are repository secrets. A release: raise `Version.xcconfig`, merge,
+     test both. The Windows job also builds the Microsoft Store's MSIX (`:app:packageMsix`,
+     `android/app/msix/`: `pack.ps1` packs Compose's app image with the Windows SDK's makepri
+     and makeappx from `AppxManifest.xml`; unsigned, the Store signs it), attached next to the
+     MSI. Its identity is Partner Center's, in `android/gradle.properties` (`orbt.msix*`); its
+     version is `<major>.<minor>.<build>.0` (the Store's last part is 0). Locally on Windows:
+     `./gradlew :app:packageMsix`, then `app/msix/sign-for-testing.ps1` signs a copy with a
+     self-signed certificate (never committed) for `Add-AppxPackage`. In the package `APPDATA` and
+     the Preferences registry are redirected into the package's own storage (removed with it, not
+     shared with an MSI install); `~/ORBT Chess` is not. The sync keys are repository secrets. A release: raise `Version.xcconfig`, merge,
      tag `v<MARKETING_VERSION>` (the workflow stops on a tag that differs), publish the draft.
   A Claude Code hook (`.claude/hooks/check-before-commit.sh`) runs the ones a commit needs before
   every `git commit` and blocks it on failure: check.sh for `core/`, build-apple.sh for

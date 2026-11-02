@@ -166,3 +166,31 @@ compose.desktop {
 tasks.withType<Test>().configureEach {
     systemProperty("jna.library.path", project(":core").layout.buildDirectory.dir("host").get().asFile.path)
 }
+
+// The Microsoft Store's package: Compose's app image packed as an MSIX by msix/pack.ps1 (Windows
+// SDK), unsigned (the Store signs it). Its identity is Partner Center's, in gradle.properties. The
+// version has four parts with the last 0, as the Store requires: the marketing version's major
+// and minor, then the build number, which goes up with every upload.
+val packageMsix by tasks.registering(Exec::class) {
+    group = "compose desktop"
+    description = "Packs the Windows app image as an MSIX for the Microsoft Store."
+    dependsOn("createDistributable")
+    val appImage = layout.buildDirectory.dir("compose/binaries/main/app/ORBT Chess")
+    val output = layout.buildDirectory.file("compose/binaries/main/msix/ORBT-Chess-windows-x64.msix")
+    val marketing = (rootProject.extra["orbtVersionName"] as String).split(".")
+    val version = "${marketing[0]}.${marketing.getOrElse(1) { "0" }}.${rootProject.extra["orbtVersionCode"]}.0"
+    inputs.dir(appImage)
+    inputs.dir("msix")
+    outputs.file(output)
+    onlyIf { System.getProperty("os.name").lowercase().contains("win") }
+    doFirst { output.get().asFile.parentFile.mkdirs() }
+    commandLine(
+        "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", file("msix/pack.ps1").path,
+        "-AppImage", appImage.get().asFile.path,
+        "-Output", output.get().asFile.path,
+        "-Version", version,
+        "-IdentityName", providers.gradleProperty("orbt.msixIdentityName").get(),
+        "-Publisher", providers.gradleProperty("orbt.msixPublisher").get(),
+        "-PublisherDisplayName", providers.gradleProperty("orbt.msixPublisherDisplayName").get(),
+    )
+}
