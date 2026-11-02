@@ -162,6 +162,21 @@ compose.desktop {
     }
 }
 
+// The installer's pictures, the app's instead of WiX's red CD, put into the built MSI
+// (icons/installer-msi.ps1 says why there).
+tasks.matching { it.name == "packageMsi" || it.name == "packageReleaseMsi" }.configureEach {
+    val script = project.file("icons/installer-msi.ps1")
+    val exec = project.providers
+    inputs.files(script, project.file("icons/installer-dialog.bmp"), project.file("icons/installer-banner.bmp"))
+    doLast {
+        outputs.files.asFileTree.matching { include("**/*.msi") }.forEach { msi ->
+            exec.exec {
+                commandLine("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script.path, msi.path)
+            }.result.get().assertNormalExitValue()
+        }
+    }
+}
+
 // Desktop tests load the host's library that core/scripts/build-android.sh puts in core/build/host.
 tasks.withType<Test>().configureEach {
     systemProperty("jna.library.path", project(":core").layout.buildDirectory.dir("host").get().asFile.path)

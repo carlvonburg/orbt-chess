@@ -146,7 +146,9 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   (the board; the cards and knight in the icon's 1024 units, its square the visible 72dp; the
   themed icon's one-color layer), also the splash's icon; the desktop's `android/app/icons/orbt.ico`
   and `app/src/desktopMain/resources/orbt-icon.png` are rendered from `Design/AppIcon-light.svg`
-  (how: `android/app/build.gradle.kts`). Change them with the icon.
+  (how: `android/app/build.gradle.kts`), and the MSI's pictures `android/app/icons/installer-*.bmp`
+  from the .ico (`installer-bitmaps.ps1`; `installer-msi.ps1` puts them in the MSI after
+  `packageMsi`). Change them with the icon.
 - `Version.xcconfig` — the version and build number of every platform, nowhere else: Xcode
   includes it (`apple/Config/ORBT.xcconfig`), Gradle reads it (`android/build.gradle.kts`: the
   Android app's versionName/versionCode, the desktop's packageVersion). One build counter for

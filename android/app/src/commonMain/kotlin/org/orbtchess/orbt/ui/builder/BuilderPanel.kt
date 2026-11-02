@@ -4,6 +4,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import org.orbtchess.orbt.ui.components.MenuGroupBuilder
 import org.orbtchess.orbt.ui.components.ExpressiveMenu
+import org.orbtchess.orbt.ui.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.ui.tour.TourGuide
@@ -726,11 +728,13 @@ private fun MoveRow(
     content: @Composable RowScope.() -> Unit,
 ) {
     var open by remember { mutableStateOf(false) }
+    var openAt by remember { mutableStateOf<IntOffset?>(null) }
     var deleting by remember { mutableStateOf<NodeId?>(null) }
     Box(modifier) {
         Column(
             Modifier.fillMaxWidth()
-                .combinedClickable(onClick = onClick, onLongClick = menu?.let { { open = true } })
+                .onSecondaryClick(menu?.let { { at: IntOffset -> openAt = at; open = true } })
+                .combinedClickable(onClick = onClick, onLongClick = menu?.let { { openAt = null; open = true } })
                 .padding(horizontal = RowInset, vertical = vertical),
             verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
@@ -738,7 +742,7 @@ private fun MoveRow(
             below()
         }
         if (menu != null) {
-            ExpressiveMenu(open, onDismissRequest = { open = false }) {
+            ExpressiveMenu(open, onDismissRequest = { open = false }, at = openAt) {
                 group { menu(MenuActions(delete = { deleting = it })) }
             }
         }

@@ -3,6 +3,7 @@ package org.orbtchess.orbt.ui.builder
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import org.orbtchess.orbt.ui.components.ExpressiveMenu
+import org.orbtchess.orbt.ui.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -49,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.core.CoverageGap
 import org.orbtchess.orbt.core.GapKind
@@ -184,10 +186,12 @@ private fun OutlineRow(
     val coverage = document.coverage[item.id]
     val gaps = coverage?.gapCount ?: 0
     var menu by remember { mutableStateOf(false) }
+    var menuAt by remember { mutableStateOf<IntOffset?>(null) }
     Box {
         Row(
             Modifier.fillMaxWidth()
-                .combinedClickable(onClick = onOpen, onLongClick = { menu = true })
+                .onSecondaryClick { menuAt = it; menu = true }
+                .combinedClickable(onClick = onOpen, onLongClick = { menuAt = null; menu = true })
                 .padding(start = 8.dp + 20.dp * depth, end = 16.dp, top = 4.dp, bottom = 4.dp)
                 .heightIn(min = 48.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -216,7 +220,7 @@ private fun OutlineRow(
                 }
             }
         }
-        ExpressiveMenu(menu, onDismissRequest = { menu = false }) {
+        ExpressiveMenu(menu, onDismissRequest = { menu = false }, at = menuAt) {
             group {
                 item("Train This Branch", Symbols.study) { onStudyBranch() }
                 if (item.first != ROOT_NODE) item("Make Main Line", BuilderSymbols.makeMain) { document.promote(item.first) }
@@ -265,14 +269,16 @@ private fun GapsSheet(model: BuilderModel, dismiss: () -> Unit) {
 private fun GapRow(model: BuilderModel, gap: CoverageGap, onOpen: () -> Unit) {
     val reply = gap.kind as? GapKind.MissingReply
     var menu by remember { mutableStateOf(false) }
+    var menuAt by remember { mutableStateOf<IntOffset?>(null) }
     Box {
         ListItem(
             onClick = onOpen,
-            onLongClick = reply?.let { { menu = true } },
+            modifier = Modifier.onSecondaryClick(reply?.let { { at: IntOffset -> menuAt = at; menu = true } }),
+            onLongClick = reply?.let { { menuAt = null; menu = true } },
             supportingContent = { Text(Format.seenGames(gap.mass), color = ThemeColor.todo.color) },
         ) { Text(model.document.core.gapText(gap), maxLines = 2, overflow = TextOverflow.Ellipsis) }
         if (reply != null) {
-            ExpressiveMenu(menu, onDismissRequest = { menu = false }) {
+            ExpressiveMenu(menu, onDismissRequest = { menu = false }, at = menuAt) {
                 group { item("Exclude ${reply.san}", BuilderSymbols.exclude) { model.document.setExcluded(reply.uci, gap.node, true) } }
             }
         }

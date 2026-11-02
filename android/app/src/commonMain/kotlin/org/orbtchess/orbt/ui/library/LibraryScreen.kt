@@ -7,6 +7,7 @@ import org.orbtchess.orbt.ui.components.ListSection
 import org.orbtchess.orbt.ui.components.GroupedBackground
 import org.orbtchess.orbt.ui.components.MenuBuilder
 import org.orbtchess.orbt.ui.components.ExpressiveMenu
+import org.orbtchess.orbt.ui.components.onSecondaryClick
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,6 +50,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -321,13 +323,15 @@ private fun LibraryRow(
     menu: MenuBuilder.() -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var menuAt by remember { mutableStateOf<IntOffset?>(null) }
     val stats = EntryStats.of(entry, app)
     Box {
         CompositionLocalProvider(LocalSelectedRow provides selected) {
             ListItem(
                 selected = selected,
                 onClick = onClick,
-                onLongClick = { showMenu = true },
+                modifier = Modifier.onSecondaryClick { menuAt = it; showMenu = true },
+                onLongClick = { menuAt = null; showMenu = true },
                 onLongClickLabel = "Repertoire menu",
                 supportingContent = {
                     when {
@@ -340,7 +344,7 @@ private fun LibraryRow(
                 colors = rowColors(selected),
             ) { Text(entry.name, maxLines = 1) }
         }
-        ExpressiveMenu(showMenu, onDismissRequest = { showMenu = false }, content = menu)
+        ExpressiveMenu(showMenu, onDismissRequest = { showMenu = false }, at = menuAt, content = menu)
     }
 }
 
