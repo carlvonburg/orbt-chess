@@ -73,9 +73,8 @@ import org.orbtchess.orbt.ui.analysis.AnalysisScreen
 import org.orbtchess.orbt.ui.builder.BuilderScreen
 import org.orbtchess.orbt.ui.components.BoardPane
 import org.orbtchess.orbt.ui.components.LocalInDialog
-import org.orbtchess.orbt.ui.components.LocalSheetHost
+import org.orbtchess.orbt.ui.components.PlatformDialog
 import org.orbtchess.orbt.ui.components.LocalWideWindow
-import org.orbtchess.orbt.ui.components.SheetHost
 import org.orbtchess.orbt.ui.components.OpenDocument
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.library.LibraryScreen
@@ -147,8 +146,7 @@ fun AppShell(app: AppModel) {
     }
 
     val suiteType = if (showBar) NavigationSuiteScaffoldDefaults.navigationSuiteType(adaptiveInfo) else NavigationSuiteType.None
-    val sheets = remember { SheetHost() }
-    CompositionLocalProvider(LocalTourGuide provides app.tour, LocalWideWindow provides wide, LocalSheetHost provides sheets) {
+    CompositionLocalProvider(LocalTourGuide provides app.tour, LocalWideWindow provides wide) {
         Box(Modifier.fillMaxSize()) {
             // Material 3 Expressive's navigation for the window: the short navigation bar (on a
             // tablet in portrait its items side by side); wide windows show the tabs as panes.
@@ -203,33 +201,20 @@ fun AppShell(app: AppModel) {
             // Full-window screens over everything (Android's settings screens, the setup flow),
             // coming and going with Material's shared axis on the expressive motion scheme's
             // springs; the back gesture shrinks the one on top, as Android's predictive back does
-            // a full-screen surface. A wide window shows them as a dialog over the dimmed app
-            // (a desktop's settings), fading in.
+            // a full-screen surface. A wide window shows them in the platform's dialog instead.
             val motion = MaterialTheme.motionScheme
-            AnimatedContent(
-                targetState = shell.overlays.lastOrNull(),
-                transitionSpec = {
-                    if (wide) {
-                        // Without a size transform: the overlay is the window's size from its first frame (a
-                        // size animated from zero grows the dimmed window and the dialog from its corner).
-                        (fadeIn(motion.defaultEffectsSpec()) togetherWith fadeOut(motion.defaultEffectsSpec())).using(null)
-                    } else {
+            if (!wide) {
+                AnimatedContent(
+                    targetState = shell.overlays.lastOrNull(),
+                    transitionSpec = {
                         val forward = targetState != null && (initialState == null || shell.overlays.size > 1)
+                        // Without a size transform: the overlay is the window's size from its first frame.
                         (sharedAxisEnter(motion, forward) togetherWith sharedAxisExit(motion, forward)).using(null)
-                    }
-                },
-                label = "overlay",
-            ) { overlay ->
-                if (overlay != null) {
-                    val progress = if (overlay == shell.overlays.lastOrNull()) backProgress ?: 0f else 0f
-                    if (wide) {
-                        // Settings save as they change, so a click outside closes them; a form
-                        // with Save (Repertoire Settings, the setup) closes only by its buttons.
-                        val lightDismiss = overlay == Destination.Settings || overlay == Destination.Acknowledgements
-                        OverlayDialog(onDismiss = if (lightDismiss) shell::closeOverlay else null, Modifier.backPreview(progress)) {
-                            Overlay(app, shell, overlay)
-                        }
-                    } else {
+                    },
+                    label = "overlay",
+                ) { overlay ->
+                    if (overlay != null) {
+                        val progress = if (overlay == shell.overlays.lastOrNull()) backProgress ?: 0f else 0f
                         Surface(Modifier.fillMaxSize().backPreview(progress)) { Overlay(app, shell, overlay) }
                     }
                 }
@@ -238,9 +223,18 @@ fun AppShell(app: AppModel) {
             // The tour's spotlight over the tour's screens, bars included; not over a screen or
             // sheet that covers them.
             if (shell.overlays.isEmpty() && shell.sheet == null) TourSpotlight(app.tour)
+        }
 
-            // A wide window's sheets, as dialogs over all of it.
-            sheets.Dialogs()
+        // A wide window's full-window screens, one dialog for them all (Settings opens About in it).
+        // Settings save as they change, so Android's tap outside closes them; a form with Save
+        // (Repertoire Settings, the setup) closes only by its buttons.
+        if (wide) {
+            shell.overlays.lastOrNull()?.let { overlay ->
+                val lightDismiss = shell.overlays.first() == Destination.Settings
+                PlatformDialog(shell::closeOverlay, width = 760.dp, height = 880.dp, GroupedBackground, dismissOnClickOutside = lightDismiss) {
+                    CompositionLocalProvider(LocalInDialog provides true) { Overlay(app, shell, overlay) }
+                }
+            }
         }
 
         shell.sheet?.let { sheet ->
@@ -539,29 +533,6 @@ private fun Screen(
         is Screen.Drill -> DrillScreen(app, screen.model, pane, navigate, onBack)
         is Screen.StudyAll -> StudyAllScreen(app, screen.model, pane, navigate, onBack)
         is Screen.Analysis -> AnalysisScreen(app, screen.model, pane, navigate, onBack)
-    }
-}
-
-/**
- * A full-window screen as a dialog on a wide window: centered on the dimmed app, at most 760 by
- * 880 dp, rounded as Material's dialogs. [onDismiss]: a click on the dimmed app closes it.
- */
-@Composable
-private fun OverlayDialog(onDismiss: (() -> Unit)?, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Box(
-        Modifier.fillMaxSize()
-            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
-            // Modal: the app under it takes no clicks.
-            .clickable(interactionSource = null, indication = null) { onDismiss?.invoke() },
-        contentAlignment = Alignment.Center,
-    ) {
-        Surface(
-            modifier.padding(32.dp).widthIn(max = 760.dp).heightIn(max = 880.dp).fillMaxSize()
-                // Clicks inside stay inside.
-                .clickable(interactionSource = null, indication = null) {},
-            shape = MaterialTheme.shapes.extraLarge,
-            shadowElevation = 6.dp,
-        ) { CompositionLocalProvider(LocalInDialog provides true) { content() } }
     }
 }
 

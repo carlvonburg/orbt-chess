@@ -20,7 +20,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
@@ -73,6 +72,7 @@ import org.orbtchess.orbt.storage.RepertoireEntry
 import org.orbtchess.orbt.storage.RepertoireLibrary
 import org.orbtchess.orbt.ui.SetupMode
 import org.orbtchess.orbt.ui.components.DialogButtons
+import org.orbtchess.orbt.ui.components.DialogTitleBar
 import org.orbtchess.orbt.ui.components.FormColumn
 import org.orbtchess.orbt.ui.components.LocalInDialog
 import org.orbtchess.orbt.ui.components.defaultAction
@@ -178,7 +178,7 @@ fun SetupScreen(
         topBar = {
             if (inDialog) {
                 // A dialog's title, at its top.
-                TopAppBar(title = { Text(title) }, subtitle = { Text("Step $step of 3") }, colors = groupedTopAppBarColors())
+                DialogTitleBar(title, subtitle = "Step $step of 3")
             } else {
                 MediumFlexibleTopAppBar(
                     title = { Text(title) },

@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.ui.components.AdaptiveSheet
+import org.orbtchess.orbt.ui.components.SheetHeading
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.ui.settings.EngineSettingsSection
 
@@ -24,11 +25,7 @@ import org.orbtchess.orbt.ui.settings.EngineSettingsSection
 internal fun EngineSettingsSheet(app: AppModel, onDismiss: () -> Unit) {
     AdaptiveSheet(onDismissRequest = onDismiss, expandedOnly = true) {
         Column(Modifier.verticalScroll(rememberScrollState())) {
-            Text(
-                "Engine Settings",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
+            SheetHeading("Engine Settings")
             // The sheet's title names it: no section heading under it.
             EngineSettingsSection(app, heading = null)
         }

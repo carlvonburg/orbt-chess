@@ -7,14 +7,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
@@ -26,7 +24,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
@@ -48,6 +44,7 @@ import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.storage.RepertoireDocument
 import org.orbtchess.orbt.storage.RepertoireLibrary
 import org.orbtchess.orbt.ui.components.DialogButtons
+import org.orbtchess.orbt.ui.components.DialogTitleBar
 import org.orbtchess.orbt.ui.components.FormColumn
 import org.orbtchess.orbt.ui.components.LocalInDialog
 import org.orbtchess.orbt.ui.components.LocalWideForm
@@ -110,7 +107,7 @@ fun RepertoireSettingsScreen(
         topBar = {
             if (inDialog) {
                 // A dialog's title, at its top.
-                TopAppBar(title = { Text("Repertoire Settings") }, colors = groupedTopAppBarColors())
+                DialogTitleBar("Repertoire Settings")
             } else {
                 MediumFlexibleTopAppBar(
                     title = { Text("Repertoire Settings") },
@@ -130,21 +127,20 @@ fun RepertoireSettingsScreen(
         },
     ) { padding ->
         FormColumn(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
-            val nameField: @Composable (Modifier, Shape) -> Unit = { fieldModifier, shape ->
+            val nameField: @Composable (Modifier) -> Unit = { fieldModifier ->
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = RepertoireLibrary.safeRepertoireName(it) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                    shape = shape,
                     modifier = fieldModifier,
                 )
             }
             RepertoireSettingsForm(app, draft, onChange = { draft = it }, nameRow = {
                 if (LocalWideForm.current) {
-                    WideRow("Name", 320.dp) { nameField(it.fillMaxWidth(), RoundedCornerShape(percent = 50)) }
+                    WideRow("Name", 320.dp) { nameField(it.fillMaxWidth()) }
                 } else {
-                    FormSection("Name") { nameField(Modifier.fillMaxWidth().padding(horizontal = 16.dp), OutlinedTextFieldDefaults.shape) }
+                    FormSection("Name") { nameField(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) }
                 }
             })
             error?.let {

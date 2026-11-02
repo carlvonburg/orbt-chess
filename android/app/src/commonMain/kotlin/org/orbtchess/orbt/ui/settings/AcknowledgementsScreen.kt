@@ -1,6 +1,8 @@
 package org.orbtchess.orbt.ui.settings
 
+import org.orbtchess.orbt.ui.components.DialogTitleBar
 import org.orbtchess.orbt.ui.components.ListSection
+import org.orbtchess.orbt.ui.components.LocalInDialog
 import org.orbtchess.orbt.ui.components.groupedTopAppBarColors
 import org.orbtchess.orbt.ui.components.GroupedBackground
 import androidx.compose.foundation.layout.Arrangement
@@ -94,14 +96,19 @@ private fun Page(title: String, onBack: () -> Unit, modifier: Modifier, content:
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = GroupedBackground,
         topBar = {
-            MediumFlexibleTopAppBar(
-                title = { Text(title) },
-                colors = groupedTopAppBarColors(),
-                scrollBehavior = scrollBehavior,
-                navigationIcon = {
-                    IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
-                },
-            )
+            // In Settings' dialog (a wide window), its title and the way back to Settings.
+            if (LocalInDialog.current) {
+                DialogTitleBar(title, back = onBack)
+            } else {
+                MediumFlexibleTopAppBar(
+                    title = { Text(title) },
+                    colors = groupedTopAppBarColors(),
+                    scrollBehavior = scrollBehavior,
+                    navigationIcon = {
+                        IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    },
+                )
+            }
         },
     ) { padding -> content(Modifier.fillMaxSize().padding(padding)) }
 }

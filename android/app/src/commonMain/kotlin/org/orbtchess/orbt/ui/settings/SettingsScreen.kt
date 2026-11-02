@@ -23,7 +23,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Download
@@ -80,8 +79,11 @@ import org.orbtchess.orbt.engine.EngineDefaults
 import org.orbtchess.orbt.engine.EngineNetwork
 import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
-import org.orbtchess.orbt.ui.components.ChoiceMenuButton
+import org.orbtchess.orbt.ui.components.ChoiceDropdown
 import org.orbtchess.orbt.ui.components.FormColumn
+import org.orbtchess.orbt.ui.components.DialogCloseButton
+import org.orbtchess.orbt.ui.components.DialogTitleBar
+import org.orbtchess.orbt.ui.components.LocalDialogWindowTitle
 import org.orbtchess.orbt.ui.components.LocalInDialog
 import org.orbtchess.orbt.ui.components.LocalWideForm
 import org.orbtchess.orbt.ui.components.NumberField
@@ -119,21 +121,21 @@ fun SettingsScreen(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = GroupedBackground,
         topBar = {
-            LargeFlexibleTopAppBar(
-                title = { Text("Settings") },
-                colors = groupedTopAppBarColors(),
-                navigationIcon = {
-                    IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) {
-                        if (LocalInDialog.current) {
-                            Icon(Icons.Filled.Close, contentDescription = "Close")
-                        } else {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                        }
-                    }
-                },
-                scrollBehavior = scrollBehavior,
-            )
+            if (LocalInDialog.current) {
+                DialogTitleBar("Settings")
+            } else {
+                LargeFlexibleTopAppBar(
+                    title = { Text("Settings") },
+                    colors = groupedTopAppBarColors(),
+                    navigationIcon = {
+                        IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    },
+                    scrollBehavior = scrollBehavior,
+                )
+            }
         },
+        // An Android dialog's Close (a desktop dialog window has the system's ✕).
+        bottomBar = { if (LocalInDialog.current && LocalDialogWindowTitle.current == null) DialogCloseButton(onBack) },
     ) { padding ->
         FormColumn(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             LichessSection(app)
@@ -220,7 +222,7 @@ private fun NumberRow(title: String, value: Int, range: IntRange, onChange: (Int
 @Composable
 private fun <T> ChoiceRow(title: String, options: List<T>, selected: T, label: (T) -> String, detail: (T) -> String, onSelect: (T) -> Unit) {
     if (LocalWideForm.current) {
-        WideRow(title, ControlWidth) { ChoiceMenuButton(options, selected, onSelect, label, it, detail) }
+        WideRow(title, ControlWidth) { ChoiceDropdown(options, selected, onSelect, label, it, detail) }
     } else {
         var choosing by remember { mutableStateOf(false) }
         ValueRow(title, label(selected)) { choosing = true }
@@ -475,7 +477,7 @@ private fun AppColorRow() {
         WideRow("Color", ControlWidth + 48.dp) { modifier ->
             Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 BoardStrip(setting.appColor, squares = 2, Modifier.width(36.dp).height(18.dp))
-                ChoiceMenuButton(AppColor.entries, setting.appColor, { setting.select(it) }, { it.title }, Modifier.weight(1f))
+                ChoiceDropdown(AppColor.entries, setting.appColor, { setting.select(it) }, { it.title }, Modifier.weight(1f))
             }
         }
         return

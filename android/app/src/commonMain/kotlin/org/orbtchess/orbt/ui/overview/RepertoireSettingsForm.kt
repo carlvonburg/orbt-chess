@@ -64,7 +64,7 @@ import org.orbtchess.orbt.explorer.CoverageTables
 import org.orbtchess.orbt.platform.Settings
 import org.orbtchess.orbt.storage.RepertoireDocument
 import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
-import org.orbtchess.orbt.ui.components.ChoiceMenuButton
+import org.orbtchess.orbt.ui.components.ChoiceDropdown
 import org.orbtchess.orbt.ui.components.ListSection
 import org.orbtchess.orbt.ui.components.LocalWideForm
 import org.orbtchess.orbt.ui.components.NumberField
@@ -321,7 +321,7 @@ private fun RatingPicker(
     val bins = coverage.selections.filter(draft.source::matches).map { it.lowestRating }.sorted()
     val options = if (draft.rating in bins) bins else (bins + draft.rating).sorted()
     if (beside) {
-        WideRow(label, 200.dp) { ChoiceMenuButton(options, draft.rating, { bin -> onChange(draft.copy(rating = bin)) }, ::ratingLabel, it) }
+        WideRow(label, 200.dp) { ChoiceDropdown(options, draft.rating, { bin -> onChange(draft.copy(rating = bin)) }, ::ratingLabel, it) }
         TableDownloadRow(coverage, draft.database)
         LaunchedEffect(databaseCacheKey(draft.database), coverage.available.size) { coverage.ensure(draft.database) }
         return
@@ -449,7 +449,7 @@ fun DepthSection(targetGames: Int, onChange: (Int) -> Unit, inSetup: Boolean = f
         if (LocalWideForm.current && !inSetup) {
             val custom = customTarget || !isPreset
             WideRow("Cover moves seen", 240.dp) {
-                ChoiceMenuButton(
+                ChoiceDropdown(
                     CoverageDepth.entries + null, if (custom) null else CoverageDepth.of(targetGames),
                     onSelect = { depth ->
                         customTarget = depth == null

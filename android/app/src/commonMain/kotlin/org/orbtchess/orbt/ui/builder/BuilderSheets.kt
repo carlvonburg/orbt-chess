@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import org.orbtchess.orbt.ui.components.AdaptiveSheet
 import org.orbtchess.orbt.ui.components.DialogButtons
 import org.orbtchess.orbt.ui.components.LocalWideWindow
+import org.orbtchess.orbt.ui.components.SheetHeading
 import org.orbtchess.orbt.ui.components.ExpressiveMenu
 import org.orbtchess.orbt.ui.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -83,13 +84,8 @@ internal fun BuilderSheets(model: BuilderModel, onStudyBranch: (NodeId) -> Unit)
 /** A sheet's title row, with its actions at the end. */
 @Composable
 private fun SheetTitle(title: String, actions: @Composable () -> Unit = {}) {
-    Row(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        actions()
-    }
+    // The dialog window's title on the desktop, a heading elsewhere.
+    SheetHeading(title) { actions() }
 }
 
 // MARK: Outline

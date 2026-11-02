@@ -1,22 +1,26 @@
 package org.orbtchess.orbt.ui.components
 
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
@@ -29,8 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -91,17 +95,19 @@ fun NumberField(value: Int, range: IntRange, onChange: (Int) -> Unit, modifier: 
         enabled = enabled,
         singleLine = true,
         isError = text.toIntOrNull()?.let { it !in range } ?: true,
-        // As round as the menus and buttons beside it.
-        shape = RoundedCornerShape(percent = 50),
         textStyle = tabularDigits(MaterialTheme.typography.bodyLarge),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = modifier.widthIn(min = 96.dp),
     )
 }
 
-/** One of several options as a button showing the chosen one that opens a menu of all (a desktop's combo box), each with its [detail]. */
+/**
+ * One of several options: Material's exposed dropdown menu (a read-only field showing the choice,
+ * a menu of all), each with its [detail].
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun <T> ChoiceMenuButton(
+fun <T> ChoiceDropdown(
     options: List<T>,
     selected: T,
     onSelect: (T) -> Unit,
@@ -109,21 +115,37 @@ fun <T> ChoiceMenuButton(
     modifier: Modifier = Modifier,
     detail: ((T) -> String?)? = null,
 ) {
-    var open by remember { mutableStateOf(false) }
-    Box(modifier) {
-        OutlinedButton(onClick = { open = true }, shapes = ButtonDefaults.shapes(), modifier = Modifier.fillMaxWidth()) {
-            Text(title(selected), Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded, { expanded = it }, modifier) {
+        // The anchor's own click handling never opens the menu on the desktop when the box comes
+        // after the screen's first frame (Compose Multiplatform material3 1.13.0-beta01, as
+        // `RatingPicker`), so a click target over the field opens it; the anchor still places it.
+        Box(Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = false)) {
+            OutlinedTextField(
+                value = title(selected),
+                onValueChange = {},
+                readOnly = true,
+                singleLine = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.matchParentSize().clickable(role = Role.DropdownList) { expanded = !expanded })
         }
-        ExpressiveMenu(open, onDismissRequest = { open = false }) {
-            group {
-                for (option in options) {
-                    item(title(option), selected = option == selected, supporting = detail?.invoke(option)) { onSelect(option) }
-                }
+        ExposedDropdownMenu(expanded, { expanded = false }) {
+            options.forEachIndexed { index, option ->
+                DropdownMenuItem(
+                    text = { Text(title(option)) },
+                    shape = MenuDefaults.itemShape(index, options.size).shape,
+                    supportingText = detail?.invoke(option)?.let { { Text(it) } },
+                    onClick = {
+                        expanded = false
+                        onSelect(option)
+                    },
+                )
             }
         }
     }
 }
 
-/** Whether this screen is shown as a dialog (a wide window's settings): it closes with ✕, not back. */
+/** Whether this screen is shown as a dialog (a wide window's settings, [org.orbtchess.orbt.ui.components.PlatformDialog]). */
 val LocalInDialog = compositionLocalOf { false }

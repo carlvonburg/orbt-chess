@@ -43,6 +43,7 @@ import org.orbtchess.orbt.ui.components.LocalWideWindow
 import org.orbtchess.orbt.ui.components.defaultAction
 import org.orbtchess.orbt.ui.components.LocalWideForm
 import org.orbtchess.orbt.ui.components.NumberField
+import org.orbtchess.orbt.ui.components.SheetHeading
 import org.orbtchess.orbt.ui.components.WideRow
 
 /**
@@ -74,8 +75,7 @@ fun StudyOptionsSheet(
     }
     Column(modifier.defaultAction(wide, save)) {
         FormColumn(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("${document.name} Options", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            SheetHeading("${document.name} Options") {
                 if (!wide) {
                     TextButton(onClick = onDone, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
                     Button(shapes = ButtonDefaults.shapes(), onClick = save) { Text("Save") }
