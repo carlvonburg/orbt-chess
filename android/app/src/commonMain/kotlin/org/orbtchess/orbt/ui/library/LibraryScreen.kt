@@ -7,6 +7,7 @@ import org.orbtchess.orbt.ui.components.ListSection
 import org.orbtchess.orbt.ui.components.GroupedBackground
 import org.orbtchess.orbt.ui.components.MenuBuilder
 import org.orbtchess.orbt.ui.components.ExpressiveMenu
+import org.orbtchess.orbt.ui.components.onSecondaryClick
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,9 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -49,6 +47,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -66,6 +65,7 @@ import org.orbtchess.orbt.ui.SetupMode
 import org.orbtchess.orbt.ui.components.CoverageBar
 import org.orbtchess.orbt.ui.components.DueCounts
 import org.orbtchess.orbt.ui.components.EmptyState
+import org.orbtchess.orbt.ui.components.Refreshable
 import org.orbtchess.orbt.ui.components.StudiedBar
 import org.orbtchess.orbt.ui.components.TooltipIconButton
 import org.orbtchess.orbt.ui.components.Symbols
@@ -162,7 +162,6 @@ fun LibraryScreen(
         },
     ) { padding ->
         val content = Modifier.fillMaxSize().padding(padding)
-        val refreshState = rememberPullToRefreshState()
         when {
             // The first launch adds the sample: still loading, not an empty library.
             !library.isLoaded || (library.entries.isEmpty() && !sampleOffered) ->
@@ -173,17 +172,16 @@ fun LibraryScreen(
                 takeTour = ::takeTour,
                 modifier = content,
             )
-            else -> PullToRefreshBox(
+            else -> Refreshable(
                 isRefreshing = refreshing,
-                state = refreshState,
-                indicator = {
-                    PullToRefreshDefaults.LoadingIndicator(refreshState, refreshing, Modifier.align(Alignment.TopCenter))
-                },
                 onRefresh = {
                     scope.launch {
                         refreshing = true
-                        library.refresh()
-                        refreshing = false
+                        try {
+                            library.refresh()
+                        } finally {
+                            refreshing = false
+                        }
                     }
                 },
                 modifier = content,
@@ -321,13 +319,15 @@ private fun LibraryRow(
     menu: MenuBuilder.() -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var menuAt by remember { mutableStateOf<IntOffset?>(null) }
     val stats = EntryStats.of(entry, app)
     Box {
         CompositionLocalProvider(LocalSelectedRow provides selected) {
             ListItem(
                 selected = selected,
                 onClick = onClick,
-                onLongClick = { showMenu = true },
+                modifier = Modifier.onSecondaryClick { menuAt = it; showMenu = true },
+                onLongClick = { menuAt = null; showMenu = true },
                 onLongClickLabel = "Repertoire menu",
                 supportingContent = {
                     when {
@@ -340,7 +340,7 @@ private fun LibraryRow(
                 colors = rowColors(selected),
             ) { Text(entry.name, maxLines = 1) }
         }
-        ExpressiveMenu(showMenu, onDismissRequest = { showMenu = false }, content = menu)
+        ExpressiveMenu(showMenu, onDismissRequest = { showMenu = false }, at = menuAt, content = menu)
     }
 }
 

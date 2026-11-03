@@ -2,6 +2,7 @@ package org.orbtchess.orbt.ui.statistics
 
 import androidx.compose.foundation.layout.Column
 import org.orbtchess.orbt.ui.components.ListSection
+import org.orbtchess.orbt.ui.components.SheetHeading
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -62,11 +63,7 @@ fun CardInfoSheet(
 
     LazyColumn(modifier.fillMaxWidth()) {
         item {
-            Text(
-                "Move Info",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics { heading() },
-            )
+            SheetHeading("Move Info")
         }
         if (epd == null || card == null) {
             item {

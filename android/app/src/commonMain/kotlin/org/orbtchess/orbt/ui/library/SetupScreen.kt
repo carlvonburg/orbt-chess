@@ -71,6 +71,11 @@ import org.orbtchess.orbt.core.Side
 import org.orbtchess.orbt.storage.RepertoireEntry
 import org.orbtchess.orbt.storage.RepertoireLibrary
 import org.orbtchess.orbt.ui.SetupMode
+import org.orbtchess.orbt.ui.components.DialogButtons
+import org.orbtchess.orbt.ui.components.DialogTitleBar
+import org.orbtchess.orbt.ui.components.FormColumn
+import org.orbtchess.orbt.ui.components.LocalInDialog
+import org.orbtchess.orbt.ui.components.defaultAction
 import org.orbtchess.orbt.ui.overview.CoverageSourceSection
 import org.orbtchess.orbt.ui.overview.DepthSection
 import org.orbtchess.orbt.ui.overview.FormSection
@@ -163,33 +168,51 @@ fun SetupScreen(
     )
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    // A dialog (a wide window): Back, Cancel and Next (Create) at its bottom, as a desktop's
+    // wizard; else the title bar's close or back and Next.
+    val inDialog = LocalInDialog.current
+    val next = { if (step < 3) step += 1 else finish() }
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        // The page's collapsing title bar takes the scroll first; a dialog has none (unattached,
+        // its scroll behavior would take every scroll and the content none).
+        modifier = modifier.then(if (LocalInDialog.current) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)).defaultAction(inDialog && canContinue, next),
         containerColor = GroupedBackground,
         topBar = {
-            MediumFlexibleTopAppBar(
-                title = { Text(title) },
-                colors = groupedTopAppBarColors(),
-                scrollBehavior = scrollBehavior,
-                subtitle = { Text("Step $step of 3") },
-                navigationIcon = {
-                    if (step == 1) {
-                        IconButton(onClick = onCancel, shapes = IconButtonDefaults.shapes()) { Icon(Icons.Filled.Close, contentDescription = "Cancel") }
-                    } else {
-                        IconButton(onClick = { step -= 1 }, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
-                    }
-                },
-                actions = {
-                    if (step < 3) {
-                        TextButton(onClick = { step += 1 }, shapes = ButtonDefaults.shapes(), enabled = canContinue) { Text("Next") }
-                    } else {
-                        Button(onClick = ::finish, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(end = 8.dp)) { Text(finishTitle) }
-                    }
-                },
-            )
+            if (inDialog) {
+                // A dialog's title, at its top.
+                DialogTitleBar(title, subtitle = "Step $step of 3")
+            } else {
+                MediumFlexibleTopAppBar(
+                    title = { Text(title) },
+                    colors = groupedTopAppBarColors(),
+                    scrollBehavior = scrollBehavior,
+                    subtitle = { Text("Step $step of 3") },
+                    navigationIcon = {
+                        if (step == 1) {
+                            IconButton(onClick = onCancel, shapes = IconButtonDefaults.shapes()) { Icon(Icons.Filled.Close, contentDescription = "Cancel") }
+                        } else {
+                            IconButton(onClick = { step -= 1 }, shapes = IconButtonDefaults.shapes()) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                        }
+                    },
+                    actions = {
+                        if (step < 3) {
+                            TextButton(onClick = { step += 1 }, shapes = ButtonDefaults.shapes(), enabled = canContinue) { Text("Next") }
+                        } else {
+                            Button(onClick = ::finish, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(end = 8.dp)) { Text(finishTitle) }
+                        }
+                    },
+                )
+            }
+        },
+        bottomBar = {
+            if (inDialog) {
+                DialogButtons(if (step < 3) "Next" else finishTitle, next, onCancel = onCancel, confirmEnabled = canContinue) {
+                    if (step > 1) TextButton(onClick = { step -= 1 }, shapes = ButtonDefaults.shapes()) { Text("Back") }
+                }
+            }
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+        FormColumn(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
             when (step) {
                 1 -> {
                     FormSection("Name") {

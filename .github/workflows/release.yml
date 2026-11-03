@@ -1,6 +1,6 @@
 # The Windows and Linux app, built on GitHub's machines: Compose packages only for the OS it runs
 # on, and the core's library is built per OS. A version tag (v1.0.0; v1.0.1-beta.1 is a
-# pre-release) builds both packages into a draft release with their SHA-256 sums; a pull request
+# pre-release) builds the packages (.deb, MSI, and the MSIX for the Microsoft Store) into a draft release with their SHA-256 sums; a pull request
 # or a manual run builds and tests them without a release (the packages are the run's artifacts).
 # The sync keys come from repository secrets (ORBT_DROPBOX_APP_KEY, ORBT_DRIVE_DESKTOP_CLIENT_ID,
 # ORBT_DRIVE_DESKTOP_CLIENT_SECRET); without them the app offers no Dropbox or Google Drive.
@@ -98,7 +98,7 @@ jobs:
           path: dist/
 
   windows:
-    name: Windows (MSI)
+    name: Windows (MSI, MSIX)
     needs: core
     runs-on: windows-2022
     timeout-minutes: 90
@@ -176,12 +176,20 @@ jobs:
           DRIVE_CLIENT_ID: ${{ secrets.ORBT_DRIVE_DESKTOP_CLIENT_ID }}
           DRIVE_CLIENT_SECRET: ${{ secrets.ORBT_DRIVE_DESKTOP_CLIENT_SECRET }}
         run: |
-          ./gradlew --no-daemon :app:packageMsi \
+          # The MSI for the GitHub release and the MSIX for the Microsoft Store (app/msix/pack.ps1,
+          # with the image's Windows SDK; unsigned, the Store signs it), from one app image.
+          ./gradlew --no-daemon :app:packageMsi :app:packageMsix \
             "-Porbt.dropboxAppKey=$DROPBOX_APP_KEY" \
             "-Porbt.driveDesktopClientId=$DRIVE_CLIENT_ID" \
             "-Porbt.driveDesktopClientSecret=$DRIVE_CLIENT_SECRET"
           mkdir -p ../dist
           cp app/build/compose/binaries/main/msi/*.msi ../dist/ORBT-Chess-windows-x64.msi
+          cp app/build/compose/binaries/main/msix/ORBT-Chess-windows-x64.msix ../dist/
+      - name: Packaging logs
+        # Gradle only names jpackage's logs when it fails; show them.
+        if: failure()
+        working-directory: android
+        run: tail -n +1 app/build/compose/logs/*/*.txt || true
       - uses: actions/upload-artifact@v6
         with:
           name: windows

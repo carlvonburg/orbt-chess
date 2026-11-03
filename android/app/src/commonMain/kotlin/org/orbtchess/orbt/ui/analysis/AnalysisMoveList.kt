@@ -3,6 +3,7 @@ package org.orbtchess.orbt.ui.analysis
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import org.orbtchess.orbt.ui.components.ExpressiveMenu
+import org.orbtchess.orbt.ui.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -39,6 +40,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.core.AnalysisMove
 import org.orbtchess.orbt.core.MoveListRow
@@ -178,23 +180,25 @@ private fun VariationMove(move: AnalysisMove) {
 @Composable
 private fun MoveButton(model: AnalysisModel, move: AnalysisMove, modifier: Modifier = Modifier, label: @Composable () -> Unit) {
     var menu by remember { mutableStateOf(false) }
+    var menuAt by remember { mutableStateOf<IntOffset?>(null) }
     val shape = RoundedCornerShape(6.dp)
     Box(modifier) {
         Box(
             Modifier.clip(shape)
                 .then(if (move.isCurrent) Modifier.background(MaterialTheme.colorScheme.secondaryContainer) else Modifier)
-                .combinedClickable(onLongClick = { menu = true }) { model.go(move.id) },
+                .onSecondaryClick { menuAt = it; menu = true }
+                .combinedClickable(onLongClick = { menuAt = null; menu = true }) { model.go(move.id) },
         ) { label() }
-        MoveMenu(model, move, menu) { menu = false }
+        MoveMenu(model, move, menu, menuAt) { menu = false }
     }
 }
 
 @Suppress("DEPRECATION")
 @Composable
-private fun MoveMenu(model: AnalysisModel, move: AnalysisMove, expanded: Boolean, dismiss: () -> Unit) {
+private fun MoveMenu(model: AnalysisModel, move: AnalysisMove, expanded: Boolean, at: IntOffset?, dismiss: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     val variation = expanded && !model.isMainLine(move.id)
-    ExpressiveMenu(expanded, onDismissRequest = dismiss) {
+    ExpressiveMenu(expanded, onDismissRequest = dismiss, at = at) {
         if (variation) {
             group {
                 item("Promote Variation", Icons.Filled.KeyboardArrowUp) { model.promote(move.id) }

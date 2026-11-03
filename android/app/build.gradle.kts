@@ -149,6 +149,12 @@ compose.desktop {
                 // For the user who installs it, without an administrator; in the Start menu and
                 // on the desktop.
                 perUserInstall = true
+                // AppData\Local\ORBT Chess App, apart from the app's data in AppData\Local\ORBT
+                // Chess: uninstalling (and so every upgrade) deletes the install folder whole. One
+                // level only: jpackage's per-user MSI lists no folder above it for removal, which
+                // fails WiX's ICE64 (AppData\Local\Programs would need Windows Installer's own
+                // per-user Program Files, which jpackage does not use).
+                installationPath = "ORBT Chess App"
                 menu = true
                 menuGroup = "ORBT Chess"
                 shortcut = true
@@ -162,7 +168,50 @@ compose.desktop {
     }
 }
 
+// The installer's pictures, the app's instead of WiX's red CD, put into the built MSI
+// (icons/installer-msi.ps1 says why there).
+tasks.matching { it.name == "packageMsi" || it.name == "packageReleaseMsi" }.configureEach {
+    val script = project.file("icons/installer-msi.ps1")
+    val exec = project.providers
+    inputs.files(script, project.file("icons/installer-dialog.bmp"), project.file("icons/installer-banner.bmp"))
+    doLast {
+        outputs.files.asFileTree.matching { include("**/*.msi") }.forEach { msi ->
+            exec.exec {
+                commandLine("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script.path, msi.path)
+            }.result.get().assertNormalExitValue()
+        }
+    }
+}
+
 // Desktop tests load the host's library that core/scripts/build-android.sh puts in core/build/host.
 tasks.withType<Test>().configureEach {
     systemProperty("jna.library.path", project(":core").layout.buildDirectory.dir("host").get().asFile.path)
+}
+
+// The Microsoft Store's package: Compose's app image packed as an MSIX by msix/pack.ps1 (Windows
+// SDK), unsigned (the Store signs it). Its identity is Partner Center's, in gradle.properties. The
+// version has four parts with the last 0, as the Store requires: the marketing version's major
+// and minor, then the build number, which goes up with every upload.
+val packageMsix by tasks.registering(Exec::class) {
+    group = "compose desktop"
+    description = "Packs the Windows app image as an MSIX for the Microsoft Store."
+    dependsOn("createDistributable")
+    val appImage = layout.buildDirectory.dir("compose/binaries/main/app/ORBT Chess")
+    val output = layout.buildDirectory.file("compose/binaries/main/msix/ORBT-Chess-windows-x64.msix")
+    val marketing = (rootProject.extra["orbtVersionName"] as String).split(".")
+    val version = "${marketing[0]}.${marketing.getOrElse(1) { "0" }}.${rootProject.extra["orbtVersionCode"]}.0"
+    inputs.dir(appImage)
+    inputs.dir("msix")
+    outputs.file(output)
+    onlyIf { System.getProperty("os.name").lowercase().contains("win") }
+    doFirst { output.get().asFile.parentFile.mkdirs() }
+    commandLine(
+        "powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", file("msix/pack.ps1").path,
+        "-AppImage", appImage.get().asFile.path,
+        "-Output", output.get().asFile.path,
+        "-Version", version,
+        "-IdentityName", providers.gradleProperty("orbt.msixIdentityName").get(),
+        "-Publisher", providers.gradleProperty("orbt.msixPublisher").get(),
+        "-PublisherDisplayName", providers.gradleProperty("orbt.msixPublisherDisplayName").get(),
+    )
 }

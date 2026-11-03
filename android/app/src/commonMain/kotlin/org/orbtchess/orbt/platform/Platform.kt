@@ -62,7 +62,15 @@ class PlatformServices(
     val syncAuth: SyncAuth = NoSyncAuth,
     /** The store's rating prompt (Google Play's In-App Review); null where there is none (the desktop). */
     val storeReview: StoreReview? = null,
+    /**
+     * Shows a folder in the system's file manager (the desktop); null where the app's folders are
+     * its own (Android: inside the app, not in Files).
+     */
+    val folderOpener: FolderOpener? = null,
 )
+
+/** The system's file manager: [label] names it as the system does ("Show in File Explorer"); [open] opens a folder in it. */
+class FolderOpener(val label: String, val open: (File) -> Unit)
 
 /** The store the app came from, to ask for a rating (`requestReview` in the Swift app). */
 interface StoreReview {

@@ -2,7 +2,12 @@ package org.orbtchess.orbt.ui.builder
 
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import org.orbtchess.orbt.ui.components.AdaptiveSheet
+import org.orbtchess.orbt.ui.components.DialogButtons
+import org.orbtchess.orbt.ui.components.LocalWideWindow
+import org.orbtchess.orbt.ui.components.SheetHeading
 import org.orbtchess.orbt.ui.components.ExpressiveMenu
+import org.orbtchess.orbt.ui.components.onSecondaryClick
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,14 +37,11 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberSearchBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
@@ -49,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.core.CoverageGap
 import org.orbtchess.orbt.core.GapKind
@@ -81,13 +84,8 @@ internal fun BuilderSheets(model: BuilderModel, onStudyBranch: (NodeId) -> Unit)
 /** A sheet's title row, with its actions at the end. */
 @Composable
 private fun SheetTitle(title: String, actions: @Composable () -> Unit = {}) {
-    Row(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        actions()
-    }
+    // The dialog window's title on the desktop, a heading elsewhere.
+    SheetHeading(title) { actions() }
 }
 
 // MARK: Outline
@@ -108,7 +106,7 @@ private fun OutlineSheet(model: BuilderModel, onStudyBranch: (NodeId) -> Unit, d
         model.go(id)
         dismiss()
     }
-    ModalBottomSheet(onDismissRequest = dismiss, sheetState = rememberBottomSheetState(SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))) {
+    AdaptiveSheet(onDismissRequest = dismiss, expandedOnly = true) {
         SheetTitle("Outline")
         // Material's search bar, collapsed: the results are the list below it, not a view of its own.
         val searchBar = rememberSearchBarState()
@@ -184,10 +182,12 @@ private fun OutlineRow(
     val coverage = document.coverage[item.id]
     val gaps = coverage?.gapCount ?: 0
     var menu by remember { mutableStateOf(false) }
+    var menuAt by remember { mutableStateOf<IntOffset?>(null) }
     Box {
         Row(
             Modifier.fillMaxWidth()
-                .combinedClickable(onClick = onOpen, onLongClick = { menu = true })
+                .onSecondaryClick { menuAt = it; menu = true }
+                .combinedClickable(onClick = onOpen, onLongClick = { menuAt = null; menu = true })
                 .padding(start = 8.dp + 20.dp * depth, end = 16.dp, top = 4.dp, bottom = 4.dp)
                 .heightIn(min = 48.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -216,7 +216,7 @@ private fun OutlineRow(
                 }
             }
         }
-        ExpressiveMenu(menu, onDismissRequest = { menu = false }) {
+        ExpressiveMenu(menu, onDismissRequest = { menu = false }, at = menuAt) {
             group {
                 item("Train This Branch", Symbols.study) { onStudyBranch() }
                 if (item.first != ROOT_NODE) item("Make Main Line", BuilderSymbols.makeMain) { document.promote(item.first) }
@@ -236,7 +236,7 @@ private fun OutlineRow(
 private fun GapsSheet(model: BuilderModel, dismiss: () -> Unit) {
     val document = model.document
     val gaps = document.coverage.gaps()
-    ModalBottomSheet(onDismissRequest = dismiss) {
+    AdaptiveSheet(onDismissRequest = dismiss) {
         SheetTitle("${gaps.size} Gaps")
         if (gaps.isEmpty()) {
             val loading = (document.coverage.root?.pendingCount ?: 0) > 0
@@ -265,14 +265,16 @@ private fun GapsSheet(model: BuilderModel, dismiss: () -> Unit) {
 private fun GapRow(model: BuilderModel, gap: CoverageGap, onOpen: () -> Unit) {
     val reply = gap.kind as? GapKind.MissingReply
     var menu by remember { mutableStateOf(false) }
+    var menuAt by remember { mutableStateOf<IntOffset?>(null) }
     Box {
         ListItem(
             onClick = onOpen,
-            onLongClick = reply?.let { { menu = true } },
+            modifier = Modifier.onSecondaryClick(reply?.let { { at: IntOffset -> menuAt = at; menu = true } }),
+            onLongClick = reply?.let { { menuAt = null; menu = true } },
             supportingContent = { Text(Format.seenGames(gap.mass), color = ThemeColor.todo.color) },
         ) { Text(model.document.core.gapText(gap), maxLines = 2, overflow = TextOverflow.Ellipsis) }
         if (reply != null) {
-            ExpressiveMenu(menu, onDismissRequest = { menu = false }) {
+            ExpressiveMenu(menu, onDismissRequest = { menu = false }, at = menuAt) {
                 group { item("Exclude ${reply.san}", BuilderSymbols.exclude) { model.document.setExcluded(reply.uci, gap.node, true) } }
             }
         }
@@ -289,13 +291,18 @@ private fun NoteSheet(model: BuilderModel, node: NodeId, dismiss: () -> Unit) {
     var text by remember(node) { mutableStateOf(document.tree[node]?.note.orEmpty()) }
     // The last move or two: "4. Bb5 a6".
     val title = document.tree.lineText(node).split(" ").takeLast(2).joinToString(" ").ifEmpty { "Note" }
-    ModalBottomSheet(onDismissRequest = dismiss) {
+    val save = {
+        document.setNote(text, node)
+        dismiss()
+    }
+    // A dialog (a wide window): Cancel and Save at its bottom; a phone's sheet has them beside its title.
+    val wide = LocalWideWindow.current
+    AdaptiveSheet(onDismissRequest = dismiss, closeButton = false) {
         SheetTitle(title) {
-            TextButton(onClick = dismiss, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
-            Button(shapes = ButtonDefaults.shapes(), onClick = {
-                document.setNote(text, node)
-                dismiss()
-            }) { Text("Save") }
+            if (!wide) {
+                TextButton(onClick = dismiss, shapes = ButtonDefaults.shapes()) { Text("Cancel") }
+                Button(shapes = ButtonDefaults.shapes(), onClick = save) { Text("Save") }
+            }
         }
         OutlinedTextField(
             value = text,
@@ -304,5 +311,7 @@ private fun NoteSheet(model: BuilderModel, node: NodeId, dismiss: () -> Unit) {
             placeholder = { Text("Note") },
             minLines = 6,
         )
+        // No Enter to save: a note's Enter is a new line.
+        if (wide) DialogButtons("Save", save, onCancel = dismiss)
     }
 }

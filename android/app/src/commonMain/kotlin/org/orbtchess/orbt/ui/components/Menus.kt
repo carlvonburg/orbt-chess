@@ -1,7 +1,10 @@
 package org.orbtchess.orbt.ui.components
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenuGroup
@@ -17,6 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.round
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
 
@@ -37,10 +46,22 @@ import org.orbtchess.orbt.ui.theme.color
  * }
  * ```
  *
- * Choosing an item closes the menu, then runs its action.
+ * Choosing an item closes the menu, then runs its action. A context menu opened by a right click
+ * ([onSecondaryClick]) opens [at] the pointer, from the `Box`'s top start; without it, below
+ * the anchor.
  */
 @Composable
-fun ExpressiveMenu(expanded: Boolean, onDismissRequest: () -> Unit, content: MenuBuilder.() -> Unit) {
+fun ExpressiveMenu(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    at: IntOffset? = null,
+    content: MenuBuilder.() -> Unit,
+) {
+    if (at != null) {
+        // An empty anchor where the pointer was: the menu opens below and after it.
+        Box(Modifier.offset { at }) { ExpressiveMenu(expanded, onDismissRequest, null, content) }
+        return
+    }
     val groups = MenuBuilder().apply(content).groups.filter { it.entries.isNotEmpty() }
     DropdownMenuPopup(expanded = expanded, onDismissRequest = onDismissRequest) {
         groups.forEachIndexed { groupIndex, group ->
@@ -152,3 +173,20 @@ internal sealed interface MenuEntry {
 
     class Label(val text: String) : MenuEntry
 }
+
+/**
+ * A right click (the mouse's secondary button), which opens an element's context menu on the
+ * desktop as a long press does on a touch screen; [onClick] gets where, for [ExpressiveMenu]'s
+ * `at` (in a `Box` with the element at its top start). Taken before the element's own click.
+ */
+fun Modifier.onSecondaryClick(onClick: ((IntOffset) -> Unit)?): Modifier =
+    if (onClick == null) this else pointerInput(onClick) {
+        awaitEachGesture {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+            if (event.type == PointerEventType.Press && event.buttons.isSecondaryPressed) {
+                val change = event.changes.first()
+                change.consume()
+                onClick(change.position.round())
+            }
+        }
+    }

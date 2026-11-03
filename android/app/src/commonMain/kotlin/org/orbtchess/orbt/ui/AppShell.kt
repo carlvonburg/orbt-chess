@@ -22,6 +22,7 @@ import androidx.compose.material3.adaptive.layout.ThreePaneScaffoldPaneScope
 import androidx.compose.material3.adaptive.layout.calculateDefaultEnterTransition
 import androidx.compose.material3.adaptive.layout.calculateDefaultExitTransition
 import androidx.compose.animation.AnimatedContent
+import org.orbtchess.orbt.ui.components.AdaptiveSheet
 import org.orbtchess.orbt.ui.components.GroupedBackground
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.background
@@ -31,7 +32,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -58,6 +58,11 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
@@ -67,6 +72,9 @@ import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.ui.analysis.AnalysisScreen
 import org.orbtchess.orbt.ui.builder.BuilderScreen
 import org.orbtchess.orbt.ui.components.BoardPane
+import org.orbtchess.orbt.ui.components.LocalInDialog
+import org.orbtchess.orbt.ui.components.PlatformDialog
+import org.orbtchess.orbt.ui.components.LocalWideWindow
 import org.orbtchess.orbt.ui.components.OpenDocument
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.library.LibraryScreen
@@ -138,7 +146,7 @@ fun AppShell(app: AppModel) {
     }
 
     val suiteType = if (showBar) NavigationSuiteScaffoldDefaults.navigationSuiteType(adaptiveInfo) else NavigationSuiteType.None
-    CompositionLocalProvider(LocalTourGuide provides app.tour) {
+    CompositionLocalProvider(LocalTourGuide provides app.tour, LocalWideWindow provides wide) {
         Box(Modifier.fillMaxSize()) {
             // Material 3 Expressive's navigation for the window: the short navigation bar (on a
             // tablet in portrait its items side by side); wide windows show the tabs as panes.
@@ -193,19 +201,22 @@ fun AppShell(app: AppModel) {
             // Full-window screens over everything (Android's settings screens, the setup flow),
             // coming and going with Material's shared axis on the expressive motion scheme's
             // springs; the back gesture shrinks the one on top, as Android's predictive back does
-            // a full-screen surface.
+            // a full-screen surface. A wide window shows them in the platform's dialog instead.
             val motion = MaterialTheme.motionScheme
-            AnimatedContent(
-                targetState = shell.overlays.lastOrNull(),
-                transitionSpec = {
-                    val forward = targetState != null && (initialState == null || shell.overlays.size > 1)
-                    sharedAxisEnter(motion, forward) togetherWith sharedAxisExit(motion, forward)
-                },
-                label = "overlay",
-            ) { overlay ->
-                if (overlay != null) {
-                    val progress = if (overlay == shell.overlays.lastOrNull()) backProgress ?: 0f else 0f
-                    Surface(Modifier.fillMaxSize().backPreview(progress)) { Overlay(app, shell, overlay) }
+            if (!wide) {
+                AnimatedContent(
+                    targetState = shell.overlays.lastOrNull(),
+                    transitionSpec = {
+                        val forward = targetState != null && (initialState == null || shell.overlays.size > 1)
+                        // Without a size transform: the overlay is the window's size from its first frame.
+                        (sharedAxisEnter(motion, forward) togetherWith sharedAxisExit(motion, forward)).using(null)
+                    },
+                    label = "overlay",
+                ) { overlay ->
+                    if (overlay != null) {
+                        val progress = if (overlay == shell.overlays.lastOrNull()) backProgress ?: 0f else 0f
+                        Surface(Modifier.fillMaxSize().backPreview(progress)) { Overlay(app, shell, overlay) }
+                    }
                 }
             }
 
@@ -214,9 +225,22 @@ fun AppShell(app: AppModel) {
             if (shell.overlays.isEmpty() && shell.sheet == null) TourSpotlight(app.tour)
         }
 
+        // A wide window's full-window screens, one dialog for them all (Settings opens About in it).
+        // Settings save as they change, so Android's tap outside closes them; a form with Save
+        // (Repertoire Settings, the setup) closes only by its buttons.
+        if (wide) {
+            shell.overlays.lastOrNull()?.let { overlay ->
+                val lightDismiss = shell.overlays.first() == Destination.Settings
+                PlatformDialog(shell::closeOverlay, width = 760.dp, height = 880.dp, GroupedBackground, dismissOnClickOutside = lightDismiss) {
+                    CompositionLocalProvider(LocalInDialog provides true) { Overlay(app, shell, overlay) }
+                }
+            }
+        }
+
         shell.sheet?.let { sheet ->
             // On the grouped pages' color, so the sheets' segmented lists and cards show.
-            ModalBottomSheet(onDismissRequest = { shell.sheet = null }, containerColor = GroupedBackground) {
+            // Study Options has Cancel and Save; Move Info only closes.
+            AdaptiveSheet(onDismissRequest = { shell.sheet = null }, containerColor = GroupedBackground, closeButton = sheet !is Destination.StudyOptions) {
                 when (sheet) {
                     is Destination.CardInfo -> OpenDocument(app, sheet.entryId) { CardInfoSheet(app, it, sheet.node) }
                     is Destination.StudyOptions -> OpenDocument(app, sheet.entryId) {

@@ -15,9 +15,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -33,6 +30,7 @@ import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.StatisticsScope
 import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
 import org.orbtchess.orbt.ui.components.EmptyState
+import org.orbtchess.orbt.ui.components.Refreshable
 import org.orbtchess.orbt.ui.components.Symbols
 
 /**
@@ -57,13 +55,8 @@ fun StatisticsDashboard(
     val graphs = model.graphs
     val hasData = model.hasData()
     val coroutines = rememberCoroutineScope()
-    val refreshState = rememberPullToRefreshState()
-    PullToRefreshBox(
+    Refreshable(
         isRefreshing = model.isLoading && graphs != null,
-        state = refreshState,
-        indicator = {
-            PullToRefreshDefaults.LoadingIndicator(refreshState, model.isLoading && graphs != null, Modifier.align(Alignment.TopCenter))
-        },
         onRefresh = { coroutines.launch { model.load(app, scope) } },
         modifier = modifier.fillMaxSize(),
     ) {

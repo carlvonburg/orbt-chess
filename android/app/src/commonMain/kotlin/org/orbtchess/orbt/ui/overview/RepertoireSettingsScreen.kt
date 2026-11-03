@@ -43,7 +43,14 @@ import kotlinx.coroutines.launch
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.storage.RepertoireDocument
 import org.orbtchess.orbt.storage.RepertoireLibrary
+import org.orbtchess.orbt.ui.components.DialogButtons
+import org.orbtchess.orbt.ui.components.DialogTitleBar
+import org.orbtchess.orbt.ui.components.FormColumn
+import org.orbtchess.orbt.ui.components.LocalInDialog
+import org.orbtchess.orbt.ui.components.LocalWideForm
+import org.orbtchess.orbt.ui.components.defaultAction
 import org.orbtchess.orbt.ui.components.Symbols
+import org.orbtchess.orbt.ui.components.WideRow
 import org.orbtchess.orbt.ui.library.rememberPgnExport
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
@@ -92,34 +99,52 @@ fun RepertoireSettingsScreen(
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    // A dialog (a wide window): Cancel and Save at its bottom; else Material's full-screen dialog.
+    val inDialog = LocalInDialog.current
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        // The page's collapsing title bar takes the scroll first; a dialog has none (unattached,
+        // its scroll behavior would take every scroll and the content none).
+        modifier = modifier.then(if (LocalInDialog.current) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)).defaultAction(inDialog && name.isNotBlank(), ::save),
         containerColor = GroupedBackground,
         topBar = {
-            MediumFlexibleTopAppBar(
-                title = { Text("Repertoire Settings") },
-                colors = groupedTopAppBarColors(),
-                scrollBehavior = scrollBehavior,
-                navigationIcon = {
-                    IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.Filled.Close, contentDescription = "Cancel") }
-                },
-                actions = {
-                    TextButton(onClick = ::save, shapes = ButtonDefaults.shapes(), enabled = name.isNotBlank()) { Text("Save") }
-                },
-            )
+            if (inDialog) {
+                // A dialog's title, at its top.
+                DialogTitleBar("Repertoire Settings")
+            } else {
+                MediumFlexibleTopAppBar(
+                    title = { Text("Repertoire Settings") },
+                    colors = groupedTopAppBarColors(),
+                    scrollBehavior = scrollBehavior,
+                    navigationIcon = {
+                        IconButton(onClick = onBack, shapes = IconButtonDefaults.shapes()) { Icon(Icons.Filled.Close, contentDescription = "Cancel") }
+                    },
+                    actions = {
+                        TextButton(onClick = ::save, shapes = ButtonDefaults.shapes(), enabled = name.isNotBlank()) { Text("Save") }
+                    },
+                )
+            }
+        },
+        bottomBar = {
+            if (inDialog) DialogButtons("Save", ::save, onCancel = onBack, confirmEnabled = name.isNotBlank())
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
-            FormSection("Name") {
+        FormColumn(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())) {
+            val nameField: @Composable (Modifier) -> Unit = { fieldModifier ->
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = RepertoireLibrary.safeRepertoireName(it) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    modifier = fieldModifier,
                 )
             }
-            RepertoireSettingsForm(app, draft) { draft = it }
+            RepertoireSettingsForm(app, draft, onChange = { draft = it }, nameRow = {
+                if (LocalWideForm.current) {
+                    WideRow("Name", 320.dp) { nameField(it.fillMaxWidth()) }
+                } else {
+                    FormSection("Name") { nameField(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) }
+                }
+            })
             error?.let {
                 Text(it, color = ThemeColor.failure.color, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
             }

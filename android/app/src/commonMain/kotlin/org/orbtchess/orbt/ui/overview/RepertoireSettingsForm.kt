@@ -64,8 +64,12 @@ import org.orbtchess.orbt.explorer.CoverageTables
 import org.orbtchess.orbt.platform.Settings
 import org.orbtchess.orbt.storage.RepertoireDocument
 import org.orbtchess.orbt.ui.components.ChoiceButtonGroup
+import org.orbtchess.orbt.ui.components.ChoiceDropdown
 import org.orbtchess.orbt.ui.components.ListSection
+import org.orbtchess.orbt.ui.components.LocalWideForm
+import org.orbtchess.orbt.ui.components.NumberField
 import org.orbtchess.orbt.ui.components.SymbolLabel
+import org.orbtchess.orbt.ui.components.WideRow
 import org.orbtchess.orbt.ui.theme.ThemeColor
 import org.orbtchess.orbt.ui.theme.color
 
@@ -200,11 +204,27 @@ fun FormSection(
     ListSection(header, modifier, footer, content)
 }
 
-/** Every repertoire setting on one page (Repertoire Settings). */
+/**
+ * Every repertoire setting on one page (Repertoire Settings). On a wide page ([LocalWideForm])
+ * the side is a row of the first group, after [nameRow].
+ */
 @Composable
-fun RepertoireSettingsForm(app: AppModel, draft: RepertoireSettingsDraft, onChange: (RepertoireSettingsDraft) -> Unit) {
-    FormSection("I play") {
-        SideSegments(draft.color, { onChange(draft.copy(color = it)) }, Modifier.padding(horizontal = 16.dp))
+fun RepertoireSettingsForm(
+    app: AppModel,
+    draft: RepertoireSettingsDraft,
+    onChange: (RepertoireSettingsDraft) -> Unit,
+    nameRow: @Composable () -> Unit = {},
+) {
+    if (LocalWideForm.current) {
+        FormSection(null) {
+            nameRow()
+            WideRow("I play", 240.dp) { SideSegments(draft.color, { onChange(draft.copy(color = it)) }, it) }
+        }
+    } else {
+        nameRow()
+        FormSection("I play") {
+            SideSegments(draft.color, { onChange(draft.copy(color = it)) }, Modifier.padding(horizontal = 16.dp))
+        }
     }
     CoverageSourceSection(app, draft, onChange, list = false)
     DepthSection(draft.targetGames, { onChange(draft.copy(targetGames = it)) })
@@ -246,6 +266,13 @@ fun CoverageSourceSection(
         FormSection(null, footer = footer) {
             RatingPicker(app, draft, onChange, "Their rating")
         }
+    } else if (LocalWideForm.current) {
+        FormSection("Coverage database", footer = footer) {
+            WideRow("Games", 320.dp) {
+                ChoiceButtonGroup(CoverageSource.entries, draft.source, { s -> onChange(draft.withSource(s, tables)) }, label = { s -> s.title }, modifier = it)
+            }
+            RatingPicker(app, draft, onChange, "Opponent rating", beside = true)
+        }
     } else {
         FormSection("Coverage database", footer = footer) {
             ChoiceButtonGroup(
@@ -277,15 +304,28 @@ private fun classicalBackup(draft: RepertoireSettingsDraft): String {
 }
 
 /**
- * The rating bins with a table for the chosen time control (Material's exposed dropdown), the
- * chosen table's download state, and the download itself, started as soon as a bin is chosen.
+ * The rating bins with a table for the chosen time control (Material's exposed dropdown, or a
+ * menu [beside] its title on a wide page), the chosen table's download state, and the download
+ * itself, started as soon as a bin is chosen.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RatingPicker(app: AppModel, draft: RepertoireSettingsDraft, onChange: (RepertoireSettingsDraft) -> Unit, label: String) {
+private fun RatingPicker(
+    app: AppModel,
+    draft: RepertoireSettingsDraft,
+    onChange: (RepertoireSettingsDraft) -> Unit,
+    label: String,
+    beside: Boolean = false,
+) {
     val coverage = app.coverage
     val bins = coverage.selections.filter(draft.source::matches).map { it.lowestRating }.sorted()
     val options = if (draft.rating in bins) bins else (bins + draft.rating).sorted()
+    if (beside) {
+        WideRow(label, 200.dp) { ChoiceDropdown(options, draft.rating, { bin -> onChange(draft.copy(rating = bin)) }, ::ratingLabel, it) }
+        TableDownloadRow(coverage, draft.database)
+        LaunchedEffect(databaseCacheKey(draft.database), coverage.available.size) { coverage.ensure(draft.database) }
+        return
+    }
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded, { expanded = it }, Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         // The anchor's own click handling never opens the menu on the desktop when the box comes
@@ -405,6 +445,23 @@ fun DepthSection(targetGames: Int, onChange: (Int) -> Unit, inSetup: Boolean = f
             "your repertoire. Deeper goals mean more lines to learn." +
             if (inSetup) " You can change this later in the repertoire's settings." else "",
     ) {
+        // A wide page's menu (null: custom) and, for a custom target, its field beside its title.
+        if (LocalWideForm.current && !inSetup) {
+            val custom = customTarget || !isPreset
+            WideRow("Cover moves seen", 240.dp) {
+                ChoiceDropdown(
+                    CoverageDepth.entries + null, if (custom) null else CoverageDepth.of(targetGames),
+                    onSelect = { depth ->
+                        customTarget = depth == null
+                        if (depth != null) onChange(depth.games)
+                    },
+                    title = { depth -> depth?.let { d -> "${d.title} · 1 in ${NumberFormat.getIntegerInstance().format(d.games)}" } ?: "Custom" },
+                    modifier = it,
+                )
+            }
+            if (custom) WideRow("1 in … games", 120.dp) { NumberField(targetGames, 20..20_000, onChange, it) }
+            return@FormSection
+        }
         Column(Modifier.selectableGroup()) {
             for (depth in CoverageDepth.entries) {
                 DepthRow(depth.title, depth.games, selected = !customTarget && targetGames == depth.games) {
