@@ -20,23 +20,30 @@ import javax.swing.filechooser.FileSystemView
  * user to other PCs; the program itself is in AppData\Local\ORBT Chess App, which uninstalling
  * deletes, so never this folder). Saves overwrite the files
  * in place (`FileAccess.journal`).
+ *
+ * `-Dorbt.dataDir=<folder>` (store screenshots) keeps everything in that folder instead: the
+ * repertoires in `ORBT Chess`, the app's data in `Support`, its settings and secrets in their own
+ * preferences node, so a real install is never touched.
  */
 fun desktopPlatform(): PlatformServices {
     val home = File(System.getProperty("user.home"))
     val os = System.getProperty("os.name").lowercase()
     val windows = os.contains("win")
+    val dataDir = System.getProperty("orbt.dataDir")?.ifEmpty { null }?.let(::File)
     val documents = when {
+        dataDir != null -> dataDir
         windows -> FileSystemView.getFileSystemView().defaultDirectory
         os.contains("mac") -> File(home, "Documents")
         else -> xdgDocuments(home)
     }
     val repertoires = File(documents, "ORBT Chess")
     val support = when {
+        dataDir != null -> File(dataDir, "Support")
         windows -> File(System.getenv("LOCALAPPDATA") ?: home.path, "ORBT Chess")
         os.contains("mac") -> File(home, "Library/Application Support/ORBT Chess")
         else -> File(System.getenv("XDG_DATA_HOME") ?: File(home, ".local/share").path, "orbt-chess")
     }
-    val prefs = Preferences.userRoot().node("org/orbtchess/orbt")
+    val prefs = Preferences.userRoot().node(if (dataDir != null) "org/orbtchess/orbt-screens" else "org/orbtchess/orbt")
     val settings = PrefsSettings(prefs.node("settings"))
     val openUrl = { url: String ->
         if (Desktop.isDesktopSupported()) Desktop.getDesktop().browse(URI(url))
@@ -49,7 +56,7 @@ fun desktopPlatform(): PlatformServices {
     return PlatformServices(
         folders = AppFolders(repertoires = repertoires, support = support),
         settings = settings,
-        secrets = KeyringSecrets.open(PrefsSecrets(prefs.node("secrets"))),
+        secrets = PrefsSecrets(prefs.node("secrets")).let { if (dataDir != null) it else KeyringSecrets.open(it) },
         openUrl = openUrl,
         authBrowser = authBrowser,
         syncAuth = DesktopSyncAuth(authBrowser),

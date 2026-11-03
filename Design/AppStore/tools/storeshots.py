@@ -1,25 +1,30 @@
 # storeshots.py <raw_dir> <out_dir> <device> [name ...]
 # device: iphone (1206 x 2622, the 6.3" slot App Store Connect asks for), ipad (2752 x 2064),
-# mac (2880 x 1800), or for Google Play android-phone (1080 x 1920) and android-tablet
+# mac (2880 x 1800), windows (3840 x 2160, the Microsoft Store's largest), or for Google Play android-phone (1080 x 1920) and android-tablet
 # (2560 x 1440): Play wants 9:16 or 16:9. A shot is laid out at its device's design width and drawn
 # at the output size with CSS zoom, so each size is rendered, never scaled afterwards.
 # App Store screenshots as HTML, rendered by headless Chrome: a feature glow, a short headline,
 # the real screen in a device frame, and one overlay per shot redrawn from that screen.
-import json, os, subprocess, sys, tempfile
+import json, os, pathlib, subprocess, sys, tempfile
 
 raw, out, device = sys.argv[1], sys.argv[2], sys.argv[3]
 only = set(sys.argv[4:])
 here = os.path.dirname(os.path.abspath(__file__))
-spec = json.load(open(os.path.join(here, "shots.json")))[device]
+spec = json.load(open(os.path.join(here, "shots.json"), encoding="utf-8"))[device]
 os.makedirs(out, exist_ok=True)
 
-OUT_W, OUT_H = {"iphone": (1206, 2622), "ipad": (2752, 2064), "mac": (2880, 1800),
+OUT_W, OUT_H = {"iphone": (1206, 2622), "ipad": (2752, 2064), "mac": (2880, 1800), "windows": (3840, 2160),
                 "android-phone": (1080, 1920), "android-tablet": (2560, 1440)}[device]
-W = {"iphone": 1320, "ipad": 2752, "mac": 2880, "android-phone": 1320, "android-tablet": 2752}[device]
+W = {"iphone": 1320, "ipad": 2752, "mac": 2880, "windows": 2880, "android-phone": 1320, "android-tablet": 2752}[device]
 TALL = device in ("iphone", "android-phone")  # two-line subtitles  # design width: the layout below is in these px
 ZOOM = OUT_W / W
 H = round(OUT_H / ZOOM)
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+CHROME = (r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" if os.name == "nt"  # Edge is Chromium: the same flags
+          else "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+
+
+def uri(path):
+    return pathlib.Path(path).absolute().as_uri()
 
 COLORS = {"orange": "255,149,0", "blue": "0,122,255", "green": "52,199,89",
           "indigo": "120,110,230", "red": "255,59,48"}
@@ -28,10 +33,12 @@ COLORS = {"orange": "255,149,0", "blue": "0,122,255", "green": "52,199,89",
 L = {"iphone": dict(head=128, sub=50, top=150, gap=70, bottom=120, bezel=26, radius=150, max_w=0.80),
      "ipad": dict(head=120, sub=52, top=110, gap=60, bottom=90, bezel=30, radius=64, max_w=0.80),
      "mac": dict(head=110, sub=50, top=90, gap=56, bottom=80, bezel=0, radius=0, max_w=0.86),
+     "windows": dict(head=104, sub=48, top=84, gap=50, bottom=70, bezel=0, radius=0, max_w=0.86),
      "android-phone": dict(head=118, sub=48, top=120, gap=56, bottom=90, bezel=22, radius=70, max_w=0.80),
      "android-tablet": dict(head=104, sub=46, top=80, gap=44, bottom=60, bezel=28, radius=40, max_w=0.80)}[device]
-# Android's screens are Roboto; Apple's the system font.
+# Android's screens are Roboto, Windows's Segoe UI; Apple's the system font.
 FONT = ('"Roboto", sans-serif' if device.startswith("android")
+        else '"Segoe UI Variable Display", "Segoe UI", sans-serif' if device == "windows"
         else '-apple-system, "SF Pro Display", "SF Pro Text", sans-serif')
 FONT_LINK = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=block">'
              if device.startswith("android") else "")
@@ -84,34 +91,36 @@ def render(shot, idx):
     fx = (W - sw - 2 * bezel) / 2
     fy = y
     r = L["radius"] * s / 0.72
-    if device == "mac":  # the window itself: its own corners (transparent in the capture) and shadow
-        html.append(f'<img src="file://{os.path.join(raw, shot["file"])}" style="position:absolute;left:{fx}px;top:{fy}px;'
+    if device in ("mac", "windows"):  # the window itself: its own corners and shadow
+        # Windows 11 rounds a window's corners by 8 px; the capture has the desktop there.
+        corners = f"border-radius:{8 * s}px;" if device == "windows" else ""
+        html.append(f'<img src="{uri(os.path.join(raw, shot["file"]))}" style="position:absolute;left:{fx}px;top:{fy}px;{corners}'
                     f'width:{sw}px;height:{sh}px;filter:drop-shadow(0 40px 60px rgba(0,0,0,.55)) drop-shadow(0 0 1.5px rgba(255,255,255,.35))">')
     else:
       html.append(f'<div class="device" style="left:{fx}px;top:{fy}px;width:{sw + 2 * bezel}px;'
                 f'height:{sh + 2 * bezel}px;border-radius:{r + bezel}px">'
-                f'<img src="file://{os.path.join(raw, shot["file"])}" style="left:{bezel}px;top:{bezel}px;'
+                f'<img src="{uri(os.path.join(raw, shot["file"]))}" style="left:{bezel}px;top:{bezel}px;'
                 f'width:{sw}px;height:{sh}px;border-radius:{r}px"></div>')
     sx, sy = fx + bezel, fy + bezel  # screen origin
 
     def at(x, y):  # raw screen pixel -> canvas
         return sx + x * s, sy + y * s
 
-    env = dict(at=at, s=s, sx=sx, sy=sy, sw=sw, sh=sh, W=W, H=H, raw=os.path.join(raw, shot["file"]),
+    env = dict(at=at, s=s, sx=sx, sy=sy, sw=sw, sh=sh, W=W, H=H, raw=uri(os.path.join(raw, shot["file"])),
                RAW_W=RAW_W, RAW_H=RAW_H)
     for o in shot.get("overlays", []):
         html.append(OVERLAYS[o["kind"]](o, env))
 
     page = (f'<!doctype html><html><head><meta charset="utf-8">{FONT_LINK}<style>{CSS % {"W": W, "H": H, "Z": ZOOM, "F": FONT}}</style>'
             f'</head><body style="--c:{COLORS[shot["color"]]}"><div class="glow"></div>{"".join(html)}</body></html>')
-    with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, dir=here) as f:
+    with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, dir=here, encoding="utf-8") as f:
         f.write(page)
         path = f.name
     png = os.path.join(out, f"{idx:02d}-{os.path.splitext(shot['file'])[0]}.png")
     for attempt in range(4):  # headless Chrome now and then exits early; try again
         r = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
                             "--force-device-scale-factor=1", f"--window-size={OUT_W},{OUT_H}",
-                            "--allow-file-access-from-files", "--virtual-time-budget=4000", f"--screenshot={png}", f"file://{path}"],
+                            "--allow-file-access-from-files", "--virtual-time-budget=4000", f"--screenshot={png}", uri(path)],
                            capture_output=True)
         if r.returncode == 0:
             break
@@ -143,7 +152,7 @@ def tile(o, e):
                  f'<svg viewBox="0 0 24 24" width="{d * .6}" height="{d * .6}"><path d="M5 12.5l4.2 4.2L19 7" '
                  f'fill="none" stroke="white" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>')
     return (f'<div class="ov tile" style="left:{cx - w / 2}px;top:{cy - h / 2}px;width:{w}px;height:{h}px;'
-            f'background-image:url(file://{e["raw"]});background-size:{bs}px auto;'
+            f'background-image:url({e["raw"]});background-size:{bs}px auto;'
             f'background-position:{bx}px {by}px">{badge}</div>')
 
 
@@ -157,7 +166,7 @@ def html_block(o, e):
     anchor = o.get("anchor", "center")
     tx = {"left": "0", "center": "-50%", "right": "-100%"}[anchor]
     return (f'<div class="ov" style="left:{x}px;top:{y}px;transform:translate({tx},-50%);'
-            f'{o.get("style", "")}">{o["html"].replace("{raw}", "file://" + e["raw"]).replace("{raw_iphone_library}", "file://" + os.path.join(os.path.dirname(raw), "iphone", "library.png"))}</div>')
+            f'{o.get("style", "")}">{o["html"].replace("{raw}", e["raw"]).replace("{raw_iphone_library}", uri(os.path.join(os.path.dirname(raw), "iphone", "library.png")))}</div>')
 
 
 OVERLAYS = {"tile": tile, "html": html_block}

@@ -16,6 +16,8 @@ xcuserdata/
 /Design/AppStore/*-overview.jpg
 /Design/PlayStore/raw/
 /Design/PlayStore/screenshots/
+/Design/MicrosoftStore/raw/
+/Design/MicrosoftStore/screenshots/
 
 # The sync connectors' OAuth client ids (apple/Config/ORBT.xcconfig)
 /apple/Config/Secrets.xcconfig
