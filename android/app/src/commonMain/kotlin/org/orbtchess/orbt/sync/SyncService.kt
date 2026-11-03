@@ -149,7 +149,7 @@ class SyncService(
             // Another account (or one we can't tell): what was synced says nothing about its
             // files, so start over (both sides are merged once).
             if (credentials.account == null || credentials.account != previous || this.provider != provider) {
-                withContext(Dispatchers.IO) { stateFile(provider).delete() }
+                deleteState(provider)
             }
             storeCredentials(provider, credentials)
             settings.putString(PROVIDER_KEY, provider.key)
@@ -179,7 +179,7 @@ class SyncService(
         sync?.close()
         secrets.remove(secretKey(provider))
         settings.remove(PROVIDER_KEY)
-        withContext(Dispatchers.IO) { stateFile(provider).delete() }
+        deleteState(provider)
         this.provider = null
         account = null
         lastError = null
@@ -360,6 +360,14 @@ class SyncService(
     // MARK: Stored sign-in
 
     private fun stateFile(provider: SyncProvider) = File(support, "Sync-${provider.key}.json")
+
+    /**
+     * Forgets what was synced, after [stop]: an outcome being applied saves the state first (its
+     * write would bring the file back), later ones see the sync stopped and save nothing.
+     */
+    private suspend fun deleteState(provider: SyncProvider) {
+        applying.withLock { withContext(Dispatchers.IO) { stateFile(provider).delete() } }
+    }
 
     private fun secretKey(provider: SyncProvider) = "sync-${provider.key}"
 
