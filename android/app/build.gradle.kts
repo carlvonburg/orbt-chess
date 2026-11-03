@@ -149,9 +149,12 @@ compose.desktop {
                 // For the user who installs it, without an administrator; in the Start menu and
                 // on the desktop.
                 perUserInstall = true
-                // Windows' place for a user's programs, AppData\Local\Programs (jpackage's
-                // default is AppData\Local itself, where the app keeps its data).
-                installationPath = "Programs/ORBT Chess"
+                // AppData\Local\ORBT Chess App, apart from the app's data in AppData\Local\ORBT
+                // Chess: uninstalling (and so every upgrade) deletes the install folder whole. One
+                // level only: jpackage's per-user MSI lists no folder above it for removal, which
+                // fails WiX's ICE64 (AppData\Local\Programs would need Windows Installer's own
+                // per-user Program Files, which jpackage does not use).
+                installationPath = "ORBT Chess App"
                 menu = true
                 menuGroup = "ORBT Chess"
                 shortcut = true

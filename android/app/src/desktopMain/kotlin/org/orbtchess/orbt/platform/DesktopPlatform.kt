@@ -17,7 +17,8 @@ import javax.swing.filechooser.FileSystemView
  * the Mac, XDG's documents folder on Linux; `FolderWatcher` follows changes made outside the app,
  * other devices through Settings › Sync), the app's own data in the per-user application data
  * folder (Windows' local, not roaming, AppData: a cache and downloads that need not follow the
- * user to other PCs; the program itself is in AppData\Local\Programs). Saves overwrite the files
+ * user to other PCs; the program itself is in AppData\Local\ORBT Chess App, which uninstalling
+ * deletes, so never this folder). Saves overwrite the files
  * in place (`FileAccess.journal`).
  */
 fun desktopPlatform(): PlatformServices {
