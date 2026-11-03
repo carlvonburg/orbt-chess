@@ -185,6 +185,11 @@ jobs:
           mkdir -p ../dist
           cp app/build/compose/binaries/main/msi/*.msi ../dist/ORBT-Chess-windows-x64.msi
           cp app/build/compose/binaries/main/msix/ORBT-Chess-windows-x64.msix ../dist/
+      - name: Packaging logs
+        # Gradle only names jpackage's logs when it fails; show them.
+        if: failure()
+        working-directory: android
+        run: tail -n +1 app/build/compose/logs/*/*.txt || true
       - uses: actions/upload-artifact@v6
         with:
           name: windows
