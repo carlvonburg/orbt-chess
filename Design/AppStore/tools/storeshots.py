@@ -1,6 +1,7 @@
 # storeshots.py <raw_dir> <out_dir> <device> [name ...]
-# device: iphone (1206 x 2622, the 6.3" slot App Store Connect asks for), ipad (2752 x 2064) or
-# mac (2880 x 1800). A shot is laid out at its device's design width and drawn
+# device: iphone (1206 x 2622, the 6.3" slot App Store Connect asks for), ipad (2752 x 2064),
+# mac (2880 x 1800), or for Google Play android-phone (1080 x 1920) and android-tablet
+# (2560 x 1440): Play wants 9:16 or 16:9. A shot is laid out at its device's design width and drawn
 # at the output size with CSS zoom, so each size is rendered, never scaled afterwards.
 # App Store screenshots as HTML, rendered by headless Chrome: a feature glow, a short headline,
 # the real screen in a device frame, and one overlay per shot redrawn from that screen.
@@ -12,8 +13,10 @@ here = os.path.dirname(os.path.abspath(__file__))
 spec = json.load(open(os.path.join(here, "shots.json")))[device]
 os.makedirs(out, exist_ok=True)
 
-OUT_W, OUT_H = {"iphone": (1206, 2622), "ipad": (2752, 2064), "mac": (2880, 1800)}[device]
-W = {"iphone": 1320, "ipad": 2752, "mac": 2880}[device]  # design width: the layout below is in these px
+OUT_W, OUT_H = {"iphone": (1206, 2622), "ipad": (2752, 2064), "mac": (2880, 1800),
+                "android-phone": (1080, 1920), "android-tablet": (2560, 1440)}[device]
+W = {"iphone": 1320, "ipad": 2752, "mac": 2880, "android-phone": 1320, "android-tablet": 2752}[device]
+TALL = device in ("iphone", "android-phone")  # two-line subtitles  # design width: the layout below is in these px
 ZOOM = OUT_W / W
 H = round(OUT_H / ZOOM)
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -24,13 +27,20 @@ COLORS = {"orange": "255,149,0", "blue": "0,122,255", "green": "52,199,89",
 # Layout: headline block, then the device scaled to fit with a bottom margin.
 L = {"iphone": dict(head=128, sub=50, top=150, gap=70, bottom=120, bezel=26, radius=150, max_w=0.80),
      "ipad": dict(head=120, sub=52, top=110, gap=60, bottom=90, bezel=30, radius=64, max_w=0.80),
-     "mac": dict(head=110, sub=50, top=90, gap=56, bottom=80, bezel=0, radius=0, max_w=0.86)}[device]
+     "mac": dict(head=110, sub=50, top=90, gap=56, bottom=80, bezel=0, radius=0, max_w=0.86),
+     "android-phone": dict(head=118, sub=48, top=120, gap=56, bottom=90, bezel=22, radius=70, max_w=0.80),
+     "android-tablet": dict(head=104, sub=46, top=80, gap=44, bottom=60, bezel=28, radius=40, max_w=0.80)}[device]
+# Android's screens are Roboto; Apple's the system font.
+FONT = ('"Roboto", sans-serif' if device.startswith("android")
+        else '-apple-system, "SF Pro Display", "SF Pro Text", sans-serif')
+FONT_LINK = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=block">'
+             if device.startswith("android") else "")
 
 CSS = """
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { zoom: %(Z)s; }
 html, body { width: %(W)dpx; height: %(H)dpx; overflow: hidden; }
-body { font-family: -apple-system, "SF Pro Display", "SF Pro Text", sans-serif; color: white;
+body { font-family: %(F)s; color: white;
   background: #100e24; position: relative; -webkit-font-smoothing: antialiased; }
 .glow { position: absolute; inset: 0;
   background: radial-gradient(ellipse 70%% 45%% at 50%% 8%%, rgba(var(--c), .55), transparent 70%%),
@@ -61,10 +71,10 @@ def render(shot, idx):
     lines = shot["title"].split("\n")
     html.append(f'<h1 style="top:{y}px;font-size:{head}px">{"<br>".join(lines)}</h1>')
     y += round(head * 1.02 * len(lines)) + 28
-    subtitle = shot["subtitle"].replace("\n", " ") if device != "iphone" else shot["subtitle"]
+    subtitle = shot["subtitle"].replace("\n", " ") if not TALL else shot["subtitle"]
     sublines = subtitle.split("\n")
     html.append(f'<p class="sub" style="top:{y}px;font-size:{sub}px">{"<br>".join(sublines)}</p>')
-    y += round(sub * 1.25 * max(1 if device != "iphone" else 2, len(sublines))) + L["gap"]
+    y += round(sub * 1.25 * max(2 if TALL else 1, len(sublines))) + L["gap"]
 
     bezel = L["bezel"]
     avail_h = H - y - L["bottom"] - 2 * bezel
@@ -92,7 +102,7 @@ def render(shot, idx):
     for o in shot.get("overlays", []):
         html.append(OVERLAYS[o["kind"]](o, env))
 
-    page = (f'<!doctype html><html><head><meta charset="utf-8"><style>{CSS % {"W": W, "H": H, "Z": ZOOM}}</style>'
+    page = (f'<!doctype html><html><head><meta charset="utf-8">{FONT_LINK}<style>{CSS % {"W": W, "H": H, "Z": ZOOM, "F": FONT}}</style>'
             f'</head><body style="--c:{COLORS[shot["color"]]}"><div class="glow"></div>{"".join(html)}</body></html>')
     with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, dir=here) as f:
         f.write(page)
@@ -101,7 +111,7 @@ def render(shot, idx):
     for attempt in range(4):  # headless Chrome now and then exits early; try again
         r = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars",
                             "--force-device-scale-factor=1", f"--window-size={OUT_W},{OUT_H}",
-                            "--allow-file-access-from-files", f"--screenshot={png}", f"file://{path}"],
+                            "--allow-file-access-from-files", "--virtual-time-budget=4000", f"--screenshot={png}", f"file://{path}"],
                            capture_output=True)
         if r.returncode == 0:
             break
@@ -128,7 +138,7 @@ def tile(o, e):
         d = w * 0.42
         bx_c, by_c = o.get("check_at", [0.84, 0.16])
         badge = (f'<div style="position:absolute;left:{w * bx_c - d / 2}px;top:{h * by_c - d / 2}px;width:{d}px;height:{d}px;'
-                 f'border-radius:50%;background:#34c759;box-shadow:0 0 0 6px white,0 10px 24px rgba(0,0,0,.35);'
+                 f'border-radius:50%;background:{o.get("check_color", "#34c759")};box-shadow:0 0 0 6px white,0 10px 24px rgba(0,0,0,.35);'
                  f'display:flex;align-items:center;justify-content:center">'
                  f'<svg viewBox="0 0 24 24" width="{d * .6}" height="{d * .6}"><path d="M5 12.5l4.2 4.2L19 7" '
                  f'fill="none" stroke="white" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>')
