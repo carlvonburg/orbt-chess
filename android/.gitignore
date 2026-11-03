@@ -4,3 +4,5 @@ build/
 local.properties
 # Built by core/scripts/build-android.sh.
 androidApp/src/main/jniLibs/
+# The upload key's path, alias and passwords (androidApp/build.gradle.kts), never committed.
+keystore.properties

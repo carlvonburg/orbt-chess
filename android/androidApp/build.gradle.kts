@@ -17,6 +17,21 @@ val dropboxAppKey: String = providers.gradleProperty("orbt.dropboxAppKey").orNul
     }
     ?: ""
 
+// The Play upload key: keystore.properties next to local.properties (storeFile, keyAlias; Android's
+// "Sign your app"), never committed. Without it the release bundle is unsigned. The password
+// (the keystore's and the key's, one in PKCS12) is the file's storePassword, else the login
+// Keychain's generic password "ORBT upload key" on a Mac
+// (`security add-generic-password -s "ORBT upload key" -a upload -w`).
+val keystoreProperties: Properties? = rootProject.file("keystore.properties").takeIf { it.exists() }
+    ?.let { file -> Properties().apply { file.inputStream().use { load(it) } } }
+val uploadKeyPassword: String? = keystoreProperties?.let { properties ->
+    properties.getProperty("storePassword")
+        ?: providers.exec {
+            commandLine("security", "find-generic-password", "-s", "ORBT upload key", "-w")
+            isIgnoreExitValue = true
+        }.standardOutput.asText.get().trim().ifEmpty { null }
+}
+
 android {
     namespace = "org.orbtchess.orbt"
     compileSdk { version = release(37) { minorApiLevel = 1 } }
@@ -35,9 +50,20 @@ android {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
     }
+    signingConfigs {
+        if (keystoreProperties != null) {
+            create("upload") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = uploadKeyPassword
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword") ?: uploadKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("upload")
         }
     }
     compileOptions {
