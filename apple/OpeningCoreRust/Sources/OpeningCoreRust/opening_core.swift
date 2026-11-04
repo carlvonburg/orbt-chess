@@ -12197,6 +12197,8 @@ public enum DrillMode: Equatable, Hashable {
     case study
     case branch(UInt32
     )
+    case practice(UInt32
+    )
 
 
 
@@ -12223,6 +12225,9 @@ public struct FfiConverterTypeDrillMode: FfiConverterRustBuffer {
         case 2: return .branch(try FfiConverterUInt32.read(from: &buf)
         )
         
+        case 3: return .practice(try FfiConverterUInt32.read(from: &buf)
+        )
+        
         default: throw UniffiInternalError.unexpectedEnumCase
         }
     }
@@ -12237,6 +12242,11 @@ public struct FfiConverterTypeDrillMode: FfiConverterRustBuffer {
         
         case let .branch(v1):
             writeInt(&buf, Int32(2))
+            FfiConverterUInt32.write(v1, into: &buf)
+            
+        
+        case let .practice(v1):
+            writeInt(&buf, Int32(3))
             FfiConverterUInt32.write(v1, into: &buf)
             
         }

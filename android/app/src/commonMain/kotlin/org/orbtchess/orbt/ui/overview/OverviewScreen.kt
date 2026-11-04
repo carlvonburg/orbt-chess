@@ -410,7 +410,7 @@ private fun StudyMoreMenu(
             }
         }
         if (stats.progress.studied > 0) {
-            group { item("Practice the Whole Repertoire", Symbols.practice) { navigate(Destination.Drill(id, DrillKind.Practice)) } }
+            group { item("Practice the Whole Repertoire", Symbols.practice) { navigate(Destination.Drill(id, DrillKind.Practice())) } }
         }
     }
 }

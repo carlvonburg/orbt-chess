@@ -100,8 +100,8 @@ final class LibraryScreens {
             return await open(id).map {
                 .drill(DrillModel(document: $0, mode: .study, learnMore: TrainingDefaults.learnMoreCount))
             }
-        case .practice(let id):
-            return await open(id).map { .drill(DrillModel(document: $0, mode: .branch(RepertoireTree.rootID))) }
+        case .practice(let id, let node):
+            return await open(id).map { .drill(DrillModel(document: $0, mode: .practice(node))) }
         case .branch(let id, let node):
             return await open(id).map { .drill(DrillModel(document: $0, mode: .branch(node))) }
         case .analysis:

@@ -8,6 +8,7 @@ extension DrillMode {
         switch self {
         case .study: "Study"
         case .branch: "Study Branch"
+        case .practice(let node): node == RepertoireTree.rootID ? "Practice" : "Practice Branch"
         }
     }
 }

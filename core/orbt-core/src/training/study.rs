@@ -174,7 +174,7 @@ impl StudyLine {
 pub struct StudySession {
     pub trainer: Arc<Trainer>,
     pub mode: PracticeMode,
-    /// A branch session (Anki filtered deck with rescheduling): no daily limits, cards
+    /// A practice session (Anki filtered deck with rescheduling): no daily limits, cards
     /// answered with their real due date.
     pub is_filtered: bool,
     pub root: NodeId,
@@ -195,8 +195,11 @@ fn index_of(order: &[Epd]) -> HashMap<Epd, usize> {
     index
 }
 
+/// Today's queue over the cards under `root` (Anki's subdeck: its cards, the deck's limits).
+#[allow(clippy::too_many_arguments)]
 fn daily_queue(
     trainer: &Trainer,
+    root: NodeId,
     cards: &HashMap<Epd, Card>,
     order: &[Epd],
     limits: RemainingLimits,
@@ -205,9 +208,16 @@ fn daily_queue(
     reach: &HashMap<NodeId, f64>,
 ) -> CardQueues {
     let epd_reach = trainer.reach_by_epd(reach);
+    let below;
+    let card_epds = if root == RepertoireTree::ROOT {
+        &trainer.card_epd_set
+    } else {
+        below = trainer.card_epds(root);
+        &below
+    };
     let active: HashMap<Epd, Card> = cards
         .iter()
-        .filter(|(e, _)| trainer.card_epd_set.contains(*e))
+        .filter(|(e, _)| card_epds.contains(*e))
         .map(|(e, c)| (e.clone(), c.clone()))
         .collect();
     CardQueues::new(&active, order, limits, timing, learn_ahead_secs, &|e| {
@@ -231,6 +241,7 @@ impl StudySession {
         let order = trainer.new_card_order(RepertoireTree::ROOT, &reach, new_move_order);
         let queue = daily_queue(
             &trainer,
+            RepertoireTree::ROOT,
             cards,
             &order,
             limits,
@@ -251,7 +262,8 @@ impl StudySession {
         }
     }
 
-    /// A branch session: every card under `root`, in random order, without limits.
+    /// A branch session (Anki's subdeck): today's cards under `root`, within the repertoire's
+    /// daily limits, which its answers count toward.
     #[allow(clippy::too_many_arguments)]
     pub fn branch(
         trainer: Arc<Trainer>,
@@ -259,14 +271,61 @@ impl StudySession {
         new_move_order: NewMoveOrder,
         root: NodeId,
         cards: &HashMap<Epd, Card>,
+        limits: RemainingLimits,
         timing: &SchedTiming,
         learn_ahead_secs: i64,
         reach: HashMap<NodeId, f64>,
     ) -> StudySession {
         let order = trainer.new_card_order(root, &reach, new_move_order);
-        let queue = CardQueues::filtered(&order, cards, timing, learn_ahead_secs);
+        let queue = daily_queue(
+            &trainer,
+            root,
+            cards,
+            &order,
+            limits,
+            timing,
+            learn_ahead_secs,
+            &reach,
+        );
         StudySession {
             new_index: index_of(&order),
+            trainer,
+            mode,
+            is_filtered: false,
+            root,
+            queue,
+            answered: HashSet::new(),
+            played: HashSet::new(),
+            reach,
+        }
+    }
+
+    /// A practice session (Anki's custom study "all review cards in random order", a filtered
+    /// deck with rescheduling): every studied card under `root`, due or not, without limits.
+    /// New cards are left out.
+    pub fn practice(
+        trainer: Arc<Trainer>,
+        mode: PracticeMode,
+        root: NodeId,
+        cards: &HashMap<Epd, Card>,
+        timing: &SchedTiming,
+        learn_ahead_secs: i64,
+        reach: HashMap<NodeId, f64>,
+    ) -> StudySession {
+        let studied: Vec<Epd> = trainer
+            .card_nodes(root)
+            .into_iter()
+            .filter_map(|id| trainer.tree.get(id).map(|n| n.epd.clone()))
+            .filter(|epd| cards.get(epd).is_some_and(|c| c.queue != CardQueue::New))
+            .collect();
+        let mut seen = HashSet::new();
+        let studied: Vec<Epd> = studied
+            .into_iter()
+            .filter(|e| seen.insert(e.clone()))
+            .collect();
+        let queue = CardQueues::filtered(&studied, cards, timing, learn_ahead_secs);
+        StudySession {
+            new_index: HashMap::new(),
             trainer,
             mode,
             is_filtered: true,
@@ -555,6 +614,7 @@ impl StudySession {
         let order: Vec<Epd> = order.into_iter().map(|(e, _)| e.clone()).collect();
         self.queue = daily_queue(
             &self.trainer,
+            self.root,
             cards,
             &order,
             limits,

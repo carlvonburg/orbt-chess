@@ -44,7 +44,7 @@ struct StudyFinishedView: View {
             Text(studied ? (learningLater ? "Done for Now" : "Done for Today") : "Nothing to Study")
                 .font(.title2.weight(.semibold))
             if !studied {
-                Text(model.isFiltered ? "There are no moves in this branch yet." : "No moves are due right now.")
+                Text(emptyText)
                     .foregroundStyle(.secondary)
             }
             if today.streak.current > 0 {
@@ -142,13 +142,26 @@ struct StudyFinishedView: View {
         .contentShape(Rectangle())
     }
 
+    private var emptyText: String {
+        switch model.mode {
+        case .study: "No moves are due right now."
+        case .branch: "No moves in this branch are due right now."
+        case .practice: "There are no learned moves here yet."
+        }
+    }
+
     // MARK: Actions
 
     /// Main button first: the next repertoire during Study All, else studying more today.
     @ViewBuilder
     private var actions: some View {
-        let notStudied = document.learningProgress().notStudied
-        let extraReviews = model.isFiltered ? 0 : document.reviewsBeyondLimit()
+        let notStudied = switch model.mode {
+        case .study: document.learningProgress().notStudied
+        case .branch(let node): document.learningProgress(under: node).notStudied
+        case .practice: 0
+        }
+        // The review limit is the repertoire's; a branch rarely reaches it.
+        let extraReviews = if case .study = model.mode { document.reviewsBeyondLimit() } else { 0 }
         let canStudyMore = !model.isFiltered && (notStudied > 0 || extraReviews > 0)
         if next != nil || canStudyMore {
             VStack(spacing: 12) {

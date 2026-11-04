@@ -129,10 +129,21 @@ struct BuilderView: View {
     /// Studies the branch from `node`: through the library, which keeps only this screen
     /// under it, else pushed here.
     private func studyBranch(_ node: NodeID) {
+        study(.branch(node))
+    }
+
+    /// Opens a study session: through the library, which keeps only this screen under it,
+    /// else pushed here.
+    private func study(_ mode: DrillMode) {
+        StudyBranchTip().invalidate(reason: .actionPerformed)
         if let openScreen {
-            openScreen(.branch(document.entryID, node))
+            switch mode {
+            case .study: openScreen(.study(document.entryID))
+            case .branch(let node): openScreen(.branch(document.entryID, node))
+            case .practice(let node): openScreen(.practice(document.entryID, node))
+            }
         } else {
-            presentation.drill = DrillRequest(mode: .branch(node))
+            presentation.drill = DrillRequest(mode: mode)
         }
     }
 
@@ -252,11 +263,10 @@ struct BuilderView: View {
                 Button("Biggest Gap", systemImage: "scope", action: goToBiggestGap)
                     .disabled(!model.canGoToBiggestGap)
 
-                Button("Study Branch", systemImage: "graduationcap") {
-                    StudyBranchTip().invalidate(reason: .actionPerformed)
-                    studyBranch(model.current)
-                }
-                    .disabled(document.learningProgress(under: model.current).cards == 0)
+                StudyMenu(progress: document.learningProgress(under: model.current),
+                          atRoot: model.current == RepertoireTree.rootID,
+                          study: { study($0 ? .branch(model.current) : .study) },
+                          practice: { study(.practice(model.current)) })
 
                 if !split {
                     Button("Analysis", systemImage: "cpu") { presentation.analyze(model, open: openAnalysis) }
@@ -509,6 +519,30 @@ struct TranspositionNote: View {
 
 struct DrillRequest: Hashable {
     let mode: DrillMode
+}
+
+/// Studies from Build: today's moves in this branch (Anki's subdeck), today's moves of the whole
+/// repertoire, or every learned move in the branch again.
+private struct StudyMenu: View {
+    let progress: Progress
+    /// At the start position the branch is the whole repertoire.
+    let atRoot: Bool
+    /// true: the branch; false: the whole repertoire.
+    let study: (Bool) -> Void
+    let practice: () -> Void
+
+    var body: some View {
+        Menu("Study", systemImage: "graduationcap") {
+            if !atRoot {
+                Button("Study Branch", systemImage: "arrow.triangle.branch") { study(true) }
+                    .disabled(progress.cards == 0)
+            }
+            Button("Study Repertoire", systemImage: "graduationcap") { study(false) }
+            Button(atRoot ? "Practice Repertoire" : "Practice Branch",
+                   systemImage: "arrow.trianglehead.2.clockwise", action: practice)
+                .disabled(progress.studied == 0)
+        }
+    }
 }
 
 /// The moves to here, then the main line ahead (what → plays), dimmed; tap a move to go there.

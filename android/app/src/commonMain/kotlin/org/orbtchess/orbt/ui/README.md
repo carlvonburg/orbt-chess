@@ -96,12 +96,12 @@ named in each stub's doc comment.
   a tonal ✕ and a filled ✓ icon button side by side (`DraftButtons` in BuilderScreen.kt).
   - One pane (a phone, as iPhone's glass bar): the toolbar floats at the bottom over the content,
     which scrolls under it (`FloatingToolbarScaffold`; lists take its bottom padding so their last
-    row scrolls clear). Build: back and forward, then Biggest Gap, Study Branch, Analysis (while a
+    row scrolls clear). Build: back and forward, then Biggest Gap, the Study menu, Analysis (while a
     line is being built: Analysis, then the ✕ ✓ pair at the end). Study: Hint, then Browse
     Repertoire, Analysis. Analysis: back and forward only, centred.
   - Two panes (as iPad): no top app bar over the board; under it, as wide as it, the toolbar with
     back and forward, the move list, then Analysis. The panel's actions are in the list pane's top
-    app bar, before ⋮: Biggest Gap and Study Branch in Build (while a line is being built, as
+    app bar, before ⋮: Biggest Gap and the Study menu in Build (while a line is being built, as
     iPad's `hasDraft` group: the ✕ ✓ pair; no FAB), Hint and Browse Repertoire in Study.
   - The engine: Analysis's top app bar has its toggle before ⋮ (Material's filled icon toggle,
     filled while on, named "Engine"), on phones and tablets. Build's and Study's Analysis button is

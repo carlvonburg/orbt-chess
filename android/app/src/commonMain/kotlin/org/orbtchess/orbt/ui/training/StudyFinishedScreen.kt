@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.ui.tour.TourGuide
+import org.orbtchess.orbt.core.DrillMode
 import org.orbtchess.orbt.core.SchedTiming
 import org.orbtchess.orbt.core.Streak
 import org.orbtchess.orbt.core.notStudied
@@ -145,7 +146,11 @@ private fun Header(model: DrillModel, studied: Boolean, learningLater: Boolean, 
         )
         if (!studied) {
             Text(
-                if (model.isFiltered) "There are no moves in this branch yet." else "No moves are due right now.",
+                when (model.mode) {
+                    DrillMode.Study -> "No moves are due right now."
+                    is DrillMode.Branch -> "No moves in this branch are due right now."
+                    is DrillMode.Practice -> "There are no learned moves here yet."
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
@@ -286,8 +291,13 @@ private fun TourEndActions(app: AppModel) {
 @Composable
 private fun Actions(model: DrillModel, next: NextRepertoire?) {
     val document = model.document
-    val notStudied = document.learningProgress().notStudied
-    val extraReviews = if (model.isFiltered) 0 else document.reviewsBeyondLimit()
+    val notStudied = when (val mode = model.mode) {
+        DrillMode.Study -> document.learningProgress().notStudied
+        is DrillMode.Branch -> document.learningProgress(mode.v1).notStudied
+        is DrillMode.Practice -> 0L
+    }
+    // The review limit is the repertoire's; a branch rarely reaches it.
+    val extraReviews = if (model.mode == DrillMode.Study) document.reviewsBeyondLimit() else 0
     val canStudyMore = !model.isFiltered && (notStudied > 0 || extraReviews > 0)
     if (next == null && !canStudyMore) return
     Column(

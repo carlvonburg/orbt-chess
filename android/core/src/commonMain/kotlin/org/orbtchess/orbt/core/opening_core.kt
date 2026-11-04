@@ -17273,6 +17273,15 @@ sealed class DrillMode {
         companion object
     }
     
+    data class Practice(
+        val v1: kotlin.UInt) : DrillMode()
+        
+    {
+        
+
+        companion object
+    }
+    
 
     
 
@@ -17293,6 +17302,9 @@ public object FfiConverterTypeDrillMode : FfiConverterRustBuffer<DrillMode>{
             2 -> DrillMode.Branch(
                 FfiConverterUInt.read(buf),
                 )
+            3 -> DrillMode.Practice(
+                FfiConverterUInt.read(buf),
+                )
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
         }
     }
@@ -17311,6 +17323,13 @@ public object FfiConverterTypeDrillMode : FfiConverterRustBuffer<DrillMode>{
                 + FfiConverterUInt.allocationSize(value.v1)
             )
         }
+        is DrillMode.Practice -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterUInt.allocationSize(value.v1)
+            )
+        }
     }
 
     override fun write(value: DrillMode, buf: ByteBuffer) {
@@ -17321,6 +17340,11 @@ public object FfiConverterTypeDrillMode : FfiConverterRustBuffer<DrillMode>{
             }
             is DrillMode.Branch -> {
                 buf.putInt(2)
+                FfiConverterUInt.write(value.v1, buf)
+                Unit
+            }
+            is DrillMode.Practice -> {
+                buf.putInt(3)
                 FfiConverterUInt.write(value.v1, buf)
                 Unit
             }

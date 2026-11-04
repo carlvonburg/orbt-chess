@@ -561,11 +561,12 @@ impl Repertoire {
         progress
     }
 
-    /// Today's session, or one over a branch (a filtered deck).
+    /// Today's session over the whole repertoire, or over a branch (Anki's subdeck).
     pub fn study_session(&mut self, branch: Option<NodeId>, timing: &SchedTiming) -> StudySession {
         let trainer = self.trainer();
         let cards = self.sidecar.cards();
         let learn_ahead = self.deck_config().learn_ahead_secs;
+        let limits = self.remaining_limits(timing);
         match branch {
             Some(root) => StudySession::branch(
                 trainer,
@@ -573,6 +574,7 @@ impl Repertoire {
                 self.new_move_order(),
                 root,
                 &cards,
+                limits,
                 timing,
                 learn_ahead,
                 self.reach(),
@@ -582,12 +584,28 @@ impl Repertoire {
                 self.practice_mode(),
                 self.new_move_order(),
                 &cards,
-                self.remaining_limits(timing),
+                limits,
                 timing,
                 learn_ahead,
                 self.reach(),
             ),
         }
+    }
+
+    /// Every studied move under `root`, due or not (a filtered deck).
+    pub fn practice_session(&mut self, root: NodeId, timing: &SchedTiming) -> StudySession {
+        let trainer = self.trainer();
+        let cards = self.sidecar.cards();
+        let learn_ahead = self.deck_config().learn_ahead_secs;
+        StudySession::practice(
+            trainer,
+            self.practice_mode(),
+            root,
+            &cards,
+            timing,
+            learn_ahead,
+            self.reach(),
+        )
     }
 
     /// Today's New / Learning / To Review counts, as on Anki's deck overview.
@@ -604,7 +622,7 @@ impl Repertoire {
         counts
     }
 
-    /// Answers a card and logs it. Answers outside today's queue (a branch session or a review
+    /// Answers a card and logs it. Answers outside today's queue (a practice session or a review
     /// ahead) don't count toward the daily limits, as in an Anki filtered deck.
     #[allow(clippy::too_many_arguments)]
     pub fn answer(

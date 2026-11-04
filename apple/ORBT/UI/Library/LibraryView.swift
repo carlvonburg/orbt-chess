@@ -15,13 +15,13 @@ enum LibraryRoute: Hashable {
     /// Study with today's new limit raised (Anki's custom study).
     case learnMore(String)
     case gaps(String)
-    /// Every studied move, as a branch session over the whole repertoire.
-    case practice(String)
+    /// Every studied move under a position, due or not: Practice.
+    case practice(String, NodeID)
     /// Today's moves of every repertoire that has some, one after another.
     case studyAll([String])
     /// Browse from a position: from Study, or a weakest move in the statistics.
     case browse(String, NodeID)
-    /// Study one branch: Study Branch in Browse.
+    /// Today's moves in one branch: Study Branch in Browse.
     case branch(String, NodeID)
     /// The analysis board, pushed on Browse or Study; its model is made by the screen it is
     /// opened from (`LibraryScreens.add`).
@@ -33,7 +33,7 @@ extension LibraryRoute {
     var entryID: String? {
         switch self {
         case .overview(let id), .builder(let id), .study(let id), .learnMore(let id), .gaps(let id),
-             .practice(let id), .browse(let id, _), .branch(let id, _), .analysis(let id, _): id
+             .practice(let id, _), .browse(let id, _), .branch(let id, _), .analysis(let id, _): id
         case .studyAll: nil
         }
     }
@@ -350,7 +350,7 @@ struct LibraryView: View {
                 RepertoireOverviewView(document: doc,
                                        editLines: { go(to: path + [.builder(doc.entryID)]) },
                                        study: { go(to: path + [.study(doc.entryID)]) },
-                                       practice: { go(to: path + [.practice(doc.entryID)]) })
+                                       practice: { go(to: path + [.practice(doc.entryID, RepertoireTree.rootID)]) })
             }
             // The title switches to another repertoire without going back to the library.
             .toolbarTitleMenu { repertoireSwitcher(id) }
@@ -847,7 +847,7 @@ private struct TodayCard: View {
     private var moreActions: some View {
         if unlearned.isEmpty && withGaps.isEmpty {
             action("Practice", withMoves.filter { $0.stats.progress.studied > 0 },
-                   detail: { "\($0.progress.studied) moves" }) { .practice($0) }
+                   detail: { "\($0.progress.studied) moves" }) { .practice($0, RepertoireTree.rootID) }
             action("Add Lines", withMoves.sorted { $0.stats.completion < $1.stats.completion },
                    detail: { "\(Format.percent($0.completion)) built" }) { .builder($0) }
         } else {

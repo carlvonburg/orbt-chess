@@ -26,12 +26,25 @@ daily:
 branch [e4]:
 +0s Counts { new: 0, learning: 1, review: 3 } e4 e5 Nf3
   roles: 0 auto, 2 queued
-  2 Good filtered: Review/Review due 115 ivl 15
+  2 Good: Review/Review due 115 ivl 15
 +14s Counts { new: 0, learning: 1, review: 2 } e4 c5 Nf3 d6 d4
   roles: 0 auto, 2 queued, 4 queued
-  2 Good filtered: Review/Review due 115 ivl 15
-  4 Good filtered: Review/Review due 107 ivl 7
+  2 Good: Review/Review due 115 ivl 15
+  4 Good: Review/Review due 107 ivl 7
 +35s Counts { new: 0, learning: 0, review: 1 } e4 c5 Nf3 Nc6 d4 (from 3)
   roles: 0 auto, 2 auto, 4 queued
+  4 Good: Review/Review due 122 ivl 22
+4 answers, 4 positions answered, 4 played; counts Counts { new: 0, learning: 0, review: 0 }
+
+practice:
++0s Counts { new: 0, learning: 1, review: 3 } e4 c5 Nf3 Nc6 d4
+  roles: 0 auto, 2 queued, 4 queued
+  2 Good filtered: Review/Review due 115 ivl 15
   4 Good filtered: Review/Review due 122 ivl 22
++21s Counts { new: 0, learning: 1, review: 1 } e4 c5 Nf3 d6 d4 (from 3)
+  roles: 0 auto, 2 auto, 4 queued
+  4 Good filtered: Review/Review due 107 ivl 7
++42s Counts { new: 0, learning: 0, review: 1 } e4 e5 Nf3
+  roles: 0 auto, 2 queued
+  2 Good filtered: Review/Review due 115 ivl 15
 4 answers, 4 positions answered, 4 played; counts Counts { new: 0, learning: 0, review: 0 }

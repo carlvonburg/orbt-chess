@@ -52,7 +52,7 @@ struct BiggestGapTip: Tip {
 
 /// Right after a save, on the counts under the board, naming the bar's button: building leads
 /// to studying. One thing at a time: a save arms it only once `BiggestGapTip` is done, so it is
-/// never shown just after that tip closes, only at a later save. Done when Study Branch is used.
+/// never shown just after that tip closes, only at a later save. Done when the Study menu is used.
 struct StudyBranchTip: Tip {
     let id = "studyBranch.\(AppTips.generation)"
     var options: [any TipOption] { AppTips.once }
@@ -65,7 +65,7 @@ struct StudyBranchTip: Tip {
     }
     var title: Text { Text("Study These Moves") }
     var message: Text? {
-        Text("\(Image(systemName: "graduationcap")) Study Branch trains the moves you saved from here on: the app plays the replies and you answer.")
+        Text("\(Image(systemName: "graduationcap")) Study Branch trains today's moves from here on: the app plays the replies and you answer.")
     }
 }
 
