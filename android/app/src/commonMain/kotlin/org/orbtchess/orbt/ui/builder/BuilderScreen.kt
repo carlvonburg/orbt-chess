@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -26,6 +25,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import org.orbtchess.orbt.core.Status
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.SnackbarHostState
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,9 +68,11 @@ import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.Tooltip
 import org.orbtchess.orbt.ui.components.TooltipIconButton
 import org.orbtchess.orbt.ui.components.ReviewPrompt
-import org.orbtchess.orbt.ui.tour.TourGuide
-import org.orbtchess.orbt.ui.tour.TourScreen
-import org.orbtchess.orbt.ui.tour.tourTarget
+import org.orbtchess.orbt.ui.tips.CountShown
+import org.orbtchess.orbt.ui.tips.LocalPopoverTip
+import org.orbtchess.orbt.ui.tips.Tip
+import org.orbtchess.orbt.ui.tips.TipCard
+import org.orbtchess.orbt.ui.tips.Tips
 
 /**
  * Build (`BuilderView.swift`, `BuilderSheets.swift`): the board with your moves, replies and
@@ -92,15 +101,21 @@ fun BuilderScreen(
     onBack: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    val actions = BuilderActions(model, navigate, app.tour, app.reviewPrompt)
+    val snackbar = remember { SnackbarHostState() }
+    val actions = BuilderActions(model, navigate, app.tips, app.reviewPrompt) { change -> snackbar.showCoverageChange(change) }
+    // The one tip Browse shows (`AppTips`): on a phone a popover from what it explains, over the
+    // board; beside the board, under the panel.
+    val tip = if (pane != BoardPane.Detail) builderTip(model, app.tips) else null
     when (pane) {
-        BoardPane.Whole -> WholeScreen(app, model, actions, onBack, modifier)
-        BoardPane.List -> PanelScreen(app, model, actions, onBack, modifier)
+        BoardPane.Whole -> CompositionLocalProvider(LocalPopoverTip provides tip) {
+            WholeScreen(app, model, actions, snackbar, onBack, modifier)
+        }
+        BoardPane.List -> PanelScreen(app, model, actions, tip, snackbar, onBack, modifier)
         BoardPane.Detail -> BoardScreen(model, actions, modifier)
     }
     if (pane != BoardPane.Detail) {
         BuilderEffects(model)
-        TourEffects(model, app.tour, actions.inTour)
+        TipEffects(model, app.tips, tip)
         BuilderSheets(model, onStudyBranch = { actions.studyBranch(it) })
         SaveErrorDialog(model)
     }
@@ -110,30 +125,31 @@ fun BuilderScreen(
 private class BuilderActions(
     val model: BuilderModel,
     val navigate: (Destination) -> Unit,
-    val tour: TourGuide,
+    private val tips: Tips,
     private val reviewPrompt: ReviewPrompt,
+    /** What a save did to coverage, shown for a moment. */
+    private val showChange: suspend (CoverageChange) -> Unit,
 ) {
     private val document get() = model.document
 
-    /** The bundled sample, where the tour's tips show. */
-    val inTour: Boolean get() = TourGuide.isSample(document.pgnFile)
-
     fun biggestGap() {
+        tips.invalidate(Tip.BiggestGap)
         model.goToBiggestGap()
-        if (inTour) tour.advance(from = TourGuide.Step.BiggestGap, to = TourGuide.Step.Answer)
     }
 
-    fun save() {
-        // Where the draft starts, and its first move (Biggest Gap's reply).
+    fun save(scope: CoroutineScope) {
+        val before = CoverageChange.Snapshot(document.coverage.root)
+        // Where the line starts and its first move, to find it once saved.
         val start = model.current
         val first = model.draft.firstOrNull()?.uci
+        if (model.draftReachedTarget) tips.invalidate(Tip.LineCovered)
+        tips.invalidate(Tip.SaveDraft)
+        // The study tip's turn only once the gaps tip has had its own.
+        tips.justSaved = tips.isDone(Tip.BiggestGap)
         model.saveDraft()
-        if (inTour && tour.step == TourGuide.Step.Save) {
-            tour.saved()
-            // To the first new move, so Study Branch trains only the line just added (from
-            // `start`, it would also train the rest of the repertoire).
-            model.go(first?.let { model.tree.childByUci(start, it) } ?: start)
-        }
+        val saved = first?.let { model.tree.childByUci(start, it) }
+        val open = saved?.let { (document.coverage[it]?.gapCount ?: 0) > 0 } ?: false
+        CoverageChange.of(before, CoverageChange.Snapshot(document.coverage.root), open)?.let { scope.launch { showChange(it) } }
         reviewPrompt.ask()
     }
 
@@ -146,8 +162,7 @@ private class BuilderActions(
 
     /** Study Branch, Study Repertoire or Practice from the Study menu. */
     fun study(kind: DrillKind) {
-        // The tour's last step.
-        if (inTour) tour.advance(from = TourGuide.Step.Study, to = TourGuide.Step.Studying)
+        tips.invalidate(Tip.StudyBranch)
         navigate(Destination.Drill(document.entryId, kind))
     }
 
@@ -156,7 +171,7 @@ private class BuilderActions(
 
     fun moveInfo() = navigate(Destination.CardInfo(document.entryId, model.current))
 
-    val canBiggestGap: Boolean get() = document.coverage.root?.biggestGap != null
+    val canBiggestGap: Boolean get() = model.canGoToBiggestGap
     val canStudyBranch: Boolean get() = document.learningProgress(model.current).cards > 0
 
     /** Move Info: the current position is one of your moves with a card. */
@@ -182,40 +197,74 @@ private fun BuilderEffects(model: BuilderModel) {
 }
 
 /**
- * The tour on the sample: Build is its next step; it builds the line until coverage is reached
- * (your answer, then a reply that needs one, and so on; Save only once every reply is below the
- * target).
+ * Browse's tip (`AppTips.swift`): the first whose rule holds, from what the board shows. Your
+ * move missing (a gap, or a new line at your move); in a new line at the opponent's move, the
+ * replies that still need an answer, then (from your second move on) that it can be saved
+ * already, or that it reached the target; on saved moves, the gaps below for Biggest Gap, and
+ * after a later save the moves to study.
+ */
+private fun builderTip(model: BuilderModel, tips: Tips): Tip? {
+    val document = model.document
+    if (model.hasDraft) {
+        if (model.draftTransposition != null) return null
+        if (model.isUserTurnOnBoard) return tips.first(Tip.Answer to true)
+        if (model.draftReachedTarget) return tips.first(Tip.LineCovered to true)
+        // From the third move of the line (two of yours as White, the second of yours as Black
+        // at the fourth): by then the replies' tip has been shown.
+        if (model.draft.size >= 3) return tips.first(Tip.SaveDraft to true)
+        return tips.first(Tip.Replies to (model.draftReplies?.any { it.required } == true))
+    }
+    val missing = model.node?.let { document.coverage[it.id]?.status } == Status.Gap
+    // Gaps below this move (Biggest Gap's own fallback, the repertoire's biggest gap elsewhere,
+    // is not "in this line").
+    val canJump = model.canGoToBiggestGap && (document.coverage[model.current]?.gapCount ?: 0) > 0
+    val canStudy = document.learningProgress(model.current).cards > 0
+    return tips.first(
+        Tip.Answer to missing,
+        Tip.BiggestGap to canJump,
+        Tip.StudyBranch to (canStudy && tips.justSaved),
+    )
+}
+
+/**
+ * The tips' actions: your move played where it was missing, a reply that needs an answer played
+ * in a new line; a new line started ends the study tip's turn, and so does leaving Browse.
  */
 @Composable
-private fun TourEffects(model: BuilderModel, tour: TourGuide, inTour: Boolean) {
-    TourScreen(running = inTour)
-    LaunchedEffect(inTour) {
-        if (!inTour) return@LaunchedEffect
-        tour.advance(from = TourGuide.Step.Browse, to = TourGuide.Step.BiggestGap)
-        // A line being built is gone (the app was closed): find the gap again.
-        if (!model.hasDraft) {
-            for (step in listOf(TourGuide.Step.Answer, TourGuide.Step.Extend, TourGuide.Step.Save)) {
-                tour.advance(from = step, to = TourGuide.Step.BiggestGap)
+private fun TipEffects(model: BuilderModel, tips: Tips, tip: Tip?) {
+    CountShown(tip)
+    val count = model.draft.size
+    var last by remember { mutableIntStateOf(count) }
+    LaunchedEffect(count) {
+        if (count > last) {
+            tips.justSaved = false
+            if (model.isUserTurnOnBoard) {
+                if (count >= 2) tips.invalidate(Tip.Replies)
+            } else {
+                tips.invalidate(Tip.Answer)
             }
         }
+        last = count
     }
-    val draftStep = when {
-        !inTour || tour.step !in listOf(TourGuide.Step.Answer, TourGuide.Step.Extend, TourGuide.Step.Save) || !model.hasDraft -> null
-        model.isUserTurnOnBoard -> TourGuide.Step.Answer
-        model.draftReachedTarget -> TourGuide.Step.Save
-        else -> TourGuide.Step.Extend
-    }
-    LaunchedEffect(draftStep) { draftStep?.let { tour.draftChanged(to = it) } }
+    DisposableEffect(Unit) { onDispose { tips.justSaved = false } }
 }
 
 // MARK: Panes
 
 @Composable
-private fun WholeScreen(app: AppModel, model: BuilderModel, actions: BuilderActions, onBack: (() -> Unit)?, modifier: Modifier) {
+private fun WholeScreen(
+    app: AppModel,
+    model: BuilderModel,
+    actions: BuilderActions,
+    snackbar: SnackbarHostState,
+    onBack: (() -> Unit)?,
+    modifier: Modifier,
+) {
     FloatingToolbarScaffold(
         modifier = modifier.builderKeys(model),
         topBar = { BuilderTopBar(model, actions, onBack, listPane = false) },
         toolbar = { BuilderFloatingToolbar(model, actions, phone = true) },
+        snackbarHost = { CoverageSnackbarHost(snackbar) },
     ) { padding ->
         BuilderList(app, model, actions.navigate, Modifier.fillMaxSize(), contentPadding = padding) {
             item("board") {
@@ -237,11 +286,30 @@ private fun WholeScreen(app: AppModel, model: BuilderModel, actions: BuilderActi
     }
 }
 
-/** The list pane beside the board: the replies, the explorer and the rest of the panel, under the screen's top app bar. */
+/**
+ * The list pane beside the board: the replies, the explorer and the rest of the panel, under the
+ * screen's top app bar, and the tip pinned under them (the board is in its own pane, so no
+ * popover over it).
+ */
 @Composable
-private fun PanelScreen(app: AppModel, model: BuilderModel, actions: BuilderActions, onBack: (() -> Unit)?, modifier: Modifier) {
-    Scaffold(modifier, topBar = { BuilderTopBar(model, actions, onBack, listPane = true) }) { padding ->
-        BuilderList(app, model, actions.navigate, Modifier.fillMaxSize().padding(padding))
+private fun PanelScreen(
+    app: AppModel,
+    model: BuilderModel,
+    actions: BuilderActions,
+    tip: Tip?,
+    snackbar: SnackbarHostState,
+    onBack: (() -> Unit)?,
+    modifier: Modifier,
+) {
+    Scaffold(
+        modifier,
+        topBar = { BuilderTopBar(model, actions, onBack, listPane = true) },
+        snackbarHost = { CoverageSnackbarHost(snackbar) },
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            BuilderList(app, model, actions.navigate, Modifier.weight(1f).fillMaxWidth())
+            TipCard(tip, Modifier.padding(horizontal = 12.dp, vertical = 12.dp))
+        }
     }
 }
 
@@ -298,10 +366,7 @@ private fun BuilderFloatingToolbar(model: BuilderModel, actions: BuilderActions,
         NavigationButtons(model)
         if (phone) Spacer(Modifier.weight(1f)) else MovePathStrip(model, Modifier.weight(1f))
         if (model.hasDraft) {
-            TooltipIconButton(
-                "Analysis", Symbols.analysis, actions::analysis,
-                Modifier.tourTarget(TourGuide.Target.Analysis), above = true,
-            )
+            TooltipIconButton("Analysis", Symbols.analysis, actions::analysis, above = true)
             if (phone) DraftButtons(model, actions, above = true)
         } else {
             if (phone) GapAndStudyButtons(actions, above = true)
@@ -324,12 +389,9 @@ private fun DraftButtons(model: BuilderModel, actions: BuilderActions, above: Bo
                 Icon(Symbols.wrong, contentDescription = "Discard")
             }
         }
+        val scope = rememberCoroutineScope()
         Tooltip("Save", above) {
-            FilledIconButton(
-                onClick = actions::save,
-                shapes = IconButtonDefaults.shapes(),
-                modifier = Modifier.tourTarget(TourGuide.Target.Save),
-            ) {
+            FilledIconButton(onClick = { actions.save(scope) }, shapes = IconButtonDefaults.shapes()) {
                 Icon(Symbols.correct, contentDescription = "Save")
             }
         }
@@ -355,10 +417,7 @@ private fun NavigationButtons(model: BuilderModel) {
 /** Biggest Gap and the Study menu; [above]: their tooltips above (a bottom toolbar) or below (a top app bar). */
 @Composable
 private fun GapAndStudyButtons(actions: BuilderActions, above: Boolean) {
-    TooltipIconButton(
-        "Biggest Gap", BuilderSymbols.biggestGap, actions::biggestGap,
-        Modifier.tourTarget(TourGuide.Target.BiggestGap), enabled = actions.canBiggestGap, above = above,
-    )
+    TooltipIconButton("Biggest Gap", BuilderSymbols.biggestGap, actions::biggestGap, enabled = actions.canBiggestGap, above = above)
     StudyMenu(actions, above)
 }
 
@@ -371,10 +430,7 @@ private fun StudyMenu(actions: BuilderActions, above: Boolean) {
     var open by remember { mutableStateOf(false) }
     val root = actions.atRoot
     Box {
-        TooltipIconButton(
-            "Study", Symbols.study, { open = true },
-            Modifier.tourTarget(TourGuide.Target.StudyBranch), above = above,
-        )
+        TooltipIconButton("Study", Symbols.study, { open = true }, above = above)
         ExpressiveMenu(open, onDismissRequest = { open = false }) {
             group {
                 item("Study Repertoire", Symbols.study) { actions.study(DrillKind.Study) }
@@ -428,7 +484,7 @@ private fun Modifier.builderKeys(model: BuilderModel): Modifier {
                 plain && event.key == Key.DirectionRight -> model.canForward.also { if (it) model.forward() }
                 plain && event.key == Key.DirectionUp -> true.also { model.sibling(-1) }
                 plain && event.key == Key.DirectionDown -> true.also { model.sibling(1) }
-                command && event.isShiftPressed && event.key == Key.G -> true.also { model.goToBiggestGap() }
+                command && event.isShiftPressed && event.key == Key.G -> true.also { if (model.canGoToBiggestGap) model.goToBiggestGap() }
                 command && event.isShiftPressed && event.key == Key.F -> true.also { model.flip() }
                 else -> false
             }

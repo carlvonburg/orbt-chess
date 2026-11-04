@@ -98,8 +98,8 @@ sealed interface StatisticsScope {
 
 /** What the setup flow sets up (`RepertoireSetupFlow.Mode`). */
 sealed interface SetupMode {
-    /** A new repertoire, its side already chosen when started from the empty library. */
-    data class New(val side: Side? = null) : SetupMode
+    /** A new repertoire. */
+    data object New : SetupMode
 
     /** A PGN picked from Files: nothing is written until it is added. */
     class Importing(val data: ByteArray, val name: String) : SetupMode

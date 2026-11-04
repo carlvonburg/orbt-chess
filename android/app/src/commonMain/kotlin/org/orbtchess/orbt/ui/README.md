@@ -125,8 +125,7 @@ named in each stub's doc comment.
   Today's row and the repertoires) and the detail pane, the rest: one scrolling page of cards
   (`statistics/StatisticsDashboard`, a staggered grid of two columns where each gets 320 dp,
   else one). Its first row is across the page: Today's card (`TodayDashboard`: `TodayCard` with
-  `wide`, what is left on the leading side, the streak and Study All on the trailing side; the
-  tour's card while it runs) or a repertoire's Coverage and Study cards (`OverviewDashboard`:
+  `wide`, what is left on the leading side, the streak and Study All on the trailing side) or a repertoire's Coverage and Study cards (`OverviewDashboard`:
   side by side at equal height, their buttons on one line; stacked on one column). Then
   "Statistics" (Today's: "Statistics · All Repertoires") with the period (its own per page) and the statistics' cards
   (`statisticsCards`, the Statistics screen's). No Statistics tab there. One pane (a phone, a
@@ -149,7 +148,8 @@ named in each stub's doc comment.
 | `ui.statistics` | `StatisticsScreen` (the tab), `StatisticsDashboard` (the wide library's detail pane), `CardInfoSheet` | Statistics |
 | `ui.settings` | `SettingsScreen`, `AcknowledgementsScreen` | Settings |
 | `ui.board` | `Board`, `BoardArrow`, `BoardBadge` | board |
-| `ui.tour` | `TourGuide` (steps, targets, `tourTarget`, `TourScreen`), `TourSpotlight` (scrim with cut-outs and a coach-mark card), `TourStudyCard`, `SkipTourButton`; the Tour section is `library/TourSection.kt` | tour |
+| `ui.onboarding` | `OnboardingScreen`: the whole window while there is no repertoire (the shell shows it in place of the tabs) | onboarding |
+| `ui.tips` | `Tips` (TipKit's part: which tips are done, per generation, and `first`), `Tip`; `TipAnchor` (a popover: Material's persistent rich tooltip), `TipCard` (inline), `CountShown` | tips |
 
 A screen's agent owns its package; the model constructors and screen signatures are the shell's
 contract (add optional parameters freely; change required ones together with the shell).

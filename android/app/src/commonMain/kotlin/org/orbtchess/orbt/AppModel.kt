@@ -16,7 +16,7 @@ import org.orbtchess.orbt.storage.RepertoireLibrary
 import org.orbtchess.orbt.storage.TrainingDefaults
 import org.orbtchess.orbt.sync.SyncService
 import org.orbtchess.orbt.ui.components.ReviewPrompt
-import org.orbtchess.orbt.ui.tour.TourGuide
+import org.orbtchess.orbt.ui.tips.Tips
 import java.io.File
 
 /**
@@ -34,8 +34,8 @@ class AppModel(val platform: PlatformServices, private val scope: CoroutineScope
     val engineDefaults = EngineDefaults(platform.settings, platform.processors)
     val engineNetwork = EngineNetwork(platform.folders, scope)
     val engine = EngineService(engineNetwork, engineDefaults, scope)
-    val tour = TourGuide(platform.settings)
-    val reviewPrompt = ReviewPrompt(platform.settings, platform.storeReview, tour)
+    val tips = Tips(platform.settings)
+    val reviewPrompt = ReviewPrompt(platform.settings, platform.storeReview)
     val sync = SyncService(
         { platform.folders.repertoires }, platform.folders.support, platform.settings, platform.secrets,
         platform.syncAuth, documents, scope = scope,

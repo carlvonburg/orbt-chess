@@ -9,21 +9,15 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.orbtchess.orbt.core.ExplorerDatabase
-import org.orbtchess.orbt.core.ExplorerSpeed
 import org.orbtchess.orbt.core.LibrarySidecar
-import org.orbtchess.orbt.core.Side
 import org.orbtchess.orbt.core.librarySidecar
 import org.orbtchess.orbt.core.newRepertoirePgn
-import org.orbtchess.orbt.core.newSidecar
-import org.orbtchess.orbt.core.nowTimestamp
 import org.orbtchess.orbt.core.revlogExtension
 import org.orbtchess.orbt.core.sidecarExtension
 import java.io.File
 import java.io.IOException
 import java.text.BreakIterator
 import java.text.Collator
-import java.util.UUID
 
 class RepertoireEntry(
     /** Path of the sidecar, stable across launches. */
@@ -129,27 +123,6 @@ class RepertoireLibrary(folder: File, private val scope: CoroutineScope) {
     suspend fun importPgn(data: ByteArray, name: String, sidecar: ByteArray): RepertoireEntry =
         add(name, { data }, sidecar)
 
-    /**
-     * The sample repertoire (White, 1.e4), added the first time; later calls return the
-     * existing one. `pgn` is the bundled `1.e4 (Sample).pgn` (`apple/ORBT/Resources`), read by
-     * the platform.
-     */
-    suspend fun addSample(pgn: () -> ByteArray): RepertoireEntry {
-        val file = File(folder, "$SAMPLE_NAME.pgn")
-        if (withContext(Dispatchers.IO) { file.exists() }) {
-            return entries.firstOrNull { it.pgnFile.canonicalPath == file.canonicalPath } ?: insertEntry(file)
-        }
-        // A small target, so a short repertoire is nearly complete: at 1 in 20 games of the
-        // blitz 1600–1799 table it leaves three gaps (1...e6, 3...Nf6 in the Italian, and
-        // 5...cxd4 in the Alapin), at depths 1, 3 and 5, for the tour to fill.
-        val sidecar = newSidecar(
-            id = UUID.randomUUID().toString(), color = Side.WHITE,
-            database = ExplorerDatabase.Lichess(ratings = listOf(1600L), speeds = listOf(ExplorerSpeed.BLITZ)),
-            targetGames = 20, now = nowTimestamp(),
-        )
-        return add(SAMPLE_NAME, { pgn() }, sidecar)
-    }
-
     private suspend fun add(name: String, pgn: (String) -> ByteArray, sidecar: ByteArray): RepertoireEntry {
         val clean = cleanName(name)
         if (clean.isEmpty()) throw RepertoireFileException(RepertoireFileException.Reason.INVALID_NAME)
@@ -187,12 +160,6 @@ class RepertoireLibrary(folder: File, private val scope: CoroutineScope) {
     companion object {
         val SIDECAR_EXTENSION: String = sidecarExtension()
         val REVLOG_EXTENSION: String = revlogExtension()
-
-        /** The sample's name, also its bundled file's. */
-        const val SAMPLE_NAME = "1.e4 (Sample)"
-
-        /** Whether this PGN is the bundled sample's. */
-        fun isSample(pgn: File): Boolean = pgn.nameWithoutExtension == SAMPLE_NAME
 
         fun sidecarFile(pgn: File): File = File(pgn.parentFile, "${pgn.nameWithoutExtension}.$SIDECAR_EXTENSION")
 

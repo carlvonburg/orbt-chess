@@ -43,7 +43,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,9 +53,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.ui.components.TooltipIconButton
 import org.orbtchess.orbt.AppModel
-import org.orbtchess.orbt.ui.tour.TourGuide
-import org.orbtchess.orbt.ui.tour.TourScreen
-import org.orbtchess.orbt.ui.tour.tourTarget
 import org.orbtchess.orbt.core.Counts
 import org.orbtchess.orbt.core.QueueState
 import org.orbtchess.orbt.core.notStudied
@@ -131,7 +127,7 @@ fun OverviewScreen(
 
 /**
  * What an overview does while on screen, as a list or a dashboard: the background coverage
- * check (the core counts viewers) and, on the sample, the tour, which begins at Browse / Edit.
+ * check (the core counts viewers).
  */
 @Composable
 internal fun OverviewEffects(app: AppModel, document: RepertoireDocument) {
@@ -139,9 +135,6 @@ internal fun OverviewEffects(app: AppModel, document: RepertoireDocument) {
         document.startCoverageCheck()
         onDispose { document.stopCoverageCheck() }
     }
-    val isSample = TourGuide.isSample(document.pgnFile)
-    TourScreen(running = isSample)
-    LaunchedEffect(isSample) { if (isSample) app.tour.advance(from = TourGuide.Step.Ready, to = TourGuide.Step.Browse) }
 }
 
 /** The overview's top app bar: the repertoire's name, back where there is one, and ⋮. */
@@ -234,12 +227,12 @@ internal fun SavedMovesCount(stats: EntryStats) {
     Text(NumberFormat.getIntegerInstance().format(stats.savedMoves), style = tabularDigits(MaterialTheme.typography.bodyLarge))
 }
 
-/** Browse / Edit, prominent while building comes first; where the tour begins. */
+/** Browse / Edit, prominent while building comes first. */
 @Composable
 internal fun BrowseButton(stats: EntryStats, browse: () -> Unit, modifier: Modifier = Modifier) {
     ActionButton(
         "Browse / Edit", prominent = buildFirst(stats), onClick = browse,
-        modifier = modifier.tourTarget(TourGuide.Target.BrowseButton),
+        modifier = modifier,
     )
 }
 

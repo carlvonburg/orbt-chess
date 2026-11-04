@@ -32,7 +32,7 @@ class DropdownTest {
             override fun remove(key: String) { values.remove(key) }
         }
         val app = AppModel(PlatformServices(AppFolders(root.resolve("R"), root.resolve("S")), MemorySettings(), secrets, {}, { null }))
-        setContent { SetupScreen(app, SetupMode.New(), {}, {}) }
+        setContent { SetupScreen(app, SetupMode.New, {}, {}) }
         onNodeWithText("Najdorf").performTextInput("Test")
         onNodeWithText("Next").performClick()
         waitForIdle()

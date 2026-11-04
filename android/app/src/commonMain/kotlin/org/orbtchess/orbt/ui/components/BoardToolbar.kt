@@ -124,6 +124,7 @@ fun FloatingToolbarScaffold(
     modifier: Modifier = Modifier,
     topBar: @Composable () -> Unit,
     toolbar: @Composable () -> Unit,
+    snackbarHost: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
     if (buttonNavigationBarAtBottom()) {
@@ -131,11 +132,15 @@ fun FloatingToolbarScaffold(
             modifier,
             topBar = topBar,
             bottomBar = { CompositionLocalProvider(LocalDockedToolbar provides true) { toolbar() } },
+            snackbarHost = snackbarHost,
             content = content,
         )
         return
     }
-    Scaffold(modifier, topBar = topBar) { padding ->
+    // The snackbar above the floating toolbar, as Material places it over a bottom bar.
+    Scaffold(modifier, topBar = topBar, snackbarHost = {
+        Box(Modifier.padding(bottom = BoardToolbarHeight + ToolbarOffset * 2)) { snackbarHost() }
+    }) { padding ->
         val bottom = padding.calculateBottomPadding()
         Box(Modifier.fillMaxSize()) {
             content(

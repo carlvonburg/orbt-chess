@@ -117,6 +117,9 @@ class BuilderModel(
     val lastMove: PlayedMove? get() { observe(); return session.lastMove() }
     val isUserTurnOnBoard: Boolean get() { observe(); return session.isUserTurnOnBoard() }
 
+    /** Biggest Gap has somewhere to go: not when the board shows it already (a new repertoire's first move). */
+    val canGoToBiggestGap: Boolean get() { observe(); return session.canGoToBiggestGap() }
+
     /** Probability of reaching the board position. Null while a needed statistic is missing. */
     val reachOnBoard: Double? get() { observe(); return session.reachOnBoard() }
 

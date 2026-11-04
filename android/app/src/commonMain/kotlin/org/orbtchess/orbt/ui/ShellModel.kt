@@ -15,7 +15,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.DrillMode
-import org.orbtchess.orbt.storage.ROOT_NODE
 import org.orbtchess.orbt.storage.RepertoireDocument
 import org.orbtchess.orbt.storage.TrainingDefaults
 import org.orbtchess.orbt.ui.analysis.AnalysisModel
@@ -163,6 +162,27 @@ class ShellModel(private val app: AppModel) : ViewModel() {
         overlays.clear()
         sheet = null
         navigate(Destination.Library)
+    }
+
+    /**
+     * A repertoire just set up (`openPending` in LibraryView.swift): its screens are made while
+     * the setup still covers them, which then closes onto them: a new one on Build, to enter its
+     * first moves, over its overview; any other on its overview.
+     */
+    suspend fun showSetUp(entryId: String, build: Boolean) {
+        tab = Tab.Repertoires
+        val overview = entry(Destination.Overview(entryId), Screen.Overview(entryId))
+        if (!build) {
+            replaceStack(listOf(overview))
+            return
+        }
+        val destination = Destination.Builder(entryId)
+        val screen = make(destination) ?: run {
+            replaceStack(listOf(overview))
+            error = "The repertoire could not be opened."
+            return
+        }
+        replaceStack(listOf(overview, entry(destination, screen)))
     }
 
     /** Pushes a board screen once its model is made (`go(to:)`): on its repertoire's overview. */
