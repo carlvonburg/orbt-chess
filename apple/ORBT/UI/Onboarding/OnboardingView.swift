@@ -10,7 +10,9 @@ import UniformTypeIdentifiers
 /// on their own, and the first one ends onboarding (`RootView`), as does any repertoire made here.
 ///
 /// HIG, Onboarding: brief, nothing to set up first (the setup's defaults do), the rest taught in
-/// place by tips (`AppTips`). Liquid Glass: the content plain, glass only on the controls.
+/// place by tips (`AppTips`). The app shows itself as on the App Store: a product shot of its
+/// own board and cards (a gap, a correct answer, today's moves) on a glow of the app color. All
+/// of it content (solid cards, never glass); Liquid Glass only on the controls.
 struct OnboardingView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.webAuthenticationSession) private var webAuth
@@ -19,33 +21,41 @@ struct OnboardingView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 40) {
-                VStack(spacing: 16) {
-                    Image("AppIconImage")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 96, height: 96)
-                        .accessibilityHidden(true)
-                    Text("Welcome to ORBT Chess")
+            VStack(spacing: 28) {
+                ProductShot()
+                VStack(spacing: 8) {
+                    Text("ORBT CHESS")
+                        .font(.caption.weight(.semibold))
+                        .tracking(1.5)
+                        .foregroundStyle(.tint)
+                    Text("Your Openings,\nWithout the Gaps")
                         .font(.largeTitle.bold())
-                        .multilineTextAlignment(.center)
+                    Text("Build from what opponents really play. Remember it with spaced repetition.")
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 2)
                 }
-                VStack(alignment: .leading, spacing: 28) {
-                    FeatureRow(symbol: "chart.bar.xaxis", title: "See What Opponents Play",
-                               text: "Every reply, with how often players at your level choose it and how it scores.")
-                    FeatureRow(symbol: "scope", title: "Find the Gaps",
-                               text: "The common replies you haven't prepared for yet, the most frequent first.")
-                    FeatureRow(symbol: "brain.head.profile", title: "Remember Your Moves",
-                               text: "Spaced repetition brings each move back just before you'd forget it.")
-                }
+                .multilineTextAlignment(.center)
+                .scenePadding(.horizontal)
+                .frame(maxWidth: 480)
             }
-            .padding(.top, 48)
-            .scenePadding(.horizontal)
-            .frame(maxWidth: 480)
+            .padding(.top, 24)
             .frame(maxWidth: .infinity)
         }
         .scrollBounceBehavior(.basedOnSize)
+        // The glow of the app color behind the shot, to the top edge; the backdrop, so it
+        // stays put while the rest scrolls at large text sizes.
+        .background(alignment: .top) {
+            Rectangle()
+                .fill(.tint.opacity(0.55))
+                .mask(RadialGradient(colors: [.black, .clear], center: .top, startRadius: 0, endRadius: 460))
+                .frame(height: 520)
+                .ignoresSafeArea()
+                .accessibilityHidden(true)
+        }
         .safeAreaBar(edge: .bottom) { actions }
+        // The setup sheet's keyboard is the window's: without this the screen behind the sheet
+        // lays out again while it comes and goes. Nothing here takes text.
+        .ignoresSafeArea(.keyboard)
         .fileImporter(isPresented: $showImport, allowedContentTypes: [.pgn, .plainText]) { result in
             do {
                 let file = try RepertoireLibrary.readImport(result.get())
@@ -166,24 +176,69 @@ struct OnboardingView: View {
     }
 }
 
-/// One thing the app does, as Apple's welcome screens list them.
-private struct FeatureRow: View {
-    let symbol: String
-    let title: String
-    let text: String
+/// The app on show, as on the App Store: the Najdorf as Browse draws it for Black (White's most
+/// played reply, solid; one not prepared yet, dashed), tilted, with cards from the app floating
+/// around it: that reply as a gap, a correct answer in Study, today's moves. Fixed example
+/// numbers, so it looks the same offline on the first launch. A fixed size, centered.
+private struct ProductShot: View {
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        Label {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.headline)
-                Text(text).foregroundStyle(.secondary)
+        ZStack {
+            BoardView(position: Self.najdorf, orientation: .black,
+                      lastMove: PlayedMove(san: "a6", uci: "a7a6"),
+                      arrows: [
+                          BoardArrow(from: BoardSquare("c1")!, to: BoardSquare("g5")!, style: .opponent, width: 0.2),
+                          BoardArrow(from: BoardSquare("f1")!, to: BoardSquare("c4")!, style: .gap, width: 0.16, dashed: true),
+                      ])
+                .frame(width: 250, height: 250)
+                .clipShape(.rect(cornerRadius: 16))
+                .shadow(color: .black.opacity(0.35), radius: 24, y: 14)
+                .rotationEffect(.degrees(-5))
+                .allowsHitTesting(false)
+
+            HStack(spacing: 8) {
+                Text("Bc4").font(.headline)
+                Text("1 in 67").font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
+                Text("Gap")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 3)
+                    .background(.todo, in: .capsule)
             }
-        } icon: {
-            Image(systemName: symbol)
-                .font(.title)
-                .foregroundStyle(.tint)
-                .frame(width: 44)
+            .floatingCard(colorScheme)
+            .offset(x: -88, y: 130)
+
+            Label("Correct", systemImage: "checkmark.circle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.correct)
+                .floatingCard(colorScheme)
+                .offset(x: 118, y: -112)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Text("35").font(.title2.bold().monospacedDigit())
+                Text("due today").font(.caption).foregroundStyle(.secondary)
+            }
+            .floatingCard(colorScheme)
+            .offset(x: 136, y: 60)
         }
-        .labelStyle(.titleAndIcon)
+        .frame(width: 380, height: 350)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Example: a Najdorf position with a reply you haven't prepared, Bc4, met 1 in 67 games; a correct answer; 35 moves due today.")
+    }
+
+    private static let najdorf = positionFromFen(fen: "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6")!
+}
+
+private extension View {
+    /// A card from the app, raised over the shot: lighter than the page in either appearance
+    /// (white in light, the next gray up in dark). Content, so solid, not glass.
+    func floatingCard(_ scheme: ColorScheme) -> some View {
+        padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(scheme == .dark ? AnyShapeStyle(.background.tertiary) : AnyShapeStyle(.background),
+                        in: .rect(cornerRadius: 14))
+            .shadow(color: .black.opacity(scheme == .dark ? 0.5 : 0.18), radius: 16, y: 8)
     }
 }

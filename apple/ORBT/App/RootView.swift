@@ -15,8 +15,10 @@ struct RootView: View {
                     let build = if case .new = request.mode { true } else { false }
                     model.pendingShow = PendingShow(entryID: entry.id, build: build)
                 }
-                // The form size, as tall as each page's content (the window permitting).
-                .presentationSizing(.form.fitted(horizontal: false, vertical: true))
+                // The form size, as the app's other sheets. Not fitted to the content: a Form
+                // scrolls and has no height of its own, so a fitted sheet collapses to its
+                // toolbar on iPad.
+                .presentationSizing(.form)
             }
     }
 

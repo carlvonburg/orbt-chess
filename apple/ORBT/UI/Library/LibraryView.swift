@@ -60,6 +60,8 @@ struct LibraryView: View {
     /// The screens pushed: on a phone onto the library, in the split view onto the selection
     /// (the middle column).
     @State private var path: [LibraryRoute] = []
+    /// In the split view, the screens to push on a repertoire being selected (`middleRoot`).
+    @State private var selectionRoutes: [LibraryRoute]?
     /// The models of the Browse and Study screens on the path.
     @State private var screens = LibraryScreens()
     @State private var columns = NavigationSplitViewVisibility.all
@@ -227,6 +229,14 @@ struct LibraryView: View {
         if case .repertoire(let id) = selection {
             route(.overview(id))
                 .id(model.currentID(id))
+                // The screens to show on it once selected (a new repertoire's Browse): pushed
+                // when the selection's root is on screen, as the split view clears this column's
+                // stack itself when the sidebar's selection changes, after any push made with it.
+                .onAppear {
+                    guard let routes = selectionRoutes else { return }
+                    selectionRoutes = nil
+                    path = routes
+                }
         } else {
             todayColumn
         }
@@ -377,8 +387,14 @@ struct LibraryView: View {
             return
         }
         if usesSplit {
-            selection = .repertoire(id)
-            path = routes
+            if selection == .repertoire(id) {
+                path = routes
+            } else {
+                // Pushed by its overview as it appears (`middleRoot`).
+                selectionRoutes = routes
+                selection = .repertoire(id)
+                path = []
+            }
         } else {
             path = pending.build ? routes : [.overview(id)]
         }
@@ -598,9 +614,12 @@ private struct BoardColumnView: View {
                 #endif
                 ToolbarItemGroup(placement: .bottomActions) { BuilderNavigationButtons(model: model) }
                 // A fixed width from the column: moving never resizes the bar; the moves
-                // scroll inside it.
-                ToolbarItem(placement: .bottomActions) {
-                    historyFrame(MovePathStrip(model: model), buttons: true)
+                // scroll inside it. Not at the start position with nothing ahead, where the
+                // strip has nothing to show (no home button, no moves) and was empty space.
+                if model.current != RepertoireTree.rootID || model.hasDraft || !model.lineAhead.isEmpty {
+                    ToolbarItem(placement: .bottomActions) {
+                        historyFrame(MovePathStrip(model: model), buttons: true)
+                    }
                 }
                 #if os(macOS)
                 ToolbarItem(placement: .bottomActions) {

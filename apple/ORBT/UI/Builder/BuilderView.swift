@@ -58,14 +58,20 @@ struct BuilderView: View {
                 }
             }
             panelRows
-            if inSplitView {
-                // Under the list: the board is in its own column, so no popover over it.
-                TipView(panelTips.currentTip)
-                    .padding(.vertical, 12)
-                    .builderRow(separator: false)
-            }
         }
         .listStyle(.plain)
+        // In a split view, pinned to the bottom of this column with the list scrolling under it:
+        // in view however long the list (as its last row it sat below the fold), and off the
+        // board, which has its own column, so no popover over it.
+        .safeAreaBar(edge: .bottom) {
+            if inSplitView {
+                TipView(panelTips.currentTip)
+                    .padding(.horizontal)
+                    .padding(.bottom, 12)
+            }
+        }
+        // The list fades under the tip, with no divider above it.
+        .scrollEdgeEffectStyle(.soft, for: .bottom)
         .environment(\.defaultMinListRowHeight, 0)
         .scrollDismissesKeyboard(.immediately)
         .onDisappear { StudyBranchTip.justSaved = false }
