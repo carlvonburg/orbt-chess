@@ -55,7 +55,7 @@ fun OverviewDashboard(
     val id = document.entryId
     OverviewEffects(app, document)
     val stats = EntryStats.of(document)
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = GroupedBackground,

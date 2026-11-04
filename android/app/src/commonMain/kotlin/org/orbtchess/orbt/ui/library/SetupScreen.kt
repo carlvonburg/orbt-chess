@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
@@ -33,7 +34,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -167,13 +167,13 @@ fun SetupScreen(
         onBackCompleted = { step -= 1 },
     )
 
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     // A dialog (a wide window): Back, Cancel and Next (Create) at its bottom, as a desktop's
     // wizard; else the title bar's close or back and Next.
     val inDialog = LocalInDialog.current
     val next = { if (step < 3) step += 1 else finish() }
     Scaffold(
-        // The page's collapsing title bar takes the scroll first; a dialog has none (unattached,
+        // The page's title bar takes the scroll first (its color as content scrolls under); a dialog has none (unattached,
         // its scroll behavior would take every scroll and the content none).
         modifier = modifier.then(if (LocalInDialog.current) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)).defaultAction(inDialog && canContinue, next),
         containerColor = GroupedBackground,
@@ -182,7 +182,7 @@ fun SetupScreen(
                 // A dialog's title, at its top.
                 DialogTitleBar(title, subtitle = "Step $step of 3")
             } else {
-                MediumFlexibleTopAppBar(
+                TopAppBar(
                     title = { Text(title) },
                     colors = groupedTopAppBarColors(),
                     scrollBehavior = scrollBehavior,

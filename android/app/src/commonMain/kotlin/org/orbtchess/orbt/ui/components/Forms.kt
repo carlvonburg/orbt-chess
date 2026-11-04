@@ -41,10 +41,15 @@ import androidx.compose.ui.unit.dp
 // Settings pages on a wide window, as Windows' Settings and the Mac's grouped forms lay them
 // out: no wider than a page reads well, centered, each setting's control
 // beside its title (a number field, a menu, a short slider) instead of under it or in a dialog,
-// a phone's way. Phones keep theirs: a page narrower than [WideForm] has no wide rows.
+// a phone's way. Only on the desktop ([controlsBesideTitles]): Android's settings keep their rows
+// (the value under the title, a dialog to change it) at every width, a tablet's too. A page
+// narrower than [WideForm] has no wide rows.
 
 /** The narrowest page whose rows put their controls beside their titles. */
 private val WideForm = 600.dp
+
+/** Whether this platform's settings put each control beside its title when there is room: the desktop's. */
+internal expect val controlsBesideTitles: Boolean
 
 /** The widest a settings page grows. */
 private val FormMaxWidth = 760.dp
@@ -52,11 +57,11 @@ private val FormMaxWidth = 760.dp
 /** Whether this settings page is wide: its rows' controls beside their titles ([FormColumn]). */
 val LocalWideForm = compositionLocalOf { false }
 
-/** A settings page's content: at most [FormMaxWidth], centered, wide ([LocalWideForm]) when there is room. On a wide window the shell shows these pages as dialogs. */
+/** A settings page's content: at most [FormMaxWidth], centered, wide ([LocalWideForm]) on the desktop when there is room. On a wide window the shell shows these pages as dialogs. */
 @Composable
 fun FormColumn(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-        CompositionLocalProvider(LocalWideForm provides (maxWidth >= WideForm)) {
+        CompositionLocalProvider(LocalWideForm provides (controlsBesideTitles && maxWidth >= WideForm)) {
             Column(Modifier.widthIn(max = FormMaxWidth).fillMaxWidth(), content = content)
         }
     }

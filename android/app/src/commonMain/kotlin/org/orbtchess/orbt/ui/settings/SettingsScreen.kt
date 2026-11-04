@@ -33,7 +33,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +43,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSliderState
 import androidx.compose.runtime.Composable
@@ -118,9 +118,9 @@ fun SettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
-        // The page's collapsing title bar takes the scroll first; a dialog has none (unattached,
+        // The page's title bar takes the scroll first (its color as content scrolls under); a dialog has none (unattached,
         // its scroll behavior would take every scroll and the content none).
         modifier = modifier.then(if (LocalInDialog.current) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)),
         containerColor = GroupedBackground,
@@ -128,7 +128,7 @@ fun SettingsScreen(
             if (LocalInDialog.current) {
                 DialogTitleBar("Settings")
             } else {
-                LargeFlexibleTopAppBar(
+                TopAppBar(
                     title = { Text("Settings") },
                     colors = groupedTopAppBarColors(),
                     navigationIcon = {

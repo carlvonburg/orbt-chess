@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -26,7 +27,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -91,9 +91,9 @@ private data class LicenseEntry(val id: String, val name: String, val text: Stri
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Page(title: String, onBack: () -> Unit, modifier: Modifier, content: @Composable (Modifier) -> Unit) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
-        // The page's collapsing title bar takes the scroll first; a dialog has none (unattached,
+        // The page's title bar takes the scroll first (its color as content scrolls under); a dialog has none (unattached,
         // its scroll behavior would take every scroll and the content none).
         modifier = modifier.then(if (LocalInDialog.current) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)),
         containerColor = GroupedBackground,
@@ -102,7 +102,7 @@ private fun Page(title: String, onBack: () -> Unit, modifier: Modifier, content:
             if (LocalInDialog.current) {
                 DialogTitleBar(title, back = onBack)
             } else {
-                MediumFlexibleTopAppBar(
+                TopAppBar(
                     title = { Text(title) },
                     colors = groupedTopAppBarColors(),
                     scrollBehavior = scrollBehavior,

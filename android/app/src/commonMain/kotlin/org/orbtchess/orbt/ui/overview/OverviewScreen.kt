@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.HourglassEmpty
 import androidx.compose.material.icons.outlined.NoAccounts
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.WifiOff
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,7 +42,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
@@ -106,7 +106,7 @@ fun OverviewScreen(
     val id = document.entryId
     OverviewEffects(app, document)
     val stats = EntryStats.of(document)
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = GroupedBackground,
@@ -155,7 +155,7 @@ internal fun OverviewTopBar(
 ) {
     val id = document.entryId
     var menu by remember { mutableStateOf(false) }
-    MediumFlexibleTopAppBar(
+    TopAppBar(
         title = { Text(document.name, maxLines = 1) },
         scrollBehavior = scrollBehavior,
         colors = groupedTopAppBarColors(),

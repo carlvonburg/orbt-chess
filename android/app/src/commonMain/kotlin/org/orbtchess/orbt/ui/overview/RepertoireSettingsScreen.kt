@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
@@ -27,7 +28,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.MediumFlexibleTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -98,11 +98,11 @@ fun RepertoireSettingsScreen(
         }
     }
 
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     // A dialog (a wide window): Cancel and Save at its bottom; else Material's full-screen dialog.
     val inDialog = LocalInDialog.current
     Scaffold(
-        // The page's collapsing title bar takes the scroll first; a dialog has none (unattached,
+        // The page's title bar takes the scroll first (its color as content scrolls under); a dialog has none (unattached,
         // its scroll behavior would take every scroll and the content none).
         modifier = modifier.then(if (LocalInDialog.current) Modifier else Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)).defaultAction(inDialog && name.isNotBlank(), ::save),
         containerColor = GroupedBackground,
@@ -111,7 +111,7 @@ fun RepertoireSettingsScreen(
                 // A dialog's title, at its top.
                 DialogTitleBar("Repertoire Settings")
             } else {
-                MediumFlexibleTopAppBar(
+                TopAppBar(
                     title = { Text("Repertoire Settings") },
                     colors = groupedTopAppBarColors(),
                     scrollBehavior = scrollBehavior,

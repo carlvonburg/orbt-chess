@@ -13,10 +13,14 @@ named in each stub's doc comment.
   - Tabs: `NavigationSuiteScaffold` with `NavigationSuiteItem` and
     `NavigationSuiteScaffoldDefaults.navigationSuiteType` (the short navigation bar; the wide
     navigation rail where a window would show one); panes: `ListDetailPaneScaffold`.
-  - Top app bars: where iOS has a large title, a flexible app bar that collapses on scroll
-    (`exitUntilCollapsedScrollBehavior`): `LargeFlexibleTopAppBar` on the tab roots
-    (Repertoires, Today, Statistics, Settings), `MediumFlexibleTopAppBar` on pushed screens;
-    `TopAppBar(title, subtitle)` where iOS's title is inline (the board screens).
+  - Top app bars: on the tab roots (Repertoires, Today, Statistics), where iOS has a large
+    title, `LargeFlexibleTopAppBar` collapsing on scroll (`exitUntilCollapsedScrollBehavior`);
+    every screen with back or close (Settings, the overview, repertoire settings, setup, About
+    and Licenses, the board screens) the one-line `TopAppBar`, its title beside the button.
+  - System bars: edge to edge with no scrim behind 3-button navigation
+    (`isNavigationBarContrastEnforced = false` in MainActivity): bottom bars draw behind the
+    buttons. Settings pages keep Android's rows (value under the title, a dialog to change it)
+    at every width; controls beside their titles are the desktop's (`controlsBesideTitles`).
   - Choosing one of a few options: a connected button group (`components/ChoiceButtonGroup`:
     `ToggleButton`s with `ButtonGroupDefaults.connected*ButtonShapes`), never `SegmentedButton`;
     tabs switch content.
@@ -87,7 +91,8 @@ named in each stub's doc comment.
   Expressive's floating toolbar (`components/BoardToolbar`, `HorizontalFloatingToolbar`), on
   phones as on tablets: icon-only items named by a tooltip, back and forward kept together,
   Study's main action (Next Line) the FAB beside it (`BoardToolbarFab`, Material's toolbar and
-  FAB pairing). While a line is being built, Discard and Save are one pair, as iPhone's ✕ and ✓:
+  FAB pairing). Over 3-button navigation along the bottom (`WindowInsets.tappableElement`) the
+  one-pane toolbar is docked instead (`FlexibleBottomAppBar`), behind the buttons. While a line is being built, Discard and Save are one pair, as iPhone's ✕ and ✓:
   a tonal ✕ and a filled ✓ icon button side by side (`DraftButtons` in BuilderScreen.kt).
   - One pane (a phone, as iPhone's glass bar): the toolbar floats at the bottom over the content,
     which scrolls under it (`FloatingToolbarScaffold`; lists take its bottom padding so their last
