@@ -229,10 +229,15 @@ final class RepertoireLibrary {
         draft.rating = 1600
         // A small target, so a short repertoire is nearly complete: at 1 in 20 games of the
         // blitz 1600–1799 table it leaves three gaps (1...e6, 3...Nf6 in the Italian, and
-        // 5...cxd4 in the Alapin), at depths 1, 3 and 5, for the tour to fill.
+        // 5...cxd4 in the Alapin), at depths 1, 3 and 5, to try filling.
         draft.targetGames = 20
         return try add(name: Self.sampleName, pgn: { _ in try Data(contentsOf: url) }, sidecar: draft.makeSidecar())
     }
+
+    /// Whether this device's first launch has added the sample, or found repertoires already
+    /// (once per device: no sample when they are all deleted later). The tour's old key, so an
+    /// update doesn't add it again.
+    nonisolated static let sampleOfferedKey = "tourOffered"
 
     /// The sample's name, also its bundled file's.
     nonisolated static let sampleName = "1.e4 (Sample)"

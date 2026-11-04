@@ -1,5 +1,6 @@
 import OpeningCoreRust
 import SwiftUI
+import TipKit
 
 /// The main screen: board, move path, and a panel that shows the opponent's replies
 /// (with gaps) or your moves and candidates.
@@ -27,15 +28,15 @@ struct BuilderView: View {
     }
 
     private var document: RepertoireDocument { model.document }
-    /// The tour's step for the draft on the board, while it builds the line.
-    private var tourDraftStep: Tour.Step? {
-        guard isSample, [.answer, .extend, .save].contains(Tour.current), model.hasDraft else { return nil }
-        if model.isUserTurnOnBoard { return .answer }
-        return model.draftReachedTarget ? .save : .extend
+    /// The split view's tips, one at a time, the first whose rules hold (`builderTip`).
+    @State private var panelTips = TipGroup(.firstAvailable) {
+        AnswerTip()
+        RepliesTip()
+        SaveTip()
+        BiggestGapTip()
     }
-
-    /// The bundled sample, where the tour's tips show.
-    private var isSample: Bool { RepertoireLibrary.isSample(document.pgnURL) }
+    /// What the last save did to coverage, shown for a moment (`CoverageToast`).
+    @State private var coverageChange: CoverageChange?
 
     var body: some View {
         let _ = document.revision
@@ -54,19 +55,17 @@ struct BuilderView: View {
                 }
             }
             panelRows
+            if inSplitView {
+                // Under the list: the board is in its own column, so no popover over it.
+                TipView(panelTips.currentTip)
+                    .padding(.vertical, 12)
+                    .builderRow(separator: false)
+            }
         }
         .listStyle(.plain)
-        .tourScreen(running: isSample)
         .environment(\.defaultMinListRowHeight, 0)
         .scrollDismissesKeyboard(.immediately)
         .onAppear {
-            if isSample {
-                Tour.advance(from: .browse, to: .biggestGap)
-                // A line being built is gone (the app was closed): find the gap again.
-                if !model.hasDraft {
-                    for step in [Tour.Step.answer, .extend, .save] { Tour.advance(from: step, to: .biggestGap) }
-                }
-            }
             // Edit > Undo and ⌘Z undo through the builder, which also leaves a removed position.
             document.attachUndo(undoManager) { [weak model, weak document] in
                 if let model { model.undo() } else { document?.undo() }
@@ -85,10 +84,25 @@ struct BuilderView: View {
         .checksCoverage(document)
         .onChange(of: model.current, initial: true) { requestStats() }
         .onChange(of: model.draft) { requestStats() }
-        // The tour builds the line until coverage is reached: your answer, then a reply that
-        // needs one, and so on; Save only once every reply is below the target.
-        .onChange(of: tourDraftStep) { _, step in
-            if let step { Tour.draftChanged(to: step) }
+        // The tips' rules (`AppTips`): what the board shows.
+        .onChange(of: tipState, initial: true) { _, state in
+            AnswerTip.yourMoveMissing = state.yourMoveMissing
+            RepliesTip.repliesNeeded = state.repliesNeeded
+            SaveTip.lineReached = state.lineReached
+        }
+        // Their actions: your move played where it was missing, a reply that needs an answer
+        // played in a new line.
+        .onChange(of: model.draft.count) { old, new in
+            guard new > old else { return }
+            if model.isUserTurnOnBoard {
+                if new >= 2 { RepliesTip().invalidate(reason: .actionPerformed) }
+            } else {
+                AnswerTip().invalidate(reason: .actionPerformed)
+            }
+        }
+        // Over the list, clear of a phone's floating bottom bar (which the list runs under).
+        .overlay(alignment: .bottom) {
+            CoverageToast(change: $coverageChange).padding(.bottom, inSplitView ? 0 : 64)
         }
         .alert("Could not save", isPresented: Binding(
             get: { document.saveError != nil }, set: { if !$0 { document.dismissSaveError() } })) {
@@ -106,6 +120,29 @@ struct BuilderView: View {
         } else {
             presentation.drill = DrillRequest(mode: .branch(node))
         }
+    }
+
+    private struct TipState: Equatable {
+        var yourMoveMissing = false
+        var repliesNeeded = false
+        var lineReached = false
+    }
+
+    /// Your move missing on the board (a gap, or a new line at your move); a new line at the
+    /// opponent's move with replies that still need an answer.
+    private var tipState: TipState {
+        if model.hasDraft {
+            if model.draftTransposition != nil { return TipState() }
+            if model.isUserTurnOnBoard { return TipState(yourMoveMissing: true) }
+            let needed = !model.draftReachedTarget && model.draftReplies?.contains(where: \.required) == true
+            return TipState(repliesNeeded: needed, lineReached: model.draftReachedTarget)
+        }
+        return TipState(yourMoveMissing: model.node.flatMap { document.coverage[$0.id]?.status } == .gap)
+    }
+
+    private func goToBiggestGap() {
+        BiggestGapTip().invalidate(reason: .actionPerformed)
+        model.goToBiggestGap()
     }
 
     private func requestStats() {
@@ -148,7 +185,7 @@ struct BuilderView: View {
         let actions: ToolbarItemPlacement = split ? .trailingBar : .bottomActions
         if !split {
             ToolbarItemGroup(placement: .bottomActions) {
-                BuilderNavigationButtons(model: model, tourRunning: isSample)
+                BuilderNavigationButtons(model: model)
             }
             ToolbarSpacer(.flexible, placement: .bottomActions)
         }
@@ -157,60 +194,47 @@ struct BuilderView: View {
             ToolbarItemGroup(placement: actions) {
                 if !split {
                     Button("Analysis", systemImage: "cpu") { presentation.analyze(model, open: openAnalysis) }
-                        .tourBarButton(.analysis, running: isSample)
                 }
                 Button("Discard", systemImage: "xmark", role: .destructive) { model.discardDraft() }
-                    .tourBarButton(nil, running: isSample)
             }
             ToolbarSpacer(.fixed, placement: actions)
             ToolbarItem(placement: actions) {
                 Button {
-                    // Where the draft starts, and its first move (Biggest Gap's reply).
+                    let before = CoverageChange.Snapshot(document.coverage.root)
+                    // Where the line starts and its first move, to find it once saved.
                     let start = model.current
                     let first = model.draft.first?.uci
+                    if model.draftReachedTarget { SaveTip().invalidate(reason: .actionPerformed) }
                     model.saveDraft()
-                    if isSample, Tour.current == .save {
-                        Tour.saved()
-                        // To the first new move, so Study Branch trains only the line just added
-                        // (from `start`, it would also train the rest of the repertoire).
-                        model.go(to: first.flatMap { model.tree.child(of: start, uci: $0) } ?? start)
+                    let saved = first.flatMap { model.tree.child(of: start, uci: $0) }
+                    var open = false
+                    if let saved, let gaps = document.coverage[saved]?.gapCount { open = gaps > 0 }
+                    withAnimation {
+                        coverageChange = CoverageChange(before: before, after: .init(document.coverage.root),
+                                                        lineOpen: open)
                     }
                     ReviewPrompt.ask(requestReview)
                 } label: {
                     Label(model.draft.count == 1 ? "Save" : "Save \(model.draft.count)", systemImage: "checkmark")
                 }
                 .buttonStyle(.glassProminent)
-                .tourBarButton(.save, running: isSample)
-
             }
         } else {
             ToolbarItemGroup(placement: actions) {
-                Button("Biggest Gap", systemImage: "scope") {
-                    model.goToBiggestGap()
-                    if isSample {
-                        Tour.advance(from: .biggestGap, to: .answer)
-                    }
-                }
-                .disabled(document.coverage.root?.biggestGap == nil)
-                .tourBarButton(.biggestGap, running: isSample)
+                Button("Biggest Gap", systemImage: "scope", action: goToBiggestGap)
+                    .disabled(document.coverage.root?.biggestGap == nil)
 
-                Button("Study Branch", systemImage: "graduationcap") {
-                    // The tour's last step.
-                    if isSample { Tour.advance(from: .study, to: .studying) }
-                    studyBranch(model.current)
-                }
-                .disabled(document.learningProgress(under: model.current).cards == 0)
-                .tourBarButton(.studyBranch, running: isSample)
+                Button("Study Branch", systemImage: "graduationcap") { studyBranch(model.current) }
+                    .disabled(document.learningProgress(under: model.current).cards == 0)
 
                 if !split {
                     Button("Analysis", systemImage: "cpu") { presentation.analyze(model, open: openAnalysis) }
-                        .tourBarButton(nil, running: isSample)
                 }
             }
         }
         if !split {
             ToolbarItem(placement: .trailingBar) {
-                BuilderMoreMenu(model: model, presentation: presentation).tourBarButton(nil, running: isSample)
+                BuilderMoreMenu(model: model, presentation: presentation)
             }
         }
     }
@@ -301,25 +325,42 @@ struct BuilderBoard: View {
                   arrows: model.arrows, movableSide: model.position.sideToMove()) { from, to, promotion in
             model.play(from: from, to: to, promotion: promotion)
         }
-        .tourTarget(.board)
     }
 }
+
 
 /// Back and forward, in the bottom bar (on a phone, and under the board in the split view). Their
 /// keys (←/→) are in the menu bar's Move menu.
 struct BuilderNavigationButtons: View {
     let model: BuilderModel
-    /// On the sample: the tour locks them while a step asks for something else.
-    var tourRunning = false
 
     var body: some View {
         // Each button its own: the bar takes the buttons out of this view.
         Button("Back", systemImage: "chevron.backward") { model.back() }
             .disabled(!model.canBack)
-            .tourBarButton(nil, running: tourRunning)
         Button("Forward", systemImage: "chevron.forward") { model.forward() }
             .disabled(!model.canForward)
-            .tourBarButton(nil, running: tourRunning)
+    }
+}
+
+extension View {
+    /// A Browse tip: on a phone a popover from what it explains, over the board above; in the
+    /// split view nothing here, the panel lists its tips under its rows (`BuilderView.panelTips`).
+    func builderTip(_ tip: some Tip) -> some View {
+        modifier(BuilderTip(tip: tip))
+    }
+}
+
+private struct BuilderTip<T: Tip>: ViewModifier {
+    @Environment(\.inSplitView) private var inSplitView
+    let tip: T
+
+    func body(content: Content) -> some View {
+        if inSplitView {
+            content
+        } else {
+            content.popoverTip(tip, arrowEdge: .bottom)
+        }
     }
 }
 
@@ -533,14 +574,22 @@ struct NodeHeader: View {
             }
             CoverageCheckStatus(document: document)
             HStack(spacing: 12) {
-                progress("Built", value: info?.completion ?? 0)
+                // The whole repertoire's, as on the overview: the number a save raises. A
+                // branch's own share read as the repertoire's (100% deep in a line).
+                progress("Built", value: document.coverage.root?.completion ?? 0)
                 Spacer(minLength: 0)
+                // What lies below this move; at the start, the whole repertoire.
                 HStack(spacing: 0) {
                     if let gaps = info?.gapCount, gaps > 0 {
                         Text("\(gaps.formatted()) \(gaps == 1 ? "gap" : "gaps")").foregroundStyle(.todo)
+                            // What the count means and how to get there (⌖); over the board.
+                            .builderTip(BiggestGapTip())
                         Text(" · ").foregroundStyle(.secondary)
                     }
                     Text("\(saved.formatted()) \(saved == 1 ? "move" : "moves")").foregroundStyle(.secondary)
+                    if node.id != RepertoireTree.rootID {
+                        Text(" below").foregroundStyle(.secondary)
+                    }
                 }
                 .font(.caption2.monospacedDigit())
             }
@@ -564,7 +613,9 @@ struct NodeHeader: View {
             Text(title).font(.caption2).foregroundStyle(.secondary)
             CoverageBar(value: value)
             Text(Format.percent(value)).font(.caption2.monospacedDigit())
+                .contentTransition(.numericText(value: value))
         }
+        .animation(.default, value: value)
     }
 
     @ViewBuilder
@@ -572,6 +623,7 @@ struct NodeHeader: View {
         switch info?.status {
         case .gap:
             Text("Your move is missing").font(.caption).statusBadge(tint: .todo)
+                .builderTip(AnswerTip())
         case .pending:
             Text("Stats not loaded yet").font(.caption).statusBadge()
         case .belowTarget:
@@ -603,14 +655,14 @@ struct RepliesPanel: View {
         Group {
             HStack {
                 Text("Replies").font(.headline)
-                    // The tour's replies step shows the heading row with the replies.
                 Spacer()
                 Text("Seen").font(.caption).foregroundStyle(.secondary).frame(width: 74, alignment: .trailing)
                 Text("Covered").font(.caption).foregroundStyle(.secondary).frame(width: 64, alignment: .trailing)
+                    // In a new line that still needs answers, where covering a reply is the step.
+                    .builderTip(RepliesTip())
                 Text("Games").font(.caption).foregroundStyle(.secondary).frame(width: 40, alignment: .trailing)
             }
             .padding(.top, 8)
-            .tourTarget(.replies, part: -1)
             .builderRow(separator: false)
             if let replies, !replies.isEmpty {
                 // Replies in the repertoire, needed or excluded first, then the ones not needed;
@@ -618,12 +670,8 @@ struct RepliesPanel: View {
                 let matters = { (r: ReplyInfo) in r.child != nil || r.transposesTo != nil || r.required || r.excluded }
                 let ordered = replies.filter(matters).sorted { $0.share > $1.share }
                     + replies.filter { !matters($0) }.sorted { $0.share > $1.share }
-                // The tour asks for a reply that needs an answer: the first few of those (they
-                // come first), so the highlight ends above the bottom bar.
-                let needed = min(4, ordered.prefix { $0.required && !$0.excluded }.count)
-                ForEach(Array(ordered.enumerated()), id: \.element.uci) { index, reply in
+                ForEach(ordered, id: \.uci) { reply in
                     ReplyRow(reply: reply, node: saved?.id, model: model, eval: eval?.text(for: reply.uci))
-                        .tourTarget(.replies, part: index < max(needed, 1) ? index : nil)
                         .builderRow()
                 }
             } else {
@@ -781,8 +829,6 @@ struct CandidatesSection: View {
         let collapsed = !saved.isEmpty && !showOthers
         let loading = stats == nil && app.isLoadingStats
         Text(saved.isEmpty ? title : "Your Moves").font(.headline).padding(.top, 8)
-            // The tour's answer step shows the heading with the candidates under it.
-            .tourTarget(.candidates, part: -1)
             .builderRow(separator: false)
             .task(id: epd) {
                 showOthers = false
@@ -803,13 +849,8 @@ struct CandidatesSection: View {
                 Text(title).font(.headline).padding(.top, 8)
                     .builderRow(separator: false)
             }
-            let tourRows = tourRows(otherRows.map(\.uci))
-            ForEach(Array(otherRows.enumerated()), id: \.element.uci) { index, move in
+            ForEach(otherRows, id: \.uci) { move in
                 row(uci: move.uci, san: move.san, move: move, total: stats?.total ?? 0)
-                    // The tour's answer step points at the candidates: the first few, so the
-                    // highlight ends above the bottom bar. Inside the row's own modifiers:
-                    // after them, the List sizes the row as a new one.
-                    .tourTarget(.candidates, part: index < tourRows ? index : nil)
                     .builderRow()
             }
             if loading {
@@ -827,18 +868,6 @@ struct CandidatesSection: View {
                     .builderRow(separator: false)
             }
         }
-    }
-
-    /// How many of the first candidates the tour's answer step offers: up to four, and on the
-    /// sample only those whose replies have stats (from the coverage table, so offline too),
-    /// so the line can go on until coverage is reached instead of stopping at no replies.
-    private func tourRows(_ moves: [String]) -> Int {
-        guard Tour.current == .answer, RepertoireLibrary.isSample(model.document.pgnURL) else { return 4 }
-        let position = model.position
-        let known = moves.prefix(4).prefix { uci in
-            position.playUci(uci: uci).map { model.document.stats($0.position.epd()) != nil } ?? false
-        }.count
-        return max(known, 1)
     }
 
     private var savedChildren: [PlayedMove] {
@@ -1077,8 +1106,13 @@ struct DraftPanel: View {
                     Text("Transposed").font(.caption).statusBadge(tint: .built)
                 } else if reached {
                     Text("Coverage target reached").font(.caption).statusBadge(tint: .built)
+                        // What the badge means. Over the board.
+                        .builderTip(SaveTip())
                 } else {
                     Text("New line, not saved").font(.caption).statusBadge()
+                        // Your move in a new line (Biggest Gap's reply played): the gap's tip,
+                        // over the board (its rule keeps it to your move).
+                        .builderTip(AnswerTip())
                 }
                 if let reach = model.reachOnBoard {
                     Text(Format.seenGames(reach)).font(.caption).foregroundStyle(.secondary)

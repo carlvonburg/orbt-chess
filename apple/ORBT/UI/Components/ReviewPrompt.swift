@@ -3,7 +3,7 @@ import StoreKit
 import SwiftUI
 
 /// Asks for a rating once the user has studied on three different days: after saving in Browse,
-/// or at the end of a line in Study. Once per app version and never during the tour; the system
+/// or at the end of a line in Study. Once per app version; the system
 /// decides whether its prompt shows (at most three times a year). Settings links to the review
 /// page at any time.
 enum ReviewPrompt {
@@ -27,8 +27,6 @@ enum ReviewPrompt {
     static var isDue: Bool {
         days.count >= daysNeeded
             && UserDefaults.standard.string(forKey: askedVersionKey) != version
-            // Offered and never started (`ready`) is not in the tour.
-            && [.off, .ready].contains(Tour.current)
     }
 
     /// Asks for a rating when it is due.

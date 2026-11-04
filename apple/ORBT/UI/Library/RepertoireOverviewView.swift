@@ -1,5 +1,6 @@
 import OpeningCoreRust
 import SwiftUI
+import TipKit
 
 /// Anki's deck overview for one repertoire: coverage and study progress and what is due
 /// today, each section ending with its action (Browse / Edit, Study): the same buttons, the
@@ -25,9 +26,7 @@ struct RepertoireOverviewView: View {
             coverageSection(stats)
             studySection(stats)
         }
-        .tourScreen(running: isSample)
         .checksCoverage(document)
-        .onAppear { if isSample { Tour.advance(from: .ready, to: .browse) } }
         .navigationTitle(document.name)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -48,8 +47,6 @@ struct RepertoireOverviewView: View {
         }
     }
 
-    private var isSample: Bool { RepertoireLibrary.isSample(document.pgnURL) }
-
     // MARK: Coverage
 
     private func coverageSection(_ stats: EntryStats) -> some View {
@@ -68,8 +65,14 @@ struct RepertoireOverviewView: View {
                 CoverageCheckStatus(document: document)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
-            Button("Browse / Edit", action: editLines).actionButton(prominent: buildFirst(stats))
-                .tourTarget(.browseButton)
+            Button("Browse / Edit") {
+                if stats.gaps > 0 { GapsTip().invalidate(reason: .actionPerformed) }
+                editLines()
+            }
+            .actionButton(prominent: buildFirst(stats))
+            // Below the button, so the gaps it explains stay in view.
+            .popoverTip(GapsTip(), arrowEdge: .top)
+            .onChange(of: stats.gaps > 0, initial: true) { _, has in GapsTip.hasGaps = has }
         } header: {
             Text("Coverage")
         }

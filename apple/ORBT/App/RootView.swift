@@ -6,8 +6,6 @@ struct RootView: View {
 
     var body: some View {
         content
-            // The tour's spotlight, over the whole window: bars included.
-            .overlay { TourSpotlight() }
     }
 
     @ViewBuilder

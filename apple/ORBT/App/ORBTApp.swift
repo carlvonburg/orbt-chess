@@ -6,6 +6,10 @@ import UIKit
 @main
 struct ORBTApp: App {
     @State private var model = AppModel()
+
+    init() {
+        AppTips.configure()
+    }
     @Environment(\.scenePhase) private var scenePhase
     #if os(macOS)
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate

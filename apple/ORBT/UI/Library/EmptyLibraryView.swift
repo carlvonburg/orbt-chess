@@ -2,11 +2,11 @@ import OpeningCoreRust
 import SwiftUI
 
 /// The repertoire list with no repertoire: start one by choosing a side (the setup flow opens
-/// with it), import a PGN, or take the tour on the sample.
+/// with it), import a PGN, or try the sample.
 struct EmptyLibraryView: View {
     let newRepertoire: (Side) -> Void
     let importPGN: () -> Void
-    let takeTour: () -> Void
+    let trySample: () -> Void
 
     var body: some View {
         ContentUnavailableView {
@@ -27,7 +27,7 @@ struct EmptyLibraryView: View {
             }
             .frame(width: 280)
             Button("Import a PGN…", action: importPGN)
-            Button("Take the Tour with a Sample", systemImage: "point.topleft.down.to.point.bottomright.curvepath", action: takeTour)
+            Button("Try a Sample Repertoire", systemImage: "book.pages", action: trySample)
                 .font(.footnote)
                 .padding(.top, 8)
         }

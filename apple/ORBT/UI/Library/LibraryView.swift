@@ -72,10 +72,8 @@ struct LibraryView: View {
     /// app menu (the `Settings` scene).
     @State private var showSettings = false
     @State private var today = LibraryTodayModel()
-    /// The tour's step and progress (`Tour`): while it runs, its section takes Today's place.
-    @AppStorage(Tour.stepKey) private var tourStep = Tour.Step.off.rawValue
-    /// Whether this device's first launch has offered the sample (`Tour.wasOffered`).
-    @AppStorage(Tour.offeredKey) private var sampleOffered = false
+    /// Whether this device's first launch has added the sample, or found repertoires already.
+    @AppStorage(RepertoireLibrary.sampleOfferedKey) private var sampleOffered = false
 
     var body: some View {
         Group {
@@ -111,18 +109,6 @@ struct LibraryView: View {
                 path.removeSubrange(first...)
             }
             if case .repertoire(let id) = selection, removed.contains(id) { selection = .today }
-        }
-        // The tour's last step, from Study's end: back to the library, at New Repertoire.
-        .onChange(of: tourStep) { _, step in
-            // Started (Settings › Show Tour): its card is in Today's place, so show Today.
-            if step == Tour.Step.ready.rawValue, usesSplit {
-                path = []
-                selection = .today
-            }
-            guard step == Tour.Step.finish.rawValue else { return }
-            path = []
-            if usesSplit { selection = .today }
-            createOwnRepertoire()
         }
         .sheet(isPresented: $showSettings) {
             SettingsView().presentationSizing(.form)
@@ -264,13 +250,12 @@ struct LibraryView: View {
         }
     }
 
-    /// Today in the middle column: the card with Study All, then each repertoire's due moves;
-    /// while the tour runs, its card instead.
+    /// Today in the middle column: the card with Study All, then each repertoire's due moves.
     private var todayColumn: some View {
         let stats = entryStats
         return List {
             Group {
-                if tourRunning { tourSection } else { Section { todayRows(stats) } }
+                Section { todayRows(stats) }
             }
             // The column's plain list draws one under the last button too.
             .listSectionSeparator(.hidden, edges: .bottom)
@@ -461,7 +446,7 @@ struct LibraryView: View {
         } else if library.entries.isEmpty {
             EmptyLibraryView(newRepertoire: { setup = SetupRequest(mode: .new(side: $0)) },
                              importPGN: { showImport = true },
-                             takeTour: startTour)
+                             trySample: addSample)
         } else {
             let stats = entryStats
             Group {
@@ -473,7 +458,7 @@ struct LibraryView: View {
             }
             .refreshable { await library.refresh() }
             // Repertoires from the start: no sample later, even if they are all deleted.
-            .task { if !Tour.wasOffered { Tour.markOffered() } }
+            .task { if !sampleOffered { sampleOffered = true } }
             .task(id: TodayKey(entries: library.entries.count, answered: stats.values.reduce(0) { $0 + $1.counts.total })) {
                 await today.load(model)
             }
@@ -483,13 +468,10 @@ struct LibraryView: View {
     @ViewBuilder
     private func rows(_ stats: [String: EntryStats]) -> some View {
         if usesSplit {
-            // Today's card (or the tour's) is in the middle column when this row is selected.
+            // Today's card is in the middle column when this row is selected.
             Label("Today", systemImage: "calendar")
                 .badge(Int(stats.values.reduce(0) { $0 + $1.counts.total }))
                 .tag(SidebarItem.today)
-        } else if tourRunning {
-            // Studying moves you haven't built yet isn't the next step.
-            tourSection
         } else {
             Section("Today") { todayRows(stats) }
         }
@@ -513,88 +495,28 @@ struct LibraryView: View {
         }
     }
 
-    /// The tour, from Start Tour to its end (Today's place in the library).
-    private var tourRunning: Bool {
-        tourStep != Tour.Step.off.rawValue
-            && model.library.entries.contains { RepertoireLibrary.isSample($0.pgnURL) }
-    }
-
-    /// The tour in Today's place, drawn like Today's card: what it is, how far it got, or, once
-    /// the sample's gap is studied, the user's own repertoire; its one main action first.
-    private var tourSection: some View {
-        let step = Tour.Step(rawValue: tourStep) ?? .off
-        let yourTurn = step == .studying || step == .finish
-        let (title, detail): (String, String) = switch step {
-        case .ready: ("Learn by Filling a Gap",
-                      "Answer a common reply in a sample 1.e4 repertoire, then study it. About two minutes.")
-        case .studying, .finish: ("Your Turn",
-                                  "Now build a repertoire for the opening you play. The sample stays here to try things on.")
-        default: ("Tour in Progress", "Pick up where you left off in the sample.")
-        }
-        // Today's card's layout: the text, then its buttons, one filled (the main action).
-        // Headed like Today's section on a phone; under the column's title in the split view.
-        return Section {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(title).font(.headline)
-                Text(detail).font(.footnote).foregroundStyle(.secondary)
-            }
-            if yourTurn {
-                Button("Create Your Repertoire", action: createOwnRepertoire)
-                    .actionButton(prominent: true)
-                Button("Not Now") { Tour.skip() }
-                    .actionButton(prominent: false)
-            } else {
-                Button(step == .ready ? "Start Tour" : "Continue Tour", action: continueTour)
-                    .actionButton(prominent: true)
-                SkipTourButton().actionButton(prominent: false)
-            }
-        } header: {
-            if !usesSplit { Text("Tour") }
-        }
-        // Open, so its row shows its moves and gaps (an unopened new sidecar has none yet).
-        .task {
-            if let sample = model.library.entries.first(where: { RepertoireLibrary.isSample($0.pgnURL) }) {
-                _ = await model.open(sample)
-            }
-        }
-    }
-
-    /// The tour's end: New Repertoire, for the user's own.
-    private func createOwnRepertoire() {
-        Tour.skip()
-        setup = SetupRequest(mode: .new(side: nil))
-    }
-
-    /// The sample's overview, or its Browse once the tour got there.
-    private func continueTour() {
-        guard let sample = model.library.entries.first(where: { RepertoireLibrary.isSample($0.pgnURL) }) else { return }
-        show(sample.id, then: tourStep >= Tour.Step.biggestGap.rawValue ? [.builder(sample.id)] : [])
-    }
-
-    /// Adds the sample and offers the tour on it.
-    private func startTour() {
-        // The tour first: the sample's row shows its first tip, made with this run's id.
-        Tour.start()
+    /// Adds the sample (again, if it was deleted), opened so its row and Today show its moves and
+    /// gaps from the start.
+    private func addSample() {
         do {
             let sample = try model.library.addSample()
-            // Opened now, so its row and Today show its moves and gaps from the start.
             Task { _ = await model.open(sample) }
         } catch {
-            Tour.skip()
             errorMessage = error.localizedDescription
         }
     }
 
-    /// The first launch on this device starts with the sample and its tour. With iCloud the
+    /// The first launch on this device starts with the sample, to try things on. With iCloud the
     /// folder is given a moment first: on a new device the repertoires may still be arriving.
     private func offerSample() async {
-        guard !Tour.wasOffered else { return }
+        guard !sampleOffered else { return }
         if model.library.usesICloud {
             try? await Task.sleep(for: .seconds(3))
             await model.library.refresh()
         }
-        guard !Tour.wasOffered else { return }
-        if model.library.entries.isEmpty { startTour() } else { Tour.markOffered() }
+        guard !sampleOffered else { return }
+        if model.library.entries.isEmpty { addSample() }
+        sampleOffered = true
     }
 
     /// Repertoires with moves due today, in list order.

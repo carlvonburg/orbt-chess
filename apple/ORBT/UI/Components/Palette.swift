@@ -212,15 +212,3 @@ nonisolated struct BoardTheme {
     /// The engine's lines: quiet, there are often three of them.
     let engine = Color(.sRGB, red: 0x2C / 255, green: 0x2C / 255, blue: 0x2E / 255)
 }
-
-extension ShapeStyle where Self == Color {
-    /// A card over dimmed content (the tour's): the grouped list's cell background, white in
-    /// light mode and elevated gray in dark, opaque so the dimming doesn't gray it.
-    static var cardBackground: Color {
-        #if os(iOS)
-        Color(uiColor: .secondarySystemGroupedBackground)
-        #else
-        Color(nsColor: .controlBackgroundColor)
-        #endif
-    }
-}

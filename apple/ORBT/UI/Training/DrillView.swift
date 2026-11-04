@@ -1,5 +1,6 @@
 import OpeningCoreRust
 import SwiftUI
+import TipKit
 
 extension DrillMode {
     var title: String {
@@ -258,11 +259,12 @@ struct DrillView: View {
     }
 
     @State private var analysis: AnalysisModel?
-    /// The tour's Study step: on the sample, with its card (it doesn't block).
-    private var inTour: Bool {
-        TourGuide.shared.step == .studying && RepertoireLibrary.isSample(model.document.pgnURL)
+    /// One tip at a time, the first whose rules hold.
+    @State private var studyTips = TipGroup(.firstAvailable) {
+        StudyCountsTip()
+        NewMoveTip()
+        HintTip()
     }
-
     /// The next repertoire when studying all of them: its name and how to go on.
     private let next: (name: String, start: () -> Void)?
 
@@ -283,8 +285,14 @@ struct DrillView: View {
             }
             .onChange(of: voiceOver) { model.autoAdvance = !voiceOver }
             .onChange(of: model.answeredCount) { ReviewPrompt.studied() }
+            .onChange(of: studyTipState, initial: true) { old, new in
+                StudyTips.update(userTurn: new.userTurn, newMove: new.newMove, recall: new.recall)
+                // The new move played (its tip's action).
+                if old.newMove && !new.newMove { NewMoveTip().invalidate(reason: .actionPerformed) }
+            }
             // At a line's end, which then waits for Next rather than starting under the prompt.
             .onChange(of: model.phase) {
+                if model.phase == .lineDone { StudyCountsTip().invalidate(reason: .actionPerformed) }
                 guard model.phase == .lineDone, ReviewPrompt.isDue else { return }
                 model.pause()
                 ReviewPrompt.ask(requestReview)
@@ -299,7 +307,7 @@ struct DrillView: View {
     private var content: some View {
         Group {
             if model.finished {
-                StudyFinishedView(model: model, next: next, tourEnd: inTour)
+                StudyFinishedView(model: model, next: next)
                     .padding(.vertical)
             } else if inSplitView {
                 // The board is in the board column: the counts, with what each means, and
@@ -311,7 +319,7 @@ struct DrillView: View {
                             openingName
                             status
                         }
-                        if inTour { TourStudyCard() }
+                        studyTip
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -332,12 +340,10 @@ struct DrillView: View {
                             StudyCountsView(counts: model.counts, highlight: model.askedKind)
                                 .font(.headline.monospacedDigit())
                         }
+                        studyTip.padding(.top, 8)
                     }
                     .frame(maxWidth: 680, alignment: .leading)
                     .padding(.horizontal)
-                    if inTour {
-                        TourStudyCard().frame(maxWidth: 680).padding(.horizontal)
-                    }
                     Spacer(minLength: 0)
                 }
                 // The board under the bar, as in the builder.
@@ -353,7 +359,10 @@ struct DrillView: View {
                 let actions: ToolbarItemPlacement = split ? .trailingBar : .bottomActions
                 // Disabled at a line's end (no move to ask about), in its place.
                 ToolbarItem(placement: actions) {
-                    Button("Hint", systemImage: "lightbulb") { model.hint() }
+                    Button("Hint", systemImage: "lightbulb") {
+                        HintTip().invalidate(reason: .actionPerformed)
+                        model.hint()
+                    }
                         .disabled(!model.canMove)
                 }
                 if !split {
@@ -410,6 +419,23 @@ struct DrillView: View {
         if let name = model.openingName {
             Text(name).font(.subheadline.weight(.semibold)).lineLimit(2)
         }
+    }
+
+    /// Study's tips (`StudyTips`), in the room under the status.
+    private var studyTip: some View {
+        TipView(studyTips.currentTip)
+    }
+
+    private struct StudyTipState: Equatable {
+        var userTurn = false, newMove = false, recall = false
+    }
+
+    private var studyTipState: StudyTipState {
+        let asked = model.isUserTurn && model.phase != .lineDone
+        var newMove = false
+        if case .newMove = model.feedback { newMove = true }
+        let recall = asked && !newMove && model.feedback == .none && model.askedKind.map { $0 != .new } == true
+        return StudyTipState(userTurn: asked, newMove: newMove, recall: recall)
     }
 
     /// What to do now, or how the last move went.
@@ -619,21 +645,4 @@ struct StudyCountsList: View {
 
 extension String {
     var nilIfEmpty: String? { isEmpty ? nil : self }
-}
-
-/// The tour's card in Study: what to do, without blocking the board.
-private struct TourStudyCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(Tour.Step.studying.title).font(.headline)
-            Text(Tour.Step.studying.message).font(.subheadline).foregroundStyle(.secondary)
-            HStack {
-                Spacer()
-                SkipTourButton().font(.subheadline)
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
-    }
 }
