@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -25,8 +24,6 @@ import androidx.compose.material.icons.automirrored.outlined.AltRoute
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material.icons.outlined.SportsScore
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -46,6 +43,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
@@ -62,8 +60,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
-import org.orbtchess.orbt.ui.tour.TourGuide
-import org.orbtchess.orbt.ui.tour.TourStudyCard
+import org.orbtchess.orbt.ui.tips.CountShown
+import org.orbtchess.orbt.ui.tips.LocalTips
+import org.orbtchess.orbt.ui.tips.Tip
+import org.orbtchess.orbt.ui.tips.TipCard
 import org.orbtchess.orbt.core.Counts
 import org.orbtchess.orbt.core.Feedback
 import org.orbtchess.orbt.core.Phase
@@ -134,6 +134,8 @@ fun DrillScreen(
         Haptics(model)
         ReviewEffects(app, model)
     }
+    // Where the tip is shown: the phone's screen, or the panel beside the board.
+    if (pane != BoardPane.Detail) StudyTipEffects(app, model)
 
     val actions = DrillActions(model, navigate)
     when (pane) {
@@ -227,7 +229,7 @@ private fun PhoneLayout(
 ) {
     if (model.finished) {
         Scaffold(modifier, topBar = { DrillTopBar(model, onBack) }) { padding ->
-            StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding), tourEnd = inTour(app, model))
+            StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding))
         }
         return
     }
@@ -257,7 +259,7 @@ private fun PhoneLayout(
                     StudyCounts(model.counts, model.askedKind)
                 }
             }
-            if (inTour(app, model)) TourStudyCard(Modifier.widthIn(max = 680.dp).padding(horizontal = 16.dp))
+            TipCard(studyTip(app, model), Modifier.widthIn(max = 680.dp).padding(horizontal = 16.dp))
         }
     }
 }
@@ -275,7 +277,7 @@ private fun PanelLayout(
 ) {
     Scaffold(modifier, topBar = { DrillTopBar(model, onBack, actions) }) { padding ->
         if (model.finished) {
-            StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding), tourEnd = inTour(app, model))
+            StudyFinishedScreen(app, model, next, navigate, onDone = { onBack?.invoke() }, Modifier.padding(padding))
         } else {
             Column(
                 Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()),
@@ -286,15 +288,37 @@ private fun PanelLayout(
                     OpeningName(model)
                     Status(model)
                 }
-                if (inTour(app, model)) TourStudyCard(Modifier.padding(horizontal = 16.dp))
+                TipCard(studyTip(app, model), Modifier.padding(horizontal = 16.dp))
             }
         }
     }
 }
 
-/** The tour's Study step: on the sample, with its card (it doesn't block). */
-private fun inTour(app: AppModel, model: DrillModel): Boolean =
-    app.tour.step == TourGuide.Step.Studying && TourGuide.isSample(model.document.pgnFile)
+/**
+ * Study's tip (`StudyTips` in AppTips.swift), inline under the status (the room under the board:
+ * nothing covered or blocked): while your move is asked, what the counts mean; a new move, how it
+ * comes back; a learned move, Hint.
+ */
+private fun studyTip(app: AppModel, model: DrillModel): Tip? {
+    val asked = model.isUserTurn && model.phase != Phase.LINE_DONE
+    val newMove = model.feedback is Feedback.NewMove
+    val recall = asked && !newMove && model.feedback is Feedback.None && model.askedKind.let { it != null && it != QueueKind.NEW }
+    return app.tips.first(Tip.StudyCounts to asked, Tip.NewMove to newMove, Tip.Hint to recall)
+}
+
+/** The tips' actions: the new move played, a line finished; and the tip on screen counted as shown. */
+@Composable
+private fun StudyTipEffects(app: AppModel, model: DrillModel) {
+    CountShown(if (model.finished) null else studyTip(app, model))
+    val newMove = model.feedback is Feedback.NewMove
+    var wasNewMove by remember { mutableStateOf(newMove) }
+    LaunchedEffect(newMove) {
+        if (wasNewMove && !newMove) app.tips.invalidate(Tip.NewMove)
+        wasNewMove = newMove
+    }
+    val phase = model.phase
+    LaunchedEffect(phase) { if (phase == Phase.LINE_DONE) app.tips.invalidate(Tip.StudyCounts) }
+}
 
 /** The detail pane: the board, and the floating toolbar with the moves played while a session runs. */
 @Composable
@@ -340,7 +364,11 @@ private fun waitsForNext(model: DrillModel): Boolean = model.phase == Phase.LINE
 
 @Composable
 private fun HintButton(model: DrillModel, above: Boolean) {
-    TooltipIconButton("Hint", Symbols.hint, model::hint, enabled = model.canMove, above = above)
+    val tips = LocalTips.current
+    TooltipIconButton("Hint", Symbols.hint, {
+        tips?.invalidate(Tip.Hint)
+        model.hint()
+    }, enabled = model.canMove, above = above)
 }
 
 @Composable

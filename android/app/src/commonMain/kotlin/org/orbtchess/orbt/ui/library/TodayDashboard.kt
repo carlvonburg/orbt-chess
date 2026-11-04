@@ -20,11 +20,11 @@ import org.orbtchess.orbt.ui.statistics.SurfaceCard
 
 /**
  * Today on wide windows (the Today column in LibraryView.swift): the detail pane while the
- * library's Today row is selected. Today's card across the page (the tour's while it runs), then
+ * library's Today row is selected. Today's card across the page, then
  * every repertoire's statistics. On a phone Today is the library's first section instead.
  *
- * @param navigate [Destination.StudyAll], [Destination.Drill], [Destination.Builder], the tour's
- *   destinations, and the statistics' ([Destination.CardInfo]).
+ * @param navigate [Destination.StudyAll], [Destination.Drill], [Destination.Builder], and the
+ *   statistics' ([Destination.CardInfo]).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,10 +39,7 @@ fun TodayDashboard(app: AppModel, navigate: (Destination) -> Unit, modifier: Mod
     ) { padding ->
         StatisticsDashboard(app, StatisticsScope.All, navigate, Modifier.padding(padding)) { columns ->
             SurfaceCard {
-                // While the tour runs, its card instead.
-                val inset = Modifier.padding(vertical = 8.dp)
-                val wide = columns > 1
-                if (tourRunning(app)) TourSection(app, navigate, inset, wide) else TodayCard(app, navigate, inset, wide)
+                TodayCard(app, navigate, Modifier.padding(vertical = 8.dp), wide = columns > 1)
             }
         }
     }

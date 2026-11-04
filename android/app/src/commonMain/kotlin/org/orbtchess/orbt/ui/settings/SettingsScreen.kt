@@ -69,7 +69,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.NewMoveOrder
@@ -92,7 +91,6 @@ import org.orbtchess.orbt.ui.components.NumberField
 import org.orbtchess.orbt.ui.components.WideRow
 import org.orbtchess.orbt.ui.components.Symbols
 import org.orbtchess.orbt.ui.components.tabularDigits
-import org.orbtchess.orbt.ui.library.startTour
 import org.orbtchess.orbt.ui.overview.detail
 import org.orbtchess.orbt.ui.theme.AppColor
 import org.orbtchess.orbt.ui.theme.LocalAppColorSetting
@@ -148,10 +146,7 @@ fun SettingsScreen(
             Section("Appearance", footer = "Buttons, selection and the board.") { AppColorRow() }
             EngineSettingsSection(app)
             DataSection(app)
-            TourSection(app, onShown = {
-                onBack()
-                navigate(Destination.Library)
-            })
+            TipsSection(app)
             SupportSection(app)
             Section(null) {
                 ListItem(
@@ -165,28 +160,19 @@ fun SettingsScreen(
 
 // MARK: Sections
 
-/** Show Tour: adds the sample again if it was deleted, and offers the tour in the library. */
+/** Show Tips Again: every tip shows again where it applies (`AppTips.showAgain`). */
 @Composable
-private fun TourSection(app: AppModel, onShown: () -> Unit) {
-    val scope = rememberCoroutineScope()
-    var error by remember { mutableStateOf<String?>(null) }
-    Section(null, footer = "Fills the gaps of a sample repertoire, adding it again if you deleted it.") {
+private fun TipsSection(app: AppModel) {
+    var shown by remember { mutableStateOf(false) }
+    Section(null, footer = "Tips explain gaps and coverage the first time you meet them.") {
         ListItem(
             onClick = {
-                scope.launch {
-                    try {
-                        startTour(app)
-                        onShown()
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        error = e.message ?: e.toString()
-                    }
-                }
+                app.tips.showAgain()
+                shown = true
             },
-            leadingContent = { Icon(Symbols.tour, contentDescription = null) },
-            supportingContent = error?.let { { Text(it, color = ThemeColor.failure.color) } },
-        ) { Text("Show Tour") }
+            enabled = !shown,
+            leadingContent = { Icon(Symbols.tips, contentDescription = null) },
+        ) { Text("Show Tips Again") }
     }
 }
 

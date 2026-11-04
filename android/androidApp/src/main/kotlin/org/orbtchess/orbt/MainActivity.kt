@@ -1,5 +1,6 @@
 package org.orbtchess.orbt
 
+import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -20,6 +21,15 @@ class MainActivity : ComponentActivity() {
         // guide asks of apps with a bottom bar.
         enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
+        // Phones in portrait only, as on iPhone; tablets and unfolded foldables turn freely
+        // (Android's "restrict orientation on phones but not on large screens"). A phone is a
+        // screen less than 600 dp across its shorter side, Material's compact width; folding or
+        // unfolding recreates the activity, which decides again.
+        requestedOrientation = if (resources.configuration.smallestScreenWidthDp < 600) {
+            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        } else {
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
         super.onCreate(savedInstanceState)
         setContent { App(model) }
     }

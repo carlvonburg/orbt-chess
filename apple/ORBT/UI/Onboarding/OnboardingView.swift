@@ -20,39 +20,16 @@ struct OnboardingView: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 28) {
-                ProductShot()
-                VStack(spacing: 8) {
-                    Text("ORBT CHESS")
-                        .font(.caption.weight(.semibold))
-                        .tracking(1.5)
-                        .foregroundStyle(.tint)
-                    Text("Your Openings,\nWithout the Gaps")
-                        .font(.largeTitle.bold())
-                    Text("Build from what opponents really play. Remember it with spaced repetition.")
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 2)
-                }
-                .multilineTextAlignment(.center)
-                .scenePadding(.horizontal)
-                .frame(maxWidth: 480)
+        GeometryReader { proxy in
+            let size = proxy.size
+            // A wide, short window (iPad in landscape, the Mac): the shot beside the text and the
+            // ways in, as a landscape App Store screenshot; else one column.
+            if size.width > size.height && size.width >= 600 {
+                sideBySide(size)
+            } else {
+                column(size)
             }
-            .padding(.top, 24)
-            .frame(maxWidth: .infinity)
         }
-        .scrollBounceBehavior(.basedOnSize)
-        // The glow of the app color behind the shot, to the top edge; the backdrop, so it
-        // stays put while the rest scrolls at large text sizes.
-        .background(alignment: .top) {
-            Rectangle()
-                .fill(.tint.opacity(0.55))
-                .mask(RadialGradient(colors: [.black, .clear], center: .top, startRadius: 0, endRadius: 460))
-                .frame(height: 520)
-                .ignoresSafeArea()
-                .accessibilityHidden(true)
-        }
-        .safeAreaBar(edge: .bottom) { actions }
         // The setup sheet's keyboard is the window's: without this the screen behind the sheet
         // lays out again while it comes and goes. Nothing here takes text.
         .ignoresSafeArea(.keyboard)
@@ -68,6 +45,75 @@ struct OnboardingView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+    }
+
+    /// One column: the shot, then the text, scrolling over the glow; the ways in in the bottom
+    /// bar. The shot gets smaller where the window is narrow or short, so the text stays in view,
+    /// and larger on a big screen (up to 1.4×).
+    private func column(_ size: CGSize) -> some View {
+        ScrollView {
+            VStack(spacing: 28) {
+                ProductShot(scale: ProductShot.fit(width: size.width - 16, height: size.height - 440, largest: 1.4))
+                headline
+            }
+            .padding(.vertical, 24)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        // Centered in the room above the bar when it fits (a tall iPad), not at its top.
+        .defaultScrollAnchor(.center, for: .alignment)
+        // The glow of the app color behind the shot, to the top edge; the backdrop, so it
+        // stays put while the rest scrolls at large text sizes.
+        .background(alignment: .top) { glow }
+        .safeAreaBar(edge: .bottom) { actions }
+    }
+
+    /// Side by side: the shot in the leading half (larger on a big screen, where it has half the
+    /// window to itself), the text and the ways in centered in the trailing half.
+    private func sideBySide(_ size: CGSize) -> some View {
+        HStack(spacing: 0) {
+            ProductShot(scale: ProductShot.fit(width: size.width / 2 - 32, height: size.height - 32, largest: 1.4))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(alignment: .top) { glow }
+            ScrollView {
+                VStack(spacing: 24) {
+                    headline
+                    actions
+                }
+                .frame(maxWidth: .infinity, minHeight: size.height)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// The app's name, its headline and what it does.
+    private var headline: some View {
+        VStack(spacing: 8) {
+            Text("ORBT CHESS")
+                .font(.caption.weight(.semibold))
+                .tracking(1.5)
+                .foregroundStyle(.tint)
+            Text("Your Openings,\nWithout the Gaps")
+                .font(.largeTitle.bold())
+            Text("Build from what opponents really play. Remember it with spaced repetition.")
+                .foregroundStyle(.secondary)
+                .padding(.top, 2)
+        }
+        .multilineTextAlignment(.center)
+        .scenePadding(.horizontal)
+        .frame(maxWidth: 480)
+    }
+
+    /// A glow of the app color from the top edge, behind the shot.
+    private var glow: some View {
+        Rectangle()
+            .fill(.tint.opacity(0.55))
+            .mask(RadialGradient(colors: [.black, .clear], center: .top, startRadius: 0, endRadius: 460))
+            // Its own width, not its container's: in half a window it would end in a straight edge.
+            .frame(width: 920, height: 520)
+            .ignoresSafeArea()
+            .accessibilityHidden(true)
     }
 
     /// The ways in, as the system's welcome screens stack them: the likely one prominent, the
@@ -179,9 +225,18 @@ struct OnboardingView: View {
 /// The app on show, as on the App Store: the Najdorf as Browse draws it for Black (White's most
 /// played reply, solid; one not prepared yet, dashed), tilted, with cards from the app floating
 /// around it: that reply as a gap, a correct answer in Study, today's moves. Fixed example
-/// numbers, so it looks the same offline on the first launch. A fixed size, centered.
+/// numbers, so it looks the same offline on the first launch. A fixed layout, scaled to fit.
 private struct ProductShot: View {
     @Environment(\.colorScheme) private var colorScheme
+    /// Drawn at its own size and scaled, in a frame of the scaled size (`fit`).
+    var scale: CGFloat = 1
+
+    static let size = CGSize(width: 380, height: 350)
+
+    /// The scale that fits `width` × `height`: at most `largest`, and never below 55%.
+    static func fit(width: CGFloat, height: CGFloat, largest: CGFloat = 1) -> CGFloat {
+        max(0.55, min(largest, width / size.width, height / size.height))
+    }
 
     var body: some View {
         ZStack {
@@ -223,7 +278,9 @@ private struct ProductShot: View {
             .floatingCard(colorScheme)
             .offset(x: 136, y: 60)
         }
-        .frame(width: 380, height: 350)
+        .frame(width: Self.size.width, height: Self.size.height)
+        .scaleEffect(scale)
+        .frame(width: Self.size.width * scale, height: Self.size.height * scale)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Example: a Najdorf position with a reply you haven't prepared, Bc4, met 1 in 67 games; a correct answer; 35 moves due today.")
     }

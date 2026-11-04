@@ -4,15 +4,13 @@ import org.orbtchess.orbt.core.SchedTiming
 import org.orbtchess.orbt.core.schedTiming
 import org.orbtchess.orbt.platform.Settings
 import org.orbtchess.orbt.platform.StoreReview
-import org.orbtchess.orbt.ui.tour.TourGuide
 
 /**
  * Asks for a rating once the user has studied on three different days (`ReviewPrompt` in
- * Swift): after saving in Browse, or at the end of a line in Study. Once per app version and
- * never during the tour; the store decides whether its prompt shows. Without a store (the
- * desktop) it never asks. Settings links to the store's page at any time.
+ * Swift): after saving in Browse, or at the end of a line in Study. Once per app version; the
+ * store decides whether its prompt shows. Without a store (the desktop) it never asks. Settings links to the store's page at any time.
  */
-class ReviewPrompt(private val settings: Settings, private val store: StoreReview?, private val tour: TourGuide) {
+class ReviewPrompt(private val settings: Settings, private val store: StoreReview?) {
     private val days: List<Long>
         get() = settings.getString(DAYS_KEY)?.split(',')?.mapNotNull { it.toLongOrNull() } ?: emptyList()
 
@@ -27,9 +25,7 @@ class ReviewPrompt(private val settings: Settings, private val store: StoreRevie
     val isDue: Boolean
         get() = store != null &&
             days.size >= DAYS_NEEDED &&
-            settings.getString(ASKED_VERSION_KEY) != store.version &&
-            // Offered and never started (Ready) is not in the tour.
-            tour.step in listOf(TourGuide.Step.Off, TourGuide.Step.Ready)
+            settings.getString(ASKED_VERSION_KEY) != store.version
 
     /** Asks for a rating when it is due. */
     fun ask() {

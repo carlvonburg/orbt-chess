@@ -28,6 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
@@ -90,7 +91,8 @@ import org.orbtchess.orbt.ui.theme.color
  * Each setting decides which replies are gaps, so each has a page; Repertoire Settings edits
  * them later on one page. Full window: close on the first page, back on the others.
  *
- * @param onDone the repertoire made or set up: the shell shows its overview (a new one opens on Build).
+ * @param onDone the repertoire made or set up: the shell opens it and puts its screen (a new one's
+ *   Build, any other's overview) under this one before this closes, so closing reveals it.
  * @param onCancel leaves without adding anything.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -98,7 +100,7 @@ import org.orbtchess.orbt.ui.theme.color
 fun SetupScreen(
     app: AppModel,
     mode: SetupMode,
-    onDone: (RepertoireEntry) -> Unit,
+    onDone: suspend (RepertoireEntry) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -113,11 +115,12 @@ fun SetupScreen(
         )
     }
     var draft by remember {
-        val last = RepertoireSettingsDraft.lastUsed(app.platform.settings)
-        mutableStateOf((mode as? SetupMode.New)?.side?.let { last.copy(color = it) } ?: last)
+        mutableStateOf(RepertoireSettingsDraft.lastUsed(app.platform.settings))
     }
     var step by remember { mutableIntStateOf(1) }
     var failure by remember { mutableStateOf<String?>(null) }
+    // Opening the repertoire before this closes.
+    var finishing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val canContinue = name.isNotBlank()
 
@@ -137,6 +140,7 @@ fun SetupScreen(
     }
 
     fun finish() {
+        if (finishing) return
         scope.launch {
             try {
                 val entry = when (mode) {
@@ -149,10 +153,12 @@ fun SetupScreen(
                     }
                 }
                 draft.remember(app.platform.settings)
+                finishing = true
                 onDone(entry)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                finishing = false
                 // The name is on the first step.
                 failure = e.message ?: e.toString()
                 step = 1
@@ -197,6 +203,8 @@ fun SetupScreen(
                     actions = {
                         if (step < 3) {
                             TextButton(onClick = { step += 1 }, shapes = ButtonDefaults.shapes(), enabled = canContinue) { Text("Next") }
+                        } else if (finishing) {
+                            LoadingIndicator(Modifier.padding(end = 16.dp).size(40.dp))
                         } else {
                             Button(onClick = ::finish, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(end = 8.dp)) { Text(finishTitle) }
                         }
@@ -206,7 +214,7 @@ fun SetupScreen(
         },
         bottomBar = {
             if (inDialog) {
-                DialogButtons(if (step < 3) "Next" else finishTitle, next, onCancel = onCancel, confirmEnabled = canContinue) {
+                DialogButtons(if (step < 3) "Next" else finishTitle, next, onCancel = onCancel, confirmEnabled = canContinue && !finishing) {
                     if (step > 1) TextButton(onClick = { step -= 1 }, shapes = ButtonDefaults.shapes()) { Text("Back") }
                 }
             }

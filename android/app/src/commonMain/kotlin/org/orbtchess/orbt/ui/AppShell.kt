@@ -32,6 +32,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -59,10 +60,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.clickable
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
@@ -88,9 +85,8 @@ import org.orbtchess.orbt.ui.settings.AcknowledgementsScreen
 import org.orbtchess.orbt.ui.settings.SettingsScreen
 import org.orbtchess.orbt.ui.statistics.CardInfoSheet
 import org.orbtchess.orbt.ui.statistics.StatisticsScreen
-import org.orbtchess.orbt.ui.tour.LocalTourGuide
-import org.orbtchess.orbt.ui.tour.TourGuide
-import org.orbtchess.orbt.ui.tour.TourSpotlight
+import org.orbtchess.orbt.ui.onboarding.OnboardingScreen
+import org.orbtchess.orbt.ui.tips.LocalTips
 import org.orbtchess.orbt.ui.training.DrillScreen
 import org.orbtchess.orbt.ui.training.StudyAllScreen
 
@@ -130,72 +126,70 @@ fun AppShell(app: AppModel) {
     // Predictive back: how far the back gesture has gone (0 to 1) while it is in progress.
     val backProgress = (backState.transitionState as? NavigationEventTransitionState.InProgress)?.latestEvent?.progress
 
-    // The tour's turns that change screens: started (Settings › Show Tour), its card is in
-    // Today's place, so show Today; its end, from Study's: back to the library, at New Repertoire.
-    val tourStep = app.tour.step
-    LaunchedEffect(tourStep) {
-        when (tourStep) {
-            TourGuide.Step.Ready -> if (wide) shell.navigate(Destination.Library)
-            TourGuide.Step.Finish -> {
-                shell.navigate(Destination.Library)
-                app.tour.skip()
-                shell.navigate(Destination.Setup(SetupMode.New()))
-            }
-            else -> Unit
-        }
-    }
-
     val suiteType = if (showBar) NavigationSuiteScaffoldDefaults.navigationSuiteType(adaptiveInfo) else NavigationSuiteType.None
-    CompositionLocalProvider(LocalTourGuide provides app.tour, LocalWideWindow provides wide) {
+    // Nothing for the tabs or the library's panes to show yet: the ways to a first repertoire,
+    // the whole window (`RootView.swift`). The first one, made or synced, replaces it.
+    val library = app.library
+    val welcome = !library.isLoaded || library.entries.isEmpty()
+    CompositionLocalProvider(LocalTips provides app.tips, LocalWideWindow provides wide) {
         Box(Modifier.fillMaxSize()) {
-            // Material 3 Expressive's navigation for the window: the short navigation bar (on a
-            // tablet in portrait its items side by side); wide windows show the tabs as panes.
-            NavigationSuiteScaffold(
-                navigationItems = {
-                    NavigationSuiteItem(
-                        navigationSuiteType = suiteType,
-                        selected = shell.tab == Tab.Repertoires,
-                        onClick = { shell.tab = Tab.Repertoires },
-                        icon = { Icon(Symbols.repertoires, contentDescription = null) },
-                        label = { Text("Repertoires") },
-                    )
-                    NavigationSuiteItem(
-                        navigationSuiteType = suiteType,
-                        selected = shell.tab == Tab.Statistics,
-                        onClick = { shell.tab = Tab.Statistics },
-                        icon = { Icon(Symbols.statistics, contentDescription = null) },
-                        label = { Text("Statistics") },
-                    )
-                },
-                navigationSuiteType = suiteType,
-            ) {
-                if (shell.tab == Tab.Statistics && !wide) {
-                    StatisticsScreen(
-                        app,
-                        shell.statisticsScope,
-                        navigate = shell::navigate,
-                        onScopeChange = { shell.statisticsScope = it },
-                    )
+            if (welcome) {
+                if (library.isLoaded) {
+                    OnboardingScreen(app, shell::navigate)
                 } else {
-                    val progress = if (shell.overlays.isEmpty()) backProgress else null
-                    if (wide) {
-                        // A board screen leaves the library and fills the window: the library and
-                        // the board screens come and go as whole screens, with Material's shared
-                        // axis (as a phone pushes them), and the back gesture seeks toward the one
-                        // under the top.
-                        val board = top?.takeIf { it.role == ListDetailPaneScaffoldRole.Extra }
-                        val under = shell.stack.getOrNull(shell.stack.lastIndex - 1)?.takeIf { it.role == ListDetailPaneScaffoldRole.Extra }
-                        SharedAxisContent(board, previous = under, seeks = board != null, backProgress = progress) { entry ->
-                            if (entry != null) {
-                                BoardPanes(app, entry, directive, shell::navigate, shell::back)
-                            } else {
-                                LibraryPanes(app, shell, directive, if (board == null) progress else null)
-                            }
-                        }
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { LoadingIndicator() }
+                }
+            } else {
+                // Material 3 Expressive's navigation for the window: the short navigation bar (on a
+                // tablet in portrait its items side by side); wide windows show the tabs as panes.
+                NavigationSuiteScaffold(
+                    navigationItems = {
+                        NavigationSuiteItem(
+                            navigationSuiteType = suiteType,
+                            selected = shell.tab == Tab.Repertoires,
+                            onClick = { shell.tab = Tab.Repertoires },
+                            icon = { Icon(Symbols.repertoires, contentDescription = null) },
+                            label = { Text("Repertoires") },
+                        )
+                        NavigationSuiteItem(
+                            navigationSuiteType = suiteType,
+                            selected = shell.tab == Tab.Statistics,
+                            onClick = { shell.tab = Tab.Statistics },
+                            icon = { Icon(Symbols.statistics, contentDescription = null) },
+                            label = { Text("Statistics") },
+                        )
+                    },
+                    navigationSuiteType = suiteType,
+                ) {
+                    if (shell.tab == Tab.Statistics && !wide) {
+                        StatisticsScreen(
+                            app,
+                            shell.statisticsScope,
+                            navigate = shell::navigate,
+                            onScopeChange = { shell.statisticsScope = it },
+                        )
                     } else {
-                        LibraryPanes(app, shell, directive, progress)
+                        val progress = if (shell.overlays.isEmpty()) backProgress else null
+                        if (wide) {
+                            // A board screen leaves the library and fills the window: the library and
+                            // the board screens come and go as whole screens, with Material's shared
+                            // axis (as a phone pushes them), and the back gesture seeks toward the one
+                            // under the top.
+                            val board = top?.takeIf { it.role == ListDetailPaneScaffoldRole.Extra }
+                            val under = shell.stack.getOrNull(shell.stack.lastIndex - 1)?.takeIf { it.role == ListDetailPaneScaffoldRole.Extra }
+                            SharedAxisContent(board, previous = under, seeks = board != null, backProgress = progress) { entry ->
+                                if (entry != null) {
+                                    BoardPanes(app, entry, directive, shell::navigate, shell::back)
+                                } else {
+                                    LibraryPanes(app, shell, directive, if (board == null) progress else null)
+                                }
+                            }
+                        } else {
+                            LibraryPanes(app, shell, directive, progress)
+                        }
                     }
                 }
+
             }
 
             // Full-window screens over everything (Android's settings screens, the setup flow),
@@ -219,10 +213,6 @@ fun AppShell(app: AppModel) {
                     }
                 }
             }
-
-            // The tour's spotlight over the tour's screens, bars included; not over a screen or
-            // sheet that covers them.
-            if (shell.overlays.isEmpty() && shell.sheet == null) TourSpotlight(app.tour)
         }
 
         // A wide window's full-window screens, one dialog for them all (Settings opens About in it).
@@ -550,10 +540,10 @@ private fun Overlay(app: AppModel, shell: ShellModel, destination: Destination) 
             app,
             destination.mode,
             onDone = { entry ->
+                // Its screen first, under the setup, which then closes onto it; on the first
+                // repertoire the library replaces the welcome under it too.
+                shell.showSetUp(entry.id, build = destination.mode is SetupMode.New)
                 close()
-                shell.navigate(Destination.Overview(entry.id))
-                // A new repertoire opens on Build, to enter its first moves.
-                if (destination.mode is SetupMode.New) shell.navigate(Destination.Builder(entry.id))
             },
             onCancel = close,
         )

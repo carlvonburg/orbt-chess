@@ -15,9 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
@@ -40,7 +37,6 @@ import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -51,10 +47,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-import orbt.app.generated.resources.Res
-import orbt.app.generated.resources.piece_wn
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.vectorResource
 import org.orbtchess.orbt.AppModel
 import org.orbtchess.orbt.core.Side
 import org.orbtchess.orbt.core.studied
@@ -64,7 +56,6 @@ import org.orbtchess.orbt.ui.Destination
 import org.orbtchess.orbt.ui.SetupMode
 import org.orbtchess.orbt.ui.components.CoverageBar
 import org.orbtchess.orbt.ui.components.DueCounts
-import org.orbtchess.orbt.ui.components.EmptyState
 import org.orbtchess.orbt.ui.components.Refreshable
 import org.orbtchess.orbt.ui.components.StudiedBar
 import org.orbtchess.orbt.ui.components.TooltipIconButton
@@ -78,8 +69,8 @@ import org.orbtchess.orbt.ui.theme.color
 /**
  * The repertoires (`LibraryView.swift`, Anki's deck list): by side, each with its coverage and
  * study progress and today's due moves; Settings and Add (New Repertoire, Import PGN) in the top
- * app bar; a row's menu (long press) renames, sets options, exports or deletes; the empty
- * library's welcome (`EmptyLibraryView.swift`). The list pane on wide windows, where Today is its
+ * app bar; a row's menu (long press) renames, sets options, exports or deletes (with no
+ * repertoire, the shell shows [org.orbtchess.orbt.ui.onboarding.OnboardingScreen] instead). The list pane on wide windows, where Today is its
  * first row; the Repertoires tab on a phone, where Today (Study All) is its first section.
  *
  * @param selectedEntryId the repertoire shown beside the list on wide windows (its row is selected), else null.
@@ -88,7 +79,7 @@ import org.orbtchess.orbt.ui.theme.color
  *   (Today on wide windows), [Destination.Settings], [Destination.Setup], [Destination.StudyAll],
  *   [Destination.RepertoireSettings], [Destination.StudyOptions].
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
     app: AppModel,
@@ -110,29 +101,6 @@ fun LibraryScreen(
     val export = rememberPgnExport(app) { errorMessage = it }
     RefreshOnReturn(app)
 
-    /** Adds the sample and offers the tour on it. */
-    fun takeTour() {
-        scope.launch {
-            try {
-                startTour(app)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                errorMessage = e.message ?: e.toString()
-            }
-        }
-    }
-
-    // The first launch on this device starts with the sample and its tour; repertoires from
-    // the start mean no sample later, even if they are all deleted.
-    var sampleOffered by remember { mutableStateOf(app.tour.wasOffered) }
-    LaunchedEffect(library.isLoaded, sampleOffered) {
-        if (!library.isLoaded || sampleOffered) return@LaunchedEffect
-        if (library.entries.isEmpty()) takeTour() else app.tour.markOffered()
-        sampleOffered = true
-    }
-    val tourRunning = tourRunning(app)
-
     // iOS's large title: Material 3 Expressive's large flexible app bar, collapsing as the list scrolls.
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
@@ -144,15 +112,12 @@ fun LibraryScreen(
                 scrollBehavior = scrollBehavior,
                 colors = groupedTopAppBarColors(),
                 actions = {
-                    // An empty library offers these in its middle.
-                    if (library.entries.isNotEmpty()) {
-                        Box {
-                            TooltipIconButton("Add", Symbols.add, { addMenu = true })
-                            ExpressiveMenu(addMenu, onDismissRequest = { addMenu = false }) {
-                                group {
-                                    item("New Repertoire", Symbols.add) { navigate(Destination.Setup(SetupMode.New())) }
-                                    item("Import PGN…", Symbols.importFile) { importPgn() }
-                                }
+                    Box {
+                        TooltipIconButton("Add", Symbols.add, { addMenu = true })
+                        ExpressiveMenu(addMenu, onDismissRequest = { addMenu = false }) {
+                            group {
+                                item("New Repertoire", Symbols.add) { navigate(Destination.Setup(SetupMode.New)) }
+                                item("Import PGN…", Symbols.importFile) { importPgn() }
                             }
                         }
                     }
@@ -163,15 +128,8 @@ fun LibraryScreen(
     ) { padding ->
         val content = Modifier.fillMaxSize().padding(padding)
         when {
-            // The first launch adds the sample: still loading, not an empty library.
-            !library.isLoaded || (library.entries.isEmpty() && !sampleOffered) ->
-                Box(content, contentAlignment = Alignment.Center) { LoadingIndicator() }
-            library.entries.isEmpty() -> EmptyLibrary(
-                newRepertoire = { navigate(Destination.Setup(SetupMode.New(it))) },
-                importPgn = importPgn,
-                takeTour = ::takeTour,
-                modifier = content,
-            )
+            // With no repertoire the shell shows the welcome instead (`OnboardingScreen`).
+            !library.isLoaded -> Box(content, contentAlignment = Alignment.Center) { LoadingIndicator() }
             else -> Refreshable(
                 isRefreshing = refreshing,
                 onRefresh = {
@@ -187,10 +145,7 @@ fun LibraryScreen(
                 modifier = content,
             ) {
                 LazyColumn(Modifier.fillMaxSize()) {
-                    if (showToday && tourRunning) {
-                        // Studying moves you haven't built yet isn't the next step.
-                        item { ListSection("Tour") { TourSection(app, navigate) } }
-                    } else if (showToday) {
+                    if (showToday) {
                         item { ListSection("Today") { TodayCard(app, navigate) } }
                     } else {
                         // Today's card is in the pane beside when this row is selected.
@@ -402,31 +357,6 @@ private fun RowProgress(stats: EntryStats) {
                     )
                 }
             }
-        }
-    }
-}
-
-/**
- * The repertoire list with no repertoire (`EmptyLibraryView.swift`): start one by choosing a
- * side (the setup flow opens with it), import a PGN, or take the tour with the sample.
- */
-@Composable
-private fun EmptyLibrary(newRepertoire: (Side) -> Unit, importPgn: () -> Unit, takeTour: () -> Unit, modifier: Modifier) {
-    EmptyState(
-        "Start a Repertoire",
-        vectorResource(Res.drawable.piece_wn),
-        modifier,
-        description = "Choose a side to see which replies opponents at your level play, and which ones you haven't answered yet.",
-    ) {
-        Row(Modifier.width(280.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SideCard(Side.WHITE, "White", selected = false, Modifier.weight(1f)) { newRepertoire(Side.WHITE) }
-            SideCard(Side.BLACK, "Black", selected = false, Modifier.weight(1f)) { newRepertoire(Side.BLACK) }
-        }
-        TextButton(onClick = importPgn, shapes = ButtonDefaults.shapes()) { Text("Import a PGN…") }
-        TextButton(onClick = takeTour, shapes = ButtonDefaults.shapes(), modifier = Modifier.padding(top = 8.dp)) {
-            Icon(Symbols.tour, contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
-            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-            Text("Take the Tour with a Sample")
         }
     }
 }

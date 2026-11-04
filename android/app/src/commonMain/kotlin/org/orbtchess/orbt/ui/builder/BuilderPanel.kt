@@ -55,8 +55,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
-import org.orbtchess.orbt.ui.tour.TourGuide
-import org.orbtchess.orbt.ui.tour.tourTarget
+import org.orbtchess.orbt.ui.tips.Tip
+import org.orbtchess.orbt.ui.tips.TipAnchor
 import org.orbtchess.orbt.core.CloudEval
 import org.orbtchess.orbt.core.Epd
 import org.orbtchess.orbt.core.ExplorerMove
@@ -214,25 +214,33 @@ private fun NodeHeader(app: AppModel, model: BuilderModel, node: Node) {
         }
         CoverageCheckStatus(app, model)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            val completion = info?.completion ?: 0.0
+            // The whole repertoire's, as on the overview: the number a save raises. A branch's
+            // own share read as the repertoire's (100% deep in a line).
+            val completion = document.coverage.root?.completion ?: 0.0
             Text("Built", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             CoverageBar(completion, Modifier.width(96.dp))
             Text(Format.percent(completion), style = tabularDigits(MaterialTheme.typography.labelSmall))
             Spacer(Modifier.weight(1f))
-            val gaps = info?.gapCount ?: 0
-            if (gaps > 0) {
-                Text(
-                    "$gaps ${if (gaps == 1L) "gap" else "gaps"}",
-                    style = tabularDigits(MaterialTheme.typography.labelSmall),
-                    color = ThemeColor.todo.color,
-                )
-                Text(" · ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            // What lies below this move (at the start, the whole repertoire), and what the counts
+            // lead to: Biggest Gap for the gaps, Study for the saved moves.
+            TipAnchor(Tip.BiggestGap, Tip.StudyBranch) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val gaps = info?.gapCount ?: 0
+                    if (gaps > 0) {
+                        Text(
+                            "$gaps ${if (gaps == 1L) "gap" else "gaps"}",
+                            style = tabularDigits(MaterialTheme.typography.labelSmall),
+                            color = ThemeColor.todo.color,
+                        )
+                        Text(" · ", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Text(
+                        "$saved ${if (saved == 1) "move" else "moves"}${if (node.id != ROOT_NODE) " below" else ""}",
+                        style = tabularDigits(MaterialTheme.typography.labelSmall),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-            Text(
-                "$saved ${if (saved == 1) "move" else "moves"}",
-                style = tabularDigits(MaterialTheme.typography.labelSmall),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
         if (node.note.isNotEmpty()) {
             Card(onClick = { model.sheet = BuilderSheet.Note }, modifier = Modifier.fillMaxWidth()) {
@@ -251,7 +259,7 @@ private val Status?.hasBadge: Boolean
 @Composable
 private fun StatusChip(status: Status?) {
     when (status) {
-        Status.Gap -> StatusBadge("Your move is missing", meaning = ThemeColor.todo)
+        Status.Gap -> TipAnchor(Tip.Answer) { StatusBadge("Your move is missing", meaning = ThemeColor.todo) }
         Status.Pending -> StatusBadge("Stats not loaded yet")
         Status.BelowTarget -> StatusBadge("Beyond your target")
         is Status.Transposition -> StatusBadge("Transposes", meaning = ThemeColor.built)
@@ -285,8 +293,10 @@ private fun DraftHeader(model: BuilderModel) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             when {
                 target != null -> StatusBadge("Transposed", meaning = ThemeColor.built)
-                reached -> StatusBadge("Coverage target reached", meaning = ThemeColor.built)
-                else -> StatusBadge("New line, not saved")
+                // What the badge means; over the board.
+                reached -> TipAnchor(Tip.LineCovered) { StatusBadge("Coverage target reached", meaning = ThemeColor.built) }
+                // Your move in a new line: the gap's tip; after your move, that it can be saved already.
+                else -> TipAnchor(Tip.Answer, Tip.SaveDraft) { StatusBadge("New line, not saved") }
             }
             model.reachOnBoard?.let { reach ->
                 Text(
@@ -378,15 +388,15 @@ private fun LazyListScope.replies(
     val saved = content.savedAt
     item("repliesHeading") {
         Row(
-            // The tour's replies step shows the heading row with the replies.
-            Modifier.fillMaxWidth().tourTarget(TourGuide.Target.Replies, part = -1)
+            Modifier.fillMaxWidth()
                 .padding(horizontal = RowInset).padding(top = 12.dp, bottom = 4.dp),
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text("Replies", Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
             ColumnHeading("Seen", SeenWidth)
-            ColumnHeading("Covered", CoveredWidth)
+            // In a new line that still needs answers, where covering a reply is the step.
+            TipAnchor(Tip.Replies) { ColumnHeading("Covered", CoveredWidth) }
             ColumnHeading("Games", GamesWidth)
         }
     }
@@ -397,12 +407,9 @@ private fun LazyListScope.replies(
         val matters = { r: ReplyInfo -> r.child != null || r.transposesTo != null || r.required || r.excluded }
         val ordered = replies.filter(matters).sortedByDescending { it.share } +
             replies.filterNot(matters).sortedByDescending { it.share }
-        for ((index, reply) in ordered.withIndex()) {
+        for (reply in ordered) {
             item("reply-${reply.uci}") {
-                // The first few, so the highlight ends above the bottom bar.
-                Box(Modifier.tourTarget(TourGuide.Target.Replies, part = index.takeIf { it < 4 })) {
-                    ReplyRow(model, reply, saved?.id, eval?.let { cloudEvalText(it, reply.uci) })
-                }
+                ReplyRow(model, reply, saved?.id, eval?.let { cloudEvalText(it, reply.uci) })
             }
         }
         return
@@ -572,10 +579,7 @@ private fun LazyListScope.candidates(
     val title = "Candidates"
 
     item("candidatesHeading") {
-        // The tour's answer step shows the heading with the candidates under it.
-        Box(Modifier.fillMaxWidth().tourTarget(TourGuide.Target.Candidates, part = -1)) {
-            Heading(if (saved.isEmpty()) title else "Your Moves")
-        }
+        Heading(if (saved.isEmpty()) title else "Your Moves")
     }
     for ((move, explorerMove) in savedRows) {
         item("saved-${move.move.uci}") {
@@ -598,13 +602,9 @@ private fun LazyListScope.candidates(
         return
     }
     if (saved.isNotEmpty()) item("candidatesHeading2") { Heading(title) }
-    for ((index, move) in otherRows.withIndex()) {
+    for (move in otherRows) {
         item("candidate-${move.uci}") {
-            // The tour's answer step points at the candidates: the first few, so the highlight
-            // ends above the bottom bar.
-            Box(Modifier.tourTarget(TourGuide.Target.Candidates, part = index.takeIf { it < 4 })) {
-                CandidateRow(model, move.san, move.uci, move, total, eval, loading = false, saved = null, onClick = { content.select(move.uci) }, menu = null)
-            }
+            CandidateRow(model, move.san, move.uci, move, total, eval, loading = false, saved = null, onClick = { content.select(move.uci) }, menu = null)
         }
     }
     when {

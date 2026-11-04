@@ -49,7 +49,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
-import org.orbtchess.orbt.ui.tour.TourGuide
 import org.orbtchess.orbt.core.DrillMode
 import org.orbtchess.orbt.core.SchedTiming
 import org.orbtchess.orbt.core.Streak
@@ -82,7 +81,6 @@ import kotlin.math.roundToInt
  * @param next the next repertoire when studying all of them.
  * @param navigate unused for now: Study More Today extends this session in place, as in Swift.
  * @param onDone back to where Study was opened from.
- * @param tourEnd the tour's Study step is done: its next step is the user's own repertoire.
  */
 @Composable
 fun StudyFinishedScreen(
@@ -92,7 +90,6 @@ fun StudyFinishedScreen(
     navigate: (Destination) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier,
-    tourEnd: Boolean = false,
 ) {
     val document = model.document
     val studied = model.answeredCount > 0
@@ -113,7 +110,7 @@ fun StudyFinishedScreen(
                 NextCard(model, laterToday, timing)
             }
         }
-        if (tourEnd) TourEndActions(app) else Actions(model, next)
+        Actions(model, next)
     }
 }
 
@@ -264,28 +261,6 @@ private fun NextCard(model: DrillModel, laterToday: List<Long>, timing: SchedTim
 }
 
 // MARK: Actions
-
-/** The tour's end: on to the user's own repertoire. */
-@Composable
-private fun TourEndActions(app: AppModel) {
-    Column(
-        Modifier.fillMaxWidth().padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            "You've filled a gap and learned the move. Now make a repertoire for the opening you play.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Button(
-            shapes = ButtonDefaults.shapes(),
-            onClick = { app.tour.advance(from = TourGuide.Step.Studying, to = TourGuide.Step.Finish) },
-            modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
-        ) { Text("Create Your Own Repertoire") }
-    }
-}
 
 /** Main button first: the next repertoire during Study All, else studying more today. */
 @Composable
