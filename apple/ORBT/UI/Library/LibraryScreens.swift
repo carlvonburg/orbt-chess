@@ -50,6 +50,16 @@ final class LibraryScreens {
         return true
     }
 
+    /// `prepare` at once, from documents already open (a repertoire just set up): false when one
+    /// isn't open or the route needs more than its document.
+    func prepareOpen(_ routes: [LibraryRoute], app: AppModel) -> Bool {
+        for route in routes where screens[route] == nil {
+            guard case .builder(let id) = route, let document = app.documents[app.currentID(id)] else { return false }
+            screens[route] = .builder(BuilderModel(document: document), BuilderPresentation())
+        }
+        return true
+    }
+
     /// The route of an analysis board made by the screen it is opened from.
     func add(_ analysis: AnalysisModel) -> LibraryRoute {
         let route = LibraryRoute.analysis(analysis.document.entryID, analysis.id)

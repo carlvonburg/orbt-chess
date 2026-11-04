@@ -34,7 +34,9 @@ struct BuilderView: View {
         AnswerTip()
         RepliesTip()
         SaveTip()
+        SaveDraftTip()
         BiggestGapTip()
+        StudyBranchTip()
     }
     /// What the last save did to coverage, shown for a moment (`CoverageToast`).
     @State private var coverageChange: CoverageChange?
@@ -66,6 +68,7 @@ struct BuilderView: View {
         .listStyle(.plain)
         .environment(\.defaultMinListRowHeight, 0)
         .scrollDismissesKeyboard(.immediately)
+        .onDisappear { StudyBranchTip.justSaved = false }
         .onAppear {
             // Edit > Undo and ⌘Z undo through the builder, which also leaves a removed position.
             document.attachUndo(undoManager) { [weak model, weak document] in
@@ -90,11 +93,15 @@ struct BuilderView: View {
             AnswerTip.yourMoveMissing = state.yourMoveMissing
             RepliesTip.repliesNeeded = state.repliesNeeded
             SaveTip.lineReached = state.lineReached
+            SaveDraftTip.canSave = state.canSave
+            BiggestGapTip.canJump = state.canJump
+            StudyBranchTip.canStudy = state.canStudy
         }
         // Their actions: your move played where it was missing, a reply that needs an answer
         // played in a new line.
         .onChange(of: model.draft.count) { old, new in
             guard new > old else { return }
+            StudyBranchTip.justSaved = false
             if model.isUserTurnOnBoard {
                 if new >= 2 { RepliesTip().invalidate(reason: .actionPerformed) }
             } else {
@@ -127,18 +134,29 @@ struct BuilderView: View {
         var yourMoveMissing = false
         var repliesNeeded = false
         var lineReached = false
+        var canSave = false
+        var canJump = false
+        var canStudy = false
     }
 
     /// Your move missing on the board (a gap, or a new line at your move); a new line at the
-    /// opponent's move with replies that still need an answer.
+    /// opponent's move with replies that still need an answer, then (from your second move on)
+    /// that it can be saved already; saved moves with a gap for Biggest Gap to go to.
     private var tipState: TipState {
         if model.hasDraft {
             if model.draftTransposition != nil { return TipState() }
             if model.isUserTurnOnBoard { return TipState(yourMoveMissing: true) }
-            let needed = !model.draftReachedTarget && model.draftReplies?.contains(where: \.required) == true
-            return TipState(repliesNeeded: needed, lineReached: model.draftReachedTarget)
+            if model.draftReachedTarget { return TipState(lineReached: true) }
+            // From the third move of the line (two of yours as White, the second of yours as
+            // Black at the fourth): by then the replies' tip has been shown.
+            if model.draft.count >= 3 { return TipState(canSave: true) }
+            return TipState(repliesNeeded: model.draftReplies?.contains(where: \.required) == true)
         }
-        return TipState(yourMoveMissing: model.node.flatMap { document.coverage[$0.id]?.status } == .gap)
+        return TipState(yourMoveMissing: model.node.flatMap { document.coverage[$0.id]?.status } == .gap,
+                        // Gaps below this move (Biggest Gap's own fallback, the repertoire's
+                        // biggest gap elsewhere, is not "in this line").
+                        canJump: model.canGoToBiggestGap && (document.coverage[model.current]?.gapCount ?? 0) > 0,
+                        canStudy: document.learningProgress(under: model.current).cards > 0)
     }
 
     private func goToBiggestGap() {
@@ -206,6 +224,9 @@ struct BuilderView: View {
                     let start = model.current
                     let first = model.draft.first?.uci
                     if model.draftReachedTarget { SaveTip().invalidate(reason: .actionPerformed) }
+                    SaveDraftTip().invalidate(reason: .actionPerformed)
+                    // The study tip's turn only once the gaps tip has had its own.
+                    StudyBranchTip.justSaved = if case .invalidated = BiggestGapTip().status { true } else { false }
                     model.saveDraft()
                     let saved = first.flatMap { model.tree.child(of: start, uci: $0) }
                     var open = false
@@ -223,9 +244,12 @@ struct BuilderView: View {
         } else {
             ToolbarItemGroup(placement: actions) {
                 Button("Biggest Gap", systemImage: "scope", action: goToBiggestGap)
-                    .disabled(document.coverage.root?.biggestGap == nil)
+                    .disabled(!model.canGoToBiggestGap)
 
-                Button("Study Branch", systemImage: "graduationcap") { studyBranch(model.current) }
+                Button("Study Branch", systemImage: "graduationcap") {
+                    StudyBranchTip().invalidate(reason: .actionPerformed)
+                    studyBranch(model.current)
+                }
                     .disabled(document.learningProgress(under: model.current).cards == 0)
 
                 if !split {
@@ -350,11 +374,29 @@ extension View {
     func builderTip(_ tip: some Tip) -> some View {
         modifier(BuilderTip(tip: tip))
     }
+
+    /// A `TipGroup`'s current tip, the same way.
+    func builderTip(_ tip: (any Tip)?) -> some View {
+        modifier(BuilderGroupTip(tip: tip))
+    }
 }
 
 private struct BuilderTip<T: Tip>: ViewModifier {
     @Environment(\.inSplitView) private var inSplitView
     let tip: T
+
+    func body(content: Content) -> some View {
+        if inSplitView {
+            content
+        } else {
+            content.popoverTip(tip, arrowEdge: .bottom)
+        }
+    }
+}
+
+private struct BuilderGroupTip: ViewModifier {
+    @Environment(\.inSplitView) private var inSplitView
+    let tip: (any Tip)?
 
     func body(content: Content) -> some View {
         if inSplitView {
@@ -393,7 +435,7 @@ struct BuilderCommands: Commands {
             Divider()
             Button("Biggest Gap") { model?.goToBiggestGap() }
                 .keyboardShortcut("g", modifiers: [.command, .shift])
-                .disabled(model?.document.coverage.root?.biggestGap == nil)
+                .disabled(model?.canGoToBiggestGap != true)
             Button("Flip Board") { model.map { $0.orientation = $0.orientation.opposite } }
                 .keyboardShortcut("f", modifiers: [.command, .shift])
                 .disabled(model == nil)
@@ -546,6 +588,12 @@ struct MoveChip: View {
 
 /// Opening name, reach, building and learning progress, and the note of the current node.
 struct NodeHeader: View {
+    /// On the gaps and moves under the board, one at a time: how to reach the gaps, else (no
+    /// gaps, or that tip done) how to study the saved moves.
+    @State private var countTips = TipGroup(.firstAvailable) {
+        BiggestGapTip()
+        StudyBranchTip()
+    }
     let model: BuilderModel
     let node: Node
     let onNote: () -> Void
@@ -583,8 +631,6 @@ struct NodeHeader: View {
                 HStack(spacing: 0) {
                     if let gaps = info?.gapCount, gaps > 0 {
                         Text("\(gaps.formatted()) \(gaps == 1 ? "gap" : "gaps")").foregroundStyle(.todo)
-                            // What the count means and how to get there (⌖); over the board.
-                            .builderTip(BiggestGapTip())
                         Text(" · ").foregroundStyle(.secondary)
                     }
                     Text("\(saved.formatted()) \(saved == 1 ? "move" : "moves")").foregroundStyle(.secondary)
@@ -593,6 +639,8 @@ struct NodeHeader: View {
                     }
                 }
                 .font(.caption2.monospacedDigit())
+                // What the counts lead to (⌖ the gaps, 🎓 the saved moves); over the board.
+                .builderTip(countTips.currentTip)
             }
             if !node.note.isEmpty {
                 Button(action: onNote) {
@@ -1112,8 +1160,10 @@ struct DraftPanel: View {
                 } else {
                     Text("New line, not saved").font(.caption).statusBadge()
                         // Your move in a new line (Biggest Gap's reply played): the gap's tip,
-                        // over the board (its rule keeps it to your move).
+                        // over the board (its rule keeps it to your move). After your move, that
+                        // the line can be saved already.
                         .builderTip(AnswerTip())
+                        .builderTip(SaveDraftTip())
                 }
                 if let reach = model.reachOnBoard {
                     Text(Format.seenGames(reach)).font(.caption).foregroundStyle(.secondary)

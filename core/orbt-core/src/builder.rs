@@ -501,15 +501,28 @@ impl Builder {
 
     /// Goes to the biggest gap below the current node, or in the whole repertoire.
     pub fn go_to_biggest_gap(&mut self, doc: &mut Repertoire, stats: &dyn StatsSource) -> Changes {
-        let gap = doc
-            .coverage()
-            .get(self.current)
-            .and_then(|c| c.biggest_gap.clone())
-            .or_else(|| doc.coverage().root().and_then(|r| r.biggest_gap.clone()));
-        match gap {
+        match self.biggest_gap(doc) {
             Some(gap) => self.go_to_gap(doc, &gap, stats),
             None => Changes::default(),
         }
+    }
+
+    /// Where Biggest Gap goes: the biggest gap below this move, else the repertoire's.
+    fn biggest_gap(&self, doc: &Repertoire) -> Option<CoverageGap> {
+        doc.coverage()
+            .get(self.current)
+            .and_then(|c| c.biggest_gap.clone())
+            .or_else(|| doc.coverage().root().and_then(|r| r.biggest_gap.clone()))
+    }
+
+    /// Whether Biggest Gap has somewhere to go: false with no gap, or when the board already
+    /// shows it (your move missing at the saved move on the board, as in a new repertoire).
+    pub fn can_go_to_biggest_gap(&self, doc: &Repertoire) -> bool {
+        self.biggest_gap(doc).is_some_and(|gap| {
+            self.has_draft()
+                || gap.node != self.current
+                || !matches!(gap.kind, GapKind::MissingMove)
+        })
     }
 
     pub fn go_to_gap(
@@ -625,6 +638,21 @@ mod tests {
 
     fn none() -> HashMap<Epd, ExplorerStats> {
         HashMap::new()
+    }
+
+    #[test]
+    fn biggest_gap_has_nowhere_to_go_when_the_board_shows_it() {
+        // A new repertoire: its only gap is your first move, at the start, on the board already.
+        let mut d = doc("*", Side::White);
+        let mut b = Builder::new(&d, None);
+        assert!(!b.can_go_to_biggest_gap(&d));
+        // A move on the board, not saved: Biggest Gap goes back to the start.
+        b.play_uci(&mut d, "e2e4", &none());
+        assert!(b.can_go_to_biggest_gap(&d));
+        b.go_to_biggest_gap(&mut d, &none());
+        assert!(!b.has_draft());
+        assert_eq!(b.current, RepertoireTree::ROOT);
+        assert!(!b.can_go_to_biggest_gap(&d));
     }
 
     #[test]

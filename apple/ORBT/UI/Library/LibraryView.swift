@@ -63,8 +63,6 @@ struct LibraryView: View {
     /// The models of the Browse and Study screens on the path.
     @State private var screens = LibraryScreens()
     @State private var columns = NavigationSplitViewVisibility.all
-    /// The step-by-step setup of a new, imported or dropped-in repertoire.
-    @State private var setup: SetupRequest?
     @State private var showImport = false
     @State private var deleteEntry: RepertoireEntry?
     @State private var sheet: EntrySheet?
@@ -73,8 +71,6 @@ struct LibraryView: View {
     /// app menu (the `Settings` scene).
     @State private var showSettings = false
     @State private var today = LibraryTodayModel()
-    /// Whether this device's first launch has added the sample, or found repertoires already.
-    @AppStorage(RepertoireLibrary.sampleOfferedKey) private var sampleOffered = false
 
     var body: some View {
         Group {
@@ -100,6 +96,8 @@ struct LibraryView: View {
                 selection = .today
             }
         }
+        // A repertoire just set up, put on screen while its sheet still covers the library.
+        .onChange(of: model.pendingShow, initial: true) { openPending() }
         // Going back from the analysis board (not covering it) hands its line back.
         .onChange(of: path) { screens.finishAnalyses(notIn: path) }
         // A repertoire deleted elsewhere while open: its screens close, back to the library.
@@ -125,22 +123,10 @@ struct LibraryView: View {
             }
             .presentationSizing(.form)
         }
-        .sheet(item: $setup) { request in
-            RepertoireSetupFlow(mode: request.mode) { entry in
-                // A new repertoire opens on Browse, to enter its first moves.
-                if case .new = request.mode {
-                    show(entry.id, then: [.builder(entry.id)])
-                } else {
-                    show(entry.id, then: [])
-                }
-            }
-            // The form size, as tall as each page's content (the window permitting).
-            .presentationSizing(.form.fitted(horizontal: false, vertical: true))
-        }
         .fileImporter(isPresented: $showImport, allowedContentTypes: [.pgn, .plainText]) { result in
             do {
                 let file = try RepertoireLibrary.readImport(result.get())
-                setup = SetupRequest(mode: .importing(data: file.data, name: file.name))
+                model.setup = SetupRequest(mode: .importing(data: file.data, name: file.name))
             } catch {
                 errorMessage = error.localizedDescription
             }
@@ -180,16 +166,11 @@ struct LibraryView: View {
     /// Shows `newPath` once the models of its Browse and Study screens are made, so the screen
     /// and the split view's board column show the same model from the start. Screens no
     /// longer on the path (popped) are forgotten first: opening one again starts afresh.
-    private func go(to newPath: [LibraryRoute], then next: (() -> Void)? = nil) {
+    private func go(to newPath: [LibraryRoute]) {
         screens.keep(path)
         Task {
             if await screens.prepare(newPath, app: model) {
                 path = newPath
-                if let next {
-                    // After the push has started, so the stack sees two pushes.
-                    try? await Task.sleep(for: .milliseconds(350))
-                    next()
-                }
             } else {
                 errorMessage = "The repertoire could not be opened."
             }
@@ -333,16 +314,13 @@ struct LibraryView: View {
             Button("Settings", systemImage: "gearshape") { showSettings = true }
         }
         #endif
-        // An empty library offers these in its middle (`EmptyLibraryView`).
-        if !model.library.entries.isEmpty {
         ToolbarItem(placement: .primaryAction) {
             Menu {
-                Button("New Repertoire", systemImage: "plus") { setup = SetupRequest(mode: .new(side: nil)) }
+                Button("New Repertoire", systemImage: "plus") { model.setup = SetupRequest(mode: .new) }
                 Button("Import PGN…", systemImage: "square.and.arrow.down") { showImport = true }
             } label: {
                 Label("Add", systemImage: "plus")
             }
-        }
         }
     }
 
@@ -383,17 +361,36 @@ struct LibraryView: View {
         }
     }
 
+    /// A repertoire just set up (`RepertoireSetupFlow`, a sheet over the whole app, so it stays
+    /// while onboarding gives way to the library under it). Its document is open already, so its
+    /// screens are made at once, under the sheet, whose dismissal then reveals them: a new one on
+    /// Browse alone (back goes to the list; its overview has nothing to show yet), any other on
+    /// its overview.
+    private func openPending() {
+        guard let pending = model.pendingShow else { return }
+        model.pendingShow = nil
+        let id = pending.entryID
+        let routes: [LibraryRoute] = pending.build ? [.builder(id)] : []
+        screens.keep([])
+        guard screens.prepareOpen(routes, app: model) else {
+            errorMessage = "The repertoire could not be opened."
+            return
+        }
+        if usesSplit {
+            selection = .repertoire(id)
+            path = routes
+        } else {
+            path = pending.build ? routes : [.overview(id)]
+        }
+    }
+
     /// A repertoire's overview, then the given screens on top of it: in the split view the
     /// repertoire selected.
     private func show(_ id: String, then routes: [LibraryRoute]) {
         if usesSplit {
             select(.repertoire(id), then: routes)
         } else {
-            // The overview first, then the screens on it: a stack given two screens at once
-            // shows the top one's bottom bar twice (iOS 26).
-            go(to: [.overview(id)]) {
-                if !routes.isEmpty { go(to: [.overview(id)] + routes) }
-            }
+            go(to: [.overview(id)] + routes)
         }
     }
 
@@ -440,14 +437,6 @@ struct LibraryView: View {
         let library = model.library
         if !library.isLoaded {
             ProgressView()
-        } else if library.entries.isEmpty && !sampleOffered {
-            // The first launch adds the sample: still loading, not an empty library.
-            ProgressView()
-                .task { await offerSample() }
-        } else if library.entries.isEmpty {
-            EmptyLibraryView(newRepertoire: { setup = SetupRequest(mode: .new(side: $0)) },
-                             importPGN: { showImport = true },
-                             trySample: addSample)
         } else {
             let stats = entryStats
             Group {
@@ -458,8 +447,6 @@ struct LibraryView: View {
                 }
             }
             .refreshable { await library.refresh() }
-            // Repertoires from the start: no sample later, even if they are all deleted.
-            .task { if !sampleOffered { sampleOffered = true } }
             .task(id: TodayKey(entries: library.entries.count, answered: stats.values.reduce(0) { $0 + $1.counts.total })) {
                 await today.load(model)
             }
@@ -496,30 +483,6 @@ struct LibraryView: View {
         }
     }
 
-    /// Adds the sample (again, if it was deleted), opened so its row and Today show its moves and
-    /// gaps from the start.
-    private func addSample() {
-        do {
-            let sample = try model.library.addSample()
-            Task { _ = await model.open(sample) }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    /// The first launch on this device starts with the sample, to try things on. With iCloud the
-    /// folder is given a moment first: on a new device the repertoires may still be arriving.
-    private func offerSample() async {
-        guard !sampleOffered else { return }
-        if model.library.usesICloud {
-            try? await Task.sleep(for: .seconds(3))
-            await model.library.refresh()
-        }
-        guard !sampleOffered else { return }
-        if model.library.entries.isEmpty { addSample() }
-        sampleOffered = true
-    }
-
     /// Repertoires with moves due today, in list order.
     private var studyAllEntries: [String] {
         model.library.entries.filter {
@@ -544,7 +507,7 @@ struct LibraryView: View {
     @ViewBuilder
     private func row(_ entry: RepertoireEntry, _ stats: EntryStats) -> some View {
         if entry.needsSetup {
-            Button { setup = SetupRequest(mode: .setup(entry)) } label: {
+            Button { model.setup = SetupRequest(mode: .setup(entry)) } label: {
                 LibraryRow(entry: entry, stats: stats, status: entry.isDownloading ? "Downloading from iCloud…" : "New PGN. Tap to set it up.")
             }
             .tint(.primary)

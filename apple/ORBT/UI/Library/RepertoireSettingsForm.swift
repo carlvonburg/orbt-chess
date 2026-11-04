@@ -43,7 +43,7 @@ struct RepertoireSettingsDraft: Equatable {
     var source = CoverageSource.blitz
     /// The rating bin (lower bound, one of `ExplorerDatabase.eloBins`).
     var rating = 1600
-    var targetGames = CoverageDepth.bulletproof.games
+    var targetGames = CoverageDepth.standard.games
 
     init() {}
 

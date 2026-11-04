@@ -6,8 +6,8 @@ import SwiftUI
 /// Repertoire Settings edits them later on one page (`RepertoireSettingsForm`).
 struct RepertoireSetupFlow: View {
     enum Mode {
-        /// A new repertoire, its side already chosen when started from the empty library.
-        case new(side: Side?)
+        /// A new repertoire.
+        case new
         /// A PGN picked from Files: nothing is written until it is added.
         case importing(data: Data, name: String)
         /// A PGN dropped into the folder without settings; its name is its file's.
@@ -24,16 +24,17 @@ struct RepertoireSetupFlow: View {
     @State private var draft: RepertoireSettingsDraft
     @State private var path: [Step] = []
     @State private var error: String?
+    /// Opening the repertoire before the sheet closes.
+    @State private var finishing = false
     @FocusState private var nameFocused: Bool
 
     init(mode: Mode, onDone: @escaping (RepertoireEntry) -> Void) {
         self.mode = mode
         self.onDone = onDone
-        var draft = RepertoireSettingsDraft.lastUsed()
+        let draft = RepertoireSettingsDraft.lastUsed()
         switch mode {
-        case .new(let side):
+        case .new:
             _name = State(initialValue: "")
-            if let side { draft.color = side }
         case .importing(_, let name):
             _name = State(initialValue: name)
         case .setup(let entry):
@@ -126,10 +127,15 @@ struct RepertoireSetupFlow: View {
         .navigationSubtitle("Step 3 of 3")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
-                Button(finishTitle, systemImage: "checkmark", action: finish)
-                    .buttonStyle(.glassProminent)
+                if finishing {
+                    ProgressView()
+                } else {
+                    Button(finishTitle, systemImage: "checkmark") { Task { await finish() } }
+                        .buttonStyle(.glassProminent)
+                }
             }
         }
+        .interactiveDismissDisabled(finishing)
     }
 
     // MARK: Actions
@@ -154,7 +160,9 @@ struct RepertoireSetupFlow: View {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && draft.isValid
     }
 
-    private func finish() {
+    /// Writes the repertoire, then opens it before the sheet closes, so the screen it opens is
+    /// made under the sheet (`onDone`) and the dismissal reveals it.
+    private func finish() async {
         do {
             let entry: RepertoireEntry
             switch mode {
@@ -167,8 +175,10 @@ struct RepertoireSetupFlow: View {
                 entry = setup
             }
             draft.remember()
-            dismiss()
+            finishing = true
+            _ = await model.open(entry)
             onDone(entry)
+            dismiss()
         } catch {
             // The name is on the first step.
             self.error = (error as? CocoaError)?.code == .fileWriteFileExists

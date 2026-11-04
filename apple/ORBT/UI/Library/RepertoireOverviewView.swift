@@ -1,6 +1,5 @@
 import OpeningCoreRust
 import SwiftUI
-import TipKit
 
 /// Anki's deck overview for one repertoire: coverage and study progress and what is due
 /// today, each section ending with its action (Browse / Edit, Study): the same buttons, the
@@ -65,14 +64,8 @@ struct RepertoireOverviewView: View {
                 CoverageCheckStatus(document: document)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
-            Button("Browse / Edit") {
-                if stats.gaps > 0 { GapsTip().invalidate(reason: .actionPerformed) }
-                editLines()
-            }
-            .actionButton(prominent: buildFirst(stats))
-            // Below the button, so the gaps it explains stay in view.
-            .popoverTip(GapsTip(), arrowEdge: .top)
-            .onChange(of: stats.gaps > 0, initial: true) { _, has in GapsTip.hasGaps = has }
+            Button("Browse / Edit", action: editLines)
+                .actionButton(prominent: buildFirst(stats))
         } header: {
             Text("Coverage")
         }

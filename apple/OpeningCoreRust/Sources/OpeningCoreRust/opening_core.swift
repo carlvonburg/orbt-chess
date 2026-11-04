@@ -1061,6 +1061,8 @@ public protocol BuilderSessionProtocol: AnyObject, Sendable {
     
     func canForward()  -> Bool
     
+    func canGoToBiggestGap()  -> Bool
+    
     func continuation()  -> UInt32?
     
     func current()  -> UInt32
@@ -1223,6 +1225,15 @@ open func canForward() -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_buildersession_can_forward(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func canGoToBiggestGap() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_can_go_to_biggest_gap(
             self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
@@ -18337,6 +18348,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_buildersession_can_forward() != 27256) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_can_go_to_biggest_gap() != 15736) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_buildersession_continuation() != 23703) {

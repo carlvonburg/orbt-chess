@@ -152,7 +152,8 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   (how: `android/app/build.gradle.kts`), the MSI's pictures `android/app/icons/installer-*.bmp`
   from the .ico (`installer-bitmaps.ps1`; `installer-msi.ps1` puts them in the MSI after
   `packageMsi`) and the MSIX's tiles `android/app/msix/Assets/*.png` from `orbt.ico`
-  (`android/app/msix/assets.ps1`). Change them with the icon.
+  (`android/app/msix/assets.ps1`); the welcome screen's `apple/ORBT/Assets.xcassets/AppIconImage.imageset`
+  is ictool's Default rendition at 360 px (the icon as people know it, in dark mode too). Change them with the icon.
 - `Version.xcconfig` — the version and build number of every platform, nowhere else: Xcode
   includes it (`apple/Config/ORBT.xcconfig`), Gradle reads it (`android/build.gradle.kts`: the
   Android app's versionName/versionCode, the desktop's packageVersion). One build counter for
