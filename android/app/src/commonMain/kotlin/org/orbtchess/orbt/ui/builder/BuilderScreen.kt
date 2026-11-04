@@ -377,10 +377,10 @@ private fun StudyMenu(actions: BuilderActions, above: Boolean) {
         )
         ExpressiveMenu(open, onDismissRequest = { open = false }) {
             group {
+                item("Study Repertoire", Symbols.study) { actions.study(DrillKind.Study) }
                 if (!root) {
                     item("Study Branch", Symbols.study, enabled = actions.canStudyBranch) { actions.studyBranch() }
                 }
-                item("Study Repertoire", Symbols.study) { actions.study(DrillKind.Study) }
                 item(if (root) "Practice Repertoire" else "Practice Branch", Symbols.practice, enabled = actions.canPractice) {
                     actions.study(DrillKind.Practice(actions.model.current))
                 }

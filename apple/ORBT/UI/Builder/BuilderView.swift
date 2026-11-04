@@ -533,15 +533,17 @@ private struct StudyMenu: View {
 
     var body: some View {
         Menu("Study", systemImage: "graduationcap") {
+            Button("Study Repertoire", systemImage: "graduationcap") { study(false) }
             if !atRoot {
                 Button("Study Branch", systemImage: "arrow.triangle.branch") { study(true) }
                     .disabled(progress.cards == 0)
             }
-            Button("Study Repertoire", systemImage: "graduationcap") { study(false) }
             Button(atRoot ? "Practice Repertoire" : "Practice Branch",
                    systemImage: "arrow.trianglehead.2.clockwise", action: practice)
                 .disabled(progress.studied == 0)
         }
+        // In this order from the top, also in a bottom bar (which would reverse it).
+        .menuOrder(.fixed)
     }
 }
 
