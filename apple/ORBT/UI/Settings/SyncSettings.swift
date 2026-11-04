@@ -1,4 +1,5 @@
 import OpeningCoreRust
+import AuthenticationServices
 import SwiftUI
 
 /// Sync: where the repertoires are kept in step across devices, one of iCloud Drive, Dropbox,

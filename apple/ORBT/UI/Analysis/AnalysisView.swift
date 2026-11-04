@@ -490,7 +490,7 @@ struct AnalysisMoveList: View {
 
     /// One level of a variation's guides: an outer level's line passing by (if it goes on),
     /// or this row's own ├ or └.
-    private struct Guide: Shape {
+    private nonisolated struct Guide: Shape {
         let own: Bool
         let goesOn: Bool
 

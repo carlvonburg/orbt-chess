@@ -1,4 +1,5 @@
 import OpeningCoreRust
+import AuthenticationServices
 import SwiftUI
 import UniformTypeIdentifiers
 
