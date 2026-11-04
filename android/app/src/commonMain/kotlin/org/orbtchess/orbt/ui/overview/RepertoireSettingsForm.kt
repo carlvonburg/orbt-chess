@@ -131,7 +131,7 @@ data class RepertoireSettingsDraft(
     val source: CoverageSource = CoverageSource.Blitz,
     /** The rating bin (lower bound, one of `databaseEloBins()`). */
     val rating: Int = 1600,
-    val targetGames: Int = CoverageDepth.Bulletproof.games,
+    val targetGames: Int = CoverageDepth.Standard.games,
 ) {
     val database: ExplorerDatabase get() = source.database(rating)
 

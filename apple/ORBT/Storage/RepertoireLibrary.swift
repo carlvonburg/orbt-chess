@@ -212,41 +212,6 @@ final class RepertoireLibrary {
         try add(name: name, pgn: { _ in data }, sidecar: sidecar)
     }
 
-    /// The bundled sample repertoire (White, 1.e4), added the first time; later calls return the existing
-    /// one (also when another device added it to the same iCloud folder).
-    func addSample() throws -> RepertoireEntry {
-        guard let folder else { throw CocoaError(.fileNoSuchFile) }
-        let pgn = folder.appending(path: Self.sampleName + ".pgn")
-        if FileManager.default.fileExists(atPath: pgn.path) {
-            return entries.first { $0.pgnURL.standardizedFileURL == pgn.standardizedFileURL } ?? insertEntry(for: pgn)
-        }
-        guard let url = Bundle.main.url(forResource: Self.sampleName, withExtension: "pgn") else {
-            throw CocoaError(.fileNoSuchFile)
-        }
-        var draft = RepertoireSettingsDraft()
-        draft.color = .white
-        draft.source = .blitz
-        draft.rating = 1600
-        // A small target, so a short repertoire is nearly complete: at 1 in 20 games of the
-        // blitz 1600–1799 table it leaves three gaps (1...e6, 3...Nf6 in the Italian, and
-        // 5...cxd4 in the Alapin), at depths 1, 3 and 5, to try filling.
-        draft.targetGames = 20
-        return try add(name: Self.sampleName, pgn: { _ in try Data(contentsOf: url) }, sidecar: draft.makeSidecar())
-    }
-
-    /// Whether this device's first launch has added the sample, or found repertoires already
-    /// (once per device: no sample when they are all deleted later). The tour's old key, so an
-    /// update doesn't add it again.
-    nonisolated static let sampleOfferedKey = "tourOffered"
-
-    /// The sample's name, also its bundled file's.
-    nonisolated static let sampleName = "1.e4 (Sample)"
-
-    /// Whether this PGN is the bundled sample's.
-    nonisolated static func isSample(_ pgnURL: URL) -> Bool {
-        pgnURL.deletingPathExtension().lastPathComponent == sampleName
-    }
-
     private func add(name: String, pgn: (String) throws -> Data, sidecar: Data) throws -> RepertoireEntry {
         guard let folder else { throw CocoaError(.fileNoSuchFile) }
         let clean = Self.cleanName(name)

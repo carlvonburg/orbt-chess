@@ -1255,6 +1255,8 @@ internal object IntegrityCheckingUniffiLib {
     ): Int
     external fun uniffi_opening_core_checksum_method_buildersession_can_forward(
     ): Int
+    external fun uniffi_opening_core_checksum_method_buildersession_can_go_to_biggest_gap(
+    ): Int
     external fun uniffi_opening_core_checksum_method_buildersession_continuation(
     ): Int
     external fun uniffi_opening_core_checksum_method_buildersession_current(
@@ -1885,6 +1887,8 @@ internal object UniffiLib {
     external fun uniffi_opening_core_fn_method_buildersession_back(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
     external fun uniffi_opening_core_fn_method_buildersession_can_forward(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
+    ): Byte
+    external fun uniffi_opening_core_fn_method_buildersession_can_go_to_biggest_gap(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): Byte
     external fun uniffi_opening_core_fn_method_buildersession_continuation(`ptr`: Long,uniffi_out_err: UniffiRustCallStatus, 
     ): RustBuffer.ByValue
@@ -3095,6 +3099,9 @@ private fun uniffiCheckApiChecksums(lib: IntegrityCheckingUniffiLib) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_method_buildersession_can_forward() and 0xFFFF) != 27256) {
+        throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
+    }
+    if ((lib.uniffi_opening_core_checksum_method_buildersession_can_go_to_biggest_gap() and 0xFFFF) != 15736) {
         throw RuntimeException("UniFFI API checksum mismatch: try cleaning and rebuilding your project")
     }
     if ((lib.uniffi_opening_core_checksum_method_buildersession_continuation() and 0xFFFF) != 23703) {
@@ -4602,6 +4609,8 @@ public interface BuilderSessionInterface {
     
     fun `canForward`(): kotlin.Boolean
     
+    fun `canGoToBiggestGap`(): kotlin.Boolean
+    
     fun `continuation`(): kotlin.UInt?
     
     fun `current`(): kotlin.UInt
@@ -4823,6 +4832,19 @@ open class BuilderSession: Disposable, AutoCloseable, BuilderSessionInterface
     callWithHandle {
     uniffiRustCall() { _status ->
     UniffiLib.uniffi_opening_core_fn_method_buildersession_can_forward(
+        it,
+        _status)
+}
+    }
+    )
+    }
+    
+
+    override fun `canGoToBiggestGap`(): kotlin.Boolean {
+            return FfiConverterBoolean.lift(
+    callWithHandle {
+    uniffiRustCall() { _status ->
+    UniffiLib.uniffi_opening_core_fn_method_buildersession_can_go_to_biggest_gap(
         it,
         _status)
 }
@@ -17251,6 +17273,15 @@ sealed class DrillMode {
         companion object
     }
     
+    data class Practice(
+        val v1: kotlin.UInt) : DrillMode()
+        
+    {
+        
+
+        companion object
+    }
+    
 
     
 
@@ -17271,6 +17302,9 @@ public object FfiConverterTypeDrillMode : FfiConverterRustBuffer<DrillMode>{
             2 -> DrillMode.Branch(
                 FfiConverterUInt.read(buf),
                 )
+            3 -> DrillMode.Practice(
+                FfiConverterUInt.read(buf),
+                )
             else -> throw RuntimeException("invalid enum value, something is very wrong!!")
         }
     }
@@ -17289,6 +17323,13 @@ public object FfiConverterTypeDrillMode : FfiConverterRustBuffer<DrillMode>{
                 + FfiConverterUInt.allocationSize(value.v1)
             )
         }
+        is DrillMode.Practice -> {
+            // Add the size for the Int that specifies the variant plus the size needed for all fields
+            (
+                4UL
+                + FfiConverterUInt.allocationSize(value.v1)
+            )
+        }
     }
 
     override fun write(value: DrillMode, buf: ByteBuffer) {
@@ -17299,6 +17340,11 @@ public object FfiConverterTypeDrillMode : FfiConverterRustBuffer<DrillMode>{
             }
             is DrillMode.Branch -> {
                 buf.putInt(2)
+                FfiConverterUInt.write(value.v1, buf)
+                Unit
+            }
+            is DrillMode.Practice -> {
+                buf.putInt(3)
                 FfiConverterUInt.write(value.v1, buf)
                 Unit
             }

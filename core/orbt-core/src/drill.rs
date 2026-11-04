@@ -20,8 +20,10 @@ use crate::training::{AnswerKind, LineOutcome, LineRun, MoveRole, StudyLine, Stu
 pub enum DrillMode {
     /// Today's cards (Anki's "Study Now").
     Study,
-    /// Every card under a position (Anki's custom study, a filtered deck).
+    /// Today's cards under a position (Anki's subdeck: the repertoire's limits).
     Branch(NodeId),
+    /// Every studied card under a position, due or not (Anki's custom study, a filtered deck).
+    Practice(NodeId),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -97,7 +99,7 @@ impl Drill {
     }
 
     pub fn is_filtered(&self) -> bool {
-        matches!(self.mode, DrillMode::Branch(_))
+        matches!(self.mode, DrillMode::Practice(_))
     }
 
     /// Starts the session; `learn_more` new cards are added to today's limit first.
@@ -114,11 +116,11 @@ impl Drill {
         if learn_more > 0 {
             changes = doc.extend_limits_today(learn_more, 0, timing);
         }
-        let branch = match self.mode {
-            DrillMode::Branch(id) => Some(id),
-            DrillMode::Study => None,
-        };
-        self.session = Some(doc.study_session(branch, timing));
+        self.session = Some(match self.mode {
+            DrillMode::Study => doc.study_session(None, timing),
+            DrillMode::Branch(id) => doc.study_session(Some(id), timing),
+            DrillMode::Practice(id) => doc.practice_session(id, timing),
+        });
         self.next_line(doc, timing);
         changes
     }

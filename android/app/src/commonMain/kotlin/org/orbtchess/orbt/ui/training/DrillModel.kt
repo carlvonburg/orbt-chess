@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import org.orbtchess.orbt.core.BoardSquare
 import org.orbtchess.orbt.core.Counts
 import org.orbtchess.orbt.core.DrillMode
+import org.orbtchess.orbt.storage.ROOT_NODE
 import org.orbtchess.orbt.core.DrillSession
 import org.orbtchess.orbt.core.Feedback
 import org.orbtchess.orbt.core.Phase
@@ -34,6 +35,7 @@ val DrillMode.title: String
     get() = when (this) {
         DrillMode.Study -> "Study"
         is DrillMode.Branch -> "Study Branch"
+        is DrillMode.Practice -> if (v1 == ROOT_NODE) "Practice" else "Practice Branch"
     }
 
 /**

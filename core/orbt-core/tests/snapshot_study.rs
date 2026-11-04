@@ -539,16 +539,17 @@ fn sessions() {
                 PracticeMode::CompleteLinesEveryTime,
                 PracticeMode::CompleteLinesOncePerSession,
             ] {
+                let limits = RemainingLimits {
+                    review: 30,
+                    new: 5,
+                    cap_new_to_review: true,
+                };
                 let daily = StudySession::daily(
                     trainer.clone(),
                     mode,
                     NewMoveOrder::default(),
                     &initial,
-                    RemainingLimits {
-                        review: 30,
-                        new: 5,
-                        cap_new_to_review: true,
-                    },
+                    limits,
                     &start(),
                     1200,
                     reach.clone(),
@@ -559,15 +560,26 @@ fn sessions() {
                     NewMoveOrder::default(),
                     branch,
                     &initial,
+                    limits,
+                    &start(),
+                    1200,
+                    reach.clone(),
+                );
+                let practice = StudySession::practice(
+                    trainer.clone(),
+                    mode,
+                    branch,
+                    &initial,
                     &start(),
                     1200,
                     reach.clone(),
                 );
                 let text = format!(
-                    "daily:\n{}\nbranch [{}]:\n{}",
+                    "daily:\n{}\nbranch [{}]:\n{}\npractice:\n{}",
                     simulate(daily, &initial, max_lines),
                     line_san(&tree, &tree.path(branch)),
-                    simulate(drill, &initial, max_lines)
+                    simulate(drill, &initial, max_lines),
+                    simulate(practice, &initial, max_lines)
                 );
                 insta::assert_snapshot!(format!("session.{name}.{cards}.{mode:?}"), text);
             }

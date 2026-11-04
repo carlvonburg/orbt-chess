@@ -499,6 +499,7 @@ pub struct Arrow {
 pub enum DrillMode {
     Study,
     Branch(NodeId),
+    Practice(NodeId),
 }
 
 #[uniffi::remote(Enum)]

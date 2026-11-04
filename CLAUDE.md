@@ -152,7 +152,8 @@ One folder per platform around a shared core (Android, Windows and Linux would b
   (how: `android/app/build.gradle.kts`), the MSI's pictures `android/app/icons/installer-*.bmp`
   from the .ico (`installer-bitmaps.ps1`; `installer-msi.ps1` puts them in the MSI after
   `packageMsi`) and the MSIX's tiles `android/app/msix/Assets/*.png` from `orbt.ico`
-  (`android/app/msix/assets.ps1`). Change them with the icon.
+  (`android/app/msix/assets.ps1`); the welcome screen's `apple/ORBT/Assets.xcassets/AppIconImage.imageset`
+  is ictool's Default rendition at 360 px (the icon as people know it, in dark mode too). Change them with the icon.
 - `Version.xcconfig` — the version and build number of every platform, nowhere else: Xcode
   includes it (`apple/Config/ORBT.xcconfig`), Gradle reads it (`android/build.gradle.kts`: the
   Android app's versionName/versionCode, the desktop's packageVersion). One build counter for
@@ -203,6 +204,9 @@ copyright header naming the source files, in Rust as before in Swift (see `train
 The UI follows Anki's deck list → deck overview → deck options, and says "moves", never
 "cards". Progress uses Anki's card-count groups (learning, young, mature), not a percentage.
 Study All runs repertoires one after another (Anki would mix a parent deck's reviews).
+Build's Study menu: Study Branch is Anki's subdeck (today's moves under the position, within
+and counted toward the repertoire's limits), Study Repertoire the daily session, Practice a
+filtered deck of every studied move under the position (no new moves, no limits).
 
 ## Analysis board and engine (see `core/orbt-core/src/engine`, `analysis`; `core/orbt-engine`)
 Analysis opens from Build and Study on the position on the board, with its move history. Its

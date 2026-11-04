@@ -1061,6 +1061,8 @@ public protocol BuilderSessionProtocol: AnyObject, Sendable {
     
     func canForward()  -> Bool
     
+    func canGoToBiggestGap()  -> Bool
+    
     func continuation()  -> UInt32?
     
     func current()  -> UInt32
@@ -1223,6 +1225,15 @@ open func canForward() -> Bool  {
     return try!  FfiConverterBool.lift(try! rustCall() {
         uniffiCallStatus in
     uniffi_opening_core_fn_method_buildersession_can_forward(
+            self.uniffiCloneHandle(),uniffiCallStatus
+    )
+})
+}
+    
+open func canGoToBiggestGap() -> Bool  {
+    return try!  FfiConverterBool.lift(try! rustCall() {
+        uniffiCallStatus in
+    uniffi_opening_core_fn_method_buildersession_can_go_to_biggest_gap(
             self.uniffiCloneHandle(),uniffiCallStatus
     )
 })
@@ -12186,6 +12197,8 @@ public enum DrillMode: Equatable, Hashable {
     case study
     case branch(UInt32
     )
+    case practice(UInt32
+    )
 
 
 
@@ -12212,6 +12225,9 @@ public struct FfiConverterTypeDrillMode: FfiConverterRustBuffer {
         case 2: return .branch(try FfiConverterUInt32.read(from: &buf)
         )
         
+        case 3: return .practice(try FfiConverterUInt32.read(from: &buf)
+        )
+        
         default: throw UniffiInternalError.unexpectedEnumCase
         }
     }
@@ -12226,6 +12242,11 @@ public struct FfiConverterTypeDrillMode: FfiConverterRustBuffer {
         
         case let .branch(v1):
             writeInt(&buf, Int32(2))
+            FfiConverterUInt32.write(v1, into: &buf)
+            
+        
+        case let .practice(v1):
+            writeInt(&buf, Int32(3))
             FfiConverterUInt32.write(v1, into: &buf)
             
         }
@@ -18337,6 +18358,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_buildersession_can_forward() != 27256) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_opening_core_checksum_method_buildersession_can_go_to_biggest_gap() != 15736) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_opening_core_checksum_method_buildersession_continuation() != 23703) {

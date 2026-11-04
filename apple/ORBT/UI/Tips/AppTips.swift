@@ -1,8 +1,8 @@
 import SwiftUI
 import TipKit
 
-/// TipKit tips for what the screens can't say on their own: what a gap is and where it is
-/// filled, what Biggest Gap does, and how a line is answered. Each shows where it applies and
+/// TipKit tips for what the screens can't say on their own, all in Browse and Study: how a
+/// line is entered and saved, what Biggest Gap does, how to study what was saved. Each shows where it applies and
 /// goes for good once its action is done, whether or not it was read (Apple's HIG, Onboarding:
 /// context-specific tips rather than one flow). Never more than one on screen: each is shown in
 /// a state the others aren't. Settings › Show Tips Again brings them back.
@@ -34,30 +34,39 @@ enum AppTips {
 /// unconditionally, and its rules (TipKit parameters the views set) say when it may show, so
 /// TipKit, not the view, shows and hides it.
 
-/// On a repertoire's overview with gaps, at Browse / Edit; done when it is tapped.
-struct GapsTip: Tip {
-    let id = "gaps.\(AppTips.generation)"
-    var options: [any TipOption] { AppTips.once }
-    /// The repertoire on screen has gaps.
-    @Parameter static var hasGaps: Bool = false
-    var rules: [Rule] { [#Rule(Self.$hasGaps) { $0 }] }
-    var title: Text { Text("Gaps") }
-    var message: Text? {
-        Text("Replies opponents at your level often play that this repertoire doesn't answer yet. Browse / Edit is where you fill them.")
-    }
-
-}
-
 /// In Browse, on the gap count under the board (iOS 26 shows no popover tip on a toolbar button,
-/// Apple forums 804587), naming the bar's button; done when Biggest Gap is used. Tips explain,
-/// never ask for a tap: an open popover takes the first tap outside it to close.
+/// Apple forums 804587), naming the bar's button; done when Biggest Gap is used. Only while
+/// browsing saved moves with somewhere for the button to go: not while a new line is entered
+/// (`SaveDraftTip` then). Tips explain, never ask for a tap: an open popover takes the first tap
+/// outside it to close.
 struct BiggestGapTip: Tip {
     let id = "biggestGap.\(AppTips.generation)"
     var options: [any TipOption] { AppTips.once }
-    /// Your move is missing on the board, where `AnswerTip` shows instead: one at a time.
-    var rules: [Rule] { [#Rule(AnswerTip.$yourMoveMissing) { !$0 }] }
+    /// Saved moves on the board (no new line) with gaps below them, Biggest Gap enabled.
+    @Parameter(.transient) static var canJump: Bool = false
+    /// Not where your move is missing, where `AnswerTip` shows instead: one at a time.
+    var rules: [Rule] { [#Rule(Self.$canJump) { $0 }, #Rule(AnswerTip.$yourMoveMissing) { !$0 }] }
     var title: Text { Text("Gaps in This Line") }
     var message: Text? { Text("Common replies below this move that you don't answer yet. \(Image(systemName: "scope")) Biggest Gap jumps to the one you'll meet most often.") }
+}
+
+/// Right after a save, on the counts under the board, naming the bar's button: building leads
+/// to studying. One thing at a time: a save arms it only once `BiggestGapTip` is done, so it is
+/// never shown just after that tip closes, only at a later save. Done when the Study menu is used.
+struct StudyBranchTip: Tip {
+    let id = "studyBranch.\(AppTips.generation)"
+    var options: [any TipOption] { AppTips.once }
+    /// Saved moves on the board (no new line) with moves of yours to study below.
+    @Parameter(.transient) static var canStudy: Bool = false
+    /// A line was just saved while the gaps tip was done; cleared when a new line is started.
+    @Parameter(.transient) static var justSaved: Bool = false
+    var rules: [Rule] {
+        [#Rule(Self.$canStudy) { $0 }, #Rule(Self.$justSaved) { $0 }, #Rule(AnswerTip.$yourMoveMissing) { !$0 }]
+    }
+    var title: Text { Text("Study These Moves") }
+    var message: Text? {
+        Text("\(Image(systemName: "graduationcap")) Study Branch trains today's moves from here on: the app plays the replies and you answer.")
+    }
 }
 
 /// Your move is missing on the board (a gap, or a new line at your move), on its badge; done when
@@ -65,10 +74,10 @@ struct BiggestGapTip: Tip {
 struct AnswerTip: Tip {
     let id = "answer.\(AppTips.generation)"
     var options: [any TipOption] { AppTips.once }
-    @Parameter static var yourMoveMissing: Bool = false
+    @Parameter(.transient) static var yourMoveMissing: Bool = false
     var rules: [Rule] { [#Rule(Self.$yourMoveMissing) { $0 }] }
-    var title: Text { Text("A Gap") }
-    var message: Text? { Text("Opponents often reach this position and your repertoire has no move here yet. The candidates show how often each move is played and how it scores.") }
+    var title: Text { Text("Add Your Move") }
+    var message: Text? { Text("Your repertoire has no move here yet. Tap one of the candidates below, which show how often each is played and how it scores, or play it on the board.") }
 }
 
 /// The opponent's move in a new line, with replies that still need an answer, on the Covered
@@ -76,11 +85,25 @@ struct AnswerTip: Tip {
 struct RepliesTip: Tip {
     let id = "replies.\(AppTips.generation)"
     var options: [any TipOption] { AppTips.once }
-    @Parameter static var repliesNeeded: Bool = false
+    @Parameter(.transient) static var repliesNeeded: Bool = false
     var rules: [Rule] { [#Rule(Self.$repliesNeeded) { $0 }] }
     var title: Text { Text("Replies to Cover") }
     var message: Text? { Text("A bar means the reply is common enough to need your answer. \"Not needed\" ones are rarer than your target.") }
 
+}
+
+/// A new line with a few of your moves, short of the coverage target, on its "New line, not
+/// saved" badge; done when a line is saved. On a new repertoire the target can be many moves
+/// away, and nothing needs to wait for it.
+struct SaveDraftTip: Tip {
+    let id = "saveDraft.\(AppTips.generation)"
+    var options: [any TipOption] { AppTips.once }
+    @Parameter(.transient) static var canSave: Bool = false
+    var rules: [Rule] { [#Rule(Self.$canSave) { $0 }] }
+    var title: Text { Text("Save as You Go") }
+    var message: Text? {
+        Text("\(Image(systemName: "checkmark")) saves these moves to your repertoire now, before every reply is covered. Come back to the line later to answer more.")
+    }
 }
 
 /// A new line reached the coverage target (every reply is rarer than it), on its "Coverage target
@@ -88,7 +111,7 @@ struct RepliesTip: Tip {
 struct SaveTip: Tip {
     let id = "save.\(AppTips.generation)"
     var options: [any TipOption] { AppTips.once }
-    @Parameter static var lineReached: Bool = false
+    @Parameter(.transient) static var lineReached: Bool = false
     var rules: [Rule] { [#Rule(Self.$lineReached) { $0 }] }
     var title: Text { Text("Line Covered") }
     var message: Text? {
@@ -115,7 +138,7 @@ enum StudyTips {
 struct StudyCountsTip: Tip {
     let id = "studyCounts.\(AppTips.generation)"
     var options: [any TipOption] { AppTips.once }
-    @Parameter static var userTurn: Bool = false
+    @Parameter(.transient) static var userTurn: Bool = false
     var rules: [Rule] { [#Rule(Self.$userTurn) { $0 }] }
     var title: Text { Text("Today's Moves") }
     var message: Text? {
@@ -127,7 +150,7 @@ struct StudyCountsTip: Tip {
 struct NewMoveTip: Tip {
     let id = "newMove.\(AppTips.generation)"
     var options: [any TipOption] { AppTips.once }
-    @Parameter static var newMove: Bool = false
+    @Parameter(.transient) static var newMove: Bool = false
     var rules: [Rule] { [#Rule(Self.$newMove) { $0 }] }
     var title: Text { Text("A New Move") }
     var message: Text? {
@@ -139,7 +162,7 @@ struct NewMoveTip: Tip {
 struct HintTip: Tip {
     let id = "hint.\(AppTips.generation)"
     var options: [any TipOption] { AppTips.once }
-    @Parameter static var recall: Bool = false
+    @Parameter(.transient) static var recall: Bool = false
     var rules: [Rule] { [#Rule(Self.$recall) { $0 }] }
     var title: Text { Text("Can't Remember?") }
     var message: Text? {

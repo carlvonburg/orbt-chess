@@ -255,7 +255,7 @@ fun TodayCard(app: AppModel, navigate: (Destination) -> Unit, modifier: Modifier
                 // What can still be done today: new moves and gaps, or else practice and adding lines.
                 if (unlearned.isEmpty() && withGaps.isEmpty()) {
                     action("Practice", withMoves.filter { it.stats.progress.studied > 0 }, main = false, detail = { "${it.progress.studied} moves" }) {
-                        Destination.Drill(it, DrillKind.Practice)
+                        Destination.Drill(it, DrillKind.Practice())
                     }
                     action("Add Lines", withMoves.sortedBy { it.stats.completion }, main = false, detail = { "${Format.percent(it.completion)} built" }) {
                         Destination.Builder(it)

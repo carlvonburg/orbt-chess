@@ -26,6 +26,31 @@ daily:
 12 answers, 8 positions answered, 8 played; counts Counts { new: 0, learning: 0, review: 0 }
 
 branch [e4]:
++0s Counts { new: 0, learning: 2, review: 4 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3
+  roles: 0 auto, 2 queued, 4 queued, 6 reviewahead, 8 queued, 10 queued
+  2 Good: Review/Review due 115 ivl 15
+  4 Good: Review/Review due 107 ivl 7
+  6 Good filtered: Review/Review due 122 ivl 22
+  8 Good: Review/Review due 123 ivl 23
+  10 Again: Learn/Learn due +107s ivl 0
++42s Counts { new: 0, learning: 1, review: 2 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3 (from 9)
+  roles: 0 auto, 2 auto, 4 auto, 6 auto, 8 auto, 10 queued
+  10 Good: Review/Review due 124 ivl 24
++84s Counts { new: 0, learning: 1, review: 1 } e4 e5 Nf3
+  roles: 0 auto, 2 queued
+  2 Again: Relearn/Learn due +762s ivl 1
++98s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 (skip to 5)
+  roles: 0 auto, 2 auto, 4 auto, 6 auto, 8 auto, 10 queued
+  10 Good: Learn/Learn due +815s ivl 0
++140s Counts { new: 0, learning: 2, review: 0 } e4 e5 Nf3
+  roles: 0 auto, 2 queued
+  2 Good: Review/Review due 101 ivl 1
++154s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 (skip to 5)
+  roles: 0 auto, 2 auto, 4 auto, 6 auto, 8 auto, 10 queued
+  10 Good: Review/Review due 101 ivl 1
+10 answers, 7 positions answered, 7 played; counts Counts { new: 0, learning: 0, review: 0 }
+
+practice:
 +0s Counts { new: 0, learning: 2, review: 5 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3
   roles: 0 auto, 2 queued, 4 queued, 6 queued, 8 queued, 10 queued
   2 Good filtered: Review/Review due 115 ivl 15
@@ -33,22 +58,19 @@ branch [e4]:
   6 Good filtered: Review/Review due 122 ivl 22
   8 Good filtered: Review/Review due 123 ivl 23
   10 Again filtered: Learn/Learn due +107s ivl 0
-+42s Counts { new: 0, learning: 1, review: 2 } e4 e5 Nf3
-  roles: 0 auto, 2 queued
-  2 Good filtered: Review/Review due 124 ivl 24
-+56s Counts { new: 0, learning: 1, review: 1 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3 (skip to 5)
++42s Counts { new: 0, learning: 1, review: 2 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 g6 Be3 (from 9)
   roles: 0 auto, 2 auto, 4 auto, 6 auto, 8 auto, 10 queued
   10 Good filtered: Review/Review due 124 ivl 24
-+98s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 (from 9)
++84s Counts { new: 0, learning: 1, review: 1 } e4 e5 Nf3
+  roles: 0 auto, 2 queued
+  2 Again filtered: Relearn/Learn due +762s ivl 1
++98s Counts { new: 0, learning: 2, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 (skip to 5)
   roles: 0 auto, 2 auto, 4 auto, 6 auto, 8 auto, 10 queued
   10 Good filtered: Learn/Learn due +815s ivl 0
-+140s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 (from 10)
-  roles: 0 auto, 2 auto, 4 auto, 6 auto, 8 auto, 10 queued
-  10 Again filtered: Learn/Learn due +254s ivl 0
-+182s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 (from 10)
-  roles: 0 auto, 2 auto, 4 auto, 6 auto, 8 auto, 10 queued
-  10 Good filtered: Learn/Learn due +946s ivl 0
-+224s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 (from 10)
++140s Counts { new: 0, learning: 2, review: 0 } e4 e5 Nf3
+  roles: 0 auto, 2 queued
+  2 Good filtered: Review/Review due 101 ivl 1
++154s Counts { new: 0, learning: 1, review: 0 } e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6 Be3 (skip to 5)
   roles: 0 auto, 2 auto, 4 auto, 6 auto, 8 auto, 10 queued
   10 Good filtered: Review/Review due 101 ivl 1
-11 answers, 7 positions answered, 7 played; counts Counts { new: 0, learning: 0, review: 0 }
+10 answers, 7 positions answered, 7 played; counts Counts { new: 0, learning: 0, review: 0 }

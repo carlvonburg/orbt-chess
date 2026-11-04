@@ -10,6 +10,10 @@ enum AppTab: Hashable {
 @Observable
 final class AppModel {
     var selectedTab = AppTab.repertoires
+    /// The setup sheet shown over the whole app (`RootView`), from onboarding or the library.
+    var setup: SetupRequest?
+    /// A repertoire just set up, for the library to show (`LibraryView.openPending`).
+    var pendingShow: PendingShow?
     /// The Statistics tab's repertoire, set when a repertoire's overview shows more.
     var statisticsScope = StatisticsModel.Scope.all
 
@@ -164,4 +168,10 @@ final class AppModel {
     func closeAll() {
         for id in Array(documents.keys) { close(id) }
     }
+}
+
+/// A repertoire to show when the library appears: on Browse (`build`) or its overview.
+struct PendingShow: Equatable {
+    let entryID: String
+    let build: Bool
 }

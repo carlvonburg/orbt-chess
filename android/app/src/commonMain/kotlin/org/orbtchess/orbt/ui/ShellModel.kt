@@ -207,7 +207,7 @@ class ShellModel(private val app: AppModel) : ViewModel() {
                     when (val kind = destination.kind) {
                         DrillKind.Study -> DrillModel(doc, DrillMode.Study)
                         DrillKind.LearnMore -> DrillModel(doc, DrillMode.Study, learnMore = TrainingDefaults.LEARN_MORE_COUNT)
-                        DrillKind.Practice -> DrillModel(doc, DrillMode.Branch(ROOT_NODE))
+                        is DrillKind.Practice -> DrillModel(doc, DrillMode.Practice(kind.node))
                         is DrillKind.Branch -> DrillModel(doc, DrillMode.Branch(kind.node))
                     },
                 )

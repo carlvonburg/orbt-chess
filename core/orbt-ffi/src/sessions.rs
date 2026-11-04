@@ -111,6 +111,10 @@ impl BuilderSession {
         self.view(|b, doc| b.is_user_turn_on_board(doc))
     }
 
+    pub fn can_go_to_biggest_gap(&self) -> bool {
+        self.view(|b, doc| b.can_go_to_biggest_gap(doc))
+    }
+
     pub fn moves_to_board(&self) -> Vec<PlayedMove> {
         self.view(|b, doc| b.moves_to_board(doc))
     }

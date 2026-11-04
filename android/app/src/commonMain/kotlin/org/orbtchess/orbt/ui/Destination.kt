@@ -3,6 +3,7 @@ package org.orbtchess.orbt.ui
 import org.orbtchess.orbt.core.PlayedMove
 import org.orbtchess.orbt.core.Side
 import org.orbtchess.orbt.storage.NodeId
+import org.orbtchess.orbt.storage.ROOT_NODE
 
 /**
  * Every screen the app can show, typed (`LibraryRoute` and the sheets of the Swift app). Screens
@@ -73,10 +74,10 @@ sealed interface DrillKind {
     /** Study with today's new limit raised (Anki's custom study). */
     data object LearnMore : DrillKind
 
-    /** Every studied move, as a branch session over the whole repertoire. */
-    data object Practice : DrillKind
+    /** Every studied move under a position, due or not (Anki's filtered deck): Practice. */
+    data class Practice(val node: NodeId = ROOT_NODE) : DrillKind
 
-    /** Every move under one position: Study Branch in Build. */
+    /** Today's moves under one position (Anki's subdeck): Study Branch in Build. */
     data class Branch(val node: NodeId) : DrillKind
 }
 

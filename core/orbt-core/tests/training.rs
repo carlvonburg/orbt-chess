@@ -684,3 +684,80 @@ fn branch_point_continues_through_transposition() {
     );
     assert_eq!(p.branches.len(), 2);
 }
+
+#[test]
+fn branch_session_is_a_subdeck() {
+    // Black: a card at every position after White's move
+    let mut tree = RepertoireTree::default();
+    for line in [
+        "e4 c5 Nf3 d6 d4 cxd4 Nxd4 Nf6 Nc3 a6",
+        "e4 c5 Nc3 Nc6 g3 g6",
+        "e4 c5 c3 Nf6 e5 Nd5",
+        "d4 Nf6 c4 e6 Nc3 Bb4",
+    ] {
+        tree.add(line);
+    }
+    let t = trainer(&tree, Side::Black);
+    let branch = tree.find("e4").unwrap();
+    let below = t.card_epds(branch);
+    let limits = RemainingLimits {
+        review: 200,
+        new: 2,
+        cap_new_to_review: true,
+    };
+    let none = HashMap::new();
+    let session = StudySession::branch(
+        t.clone(),
+        PracticeMode::IndividualMoves,
+        NewMoveOrder::default(),
+        branch,
+        &none,
+        limits,
+        &timing(),
+        1200,
+        HashMap::new(),
+    );
+    // new moves within the daily limit, not every one below the branch
+    assert!(below.len() > 2);
+    assert_eq!(session.queue.counts.new, 2);
+    assert!(!session.is_filtered);
+    let mut session = session;
+    let line = session.next_line(&none).unwrap();
+    assert!(tree.is_ancestor(branch, *line.nodes.last().unwrap()));
+
+    // a review due outside the branch is not in it
+    let d4 = tree[tree.find("d4").unwrap()].epd.clone();
+    let e4 = tree[branch].epd.clone();
+    let due = |epd: &Epd| Card {
+        due: 90,
+        ..answer(epd, 0, Rating::Easy, &timing())
+    };
+    let cards = HashMap::from([(d4.clone(), due(&d4)), (e4.clone(), due(&e4))]);
+    let session = StudySession::branch(
+        t.clone(),
+        PracticeMode::IndividualMoves,
+        NewMoveOrder::default(),
+        branch,
+        &cards,
+        RemainingLimits { new: 0, ..limits },
+        &timing(),
+        1200,
+        HashMap::new(),
+    );
+    assert_eq!(session.queue.counts.review, 1);
+    assert!(session.queue.contains(&e4) && !session.queue.contains(&d4));
+
+    // practice: every studied move below, due or not, no new ones
+    let practice = StudySession::practice(
+        t,
+        PracticeMode::IndividualMoves,
+        branch,
+        &cards,
+        &timing(),
+        1200,
+        HashMap::new(),
+    );
+    assert!(practice.is_filtered);
+    assert_eq!(practice.queue.counts.new, 0);
+    assert_eq!(practice.queue.counts.review, 1);
+}

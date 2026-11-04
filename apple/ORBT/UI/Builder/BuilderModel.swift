@@ -66,6 +66,9 @@ final class BuilderModel {
     var lineAhead: [NodeID] { observe(); return session.lineAhead(limit: 40) }
     var lastMove: PlayedMove? { observe(); return session.lastMove() }
     var isUserTurnOnBoard: Bool { observe(); return session.isUserTurnOnBoard() }
+    /// Biggest Gap has somewhere to go: not when the board shows it already (a new repertoire's
+    /// first move).
+    var canGoToBiggestGap: Bool { observe(); return session.canGoToBiggestGap() }
 
     /// Probability of reaching the board position. Nil while a needed statistic is missing.
     var reachOnBoard: Double? { observe(); return session.reachOnBoard() }

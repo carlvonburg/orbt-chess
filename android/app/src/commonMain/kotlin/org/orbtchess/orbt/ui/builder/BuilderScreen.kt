@@ -46,6 +46,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import org.orbtchess.orbt.AppModel
+import org.orbtchess.orbt.core.studied
 import org.orbtchess.orbt.storage.ROOT_NODE
 import org.orbtchess.orbt.ui.AnalysisOrigin
 import org.orbtchess.orbt.ui.Destination
@@ -141,11 +142,17 @@ private class BuilderActions(
         Destination.Analysis(document.entryId, null, model.movesToBoard, model.orientation, AnalysisOrigin.Build),
     )
 
-    fun studyBranch(node: UInt = model.current) {
+    fun studyBranch(node: UInt = model.current) = study(DrillKind.Branch(node))
+
+    /** Study Branch, Study Repertoire or Practice from the Study menu. */
+    fun study(kind: DrillKind) {
         // The tour's last step.
         if (inTour) tour.advance(from = TourGuide.Step.Study, to = TourGuide.Step.Studying)
-        navigate(Destination.Drill(document.entryId, DrillKind.Branch(node)))
+        navigate(Destination.Drill(document.entryId, kind))
     }
+
+    val atRoot: Boolean get() = model.current == ROOT_NODE
+    val canPractice: Boolean get() = document.learningProgress(model.current).studied > 0
 
     fun moveInfo() = navigate(Destination.CardInfo(document.entryId, model.current))
 
@@ -345,17 +352,41 @@ private fun NavigationButtons(model: BuilderModel) {
     }
 }
 
-/** Biggest Gap and Study Branch; [above]: their tooltips above (a bottom toolbar) or below (a top app bar). */
+/** Biggest Gap and the Study menu; [above]: their tooltips above (a bottom toolbar) or below (a top app bar). */
 @Composable
 private fun GapAndStudyButtons(actions: BuilderActions, above: Boolean) {
     TooltipIconButton(
         "Biggest Gap", BuilderSymbols.biggestGap, actions::biggestGap,
         Modifier.tourTarget(TourGuide.Target.BiggestGap), enabled = actions.canBiggestGap, above = above,
     )
-    TooltipIconButton(
-        "Study Branch", Symbols.study, { actions.studyBranch() },
-        Modifier.tourTarget(TourGuide.Target.StudyBranch), enabled = actions.canStudyBranch, above = above,
-    )
+    StudyMenu(actions, above)
+}
+
+/**
+ * Today's moves in this branch (Anki's subdeck), the whole repertoire's session, or every learned
+ * move in the branch again (`StudyMenu` in BuilderView.swift).
+ */
+@Composable
+private fun StudyMenu(actions: BuilderActions, above: Boolean) {
+    var open by remember { mutableStateOf(false) }
+    val root = actions.atRoot
+    Box {
+        TooltipIconButton(
+            "Study", Symbols.study, { open = true },
+            Modifier.tourTarget(TourGuide.Target.StudyBranch), above = above,
+        )
+        ExpressiveMenu(open, onDismissRequest = { open = false }) {
+            group {
+                item("Study Repertoire", Symbols.study) { actions.study(DrillKind.Study) }
+                if (!root) {
+                    item("Study Branch", Symbols.study, enabled = actions.canStudyBranch) { actions.studyBranch() }
+                }
+                item(if (root) "Practice Repertoire" else "Practice Branch", Symbols.practice, enabled = actions.canPractice) {
+                    actions.study(DrillKind.Practice(actions.model.current))
+                }
+            }
+        }
+    }
 }
 
 /** The builder's menu (`BuilderMoreMenu`): top trailing (over the panel on wide windows). */

@@ -7,7 +7,6 @@ struct SettingsView: View {
     @Environment(\.webAuthenticationSession) private var webAuth
     @Environment(\.dismiss) private var dismiss
     @State private var cacheCount = 0
-    @State private var sampleError: String?
     @State private var tipsShown = false
     @AppStorage(TrainingDefaults.newPerDayKey) private var newPerDay = Int(TrainingDefaults.preset.newPerDay)
     @AppStorage(TrainingDefaults.reviewsPerDayKey) private var reviewsPerDay = Int(TrainingDefaults.preset.reviewsPerDay)
@@ -79,26 +78,13 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Button("Add Sample Repertoire", systemImage: "book.pages") {
-                        do {
-                            let sample = try model.library.addSample()
-                            // Opened now, so its row shows its moves and gaps (an unopened new
-                            // sidecar has none yet).
-                            Task { _ = await model.open(sample) }
-                            model.selectedTab = .repertoires
-                            dismiss()
-                        } catch {
-                            sampleError = error.localizedDescription
-                        }
-                    }
-                    if let sampleError { Text(sampleError).font(.footnote).foregroundStyle(.failure) }
                     Button("Show Tips Again", systemImage: "lightbulb") {
                         AppTips.showAgain()
                         tipsShown = true
                     }
                     .disabled(tipsShown)
                 } footer: {
-                    Text("The sample is a 1.e4 repertoire with a few gaps to try things on. Tips explain gaps and coverage the first time you meet them.")
+                    Text("Tips explain gaps and coverage the first time you meet them.")
                 }
 
                 Section {
