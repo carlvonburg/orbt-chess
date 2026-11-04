@@ -76,6 +76,42 @@ kotlin {
     jvmToolchain(17)
 }
 
+// What a release bundle must have, checked before it is built, so one without them is never
+// uploaded: the Dropbox key, the upload key, and the core's .so files built (for release) from
+// the core as it is now (build-android.sh records which: jniLibs.sources). Google Drive needs
+// nothing here: Play services matches the app's signing certificate.
+val checkReleaseInputs by tasks.registering {
+    group = "verification"
+    description = "Fails unless the release has its keys and up-to-date core libraries."
+    val key = dropboxAppKey
+    val signed = keystoreProperties != null && uploadKeyPassword != null
+    val stamp = file("jniLibs.sources")
+    val fingerprintScript = rootProject.file("../core/scripts/core-fingerprint.sh")
+    doLast {
+        val problems = mutableListOf<String>()
+        if (key.isBlank()) {
+            problems += "no Dropbox app key (orbt.dropboxAppKey in local.properties or -P)"
+        }
+        if (!signed) {
+            problems += "no upload key (keystore.properties, and its password in the Keychain's \"ORBT upload key\")"
+        }
+        val built = stamp.takeIf { it.exists() }?.readText()?.trim()
+        val current = ProcessBuilder(fingerprintScript.path).redirectErrorStream(true).start()
+            .let { process -> process.inputStream.bufferedReader().readText().trim().takeIf { process.waitFor() == 0 } }
+        when {
+            built == null -> problems += "the core's .so files have no release build record: run core/scripts/build-android.sh"
+            current == null -> problems += "could not fingerprint the core (core/scripts/core-fingerprint.sh)"
+            built != current -> problems += "the core's .so files are older than the core: run core/scripts/build-android.sh"
+        }
+        if (problems.isNotEmpty()) {
+            throw GradleException("This release is not ready:\n" + problems.joinToString("\n") { "- $it" })
+        }
+    }
+}
+
+// Every release variant (bundleRelease, assembleRelease) checks first.
+tasks.matching { it.name == "preReleaseBuild" }.configureEach { dependsOn(checkReleaseInputs) }
+
 dependencies {
     implementation(project(":app"))
     implementation(project(":core"))
