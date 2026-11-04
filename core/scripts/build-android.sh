@@ -5,6 +5,8 @@
 #   android/core/src/commonMain/kotlin/.../opening_core.kt (generated Kotlin bindings, committed)
 #   android/app/src/commonMain/composeResources/files/Acknowledgements.json
 #                                                          (the licenses Settings shows, committed)
+#   android/androidApp/jniLibs.sources                     (core-fingerprint.sh of a release build,
+#                                                          not committed: a release bundle checks it)
 # The host's library serves the JVM tests (jna.library.path) and the desktop app: Gradle copies it
 # into the app's resources for this OS and architecture (app/build.gradle.kts, `copyHostLibrary`,
 # Compose's appResourcesRootDir: macos-arm64/, linux-x64/, windows-x64/), so `./gradlew :app:run`
@@ -47,6 +49,11 @@ abis=(
   "x86_64-linux-android x86_64 x86_64-linux-android"
 )
 
+# Removed first so a failed or half-done build is never taken as current.
+stamp="$repo_dir/android/androidApp/jniLibs.sources"
+rm -f "$stamp"
+fingerprint="$("$core_dir/scripts/core-fingerprint.sh")"
+
 cd "$core_dir"
 for entry in $abis; do
   read target abi triple <<< "$entry"
@@ -88,3 +95,4 @@ echo "updated $module_dir and $jni_dir"
 
 # The licenses of what the Android and desktop app ships.
 python3 "$core_dir/scripts/acknowledgements.py" --android
+if [[ "$profile" == release ]]; then echo "$fingerprint" > "$stamp"; fi

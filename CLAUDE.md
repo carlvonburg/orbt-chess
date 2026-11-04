@@ -305,3 +305,8 @@ in `Design/COLORS.md`. The commit hook blocks hue names in `UI/` outside `Palett
   `core/orbt-ffi/` or Cargo.lock (the committed bindings must be up to date), the simulator build
   for `apple/` or the FFI, build-android.sh for the FFI (the Kotlin bindings too) and the JVM
   tests (`:core:jvmTest`, `:app:desktopTest`, with the Android app's Kotlin) for `android/` or the FFI. A blocked commit is fixed, not bypassed.
+  Release guards, so nothing ships without its keys or with an old core: a Release build in Xcode
+  (Archive) runs `apple/scripts/check-release.sh` (the keys in `Secrets.xcconfig`; the framework's
+  `OpeningCoreFFI.sources` is `core-fingerprint.sh` now); Android's release variants depend on
+  `checkReleaseInputs` (the Dropbox key, the upload key; `androidApp/jniLibs.sources`, written by a
+  release build-android.sh); a version tag's workflow checks the sync secrets first.
