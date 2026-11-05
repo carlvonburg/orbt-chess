@@ -59,6 +59,9 @@ final class RepertoireLibrary {
     /// library shows them as placeholders (HIG, Launching: restore the previous state), never
     /// the welcome screen (`RootView`).
     let remembered: [RememberedRepertoire]
+    /// Repertoires are expected: remembered, or (after an update from a version that did not
+    /// remember them) a repertoire was set up on this device, whose setup choices are kept.
+    let expectsRepertoires: Bool
     var lastError: String?
 
     @ObservationIgnored private var presenter: FilePresenter?
@@ -80,6 +83,8 @@ final class RepertoireLibrary {
     init(folder: URL? = nil) {
         fixedFolder = folder
         remembered = folder == nil ? Self.loadRemembered() : []
+        expectsRepertoires = !remembered.isEmpty
+            || folder == nil && UserDefaults.standard.object(forKey: RepertoireSettingsDraft.sourceKey) != nil
     }
 
     /// The folder, once `setUp` has found it (iCloud Drive's can take a while after an install):

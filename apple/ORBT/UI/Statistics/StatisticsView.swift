@@ -111,7 +111,10 @@ struct StatisticsSummary<Lead: View>: View {
                     .scenePadding()
             }
         } else if model.graphs == nil {
-            ProgressView()
+            ScrollView {
+                VStack(spacing: 16) { StatisticsPlaceholder() }
+                    .scenePadding()
+            }
         } else {
             ContentUnavailableView("No Statistics Yet", systemImage: "chart.bar",
                                    description: Text("Study a repertoire to see your progress here."))
@@ -131,7 +134,7 @@ struct StatisticsSummary<Lead: View>: View {
                 cards(graphs)
             }
         } else if model.graphs == nil {
-            ProgressView().frame(maxWidth: .infinity).padding()
+            StatisticsPlaceholder()
         } else {
             ContentUnavailableView("No Statistics Yet", systemImage: "chart.bar",
                                    description: Text("Study a repertoire to see your progress here."))

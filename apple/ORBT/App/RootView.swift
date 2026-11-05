@@ -26,7 +26,7 @@ struct RootView: View {
     private var content: some View {
         @Bindable var model = model
         let library = model.library
-        if library.entries.isEmpty && (library.isLoaded || library.remembered.isEmpty) {
+        if library.entries.isEmpty && (library.isLoaded || !library.expectsRepertoires) {
             // Nothing for the tabs or the sidebar to show: the ways to a first repertoire, at
             // once (HIG, Launching). A first launch never waits for iCloud Drive: its repertoires
             // replace this screen as they arrive, and it says while it looks for them.

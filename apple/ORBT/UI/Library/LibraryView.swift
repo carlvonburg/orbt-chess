@@ -274,11 +274,17 @@ struct LibraryView: View {
             .environment(\.openScreen, OpenScreenAction(openScreen))
             .environment(\.openAnalysis, OpenAnalysisAction(openAnalysis))
         } else if isListing {
-            // Today's card as a placeholder until the repertoires are listed; the statistics
-            // follow under it then (made now, they would count nothing).
+            // The dashboard's outlines until the repertoires are listed (the statistics, made
+            // now, would count nothing): Today's card, the statistics' cards.
             ScrollView {
-                GroupBox { todayRows([:], wide: true) }
-                    .scenePadding()
+                VStack(alignment: .leading, spacing: 16) {
+                    GroupBox { todayRows([:], wide: true) }
+                    Text("Statistics").font(.title2.bold())
+                        .accessibilityAddTraits(.isHeader)
+                        .padding(.top, 8)
+                    StatisticsPlaceholder()
+                }
+                .scenePadding()
             }
             .navigationTitle("Today")
         } else {
@@ -569,6 +575,16 @@ struct LibraryView: View {
         if isListing {
             // The repertoires as last listed, until iCloud Drive lists them again: their names,
             // the rest a placeholder.
+            if model.library.remembered.isEmpty {
+                // Repertoires made before the library remembered them (an update): unnamed.
+                Section {
+                    ForEach(0..<2, id: \.self) { _ in
+                        LibraryRow(entry: .placeholder("Repertoire"), stats: EntryStats(), status: "Loading the repertoire",
+                                   knowsName: false)
+                            .redacted(reason: .placeholder)
+                    }
+                }
+            }
             ForEach(LibraryGroup.allCases) { group in
                 let remembered = model.library.remembered.filter { group.contains($0) }
                 if !remembered.isEmpty {
@@ -1075,12 +1091,15 @@ struct LibraryRow: View {
     let entry: RepertoireEntry
     let stats: EntryStats
     var status: String?
+    /// A placeholder row's name is the one last listed; false when there is none.
+    var knowsName = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(entry.name).font(.headline).lineLimit(1)
                         // Known on a placeholder row too.
+                        .redacted(reason: knowsName ? [] : .placeholder)
                         .unredacted()
                     Spacer(minLength: 0)
                     if status == nil {

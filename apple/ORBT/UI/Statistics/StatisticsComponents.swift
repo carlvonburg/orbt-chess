@@ -296,3 +296,37 @@ struct MoveGroupsBar: View {
         .accessibilityHidden(true)
     }
 }
+
+/// The cards' outlines while the statistics load (HIG, Loading: placeholders, not an empty
+/// page): the period and the first cards, titled, their numbers and charts redacted.
+struct StatisticsPlaceholder: View {
+    var body: some View {
+        Picker("Period", selection: .constant(GraphRange.month)) {
+            ForEach(GraphRange.allCases) { Text($0.shortTitle).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .disabled(true)
+        MasonryLayout {
+            card("Moves", "square.stack.3d.up.fill", .learned, unit: "learned")
+            card("Upcoming", "calendar", nil, unit: "due tomorrow")
+            card("Reviews", "chart.bar.fill", nil, unit: "answers a day")
+            card("Retention", "checkmark.seal.fill", .correct, unit: "remembered")
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Loading statistics")
+    }
+
+    private func card(_ title: String, _ systemImage: String, _ color: ThemeColor?, unit: String) -> some View {
+        StatCard(title: title, systemImage: systemImage, color: color) {
+            Group {
+                StatValue(value: "00", unit: unit)
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.quaternary)
+                    .frame(height: 160)
+                Text("The statistics of this period, loading.").font(.footnote)
+            }
+            .redacted(reason: .placeholder)
+        }
+    }
+}
