@@ -630,7 +630,11 @@ private struct BoardColumnView: View {
     @ViewBuilder
     private func historyFrame(_ history: some View, buttons: Bool) -> some View {
         #if os(macOS)
-        history.frame(width: max(120, columnWidth - (buttons ? 180 : 60) - 200))
+        // A flexible item, as Safari's address field: the window toolbar sizes it between
+        // these as the columns change (a width computed from the column went stale when the
+        // sidebar collapsed or expanded), and never below the minimum, so it stays out of the
+        // overflow menu.
+        history.frame(minWidth: 240, idealWidth: 480, maxWidth: 720)
         #else
         // The bar as wide as the board, within the bar's margins (a board edge to edge across
         // the column is wider than they allow, and an item that does not fit is dropped): the
@@ -664,6 +668,7 @@ private struct BoardColumnView: View {
                         }
                         AnalysisEngineLines(model: model)
                     }
+                    .toolbarTopMargin()
                 } board: {
                     AnalysisBoard(model: model)
                 } below: {
