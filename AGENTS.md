@@ -26,6 +26,9 @@ Non-goals for now: auto gap filling, online game review, daily tasks, plans in a
 model games.
 
 ## Decisions
+- When an established system already solves something (Anki for training, Chessbook for
+  practice, lichess for analysis), port its behaviour from its source code rather than invent
+  rules, and list every deviation for the owner to approve.
 - Rules live in `core/orbt-core`, with Rust tests; the apps never re-implement them. A new rule
   or query goes into the core and out through `orbt-ffi`. The core takes time as arguments and
   returns what to do (saves, fetches); the apps run the IO and timers.

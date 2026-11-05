@@ -21,3 +21,6 @@ xcuserdata/
 
 # The sync connectors' OAuth client ids (apple/Config/ORBT.xcconfig)
 /apple/Config/Secrets.xcconfig
+
+# Personal Claude Code instructions, never committed.
+CLAUDE.local.md
