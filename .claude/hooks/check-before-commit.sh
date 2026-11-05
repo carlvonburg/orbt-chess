@@ -128,8 +128,10 @@ fi
 if $android_needed; then
   # Needs the host library from build-android.sh (android/core/build/host), built from the
   # current sources: an older one fails the tests with UnsatisfiedLinkError.
-  [[ "$(cat android/core/build/host/sources 2>/dev/null)" == "$(core/scripts/core-fingerprint.sh)" ]] \
-    || core/scripts/build-android.sh --debug >>"$log" 2>&1 \
+  # Copied from another worktree when one has it, else built.
+  host_current() { [[ "$(cat android/core/build/host/sources 2>/dev/null)" == "$(core/scripts/core-fingerprint.sh)" ]]; }
+  host_current || core/scripts/git-hooks/rebuild-core.sh 0000000000000000000000000000000000000000 HEAD >>"$log" 2>&1
+  host_current || core/scripts/build-android.sh --debug >>"$log" 2>&1 \
     || fail "core/scripts/build-android.sh"
   (cd android && ./gradlew -q :core:jvmTest :app:desktopTest :androidApp:compileDebugKotlin) >>"$log" 2>&1 \
     || fail "the Android/desktop JVM tests or the Android app's build"
