@@ -326,7 +326,35 @@ struct StatisticsPlaceholder: View {
                     .frame(height: 160)
                 Text("The statistics of this period, loading.").font(.footnote)
             }
+            .pulsesWhenRedacted()
             .redacted(reason: .placeholder)
         }
+    }
+}
+
+/// A placeholder's pulse (HIG, Progress indicators: keep it moving, as a still one reads as
+/// stalled): redacted content fades slowly in and out; still with Reduce Motion, and content
+/// that is not redacted never pulses. Inside the `.redacted` it reads.
+private struct PlaceholderPulse: ViewModifier {
+    @Environment(\.redactionReasons) private var redaction
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        if redaction.contains(.placeholder) && !reduceMotion {
+            content.phaseAnimator([false, true]) { view, faded in
+                view.opacity(faded ? 0.45 : 1)
+            } animation: { _ in
+                .easeInOut(duration: 0.9)
+            }
+        } else {
+            content
+        }
+    }
+}
+
+extension View {
+    /// Pulses while redacted as a placeholder (`PlaceholderPulse`).
+    func pulsesWhenRedacted() -> some View {
+        modifier(PlaceholderPulse())
     }
 }

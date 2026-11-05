@@ -349,6 +349,7 @@ struct LibraryView: View {
     /// A placeholder while iCloud Drive lists the repertoires (HIG, Loading: show something).
     private func todayRows(_ stats: [String: EntryStats], wide: Bool = false) -> some View {
         todayCard(stats, wide: wide)
+            .pulsesWhenRedacted()
             .redacted(reason: isListing ? .placeholder : [])
             .disabled(isListing)
     }
@@ -1099,6 +1100,7 @@ struct LibraryRow: View {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(entry.name).font(.headline).lineLimit(1)
                         // Known on a placeholder row too.
+                        .pulsesWhenRedacted()
                         .redacted(reason: knowsName ? [] : .placeholder)
                         .unredacted()
                     Spacer(minLength: 0)
@@ -1108,6 +1110,7 @@ struct LibraryRow: View {
                 }
                 if let status {
                     Text(status).font(.caption).foregroundStyle(.secondary)
+                        .pulsesWhenRedacted()
                 } else if stats.progress.cards == 0 && stats.savedMoves == 0 {
                     Text("Empty · add moves to start").font(.caption).foregroundStyle(.secondary)
                 } else {
