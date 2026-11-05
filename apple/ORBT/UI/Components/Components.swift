@@ -8,25 +8,63 @@ import SwiftUI
 typealias Progress = OpeningCoreRust.Progress
 
 /// The split view's board column: what belongs above the board, the board as large as the
-/// column allows (edge to edge across its width, or its height in a wide window, then on the
-/// leading side), then what belongs under it. What is above and below the board keeps the
-/// scene's margins, as the title does.
+/// column allows, centred, then what belongs under it. Edge to edge across the column it is
+/// square, and what is above and below it keeps the scene's margins, as the title does;
+/// narrower than the column (a wide window) it stands on its own with the continuous rounded
+/// corners of other inset content, and what is above and below it takes its width.
 struct BoardColumnLayout<Above: View, Board: View, Below: View>: View {
     @ViewBuilder var above: Above
     @ViewBuilder var board: Board
     @ViewBuilder var below: Below
+    /// The board's side, once it is narrower than the column (else nil).
+    @State private var insetSide: CGFloat?
+    @State private var boardSide: CGFloat = 0
 
     var body: some View {
-        VStack(alignment: .leading) {
-            above
-                .scenePadding(.horizontal)
+        VStack {
+            attached(above)
             board
                 .aspectRatio(1, contentMode: .fit)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            below
+                .environment(\.boardCornerRadius, insetSide == nil ? 0 : 12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // The room the board has: wider than tall leaves it narrower than the column.
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+                    insetSide = size.width > size.height + 1 ? size.height : nil
+                    boardSide = min(size.width, size.height)
+                }
+                // For the bottom bar, which is the column's (`BoardSideKey`).
+                .preference(key: BoardSideKey.self, value: boardSide)
+            attached(below)
+        }
+    }
+
+    /// What goes with the board (the engine's lines): as wide as an inset board and aligned
+    /// with it; with the scene's margins when the board runs edge to edge.
+    @ViewBuilder
+    private func attached(_ content: some View) -> some View {
+        if let insetSide {
+            content.frame(width: insetSide, alignment: .leading)
+        } else {
+            content
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .scenePadding(.horizontal)
         }
     }
+}
+
+/// The side of the board in a board column, read by the column's bottom bar so its history
+/// spans the board's width (the bar is the system's and sizes an item to what is in it).
+struct BoardSideKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+extension EnvironmentValues {
+    /// The board's corner radius: rounded where it is inset (`BoardColumnLayout`), square
+    /// where it runs edge to edge.
+    @Entry var boardCornerRadius: CGFloat = 0
 }
 
 extension BoardColumnLayout where Above == EmptyView {

@@ -4,6 +4,8 @@ import SwiftUI
 /// Anki's deck overview for one repertoire: coverage and study progress and what is due
 /// today, each section ending with its action (Browse / Edit, Study): the same buttons, the
 /// most likely one prominent, building while there are gaps, else studying. Its history is in Statistics (beside it in the split view).
+/// On iPad (`dashboard`) Coverage and Study are two cards side by side above the statistics,
+/// the detail beside the library, as on Android's wide windows.
 struct RepertoireOverviewView: View {
     @Environment(AppModel.self) private var app
     /// Set in the split view (iPad, Mac), whose board column shows this repertoire's statistics.
@@ -12,6 +14,8 @@ struct RepertoireOverviewView: View {
     let editLines: () -> Void
     let study: () -> Void
     let practice: () -> Void
+    /// iPad's two columns: the cards and the statistics in the detail.
+    var dashboard = false
     @State private var sheet: Sheet?
 
     private enum Sheet: String, Identifiable {
@@ -21,9 +25,15 @@ struct RepertoireOverviewView: View {
 
     var body: some View {
         let stats = EntryStats(document: document)
-        List {
-            coverageSection(stats)
-            studySection(stats)
+        Group {
+            if dashboard {
+                InlineStatistics(scope: .repertoire(document.entryID)) { cards(stats) }
+            } else {
+                List {
+                    coverageSection(stats)
+                    studySection(stats)
+                }
+            }
         }
         .checksCoverage(document)
         .navigationTitle(document.name)
@@ -46,10 +56,49 @@ struct RepertoireOverviewView: View {
         }
     }
 
+    // MARK: Dashboard
+
+    /// Coverage and Study side by side, equal in height with their buttons on one line;
+    /// one above the other where both don't fit.
+    private func cards(_ stats: EntryStats) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 16) {
+                coverageCard(stats).frame(minWidth: 320, maxHeight: .infinity)
+                studyCard(stats).frame(minWidth: 320, maxHeight: .infinity)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 16) {
+                coverageCard(stats)
+                studyCard(stats)
+            }
+        }
+    }
+
+    private func coverageCard(_ stats: EntryStats) -> some View {
+        StatCard(title: "Coverage", systemImage: "arrow.triangle.branch", color: .built) {
+            coverageRows(stats)
+        }
+    }
+
+    private func studyCard(_ stats: EntryStats) -> some View {
+        StatCard(title: "Study", systemImage: "graduationcap.fill") {
+            studyRows(stats)
+        }
+    }
+
     // MARK: Coverage
 
     private func coverageSection(_ stats: EntryStats) -> some View {
         Section {
+            coverageRows(stats)
+        } header: {
+            Text("Coverage")
+        }
+    }
+
+    /// List rows in the list, a card's lines on the dashboard (its button at the bottom).
+    @ViewBuilder
+    private func coverageRows(_ stats: EntryStats) -> some View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .firstTextBaseline) {
                     Text("\(Format.percent(stats.completion)) complete").font(.headline.monospacedDigit())
@@ -64,26 +113,29 @@ struct RepertoireOverviewView: View {
                 CoverageCheckStatus(document: document)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
+            if dashboard { Spacer(minLength: 0) }
             Button("Browse / Edit", action: editLines)
                 .actionButton(prominent: buildFirst(stats))
-        } header: {
-            Text("Coverage")
-        }
     }
 
     // MARK: Study
 
     private func studySection(_ stats: EntryStats) -> some View {
         Section {
-            if stats.progress.cards == 0 {
-                // Nothing to count yet: only what to do.
-                Label("Add moves of yours to study them.", systemImage: "checkmark.circle")
-                    .foregroundStyle(.secondary)
-            } else {
-                studyProgress(stats)
-            }
+            studyRows(stats)
         } header: {
             Text("Study")
+        }
+    }
+
+    @ViewBuilder
+    private func studyRows(_ stats: EntryStats) -> some View {
+        if stats.progress.cards == 0 {
+            // Nothing to count yet: only what to do.
+            Label("Add moves of yours to study them.", systemImage: "checkmark.circle")
+                .foregroundStyle(.secondary)
+        } else {
+            studyProgress(stats)
         }
     }
 
@@ -122,6 +174,7 @@ struct RepertoireOverviewView: View {
                 .foregroundStyle(stats.progress.studied > 0 ? AnyShapeStyle(.learned) : AnyShapeStyle(.secondary))
         }
         if stats.progress.cards > 0 {
+            if dashboard { Spacer(minLength: 0) }
             studyButton(stats).actionButton(prominent: !buildFirst(stats))
         }
         // The split view shows the statistics beside the overview.

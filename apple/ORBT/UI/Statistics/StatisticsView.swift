@@ -15,7 +15,7 @@ struct StatisticsView: View {
 
     var body: some View {
         NavigationStack {
-            StatisticsSummary(model: model)
+            StatisticsSummary(model: model, lead: EmptyView())
                 .navigationTitle("Statistics")
                 .navigationSubtitle(scopeTitle)
                 .toolbar {
@@ -60,14 +60,16 @@ struct StatisticsView: View {
 }
 
 /// The Statistics screen's content for one scope, beside an overview (iPad, Mac): the same
-/// cards with the repertoire filter set to what the overview shows.
-struct InlineStatistics: View {
+/// cards with the repertoire filter set to what the overview shows. On iPad the overview's own
+/// cards (`lead`) come first, across the page, as Android's dashboard.
+struct InlineStatistics<Lead: View>: View {
     @Environment(AppModel.self) private var app
     @State private var model = StatisticsModel()
     let scope: StatisticsModel.Scope
+    @ViewBuilder var lead: Lead
 
     var body: some View {
-        StatisticsSummary(model: model)
+        StatisticsSummary(model: model, lead: lead)
             .task(id: scope) {
                 model.scope = scope
                 await model.load(app)
@@ -76,27 +78,59 @@ struct InlineStatistics: View {
     }
 }
 
-/// The period, then the cards: one column on a phone, as many as fit on iPad and Mac.
-struct StatisticsSummary: View {
+extension InlineStatistics where Lead == EmptyView {
+    init(scope: StatisticsModel.Scope) {
+        self.init(scope: scope) { EmptyView() }
+    }
+}
+
+/// The period, then the cards: one column on a phone, as many as fit on iPad and Mac. With a
+/// `lead` (iPad's dashboard) it comes first, and the statistics follow under their heading.
+struct StatisticsSummary<Lead: View>: View {
     @Bindable var model: StatisticsModel
+    var lead: Lead
+
+    private var hasLead: Bool { Lead.self != EmptyView.self }
 
     var body: some View {
-        if let graphs = model.graphs, graphs.cardCounts().total > 0 || graphs.reviewsSummary(range: .all).answers > 0 {
+        if hasLead {
             ScrollView {
-                VStack(spacing: 16) {
-                    Picker("Period", selection: $model.range) {
-                        ForEach(GraphRange.allCases) { Text($0.shortTitle).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 320), spacing: 16, alignment: .top)], spacing: 16) {
-                        cards(graphs)
-                    }
+                VStack(alignment: .leading, spacing: 16) {
+                    lead
+                    Text("Statistics").font(.title2.bold())
+                        .accessibilityAddTraits(.isHeader)
+                        .padding(.top, 8)
+                    statistics
                 }
                 .scenePadding()
             }
+        } else if model.graphs?.hasData == true {
+            ScrollView {
+                VStack(spacing: 16) { statistics }
+                    .scenePadding()
+            }
         } else if model.graphs == nil {
             ProgressView()
+        } else {
+            ContentUnavailableView("No Statistics Yet", systemImage: "chart.bar",
+                                   description: Text("Study a repertoire to see your progress here."))
+        }
+    }
+
+    /// The period and the cards, or why there are none (in the page, under the lead).
+    @ViewBuilder
+    private var statistics: some View {
+        if let graphs = model.graphs, graphs.hasData {
+            Picker("Period", selection: $model.range) {
+                ForEach(GraphRange.allCases) { Text($0.shortTitle).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 320), spacing: 16, alignment: .top)], spacing: 16) {
+                cards(graphs)
+            }
+        } else if model.graphs == nil {
+            ProgressView().frame(maxWidth: .infinity).padding()
         } else {
             ContentUnavailableView("No Statistics Yet", systemImage: "chart.bar",
                                    description: Text("Study a repertoire to see your progress here."))
@@ -821,4 +855,9 @@ private struct WeakMoveRow: View {
         .padding(.vertical, 8)
         .contentShape(Rectangle())
     }
+}
+
+private extension Graphs {
+    /// Something to chart: moves saved or answers given.
+    var hasData: Bool { cardCounts().total > 0 || reviewsSummary(range: .all).answers > 0 }
 }
