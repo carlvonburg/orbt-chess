@@ -28,8 +28,8 @@ The version is `$ARGUMENTS`; if it is empty, show the current one from `Version.
    the draft lists every file (`gh release view v<version>`). Only then tell the owner to publish
    the draft and upload the MSIX to Partner Center. If the run fails, fix it on main, delete the
    tag locally and on GitHub (with the owner's OK) and tag again.
-7. Store texts: if anything users see changed, draft the new text in each store's
-   `Design/*/metadata.md` for the owner to paste.
+7. Store texts: if anything users see changed, draft the changes for the owner to paste (the
+   current listings are in the owner's notes, outside the repo; ask for them).
 
 Testing the MSIX locally on Windows: `./gradlew :app:packageMsix`, then
 `android/app/msix/sign-for-testing.ps1` signs a copy with a self-signed certificate (never
