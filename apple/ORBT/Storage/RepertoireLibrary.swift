@@ -33,8 +33,17 @@ final class RepertoireLibrary {
 
     private(set) var folder: URL?
     private(set) var usesICloud = false
-    private(set) var entries: [RepertoireEntry] = []
-    private(set) var isLoaded = false
+    private(set) var entries: [RepertoireEntry] = [] {
+        didSet { rememberRepertoires() }
+    }
+    /// The folder's listing is complete: no repertoires now means there are none. iCloud Drive
+    /// lists its files a while after launch on a new install or after an update.
+    private(set) var isLoaded = false {
+        didSet { rememberRepertoires() }
+    }
+    /// The library had repertoires when last seen on this device, so while it loads, the app
+    /// shows the library (`RootView`) rather than the welcome screen.
+    let expectsRepertoires: Bool
     var lastError: String?
 
     @ObservationIgnored private var presenter: FilePresenter?
@@ -42,9 +51,17 @@ final class RepertoireLibrary {
     @ObservationIgnored private var scanGeneration = 0
     /// The folder to use instead of looking for one (tests).
     @ObservationIgnored private let fixedFolder: URL?
+    /// `SlowICloudSimulation`: the folder's repertoires are not listed yet.
+    @ObservationIgnored private var hidesRepertoires = false
+    /// iCloud Drive's list of the folder's PGNs, until the folder shows them (`waitForICloudListing`).
+    @ObservationIgnored private var listing: NSMetadataQuery?
+    @ObservationIgnored private var listingObservers: [any NSObjectProtocol] = []
+
+    private static let hadRepertoiresKey = "libraryHadRepertoires"
 
     init(folder: URL? = nil) {
         fixedFolder = folder
+        expectsRepertoires = folder == nil && UserDefaults.standard.bool(forKey: Self.hadRepertoiresKey)
     }
 
     /// iCloud Drive's folder, when there is one (`inICloud`); else the device's.
@@ -52,13 +69,72 @@ final class RepertoireLibrary {
         guard folder == nil else { return }
         if let fixedFolder {
             use(fixedFolder, iCloud: false)
+        } else if await simulatesSlowICloud() {
+            // The device's folder, listed later (DEBUG only).
+            return
         } else if inICloud, let ubiquity = await Self.iCloudFolder() {
             use(ubiquity, iCloud: true)
+            await refresh()
+            if entries.isEmpty { waitForICloudListing() } else { isLoaded = true }
+            return
         } else {
             use(URL.documentsDirectory, iCloud: false)
         }
         await refresh()
         isLoaded = true
+    }
+
+    /// The folder showed no repertoires, which in iCloud Drive may only mean that its files are
+    /// not listed yet. Its metadata query says which PGNs the folder holds once it has gathered
+    /// (Apple's way to list a ubiquity container): none, and the library is empty; some, and
+    /// it is loaded when the folder shows them (`refresh`), or after 20 seconds at most.
+    private func waitForICloudListing() {
+        let query = NSMetadataQuery()
+        query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
+        query.predicate = NSPredicate(format: "%K LIKE '*.pgn'", NSMetadataItemFSNameKey)
+        query.operationQueue = .main
+        let center = NotificationCenter.default
+        listingObservers = [NSNotification.Name.NSMetadataQueryDidFinishGathering, .NSMetadataQueryDidUpdate].map { name in
+            center.addObserver(forName: name, object: query, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.listingChanged() }
+            }
+        }
+        listing = query
+        query.start()
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(20))
+            self?.listingComplete()
+        }
+    }
+
+    private func listingChanged() {
+        guard let query = listing else { return }
+        query.disableUpdates()
+        let pgns = query.resultCount
+        query.enableUpdates()
+        if pgns == 0 {
+            listingComplete()
+        } else {
+            Task { await refresh() }
+        }
+    }
+
+    /// The listing is in: what the folder shows is what there is.
+    private func listingComplete() {
+        listing?.stop()
+        listing = nil
+        listingObservers.forEach(NotificationCenter.default.removeObserver)
+        listingObservers = []
+        isLoaded = true
+    }
+
+    /// Remembers whether there are repertoires, for the next launch (`expectsRepertoires`).
+    private func rememberRepertoires() {
+        guard fixedFolder == nil, isLoaded || !entries.isEmpty else { return }
+        let has = !entries.isEmpty
+        if UserDefaults.standard.bool(forKey: Self.hadRepertoiresKey) != has {
+            UserDefaults.standard.set(has, forKey: Self.hadRepertoiresKey)
+        }
     }
 
     /// Moves the repertoires to iCloud Drive's folder or to the device's (close the documents
@@ -93,6 +169,26 @@ final class RepertoireLibrary {
         let presenter = FilePresenter(url: url) { [weak self] in self?.scheduleRefresh() }
         presenter.start()
         self.presenter = presenter
+    }
+
+    /// `SlowICloudSimulation`: always false in Release builds.
+    private func simulatesSlowICloud() async -> Bool {
+        #if DEBUG
+        guard let seconds = SlowICloudSimulation.seconds, fixedFolder == nil else { return false }
+        try? await Task.sleep(for: .seconds(seconds))
+        hidesRepertoires = true
+        use(URL.documentsDirectory, iCloud: false)
+        Task {
+            try? await Task.sleep(for: .seconds(seconds))
+            hidesRepertoires = false
+            await refresh()
+            // As iCloud Drive's metadata query gathering (`waitForICloudListing`).
+            listingComplete()
+        }
+        return true
+        #else
+        return false
+        #endif
     }
 
     nonisolated private static func iCloudFolder() async -> URL? {
@@ -142,10 +238,12 @@ final class RepertoireLibrary {
         guard let folder else { return }
         scanGeneration += 1
         let generation = scanGeneration
-        let result = await Task.detached(priority: .userInitiated) { Self.scan(folder) }.value
+        let result = hidesRepertoires ? [] : await Task.detached(priority: .userInitiated) { Self.scan(folder) }.value
         // A later scan started meanwhile and has fresher results.
         guard generation == scanGeneration else { return }
         if result != entries { entries = result }
+        // iCloud Drive's files have arrived (`waitForICloudListing`).
+        if listing != nil, !entries.isEmpty { listingComplete() }
     }
 
     nonisolated private static func scan(_ folder: URL) -> [RepertoireEntry] {

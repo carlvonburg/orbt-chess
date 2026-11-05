@@ -190,9 +190,14 @@ struct LibraryView: View {
         }
     }
 
-    /// A regular-width window (iPad, Mac) with repertoires to show.
+    /// A regular-width window (iPad, Mac) with repertoires to show, or loading them.
     private var usesSplit: Bool {
-        isRegularWidth(sizeClass) && !model.library.entries.isEmpty
+        isRegularWidth(sizeClass) && !(model.library.entries.isEmpty && model.library.isLoaded)
+    }
+
+    /// iCloud Drive is listing a folder that had repertoires (`RootView`): none to show yet.
+    private var isListing: Bool {
+        model.library.entries.isEmpty && !model.library.isLoaded
     }
 
     #if os(macOS)
@@ -268,6 +273,9 @@ struct LibraryView: View {
             .id(model.currentID(id))
             .environment(\.openScreen, OpenScreenAction(openScreen))
             .environment(\.openAnalysis, OpenAnalysisAction(openAnalysis))
+        } else if isListing {
+            // Nothing to count until the repertoires are listed; the list shows the progress.
+            Color.clear.navigationTitle("Today")
         } else {
             let stats = entryStats
             InlineStatistics(scope: .all) {
@@ -306,6 +314,9 @@ struct LibraryView: View {
                     selectionRoutes = nil
                     path = routes
                 }
+        } else if isListing {
+            // Nothing to count until the repertoires are listed; the list shows the progress.
+            Color.clear.navigationTitle("Today")
         } else {
             todayColumn
         }
@@ -526,7 +537,7 @@ struct LibraryView: View {
     @ViewBuilder
     private var content: some View {
         let library = model.library
-        if !library.isLoaded {
+        if isListing {
             ProgressView()
         } else {
             let stats = entryStats
