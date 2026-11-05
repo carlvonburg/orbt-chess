@@ -41,6 +41,16 @@ extension View {
         self
         #endif
     }
+
+    /// The scene's margin above content that starts right under the window toolbar (macOS;
+    /// on iPhone and iPad the navigation bar already leaves room).
+    func toolbarTopMargin() -> some View {
+        #if os(macOS)
+        scenePadding(.top)
+        #else
+        self
+        #endif
+    }
 }
 
 /// A regular-width window: iPad (not Slide Over or a narrow window) and every Mac window.
