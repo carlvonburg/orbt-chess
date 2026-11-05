@@ -2,12 +2,12 @@
 # Claude Code PreToolUse hook (Bash): before a `git commit`, runs the checks for what the
 # commit changes, and blocks the commit (exit 2) if one fails.
 #   core/ changed            -> core/scripts/check.sh
-#   core/orbt-ffi/ or Cargo.lock changed -> core/scripts/build-apple.sh; the committed Swift
-#                               bindings must already be up to date
-#   apple/ or the FFI changed -> the iOS simulator build
-#   core/orbt-ffi/ or Cargo.lock changed -> core/scripts/build-android.sh; the committed Kotlin
-#                               bindings must already be up to date
-#   android/ or the FFI changed -> the JVM tests (bindings, app) and the Android app's Kotlin
+#   the core's sources changed -> core/scripts/check-bindings.sh: one build for this computer
+#                               checks the committed bindings and acknowledgements and refreshes
+#                               the JVM tests' library; then both apps' checks below
+#   apple/ (or the core) changed -> the iOS simulator build, against an xcframework with the
+#                               current bindings (built only when none has them)
+#   android/ (or the core) changed -> the JVM tests (bindings, app) and the Android app's Kotlin
 #   apple/ORBT/UI/ changed -> no colors by name outside Palette.swift
 #   android/app/src/*/ui/ changed -> no colors by name outside ui/theme
 #   any PGN outside the test data and the store samples -> blocked (personal repertoires)
@@ -59,30 +59,14 @@ if touches '^core/'; then
 fi
 
 app_needed=false
-touches '^apple/' && app_needed=true
-if touches '^core/(orbt-ffi/|Cargo\.lock)'; then
-  app_needed=true
-  bindings=apple/OpeningCoreRust/Sources/OpeningCoreRust/opening_core.swift
-  acknowledgements=apple/ORBT/UI/Settings/Acknowledgements.json
-  before=$(shasum "$bindings" "$acknowledgements" 2>/dev/null)
-  core/scripts/build-apple.sh >>"$log" 2>&1 || fail "core/scripts/build-apple.sh"
-  if [[ "$(shasum "$bindings" "$acknowledgements" 2>/dev/null)" != "$before" ]]; then
-    echo "Commit blocked: the Swift bindings or the acknowledgements were out of date. build-apple.sh has regenerated $bindings and $acknowledgements; review and stage them, then commit again." >&2
-    exit 2
-  fi
-fi
-
 android_needed=false
+touches '^apple/' && app_needed=true
 touches '^android/' && android_needed=true
-if touches '^core/(orbt-ffi/|Cargo\.lock)'; then
+# What every platform's library is built from: one build for this computer checks it.
+if touches '^core/(orbt-core|orbt-engine|orbt-ffi|uniffi-bindgen|uniffi-bindgen-swift)/|^core/(Cargo\.(toml|lock)|rust-toolchain\.toml)$'; then
+  app_needed=true
   android_needed=true
-  kotlin=android/core/src/commonMain/kotlin/org/orbtchess/orbt/core/opening_core.kt
-  before=$(shasum "$kotlin" 2>/dev/null)
-  core/scripts/build-android.sh --debug >>"$log" 2>&1 || fail "core/scripts/build-android.sh"
-  if [[ "$(shasum "$kotlin" 2>/dev/null)" != "$before" ]]; then
-    echo "Commit blocked: the Kotlin bindings were out of date. build-android.sh has regenerated $kotlin; review and stage it, then commit again." >&2
-    exit 2
-  fi
+  core/scripts/check-bindings.sh >>"$log" 2>&1 || fail "core/scripts/check-bindings.sh"
 fi
 
 if touches '^apple/ORBT/UI/'; then
@@ -108,15 +92,27 @@ if touches '^android/app/src/.*/ui/'; then
 fi
 
 if $app_needed; then
-  # The xcframework is not committed: a new worktree may have none, or one built from older
-  # sources. Copy a current one from another worktree, else build it.
-  fingerprint=$(core/scripts/core-fingerprint.sh)
-  framework_sources=apple/OpeningCoreRust/OpeningCoreFFI.sources
-  if [[ "$(cat "$framework_sources" 2>/dev/null)" != "$fingerprint" ]]; then
-    core/scripts/git-hooks/rebuild-core.sh 0000000000000000000000000000000000000000 HEAD >>"$log" 2>&1
-    [[ "$(cat "$framework_sources" 2>/dev/null)" == "$fingerprint" ]] \
-      || core/scripts/build-apple.sh >>"$log" 2>&1 || fail "core/scripts/build-apple.sh"
+  # The xcframework is not committed. Compiling the app needs one with the current bindings,
+  # not one of the current sources: a core change that leaves the bindings alone keeps it.
+  package=apple/OpeningCoreRust
+  bindings=$(shasum $package/Sources/OpeningCoreRust/opening_core.swift | cut -d' ' -f1)
+  usable() {  # <checkout> (this one)
+    [[ -d "$1/$package/OpeningCoreFFI.xcframework" ]] || return 1
+    [[ "$(cat "$1/$package/OpeningCoreFFI.bindings" 2>/dev/null)" == "$bindings" ]] && return 0
+    # Built from these very sources (before the bindings stamp existed): the same bindings.
+    [[ "$(cat "$1/$package/OpeningCoreFFI.sources" 2>/dev/null)" == "$(core/scripts/core-fingerprint.sh)" ]] || return 1
+    echo "$bindings" > "$1/$package/OpeningCoreFFI.bindings"
+  }
+  if ! usable .; then
+    for other in $(git worktree list --porcelain | sed -n 's/^worktree //p'); do
+      [[ "$other" == "$repo" ]] && continue
+      [[ -d "$other/$package/OpeningCoreFFI.xcframework" && "$(cat "$other/$package/OpeningCoreFFI.bindings" 2>/dev/null)" == "$bindings" ]] || continue
+      rm -rf $package/OpeningCoreFFI.xcframework
+      cp -c -R "$other/$package/OpeningCoreFFI.xcframework" $package/ && echo "$bindings" > $package/OpeningCoreFFI.bindings \
+        && echo "Copied an xcframework with these bindings from $other" >>"$log" && break
+    done
   fi
+  usable . || core/scripts/build-apple.sh >>"$log" 2>&1 || fail "core/scripts/build-apple.sh"
   # The checkout's own project, whatever it is called (its scheme has the same name).
   project=(apple/*.xcodeproj(N))
   [[ ${#project} -eq 1 ]] || { echo "no single Xcode project in apple/" >"$log"; fail "finding the Xcode project"; }
@@ -128,11 +124,10 @@ fi
 if $android_needed; then
   # Needs the host library from build-android.sh (android/core/build/host), built from the
   # current sources: an older one fails the tests with UnsatisfiedLinkError.
-  # Copied from another worktree when one has it, else built.
+  # Copied from another worktree when one has it, else built for this computer only.
   host_current() { [[ "$(cat android/core/build/host/sources 2>/dev/null)" == "$(core/scripts/core-fingerprint.sh)" ]]; }
   host_current || core/scripts/git-hooks/rebuild-core.sh 0000000000000000000000000000000000000000 HEAD >>"$log" 2>&1
-  host_current || core/scripts/build-android.sh --debug >>"$log" 2>&1 \
-    || fail "core/scripts/build-android.sh"
+  host_current || core/scripts/check-bindings.sh >>"$log" 2>&1 || fail "core/scripts/check-bindings.sh"
   (cd android && ./gradlew -q :core:jvmTest :app:desktopTest :androidApp:compileDebugKotlin) >>"$log" 2>&1 \
     || fail "the Android/desktop JVM tests or the Android app's build"
 fi

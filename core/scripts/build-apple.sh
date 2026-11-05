@@ -3,6 +3,7 @@
 #   apple/OpeningCoreRust/OpeningCoreFFI.xcframework   (static libraries + C headers, not committed)
 #   apple/OpeningCoreRust/Sources/OpeningCoreRust/      (generated Swift bindings, committed)
 #   apple/OpeningCoreRust/OpeningCoreFFI.sources        (core-fingerprint.sh of a release build)
+#   apple/OpeningCoreRust/OpeningCoreFFI.bindings       (the bindings' hash, for the commit hook)
 #   apple/ORBT/UI/Settings/Acknowledgements.json        (the linked crates' licenses, committed)
 # Usage: core/scripts/build-apple.sh [--debug]
 set -euo pipefail
@@ -26,7 +27,7 @@ targets=(aarch64-apple-ios aarch64-apple-ios-sim aarch64-apple-darwin x86_64-app
 
 # Removed first so a failed or half-done build is never taken as current or copied.
 stamp="$package_dir/OpeningCoreFFI.sources"
-rm -f "$stamp"
+rm -f "$stamp" "$package_dir/OpeningCoreFFI.bindings"
 fingerprint="$("$core_dir/scripts/core-fingerprint.sh")"
 
 cd "$core_dir"
@@ -64,5 +65,6 @@ sources="$package_dir/Sources/OpeningCoreRust"
 mkdir -p "$sources"
 cp "$work/generated/"*.swift "$sources/"
 "$core_dir/scripts/acknowledgements.py"
+shasum "$sources/opening_core.swift" | cut -d' ' -f1 > "$package_dir/OpeningCoreFFI.bindings"
 [[ "$profile" == release ]] && echo "$fingerprint" > "$stamp"
 echo "updated $package_dir"
