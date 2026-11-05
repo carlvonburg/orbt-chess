@@ -23,6 +23,12 @@ final class StatisticsModel {
     private(set) var isLoading = false
 
     func load(_ app: AppModel) async {
+        // iCloud Drive is still listing the repertoires: nothing to count yet, so the cards'
+        // outlines (`StatisticsPlaceholder`), not "No Statistics Yet". Their arrival loads again.
+        guard app.library.isLoaded || !app.library.entries.isEmpty else {
+            graphs = nil
+            return
+        }
         isLoading = true
         defer { isLoading = false }
         let timing = SchedTiming()
