@@ -89,7 +89,7 @@ struct RepertoireSettingsDraft: Equatable {
         defaults.set(targetGames, forKey: Self.depthKey)
     }
 
-    private static let sourceKey = "newRepertoireSource"
+    static let sourceKey = "newRepertoireSource"
     private static let ratingKey = "newRepertoireRating"
     private static let depthKey = "newRepertoireDepth"
 

@@ -190,9 +190,14 @@ struct LibraryView: View {
         }
     }
 
-    /// A regular-width window (iPad, Mac) with repertoires to show.
+    /// A regular-width window (iPad, Mac) with repertoires to show, or loading them.
     private var usesSplit: Bool {
-        isRegularWidth(sizeClass) && !model.library.entries.isEmpty
+        isRegularWidth(sizeClass) && !(model.library.entries.isEmpty && model.library.isLoaded)
+    }
+
+    /// iCloud Drive is listing a folder that had repertoires (`RootView`): none to show yet.
+    private var isListing: Bool {
+        model.library.entries.isEmpty && !model.library.isLoaded
     }
 
     #if os(macOS)
@@ -268,6 +273,20 @@ struct LibraryView: View {
             .id(model.currentID(id))
             .environment(\.openScreen, OpenScreenAction(openScreen))
             .environment(\.openAnalysis, OpenAnalysisAction(openAnalysis))
+        } else if isListing {
+            // The dashboard's outlines until the repertoires are listed (the statistics, made
+            // now, would count nothing): Today's card, the statistics' cards.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    GroupBox { todayRows([:], wide: true) }
+                    Text("Statistics").font(.title2.bold())
+                        .accessibilityAddTraits(.isHeader)
+                        .padding(.top, 8)
+                    StatisticsPlaceholder()
+                }
+                .scenePadding()
+            }
+            .navigationTitle("Today")
         } else {
             let stats = entryStats
             InlineStatistics(scope: .all) {
@@ -327,8 +346,12 @@ struct LibraryView: View {
 
     /// What is left to do today and what was studied: in the library's Today section on a
     /// phone, in the Today column in the split view.
-    private func todayRows(_ stats: [String: EntryStats]) -> some View {
-        todayCard(stats)
+    /// A placeholder while iCloud Drive lists the repertoires (HIG, Loading: show something).
+    private func todayRows(_ stats: [String: EntryStats], wide: Bool = false) -> some View {
+        todayCard(stats, wide: wide)
+            .pulsesWhenRedacted()
+            .redacted(reason: isListing ? .placeholder : [])
+            .disabled(isListing)
     }
 
     /// What the sidebar selects: today across every repertoire, or one repertoire.
@@ -526,21 +549,17 @@ struct LibraryView: View {
     @ViewBuilder
     private var content: some View {
         let library = model.library
-        if !library.isLoaded {
-            ProgressView()
-        } else {
-            let stats = entryStats
-            Group {
-                if usesSplit {
-                    List(selection: sidebarSelection) { rows(stats) }
-                } else {
-                    List { rows(stats) }
-                }
+        let stats = entryStats
+        Group {
+            if usesSplit {
+                List(selection: sidebarSelection) { rows(stats) }
+            } else {
+                List { rows(stats) }
             }
-            .refreshable { await library.refresh() }
-            .task(id: TodayKey(entries: library.entries.count, answered: stats.values.reduce(0) { $0 + $1.counts.total })) {
-                await today.load(model)
-            }
+        }
+        .refreshable { await library.refresh() }
+        .task(id: TodayKey(entries: library.entries.count, answered: stats.values.reduce(0) { $0 + $1.counts.total })) {
+            await today.load(model)
         }
     }
 
@@ -553,6 +572,31 @@ struct LibraryView: View {
                 .tag(SidebarItem.today)
         } else {
             Section("Today") { todayRows(stats) }
+        }
+        if isListing {
+            // The repertoires as last listed, until iCloud Drive lists them again: their names,
+            // the rest a placeholder.
+            if model.library.remembered.isEmpty {
+                // Repertoires made before the library remembered them (an update): unnamed.
+                Section {
+                    ForEach(0..<2, id: \.self) { _ in
+                        LibraryRow(entry: .placeholder("Repertoire"), stats: EntryStats(), status: "Loading the repertoire",
+                                   knowsName: false)
+                            .redacted(reason: .placeholder)
+                    }
+                }
+            }
+            ForEach(LibraryGroup.allCases) { group in
+                let remembered = model.library.remembered.filter { group.contains($0) }
+                if !remembered.isEmpty {
+                    Section(group.title) {
+                        ForEach(remembered, id: \.name) { item in
+                            LibraryRow(entry: .placeholder(item.name), stats: EntryStats(), status: "Loading the repertoire")
+                                .redacted(reason: .placeholder)
+                        }
+                    }
+                }
+            }
         }
         // Grouped by side, as Chessbook does; by name within each group.
         ForEach(LibraryGroup.allCases) { group in
@@ -1048,11 +1092,17 @@ struct LibraryRow: View {
     let entry: RepertoireEntry
     let stats: EntryStats
     var status: String?
+    /// A placeholder row's name is the one last listed; false when there is none.
+    var knowsName = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(entry.name).font(.headline).lineLimit(1)
+                        // Known on a placeholder row too.
+                        .pulsesWhenRedacted()
+                        .redacted(reason: knowsName ? [] : .placeholder)
+                        .unredacted()
                     Spacer(minLength: 0)
                     if status == nil {
                         dueStatus.layoutPriority(1)
@@ -1060,6 +1110,7 @@ struct LibraryRow: View {
                 }
                 if let status {
                     Text(status).font(.caption).foregroundStyle(.secondary)
+                        .pulsesWhenRedacted()
                 } else if stats.progress.cards == 0 && stats.savedMoves == 0 {
                     Text("Empty · add moves to start").font(.caption).foregroundStyle(.secondary)
                 } else {
@@ -1142,6 +1193,14 @@ private enum LibraryGroup: String, CaseIterable, Identifiable {
         case .setup: entry.sidecar == nil
         }
     }
+
+    func contains(_ item: RememberedRepertoire) -> Bool {
+        switch self {
+        case .white: item.white == true
+        case .black: item.white == false
+        case .setup: item.white == nil
+        }
+    }
 }
 
 /// Progress of one repertoire: live from the open document, else from the sidecar.
@@ -1157,6 +1216,9 @@ struct EntryStats {
     var nextDue: Date?
     /// Learning and review cards waiting today.
     var due: Int { Int(counts.learning + counts.review) }
+
+    /// Nothing yet: a placeholder row's.
+    init() {}
 
     init(document: RepertoireDocument) {
         _ = document.revision

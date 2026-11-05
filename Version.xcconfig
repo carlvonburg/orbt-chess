@@ -9,4 +9,4 @@
 // versionCode): one more for every upload, even of the same version, and never back.
 
 MARKETING_VERSION = 1.0.2
-CURRENT_PROJECT_VERSION = 3
+CURRENT_PROJECT_VERSION = 4
