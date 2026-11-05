@@ -1,8 +1,11 @@
 # ORBT Chess
 
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-blue)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/carlvonburg/orbt-chess?include_prereleases)](https://github.com/carlvonburg/orbt-chess/releases)
+
 ORBT (said "orbit": Opening Repertoire Builder & Trainer) is a free, open-source opening
-repertoire trainer for iPhone, iPad and Mac: no subscription, no ads, no account.
-[orbtchess.org](https://orbtchess.org)
+repertoire trainer for iPhone, iPad, Mac, Android, Windows and Linux: no subscription, no ads,
+no account. [orbtchess.org](https://orbtchess.org)
 
 <p align="center">
   <picture>
@@ -15,6 +18,13 @@ repertoire trainer for iPhone, iPad and Mac: no subscription, no ads, no account
   </picture>
 </p>
 
+## Download
+Every platform's download, store link and requirements are on
+[orbtchess.org/download](https://orbtchess.org/download/). The Windows installer (.msi), the Linux
+package (.deb), their SHA-256 sums and the source of each version are on
+[GitHub Releases](https://github.com/carlvonburg/orbt-chess/releases).
+
+## Features
 - **Build.** Every move shows how often it's played, how it scores and the engine's
   evaluation, from the Lichess opening explorer. Enter the lines from a book or video, or pick
   moves with the numbers. Transpositions are recognised: a position's lines are stored once.
@@ -28,8 +38,22 @@ repertoire trainer for iPhone, iPad and Mac: no subscription, no ads, no account
 - **Study.** Each position where it's your move is a card, scheduled with Anki's scheduler
   (learning steps, FSRS, daily limits). Study everything that's due, or drill one branch.
   Works offline.
-- **Your files.** A repertoire is a plain PGN in iCloud Drive (Files › ORBT Chess), saved on
-  every edit and merged across devices. Import any PGN.
+- **Your files.** A repertoire is a plain PGN file, saved on every edit. Import any PGN.
+
+## Where your repertoires live
+There is no ORBT server: each repertoire is a PGN file next to its training state
+(`<Name>.otrep.json`) and review log (`<Name>.otlog.jsonl`), synced by a service you choose in
+Settings › Sync.
+
+| Platform | Repertoires | Sync |
+|---|---|---|
+| iPhone, iPad, Mac | iCloud Drive (Files › ORBT Chess) | iCloud Drive, or Dropbox or Google Drive |
+| Android | the app's own storage | Dropbox or Google Drive |
+| Windows, Linux | `ORBT Chess` in your Documents folder | Dropbox or Google Drive |
+
+One service syncs at a time. Dropbox keeps the files in its `Apps/ORBT Chess` folder; Google
+Drive gives ORBT access only to the files it created. Phones use the services' APIs rather than
+their apps because neither syncs a folder on a phone.
 
 ## How coverage is computed
 For each position, *reach* is the probability of getting there: your own moves count as
@@ -45,45 +69,53 @@ is fetched once, and the offline coverage tables answer the common positions wit
 request.
 
 ## Layout
-- `core/`: the Rust core shared by every platform (chess, PGN, repertoire, coverage,
-  training, the analysis board and the engine). `orbt-core` has no IO or platform APIs;
+- `core/`: the Rust core shared by every app (chess, PGN, repertoire, coverage, training,
+  sync, the analysis board and the engine). `orbt-core` has no IO or platform APIs;
   `orbt-ffi` exposes it to Swift and Kotlin with UniFFI.
-- `apple/`: the iPhone, iPad and Mac app (SwiftUI, one multiplatform target) and its Swift
-  package over the core.
+- `apple/`: the iPhone, iPad and Mac app (SwiftUI, one multiplatform target).
 - `android/`: the Android, Windows and Linux app (Compose Multiplatform).
-- `website/`: orbtchess.org.
-- `Design/`: the app icon, colors and App Store material.
-- `docs/PLATFORMS.md`: why native apps only, where each platform keeps the repertoires, and how
-  Google Drive and Dropbox sync.
+- `website/`: orbtchess.org. `tools/coverage-tables/`: builds the offline coverage tables.
+- `Design/`: the app icon and the color system (`COLORS.md`).
 
-`AGENTS.md` (and one each in `core/`, `apple/` and `android/`) describes the design in
-detail: the rules, where each one lives, and the conventions.
+Native apps only, no web app: a browser app would need a server of ours to keep a Google Drive
+sign-in, and couldn't run Stockfish natively or open a local folder in every browser.
+`AGENTS.md` (one at the root and one per app) holds the rules for contributors and coding
+agents.
 
 ## Building
-Requires Xcode 26 (iOS 26, macOS 26) and rustup (`brew install rustup`); the pinned toolchain
-in `core/rust-toolchain.toml` installs itself on first use.
+Requires rustup (`brew install rustup`); the pinned toolchain in `core/rust-toolchain.toml`
+installs itself on first use. Before committing Rust changes, `core/scripts/check.sh` runs fmt,
+clippy, the tests, a wasm32 build and cargo-deny (`cargo install --locked cargo-deny` once).
 
+**iPhone, iPad and Mac** (Xcode 26):
 ```
 core/scripts/build-apple.sh
 xcodebuild -project apple/ORBT.xcodeproj -scheme ORBT -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 ```
-
 `build-apple.sh` builds the core for iOS, the iOS simulator and macOS and regenerates the
 Swift bindings; run it again after changing Rust code. For the Mac, use
 `-destination 'platform=macOS'`, which needs a development profile for the iCloud
 entitlement, or add `CODE_SIGNING_ALLOWED=NO` to compile only.
 
-Before committing Rust changes, `core/scripts/check.sh` runs fmt, clippy, the tests, a wasm32
-build and cargo-deny (`cargo install --locked cargo-deny` once).
+**Android, Windows and Linux** (JDK 17; the Android NDK from Android Studio's SDK Manager):
+```
+core/scripts/build-android.sh --debug
+cd android
+./gradlew :androidApp:assembleDebug   # the Android app
+./gradlew :app:run                    # the desktop app
+./gradlew :core:jvmTest :app:desktopTest
+```
+Windows and Linux packages are built on their own OS (`.github/workflows/release.yml`).
+Dropbox and Google Drive need app keys of your own (`apple/Config/Secrets.xcconfig`, the
+Gradle property `orbt.dropboxAppKey`); without them the apps build with those services off.
 
-Once per clone, `git config core.hooksPath core/scripts/git-hooks` turns on hooks that rebuild
-the xcframework (not committed) when a pull, merge, rebase or branch switch changes the core.
-
-Lichess sign-in uses OAuth with PKCE and needs no client registration.
+Once per clone, `git config core.hooksPath core/scripts/git-hooks` turns on hooks that keep the
+built core (not committed) in step when a pull, merge, rebase or branch switch changes it.
 
 ## Contributing
 Bug reports and ideas are welcome in [GitHub issues](https://github.com/carlvonburg/orbt-chess/issues).
-For security problems, see [SECURITY.md](SECURITY.md).
+Pull requests aren't accepted for now, so that the app-store builds stay under one copyright
+holder. For security problems, see [SECURITY.md](SECURITY.md).
 
 ## License
 AGPL-3.0-or-later (`LICENSE`). ORBT builds on:

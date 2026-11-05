@@ -14,8 +14,7 @@ import com.materialkolor.ktx.toHct
  * board (pale tinted light squares, muted mid-tone dark squares: there tone 87 chroma 17 and tone
  * 60 chroma 30, measured in HCT), never the primary's own chroma, which made a loud board. The
  * overlays are one ink, the palette's dark tone, told apart by width, opacity and dashes; the
- * highlights the primary itself at a mid tone. Design/COLORS.md, "Android and desktop", has the
- * tones.
+ * highlights the primary itself at a mid tone (Design/COLORS.md, Board).
  */
 @Immutable
 class BoardTheme internal constructor(private val theme: Theme) {

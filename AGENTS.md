@@ -42,12 +42,22 @@ model games.
 - Coverage: an opponent reply is required when its reach is ≥ 1/N (the repertoire's target)
   and its position has enough games; README.md "How coverage is computed" has the model.
 - Training is a port of Anki's scheduler: follow Anki's code, not invented rules. Chess
-  additions stay minimal and are listed in `training/study.rs`; every difference from Anki or
-  lichess goes in `core/DEVIATIONS.md`. Ported files keep their AGPL header naming the source.
+  additions stay minimal and are listed in `training/study.rs`; every other difference from
+  Anki or lichess is a `Differences:` comment at the code. Ported files keep their AGPL header
+  naming the source.
   The UI follows Anki (deck list → overview → options), says "moves", never "cards", and shows
   Anki's card-count groups, not percentages. Grading is Again/Good only.
 - The analysis board's tree is never saved: back to Build it becomes the builder's draft; back
   to Study it is dropped and the card counts as Again.
+- Native apps only, no web app: a browser app would need a server of ours for Google Drive
+  sign-ins. No ORBT server either: repertoires sync through iCloud Drive, Dropbox or Google
+  Drive, one at a time, never two (each would push the same edits).
+- No user-chosen folder on computers (it was built, then removed): a folder only computers see
+  never reaches the phones, and one inside Dropbox or Drive syncs twice. Google Drive uses the
+  `drive.file` scope (no security assessment), so ORBT sees only files it created or the user
+  picked.
+- A new outside service must also go into the privacy policy (`website/public/privacy/`) and,
+  for the owner, Play's Data safety form.
 - Lichess allows about 20 explorer requests a minute per user (measured): expect 429s, pause
   60 s on one, and never fetch every position of a PGN. The background coverage check runs only
   while one of the repertoire's screens is showing.

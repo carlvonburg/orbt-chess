@@ -1,7 +1,7 @@
 # The Windows installer's pictures, in place of WiX's red CD: installer-dialog.bmp (493x312, the
 # welcome and finish pages; their text starts at x 180, so the picture is the left 164 px) and
 # installer-banner.bmp (493x58, the top of the other pages; their title is on the left). The app
-# icon's indigo (Design/COLORS.md, App icon) and the icon itself, from orbt.ico.
+# icon's indigo (#6B64B8, the indigo of apple/ORBT/AppIcon.icon) and the icon itself, from orbt.ico.
 # Run again after changing the icon: powershell -File installer-bitmaps.ps1 (Windows PowerShell).
 Add-Type -AssemblyName System.Drawing
 $here = $PSScriptRoot

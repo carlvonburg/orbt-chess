@@ -2,7 +2,7 @@
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
 //
-// Difference: Anki counts days from the collection's creation; this counts from a fixed epoch
+// Differences: Anki counts days from the collection's creation; this counts from a fixed epoch
 // (1 Jan 2020, local time), so every device and repertoire agrees on day numbers. The day
 // number needs the local calendar, so the platform computes it (as Anki takes the UTC offset
 // from its caller) and passes the three values in.

@@ -1,6 +1,7 @@
 # The Rust core
 
-- `orbt-core` is pure Rust: no IO, no async, no OS APIs, and it must keep building for wasm32.
+- `orbt-core` is pure Rust: no IO, no async, no OS APIs, and it must keep building for wasm32
+  (cheap to keep, and it leaves room for a browser demo).
 - It must never panic or recurse per ply on any input: the apps call it on small stacks, and a
   panic in a non-throwing call crashes the app on every launch. `fuzz/run.sh [seconds]` runs the
   fuzz targets (nightly, outside the workspace).

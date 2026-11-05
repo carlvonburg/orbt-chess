@@ -5,7 +5,15 @@
 //! On Android's arm64 each flavour is compiled twice, Stockfish's `armv8` and `armv8-dotprod`,
 //! and `src/lib.rs` picks one when the engine starts (`getauxval(AT_HWCAP)`), as upstream's
 //! `arm64-universal` build does (see `vendor/PATCHES.md`). Apple and x86_64 get one copy.
+//!
+//! Compiled copies are kept in a cache shared by every checkout of the repository (worktrees,
+//! clones), keyed by the contents of `vendor/`, `bridge/` and this file, the compiler, its
+//! version and its every argument: a new worktree links them in a second instead of compiling
+//! Stockfish again (about 40 s a copy). Nothing in them depends on the checkout's path but debug
+//! info. `ORBT_STOCKFISH_CACHE` sets another folder, or `off`.
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -182,25 +190,33 @@ fn dotprod_copy(name: &str, dir: &str, function: &str, embedded_net: bool) {
         // network.cpp declares the baseline's gEmbeddedNNUEData instead of embedding it again.
         build.define("UNIVERSAL_BINARY", None);
     }
+    let objects = cached_objects(&build, name, || {
+        vec![dotprod_object(&build, name, &init_section, function)]
+    });
+    archive(name, &objects);
+}
+
+/// Compiles the copy and makes it the one relocatable object `dotprod_copy` describes.
+fn dotprod_object(build: &cc::Build, name: &str, init_section: &str, function: &str) -> PathBuf {
     let objects = build.compile_intermediates();
 
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR"));
     let object = out_dir.join(format!("{name}.o"));
-    run(Command::new(llvm_tool(&build, "ld.lld"))
+    run(Command::new(llvm_tool(build, "ld.lld"))
         .arg("-r")
         .arg("-o")
         .arg(&object)
         .args(&objects));
     // The section keeps its type (SHT_INIT_ARRAY), so the linker never drops it, but only
     // `.init_array` itself is run when the library loads.
-    run(Command::new(llvm_tool(&build, "llvm-objcopy"))
+    run(Command::new(llvm_tool(build, "llvm-objcopy"))
         .arg("--remove-section=.group")
         .arg(format!("--rename-section=.init_array={init_section}"))
         .arg(format!("--keep-global-symbol={function}"))
         .arg(&object));
     // Nothing else of this copy may run at load (prioritized initializers would be in
     // `.init_array.<n>`: rename them too if a Stockfish update brings some).
-    let sections = Command::new(llvm_tool(&build, "llvm-readelf"))
+    let sections = Command::new(llvm_tool(build, "llvm-readelf"))
         .args(["-S", "-W"])
         .arg(&object)
         .output()
@@ -213,12 +229,135 @@ fn dotprod_copy(name: &str, dir: &str, function: &str, embedded_net: bool) {
             "{name} still has {loaded}:\n{sections}"
         );
     }
+    object
+}
 
-    cc::Build::new().cpp(true).object(&object).compile(name);
+/// Where compiled copies are kept, unless `ORBT_STOCKFISH_CACHE` is `off`. A folder of the
+/// build machine, apart from the app's own data.
+fn cache_root() -> Option<PathBuf> {
+    println!("cargo:rerun-if-env-changed=ORBT_STOCKFISH_CACHE");
+    match std::env::var("ORBT_STOCKFISH_CACHE") {
+        Ok(dir) if dir == "off" => return None,
+        Ok(dir) if !dir.is_empty() => return Some(PathBuf::from(dir)),
+        _ => {}
+    }
+    let env = |name| std::env::var_os(name).map(PathBuf::from);
+    let base = if cfg!(target_os = "macos") {
+        env("HOME")?.join("Library/Caches")
+    } else if cfg!(windows) {
+        env("LOCALAPPDATA")?
+    } else {
+        env("XDG_CACHE_HOME").or_else(|| env("HOME").map(|home| home.join(".cache")))?
+    };
+    Some(base.join("orbt-chess-build/stockfish"))
+}
+
+/// Every file under `dir`, by path and contents.
+fn hash_tree(dir: &Path, hasher: &mut DefaultHasher) {
+    let mut entries: Vec<PathBuf> = std::fs::read_dir(dir)
+        .expect("vendored sources")
+        .map(|e| e.expect("directory entry").path())
+        .collect();
+    entries.sort();
+    for path in entries {
+        if path.is_dir() {
+            hash_tree(&path, hasher);
+        } else {
+            path.hash(hasher);
+            std::fs::read(&path).expect("source file").hash(hasher);
+        }
+    }
+}
+
+/// What a compiled copy depends on: the sources, how this script treats them, and the exact
+/// compiler command. Two differently seeded hashes, so a collision is out of the question.
+fn cache_key(build: &cc::Build, name: &str) -> String {
+    let compiler = build.get_compiler();
+    let version = Command::new(compiler.path())
+        .arg("--version")
+        .output()
+        .map(|output| output.stdout)
+        .unwrap_or_default();
+    let mut key = String::new();
+    for seed in [0u8, 1] {
+        let mut hasher = DefaultHasher::new();
+        seed.hash(&mut hasher);
+        for dir in ["vendor", "bridge"] {
+            hash_tree(Path::new(dir), &mut hasher);
+        }
+        std::fs::read("build.rs")
+            .expect("build.rs")
+            .hash(&mut hasher);
+        name.hash(&mut hasher);
+        std::env::var("TARGET")
+            .unwrap_or_default()
+            .hash(&mut hasher);
+        compiler.path().hash(&mut hasher);
+        compiler.args().hash(&mut hasher);
+        version.hash(&mut hasher);
+        key.push_str(&format!("{:016x}", hasher.finish()));
+    }
+    key
+}
+
+/// The objects of one copy: from the cache when it has them, else made by `make` and stored.
+fn cached_objects(
+    build: &cc::Build,
+    name: &str,
+    make: impl FnOnce() -> Vec<PathBuf>,
+) -> Vec<PathBuf> {
+    let Some(root) = cache_root() else {
+        return make();
+    };
+    let entry = root.join(cache_key(build, name));
+    let out_dir = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR"));
+    let local = out_dir.join("stockfish-cache").join(name);
+    if let Ok(files) = std::fs::read_dir(&entry) {
+        let _ = std::fs::remove_dir_all(&local);
+        std::fs::create_dir_all(&local).expect("OUT_DIR");
+        let objects: Option<Vec<PathBuf>> = files
+            .map(|file| {
+                let file = file.ok()?.path();
+                let copy = local.join(file.file_name()?);
+                std::fs::copy(&file, &copy).ok()?;
+                Some(copy)
+            })
+            .collect();
+        if let Some(objects) = objects.filter(|objects| !objects.is_empty()) {
+            return objects;
+        }
+    }
+    let objects = make();
+    // Written under a temporary name and renamed: another build reading or writing the same
+    // entry never sees half of it.
+    let temporary = root.join(format!("{}.tmp-{}", entry.display(), std::process::id()));
+    let stored = std::fs::create_dir_all(&temporary).is_ok()
+        && objects.iter().all(|object| {
+            object
+                .file_name()
+                .is_some_and(|file| std::fs::copy(object, temporary.join(file)).is_ok())
+        })
+        && std::fs::rename(&temporary, &entry).is_ok();
+    if !stored {
+        let _ = std::fs::remove_dir_all(&temporary);
+    }
+    objects
+}
+
+/// One static library from compiled objects, linked like `cc::Build::compile` links it.
+fn archive(name: &str, objects: &[PathBuf]) {
+    let mut build = cc::Build::new();
+    build.cpp(true).objects(objects);
+    if windows_gnu() {
+        build.cpp_link_stdlib(None);
+    }
+    build.compile(name);
 }
 
 fn flavour(name: &str, dir: &str, function: &str, embedded_net: bool) {
-    configure(dir, function, embedded_net, isa()).compile(name);
+    let build = configure(dir, function, embedded_net, isa());
+    let objects = cached_objects(&build, name, || build.compile_intermediates());
+    archive(name, &objects);
     if runtime_dispatch() {
         dotprod_copy(
             &format!("{name}_dotprod"),

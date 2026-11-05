@@ -2,6 +2,13 @@
 // intervals,eases,retrievability,retention}.rs (https://github.com/ankitects/anki).
 // Copyright: Ankitects Pty Ltd and contributors
 // License: GNU AGPL, version 3 or later; http://www.gnu.org/licenses/agpl.html
+//
+// Differences: a one-week range besides Anki's (`GraphRange::Week`): the summary cards show this
+// week, as Apple's Health and Fitness do. Today's stats also count distinct moves
+// (`Today::card_count`): the library's progress ring sets the moves answered today against those
+// still due, and answers alone count a relearned move twice. `stages_by_day` replays the review
+// log into Anki's card-count groups for each past day, where Anki only shows today's counts: the
+// owner wants to see moves reach mature. Suspended moves count in the stage they were in.
 
 mod chess_stats;
 mod scope;

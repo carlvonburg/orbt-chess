@@ -1,237 +1,65 @@
 # Colors
 
-How the app uses color. Everything lives in `apple/ORBT/UI/Components/Palette.swift`:
-the `Theme` (one per app color, in the environment) decides every hue, and views only name a
-meaning (`ThemeColor`: `.built`, `.learned`, `.learning`, `.new`, `.todo`, `.correct`,
-`.wrong`, `.failure`, `.ahead`, `.inactive`), never a hue (the commit hook blocks `.orange`, `Color(red:` …
-in `UI/` outside `Palette.swift`).
+The color system of both apps. Views name a meaning, never a hue: on Apple `ThemeColor` in
+`apple/ORBT/UI/Components/Palette.swift`, on Android and the desktop `ThemeColor` in
+`android/app/.../ui/theme` (hues by name only there; the commit hook blocks them elsewhere). The
+values and the measurements behind them are commented in those files.
 
 ## Rules
-1. **Two layers.**
-   - The **accent** is the control color: tappable and selected things (buttons, selection,
-     links, the prominent Study button, segmented pickers). It is the **app color** chosen in
-     Settings › Appearance: **Multicolor** (the default): blue controls, board and Built bars,
-     with Anki's colors for studying (below); then the Mac's accent colors: Blue, Indigo (the
-     app icon's color), Purple, Pink, Red, Orange, Yellow, Green or Graphite, each shown as a
-     strip of the board it gives. Every view takes the app color through the tint (`.tint`,
-     never `Color.accentColor`, which on the Mac is the system accent). On the Mac the app
-     color follows the system accent (`AppleAccentColor`; none is Multicolor): when it
-     changes, the app color becomes it; a color picked in Settings stays until the next
-     change.
-   - **Meanings** (`ThemeColor`) are one set, resolved by the theme of the app color
-     (table below). **Multicolor** gives each meaning its own system color, Anki's for
-     studying. Every other app color is **tinted**, the way Apple tints accented widgets and
-     watch complications (HIG Widgets › Accented, Complications › tinted mode): the app color,
-     the label colors and red for wrong, lighter shades for levels (young, Anki's learning),
-     so the bars and counts sit with the board. Text and position tell the meanings apart
-     where they share a color.
-2. **One meaning per color within a theme**, except where a theme shares on purpose (tinted:
-   the app color for building, learned, correct and to do; Multicolor: blue for building and
-   new, green for learned and correct, red for learning and wrong), always with text or a
-   shape to tell them apart.
-3. **Never color alone.** A meaning color always comes with a symbol, text or shape
-   (✓/✕ badges, empty coverage bars, dashed arrows, labelled counts), for color blindness and for the
-   accent overlap.
-4. **Anything that asks you to act is colored.** Neutral is only for decoration and for
-   information that needs nothing from you and has its own text. Remove a color only when
-   nothing becomes less clear without it.
-5. **Let Apple theme.** System colors and semantic styles (`.primary/.secondary/.tertiary`,
-   `.fill.*`, `.background.*`, materials) adapt to dark mode, Increase Contrast and Liquid
-   Glass. Custom values only where no system color fits (the board squares), as asset color
-   sets with Any, Dark and High Contrast variants.
-6. **Selected rows.** On a row with the accent selection fill (the Mac sidebar), every
-   meaning color turns white (`backgroundProminence == .increased`), as Apple's own styles do:
-   lighter shades at 75%, learning at 55%, so bars and counts stay readable in every theme.
-7. **Restraint (HIG):** one prominent control per screen; color the background of the
-   primary action, not its label; glass stays colorless otherwise.
+1. **Two layers.** The **accent** is the control color (buttons, selection, links, the
+   prominent action): the **app color** chosen in Settings › Appearance — Multicolor (the
+   default: blue controls, Anki's colors for studying) or one of the Mac's accent colors. On the
+   Mac it follows the system accent. Views take it through the tint (`.tint`, never
+   `Color.accentColor`; on Android Material's primary). **Meanings** are one set, resolved by the
+   theme of the app color (table below).
+2. **One meaning per color within a theme**, except where a theme shares on purpose, always
+   with text or a shape to tell them apart.
+3. **Never color alone.** A meaning color comes with a symbol, text or shape (✓/✕ badges,
+   empty coverage bars, dashed arrows, labelled counts).
+4. **Anything that asks you to act is colored.** Neutral is for decoration and for information
+   that needs nothing from you. Remove a color only when nothing becomes less clear.
+5. **Let the platform theme.** System colors and semantic styles on Apple, Material's roles on
+   Android; custom values only where nothing fits (the board), as asset color sets with Dark and
+   High Contrast variants on Apple.
+6. **Selected rows.** On a selected row meaning colors take the row's content color (white on
+   the Mac's accent fill, the secondary container's content on Android): lighter shades at 75%,
+   learning at 55%.
+7. **Restraint (HIG):** one prominent control per screen; color the background of the primary
+   action, not its label.
 
-## Theme meanings (`ThemeColor`)
-One set of meanings, resolved by the theme of the app color. **Multicolor** gives each meaning
-its own system color (Anki's for studying). Every other app color is **tinted** like Apple's
-accented widgets: the app color, the label colors, and red for wrong.
+## Meanings
+Multicolor gives each meaning its own system color (Anki's for studying). Every other app color
+is **tinted**, like Apple's accented widgets: the app color, the label colors and red for wrong.
+On Android, a named hue is a Material custom color harmonized with the primary at chroma ≤ 36,
+and every meaning also has a container and on-container role.
 
-| Meaning | Multicolor | Tinted | Where |
-|---|---|---|---|
-| `.built` | blue | the app color | the covered part of a `CoverageBar` (on a neutral track: what is left, gaps and lines not checked yet alike): Built bars, the overview, the Build header, replies, the gap list; your saved moves' row tint (8%), the transposition icon and chips, "Coverage target reached", the "Main" swipe, Welcome "build" |
-| `.learned` | green | the app color | the review due count, mature moves (young: `.learned.lighter()`, mixed 45% toward white) in the studied bar, legends and Statistics, studied today, the "done for now" header, Welcome "study" |
-| `.learning` | red | secondary label gray | the learning due count, relearning (learning: `.learning.lighter()`) in the studied bar, legends and Statistics |
-| `.new` | blue | label color | the new due count, Statistics' new group, "New move" in the drill |
-| `.todo` | orange | the app color | gap counts, "Your move is missing", "That's your alternative", the streak, leeches, Welcome "gaps" |
-| `.correct` | green | the app color | "Correct", correct % |
-| `.wrong` | red (purple when the app color is red or pink) | same | the ✕ badge and "Not quite", Again, overdue |
-| `.failure` | Apple's red | same | error messages, the Delete swipe |
-| `.ahead` | cyan | same | the Reviews chart |
-| `.inactive` | gray | secondary gray at 40% | suspended in Move Counts and legends |
+| Meaning | Multicolor | Tinted | Android tinted | Means |
+|---|---|---|---|---|
+| built | blue | app color | `primary` | covered lines, saved moves, transpositions |
+| learned | green | app color | `primary` | reviews due, mature (young: lighter) |
+| learning | red | secondary label | `onSurfaceVariant` | Anki's learning (lighter) and relearning |
+| new | blue | label | `onSurface` | not studied yet |
+| todo | orange | app color | `primary` | gaps, a missing move, the streak, leeches |
+| correct | green | app color | `primary` | ✓, "Correct", correct % |
+| wrong | red (purple when the app color is red or pink) | same | same | ✕, Again, overdue |
+| failure | Apple's red | same | `error` | errors, Delete |
+| ahead | cyan | same | same | reviewed ahead |
+| inactive | gray | secondary at 40% | `onSurfaceVariant` at 40% | suspended |
 
-Graphite tints with indigo (its gray would read as learning). Multicolor uses blue for both
-building and new; they never share a bar. The board has its own colors (below).
+Graphite tints with indigo (its gray would read as learning). Lighter shades (young, Anki's
+learning) are 45% toward white; on Android in dark appearance, 45% down toward tone 30.
 
-The accent is not a meaning: it is the app color itself, on buttons, selection, sliders,
-switches and single-series charts.
-
-Neutral: text, fills, cards, zero due counts (tertiary), the comment background, the track of a
-`CoverageBar` and of the studied bar, "Excluded", "Not needed" (only the move name dimmed), the
-transposition callout's card.
-
-A new meaning: Multicolor takes a free system color (teal, mint, brown, indigo, pink); tinted
-themes a label color or a shade of the app color.
-
-## Statistics
-Each summary card's title and symbol name its subject in its meaning's color, or the accent
-where it has none.
-
-| Card / chart | Colors |
-|---|---|
-
-| Streak (calendar) | `.todo` (days by intensity; days without answers neutral) |
-| Reviews | accent title; by kind: learning and relearning `.learning` (lighter / full), young and mature `.learned` (lighter / full), `.ahead` |
-| Moves | `.learned` (title, moves studied over time); the studied bar: `.new`, `.learning.lighter()`, `.learning`, `.learned.lighter()`, `.learned`, `.inactive` |
-| Upcoming (Future Due) | accent; overdue `.wrong` |
-| Retention, Retention by Opening or Repertoire | `.correct` |
-| Time of Day | accent bars, `.correct` line (% correct) |
-| Recall, Intervals | accent; recall below 70% `.wrong` |
-| Weakest Moves | `.wrong` title; leech `.todo` |
-
-## Board (`BoardTheme` in Palette.swift)
-The board is content with its own theme: the same in the app's light and dark appearance
-(dimmer squares in dark). Its squares are tinted toward the app color (`AppColor.board`), so
-it carries the app's look. Its overlays are tinted the same way as
-progress (Apple's tinted mode): one **ink**, the app color mixed 55% toward black, told apart
-by width, opacity and dashes. The app color itself would vanish on its own board, the ink
-stands out by lightness and keeps the hue.
-
-| Element | Color | Shown in |
-|---|---|---|
-| squares | `BoardLight` `#E4E6E9` / `BoardDark` `#8E959E` (dark appearance `#C4C8CD`/`#737A84`; High Contrast wider), mixed 14% / 28% toward the app color | everywhere |
-| last move / selected square | the app color 50% / 75% (graphite: the ink 25% / 40%) | everywhere |
-| legal moves | black dots 22%, rings on captures 25% | moving a piece |
-| your move | ink, main bold 85%, alternatives thin 50% | Build, your turn |
-| reply you cover | ink, width and opacity by share | Build, their turn |
-| gap | ink, dashed, by share (like the empty coverage bar: a shape, not a hue) | Build, their turn |
-| hint | ink (100%, or 60% after a miss) | Study |
-| correct / wrong | ✓ in `.correct` (Multicolor green; tinted themes the ink) / ✕ in `.wrong`, a badge on the destination square | Study |
-| engine lines | graphite `#2C2C2E`, best 70%, then 45%, 30% (quiet: often three) | Analysis |
-| coordinates | the opposite square's color | everywhere |
-| promotion | black 35% dim, pieces on a material | promoting |
-
-## Android and desktop (`android/app/.../ui/theme`)
-The same meanings, rules and board, in Material 3 Expressive's terms (`MaterialExpressiveTheme`).
-Hues by name live only in `ui/theme` (`Hues.kt`; the commit hook blocks `Color(0x…)`,
-`Color.Red` … and `Hues.` in `ui/` outside it). Views take a meaning
-(`ThemeColor.learned.color`, `.lighter()`, `.opacity()`, `.container`, `.onContainer`), a
-Material role (`MaterialTheme.colorScheme.*`) or the board's colors (`OrbtTheme.board`), and let
-stock Material components color themselves.
-
-- **The app color is the scheme.** Multicolor is Material You on Android 12 and later (the
-  system's dynamic color from the wallpaper, as the system gives it); on the desktop and older
-  Android, a scheme seeded with blue. Every other app color seeds a Material scheme from
-  Apple's system color of that name with tonal spot (the system's default wallpaper style) on
-  the **2021** color spec, with the **neutral style's surfaces** (Graphite: monochrome). Why:
-  the 2025 spec's tonal spot puts the primary container at tone 82 chroma 32 (orange's a strong
-  peach) and tints the surface containers (chroma 7–9), so every tonal container and page
-  shouted; the 2021 spec keeps containers at tone 90 chroma 16, and the neutral style's
-  surfaces, outlines and their content (chroma 2) keep pages near-neutral even for warm seeds,
-  where tonal spot's chroma-6 surfaces still read peach. Surfaces stay neutral; the primary is on
-  the few things that act. The primary is the accent: controls
-  take it from Material, as SwiftUI's take the tint; filled buttons, the selected option of a
-  button group and the FAB take the primary, tonal buttons and selected rows the secondary
-  container, as Expressive assigns them. Tertiary is not used: every accent in the app means
-  something, and a color is added only where something gets clearer.
-- **Meanings** resolve as on Apple, with Material's roles for the label colors:
-
-| Meaning | Multicolor | Tinted |
-|---|---|---|
-| built | `primary` | `primary` |
-| learned, correct | green | `primary` (Graphite: indigo's) |
-| learning | red | `onSurfaceVariant` |
-| new | blue | `onSurface` |
-| todo | orange | `primary` (Graphite: indigo's) |
-| wrong | red | red (purple for Red and Pink) |
-| failure | `error` | `error` |
-| ahead | cyan | cyan |
-| inactive | `outline` | `onSurfaceVariant` at 40% |
-
-  A named hue (green, red, …) is a Material custom color: harmonized with the primary (its hue
-  turned up to 15° toward it, in every scheme), then tones of its own palette at no more than
-  **chroma 36** (a tonal-spot primary's): Apple's system colors run to chroma 60–90, and at full
-  chroma the status colors shouted next to Material's scheme; capped, they keep their identity
-  as Google's apps show status colors.
-- **Containers.** Every meaning has Material's three roles, as a custom color group: the color
-  (text, symbols, bars), its container (a surface the meaning fills: a status badge, Study's
-  finished disc) and the content on that container. Custom colors: tones 40, 90, 10 in light
-  and 80, 30, 90 in dark. Scheme roles: built `primaryContainer`/`onPrimaryContainer`, the
-  tinted accent the tint scheme's, failure `errorContainer`/`onErrorContainer`, the label colors
-  (tinted learning and new, inactive) on `surfaceContainerHighest`. A saved candidate's row in
-  Build is the built container at 50%.
-- **Lighter shades** (young, Anki's learning: 45%) are other tones of the same palette (HCT:
-  hue and chroma kept): in light appearance that share of the way to white, as iOS mixes; in
-  dark appearance that share of the way down toward tone 30 (the dark surface's end), because
-  lifting a tone-80 color toward white washed it out to a pastel that no longer read as weaker.
-- **Selected rows.** Material selects a row with the secondary container, not the accent: inside
-  one (`LocalSelectedRow provides true`) meanings take the row's content color, lighter shades
-  at 75% and learning at 55%, as they turn white on the Mac.
-- **Neutral** is Material's surfaces and `onSurfaceVariant`; bar tracks are
-  `surfaceContainerHighest`.
-- **Grouped pages** (settings, the library, Today, the overview, statistics, sheets) are
-  Material 3 Expressive's segmented lists, as Android 16's Settings: the page
-  `surfaceContainer` (`components.GroupedBackground`, its top app bar the same), rows and cards
-  on `surface` segments (Material's segmented list item color). Board screens stay on `surface`.
-- **Menus** select with the secondary container, not Material's default tertiary, which the
-  app leaves unused.
-- **The board** is the table above in Material's terms (`ui/theme/BoardTheme.kt`): every color
-  is the hue of the theme's primary (HCT; Material You's for Multicolor, the seeded scheme's for
-  the other app colors, neutral for graphite) at a tone and a chroma of its own; one rule for
-  all. The squares are low chroma, as the iPhone's calm board (measured: light squares tone 87
-  chroma 17, dark tone 60 chroma 30, both blue): the primary's own chroma (36–48) made a loud
-  board, orange and peach in Orange, strong blue in Multicolor. Chroma is capped lower than the
-  iPhone's because warm hues read stronger at the same chroma (orange at 24 was tan).
-
-  | Element | Light appearance | Dark appearance |
-  |---|---|---|
-  | light squares | tone 88, chroma ≤ 10 | tone 76, chroma ≤ 8 |
-  | dark squares | tone 62, chroma ≤ 18 | tone 52, chroma ≤ 16 |
-  | ink (your moves, covered replies, gaps dashed, hint; ✓ in tinted themes) | tone 28, chroma ≤ 40 | same |
-  | last move / selected square | tone 58, chroma ≥ 36, at 50% / 75% (graphite: the ink 25% / 40%) | tone 50, same |
-  | coordinates | the opposite square's color | same |
-
-  The values were picked on screenshots (Multicolor on the emulator's wallpaper, Orange and Green,
-  light and dark): white and black pieces, the coordinates, the ink, the hint and the engine's
-  graphite read on both squares; the highlights take the hue at full chroma so they show on the
-  calm squares. The OKLab measurements below are the iOS board's;
-  the Android tones are not measured that way yet. The badges, engine graphite, dots and the
-  explorer's fixed white, gray and black are the table's.
-
-## What changes when you pick an app color in Settings (`Theme.color(_:)`)
-Every app color changes the tint (controls), tints the board's squares toward it and gives the
-board its ink. Multicolor keeps the meaning colors above; every other app color tints them
-(table above). The one stand-in left: `.wrong` is purple when the app color is red or pink.
-
-Measured (OKLab ΔE of each overlay against the weaker of its two squares, ≥ ~10 clearly
-visible), on all nine boards in light and dark appearance: the ink at 38% (the rarest reply
-or gap) 10.2–14.4, at 85% 23–33; the last move 7.1–11.7 and the selected square 10.4–15.4
-(graphite's ink 5.7–6.9 and 10.1–12.2); the engine's graphite 8–12 at 30%, 12–18 at 45%. A
-white engine line was tried and fails on the light squares (3–6). Brown barely tints the slate
-(chroma 0.6), so it isn't offered. A board swallows its own hue (the app color at 40% over its
-board: 6–9; lichess brown: orange 6; chess.com green: green 6), which is why the overlays use
-the ink, not the app color.
-
-## App icon
-The icon keeps its own indigo (`#6B64B8`, `#3F3A8C`, the knight's eye `#2B2760`; dark icon
-`#2A2650`/`#14122B`): a white knight on a loose stack of two glass flashcards (40% and 22%): openings,
-learned by review. `AppIcon.icon` holds the shapes in white; the colors are its fills, set in
-Icon Composer (light and dark), which derives tinted and clear. `Design/AppIcon-*.svg` are flat
-references. It has the same hue as Apple's indigo (~245°), the default app color until October 2026 (now blue).
-Android uses the light colors (its launchers have no dark icon): the board as the adaptive icon's
-background, the knight and cards as its foreground; the themed icon (Android 13) is the knight and
-cards in one color with the eye cut out, as Apple's tinted icon. The splash shows the icon on the
-app's background (Material You's background color, light or dark).
+## Board
+The board has its own theme, the same in light and dark appearance (dimmer squares in dark):
+squares tinted toward the app color, and every overlay in one **ink** (the app color 55% toward
+black on Apple, tone 28 on Android), told apart by width, opacity and dashes: your moves bold,
+alternatives thin, covered replies by share, gaps dashed, the hint. Last move and selected square
+are the app color at 50% / 75% (graphite: the ink). The ✓ is `correct` (the ink in tinted
+themes), the ✕ `wrong`, the engine's lines graphite.
 
 ## Adding a color
 1. Name the meaning. If an existing role already means it, use that role.
-2. Otherwise take a free system color, add a `ThemeColor.Role`, its hue (and stand-in) in
-   `Theme.color(_:)`, a `ThemeColor` accessor, and rows above.
+2. Otherwise take a free system color (teal, mint, brown, indigo, pink) for Multicolor and a
+   label color or a shade of the app color for tinted themes; add the role on both platforms
+   and a row above.
 3. Pair it with a symbol or text, and check light, dark and Increase Contrast.
-
-Sources: Apple HIG [Color](https://developer.apple.com/design/human-interface-guidelines/color),
-[Materials](https://developer.apple.com/design/human-interface-guidelines/materials),
-[Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility).

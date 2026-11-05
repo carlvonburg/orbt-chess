@@ -192,7 +192,8 @@ impl CardQueues {
         timing: &SchedTiming,
         learn_ahead_secs: i64,
     ) -> CardQueues {
-        // Anki shuffles with SQL's random(); seeding by day keeps the order for the day.
+        // Differences: Anki shuffles with SQL's random(); a `StdRng` seeded by the day keeps a
+        // branch drill's order for the day.
         let mut rng = StdRng::seed_from_u64(timing.days_elapsed as u64);
         let mut learning = Vec::new();
         let mut main = Vec::new();
