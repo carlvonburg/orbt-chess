@@ -826,28 +826,37 @@ private struct TodayCard: View {
     @ViewBuilder
     var body: some View {
         if wide {
-            HStack(alignment: .top, spacing: 24) {
-                summary.frame(maxWidth: .infinity, alignment: .leading)
-                VStack(alignment: .trailing, spacing: 8) {
-                    streakBadge
+            // Side by side when the summary fits at its own width, the actions taking the
+            // rest; else one above the other, as in a list.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 24) {
+                    summary(streakInHeader: false).fixedSize(horizontal: true, vertical: false)
+                    VStack(alignment: .trailing, spacing: 8) {
+                        streakBadge
+                        actions
+                    }
+                    .frame(minWidth: 200, maxWidth: .infinity, alignment: .trailing)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    summary(streakInHeader: true)
                     actions
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
             }
         } else {
-            summary
+            summary(streakInHeader: true)
             actions
         }
     }
 
-    private var summary: some View {
+    /// What today looks like; the streak by the title unless it heads the actions.
+    private func summary(streakInHeader: Bool) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             switch phase {
             case .due:
                 // What is left first, then what was studied (Anki's line under its deck list).
                 header {
                     Text("\(Text(counts.total.formatted()).font(.title.bold()).monospacedDigit()) \(counts.total == 1 ? "move" : "moves") to study")
-                } trailing: { streakBadge }
+                } trailing: { if streakInHeader { streakBadge } }
                 dueCounts
                 studiedLine
             case .empty:
@@ -855,20 +864,20 @@ private struct TodayCard: View {
                 Text("Answer the replies your opponents play, then study your moves here.")
                     .font(.footnote).foregroundStyle(.secondary)
             case .doneForNow(let count, let at):
-                doneHeader("Done for Now", "checkmark.circle.fill")
+                doneHeader("Done for Now", "checkmark.circle.fill", streak: streakInHeader)
                 studiedLine
                 Label("\(count) learning \(count == 1 ? "move" : "moves") due at \(at.formatted(date: .omitted, time: .shortened))",
                       systemImage: "clock")
                     .font(.footnote).foregroundStyle(.secondary)
             case .nothingDue:
-                header { Text("Nothing Due Today") } trailing: { streakBadge }
+                header { Text("Nothing Due Today") } trailing: { if streakInHeader { streakBadge } }
                 if streak.current > 0 {
                     Text("Learn a few new moves to keep your \(streak.current)-day streak.")
                         .font(.footnote).foregroundStyle(.todo)
                 }
                 nextLine
             case .caughtUp:
-                doneHeader("All Caught Up", "checkmark.seal.fill")
+                doneHeader("All Caught Up", "checkmark.seal.fill", streak: streakInHeader)
                 studiedLine
                 if unlearned.isEmpty && withGaps.isEmpty {
                     Text("Every move you've saved is learned.").font(.footnote).foregroundStyle(.secondary)
@@ -899,13 +908,12 @@ private struct TodayCard: View {
         HStack(alignment: .firstTextBaseline) {
             title().font(.headline)
             Spacer()
-            // Across the dashboard the streak heads the actions instead.
-            if !wide { trailing() }
+            trailing()
         }
     }
 
-    private func doneHeader(_ title: String, _ icon: String) -> some View {
-        header { Label(title, systemImage: icon).foregroundStyle(.learned) } trailing: { streakBadge }
+    private func doneHeader(_ title: String, _ icon: String, streak: Bool) -> some View {
+        header { Label(title, systemImage: icon).foregroundStyle(.learned) } trailing: { if streak { streakBadge } }
     }
 
     /// The due counts, each with its name, colored like the studied bar.

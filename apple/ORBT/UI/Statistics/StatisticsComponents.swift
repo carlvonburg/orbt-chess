@@ -5,6 +5,44 @@ import SwiftUI
 // The building blocks of the Statistics screen, after Apple's Health and Fitness: a card names
 // its subject with a symbol, leads with one number and shows the chart that answers it.
 
+/// The statistics' cards in columns, as many as fit at `minColumnWidth`, each card under the
+/// shortest column so far at its own height (Android's staggered grid; SwiftUI's grids align
+/// cards in rows as tall as the tallest). In order, so the first cards stay at the top.
+struct MasonryLayout: Layout {
+    var minColumnWidth: CGFloat = 320
+    var spacing: CGFloat = 16
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? minColumnWidth
+        let columns = arrange(width: width, subviews: subviews)
+        return CGSize(width: width, height: columns.heights.max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let columns = arrange(width: bounds.width, subviews: subviews)
+        for (index, frame) in columns.frames.enumerated() {
+            subviews[index].place(at: CGPoint(x: bounds.minX + frame.minX, y: bounds.minY + frame.minY),
+                                  proposal: ProposedViewSize(frame.size))
+        }
+    }
+
+    /// Each card's frame, and the height of each column.
+    private func arrange(width: CGFloat, subviews: Subviews) -> (frames: [CGRect], heights: [CGFloat]) {
+        let count = max(1, Int((width + spacing) / (minColumnWidth + spacing)))
+        let columnWidth = (width - spacing * CGFloat(count - 1)) / CGFloat(count)
+        var heights = Array(repeating: CGFloat(0), count: count)
+        var frames: [CGRect] = []
+        for subview in subviews {
+            let column = heights.indices.min { heights[$0] < heights[$1] } ?? 0
+            let height = subview.sizeThatFits(ProposedViewSize(width: columnWidth, height: nil)).height
+            let y = heights[column] == 0 ? 0 : heights[column] + spacing
+            frames.append(CGRect(x: CGFloat(column) * (columnWidth + spacing), y: y, width: columnWidth, height: height))
+            heights[column] = y + height
+        }
+        return (frames, heights)
+    }
+}
+
 /// A card of the Statistics grid: a group box titled with its subject.
 struct StatCard<Content: View>: View {
     let title: String
