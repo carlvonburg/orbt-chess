@@ -737,6 +737,9 @@ private struct BoardColumnView: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { columnWidth = $0 }
         .onPreferenceChange(BoardSideKey.self) { boardSide = $0 }
         .navigationTitle(title)
+        // A board has no title here: inline, so the bar never keeps a large title's height
+        // from the overview it replaced (it did until the next screen, leaving the board small).
+        .toolbarTitleDisplayMode(board == nil ? .automatic : .inline)
         .toolbar {
             if case .builder(let model, let presentation) = board {
                 // Move navigation under the board (the top bar's leading side is the title's), as
