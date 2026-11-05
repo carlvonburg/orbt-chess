@@ -3,3 +3,4 @@
 /OpeningCoreFFI.sources
 /.build
 /.swiftpm
+/OpeningCoreFFI.bindings
