@@ -4,7 +4,16 @@ import SwiftUI
 extension EnvironmentValues {
     /// Pushes the analysis board on the screen it is opened from (set by the library). Going
     /// back finishes it (`AnalysisModel.finish`).
-    @Entry var openAnalysis: ((AnalysisModel) -> Void)?
+    @Entry var openAnalysis: OpenAnalysisAction?
+}
+
+/// The library's `openAnalysis`, called like a function; equal to any other for the same
+/// reason as `OpenScreenAction`.
+struct OpenAnalysisAction: Equatable {
+    let perform: (AnalysisModel) -> Void
+    init(_ perform: @escaping (AnalysisModel) -> Void) { self.perform = perform }
+    func callAsFunction(_ analysis: AnalysisModel) { perform(analysis) }
+    static func == (lhs: Self, rhs: Self) -> Bool { true }
 }
 
 extension View {

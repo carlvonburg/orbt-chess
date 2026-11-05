@@ -86,7 +86,7 @@ final class AppModel {
     func open(_ entry: RepertoireEntry) async -> RepertoireDocument? {
         if let existing = documents[entry.id] { return existing }
         if let task = opening[entry.id] { return await task.value }
-        let task = Task { () -> RepertoireDocument? in
+        let task = Task { [self] () -> RepertoireDocument? in
             defer { opening[entry.id] = nil }
             await closing[entry.id]?.value
             do {
