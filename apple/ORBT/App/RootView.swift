@@ -28,8 +28,8 @@ struct RootView: View {
         let library = model.library
         if library.entries.isEmpty && (library.isLoaded || !library.expectsRepertoires) {
             // Nothing for the tabs or the sidebar to show: the ways to a first repertoire, at
-            // once (HIG, Launching). A first launch never waits for iCloud Drive: its repertoires
-            // replace this screen as they arrive, and it says while it looks for them.
+            // once (HIG, Launching). A first launch never waits for iCloud Drive: repertoires
+            // already there (another device's) replace this screen as they arrive.
             OnboardingView()
         } else if isRegularWidth(sizeClass) {
             // Also while iCloud Drive lists a folder that had repertoires: the library as it was

@@ -18,8 +18,6 @@ struct OnboardingView: View {
     @Environment(\.webAuthenticationSession) private var webAuth
     @State private var showImport = false
     @State private var errorMessage: String?
-    /// iCloud Drive's folder has taken more than a moment to list (`syncStatus`).
-    @State private var listingIsSlow = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -31,11 +29,6 @@ struct OnboardingView: View {
             } else {
                 column(size)
             }
-        }
-        // A moment first, so a quick listing (the device's folder) shows no status at all.
-        .task {
-            try? await Task.sleep(for: .seconds(1))
-            listingIsSlow = true
         }
         // The setup sheet's keyboard is the window's: without this the screen behind the sheet
         // lays out again while it comes and goes. Nothing here takes text.
@@ -219,11 +212,6 @@ struct OnboardingView: View {
     private var syncStatus: String? {
         let sync = model.sync
         if sync.isSigningIn { return "Signing in…" }
-        // A first launch shows this screen at once; iCloud Drive's repertoires, if there are
-        // any, replace it as they arrive (HIG, Loading: say that content is on its way).
-        if !model.library.isLoaded && listingIsSlow {
-            return currentSync == .iCloud ? "Looking for your repertoires in iCloud Drive…" : "Looking for your repertoires…"
-        }
         guard let provider = sync.provider else { return nil }
         if case .syncing = sync.state { return "Downloading your repertoires from \(provider.title)…" }
         return nil
