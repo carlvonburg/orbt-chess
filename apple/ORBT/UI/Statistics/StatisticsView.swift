@@ -84,8 +84,9 @@ extension InlineStatistics where Lead == EmptyView {
     }
 }
 
-/// The period, then the cards: one column on a phone, as many as fit on iPad and Mac. With a
-/// `lead` (iPad's dashboard) it comes first, and the statistics follow under their heading.
+/// The period, then the cards: one column on a phone, as many as fit on iPad and Mac, tiled
+/// at their own heights (`MasonryLayout`). With a `lead` (iPad's dashboard) it comes first,
+/// and the statistics follow under their heading.
 struct StatisticsSummary<Lead: View>: View {
     @Bindable var model: StatisticsModel
     var lead: Lead
@@ -126,7 +127,7 @@ struct StatisticsSummary<Lead: View>: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 320), spacing: 16, alignment: .top)], spacing: 16) {
+            MasonryLayout {
                 cards(graphs)
             }
         } else if model.graphs == nil {

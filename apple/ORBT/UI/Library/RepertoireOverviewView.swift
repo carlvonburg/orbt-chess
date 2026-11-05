@@ -77,12 +77,13 @@ struct RepertoireOverviewView: View {
     // MARK: Dashboard
 
     /// Coverage and Study side by side, equal in height with their buttons on one line;
-    /// one above the other where both don't fit.
+    /// one above the other where two 320 pt columns don't fit (Android's dashboard). The ideal
+    /// width is what `ViewThatFits` measures: a text's own would be its whole line.
     private func cards(_ stats: EntryStats) -> some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .top, spacing: 16) {
-                coverageCard(stats).frame(minWidth: 320, maxHeight: .infinity)
-                studyCard(stats).frame(minWidth: 320, maxHeight: .infinity)
+                coverageCard(stats).frame(minWidth: 320, idealWidth: 320, maxHeight: .infinity)
+                studyCard(stats).frame(minWidth: 320, idealWidth: 320, maxHeight: .infinity)
             }
             .fixedSize(horizontal: false, vertical: true)
             VStack(spacing: 16) {
