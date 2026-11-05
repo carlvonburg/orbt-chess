@@ -13,5 +13,21 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git merge *)",
+      "Bash(git -C * merge *)",
+      "Bash(git checkout main*)",
+      "Bash(git switch main*)"
+    ],
+    "deny": [
+      "Read(./apple/Config/Secrets.xcconfig)",
+      "Read(**/local.properties)",
+      "Read(**/keystore.properties)",
+      "Read(**/*.jks)",
+      "Read(**/*.keystore)"
+    ]
   }
 }
