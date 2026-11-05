@@ -21,10 +21,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		CC0000000000000000000001 /* Config/ORBT.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/ORBT.xcconfig; sourceTree = "<group>"; };
 		1F1758813083B5B8003B959B /* ORBT Chess.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "ORBT Chess.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000000B4 /* OpeningCoreRust */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = OpeningCoreRust; sourceTree = "<group>"; };
 		BB0000000000000000000001 /* ORBTTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ORBTTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC0000000000000000000001 /* Config/ORBT.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/ORBT.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
