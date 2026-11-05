@@ -3,7 +3,7 @@ import Foundation
 import OpeningCoreRust
 import SwiftUI
 
-/// Where the repertoire folder syncs to (`docs/PLATFORMS.md`, Connectors). None: iCloud Drive only.
+/// Where the repertoire folder syncs to (`orbt-core`'s `sync`). None: iCloud Drive only.
 enum SyncProvider: String, CaseIterable, Identifiable {
     case dropbox
     case drive

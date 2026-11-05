@@ -392,6 +392,8 @@ impl Provider for Drive {
                 // the engine replaces a file only while the latest listing shows the version it
                 // last synced (`md5Checksum`), which leaves the moments between that listing and
                 // this upload. Waiting for an ETag instead downloaded the file forever.
+                // Differences: Google documents `If-Match` for Drive v2 only; check the 412 on the
+                // live API before shipping.
                 let request = match r.etag {
                     Some(etag) => request.header("If-Match", etag),
                     None => request,

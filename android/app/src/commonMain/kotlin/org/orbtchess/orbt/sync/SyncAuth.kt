@@ -2,7 +2,7 @@ package org.orbtchess.orbt.sync
 
 import org.orbtchess.orbt.core.RepertoireSync
 
-/** Where the repertoire folder syncs to (`docs/PLATFORMS.md`, Connectors). None: this device only. */
+/** Where the repertoire folder syncs to (`orbt-core`'s `sync`). None: this device only. */
 enum class SyncProvider(val key: String, val title: String) {
     Dropbox("dropbox", "Dropbox"),
     Drive("drive", "Google Drive");

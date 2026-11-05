@@ -11,7 +11,7 @@ import org.orbtchess.orbt.platform.Settings
 /**
  * The app's color, chosen in Settings (`AppColor` in `apple/ORBT/UI/Components/Palette.swift`):
  * the tint of every control (the color scheme's primary), the board's tint and, except for
- * Multicolor, the color of the meanings (Design/COLORS.md, "Android and desktop").
+ * Multicolor, the color of the meanings (Design/COLORS.md).
  *
  * Multicolor is Material You on Android 12 and later (the wallpaper's colors, the system's
  * dynamic color), with the meanings in their own colors (Anki's for studying); elsewhere it is

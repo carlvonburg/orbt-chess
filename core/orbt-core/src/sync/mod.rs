@@ -20,6 +20,11 @@
 //! deleted remotely (Drive: to the trash) unless it changed there (then it comes back).
 //! Edits made offline upload later. One request at a time, plus Dropbox's long poll while
 //! `set_watching(true)`.
+//!
+//! Differences: merges are unions, not three-way, with the merges iCloud conflict versions
+//! already use; the base only decides whether to merge. So a line deleted on one device while
+//! the other also edited the file comes back, as with an iCloud conflict; a deletion alone
+//! carries over. An edit wins over a deletion of the whole file on another device.
 
 pub mod drive;
 pub mod dropbox;

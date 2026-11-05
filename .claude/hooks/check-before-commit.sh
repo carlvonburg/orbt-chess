@@ -10,7 +10,8 @@
 #   android/ or the FFI changed -> the JVM tests (bindings, app) and the Android app's Kotlin
 #   apple/ORBT/UI/ changed -> no colors by name outside Palette.swift
 #   android/app/src/*/ui/ changed -> no colors by name outside ui/theme
-# Other commands pass through untouched.
+#   any PGN outside the test data and the store samples -> blocked (personal repertoires)
+# Markdown files alone run no check. Other commands pass through untouched.
 set -uo pipefail
 
 input=$(cat)
@@ -33,7 +34,18 @@ changed=$(git diff --cached --name-only)
 if [[ "$command" == *"git add"* || "$command" =~ 'commit +-[a-zA-Z]*a' ]]; then
   changed+=$'\n'$(git diff --name-only; git ls-files --others --exclude-standard)
 fi
-touches() { grep -qE "$1" <<<"$changed"; }
+# Markdown (README, AGENTS.md, skills) changes no build: only the other files pick the checks.
+code_changed=$(grep -vE '\.md$' <<<"$changed")
+touches() { grep -qE "$1" <<<"$code_changed"; }
+
+# Personal repertoires never go in the repo: PGNs only as test data and the store's samples.
+pgns=$(grep -iE '\.pgn$' <<<"$changed" | grep -vE '^(core/orbt-core/tests/data|core/fuzz|Design/AppStore/samples)/' \
+  | while read -r f; do [[ -e "$f" ]] && echo "$f"; done)
+if [[ -n "$pgns" ]]; then
+  echo "Commit blocked: PGN files outside the test data and the store samples (personal repertoires belong in testData/, which git ignores):" >&2
+  echo "$pgns" >&2
+  exit 2
+fi
 
 log=$(mktemp -t check-before-commit)
 fail() {

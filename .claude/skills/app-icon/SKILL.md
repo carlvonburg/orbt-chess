@@ -2,7 +2,11 @@
 name: app-icon
 description: Change the ORBT app icon (apple/ORBT/AppIcon.icon) and every icon derived from it on Android, the desktop, the website and the welcome screen.
 ---
-The Icon Composer document `apple/ORBT/AppIcon.icon` is the icon of every platform.
+The Icon Composer document `apple/ORBT/AppIcon.icon` is the icon of every platform: a white
+knight on a loose stack of two glass flashcards (40% and 22%) on a 2×2 board. It keeps its own
+indigo, whatever the app color: `#6B64B8`, `#3F3A8C`, the knight's eye `#2B2760`; dark icon
+`#2A2650` / `#14122B`. Android uses the light colors (its launchers have no dark icon); its
+themed icon is the knight and cards in one color with the eye cut out, like Apple's tinted icon.
 
 Keep it Icon Composer's:
 - The `Assets/` SVGs are plain white shapes; their colors are fills in `icon.json`
@@ -17,7 +21,7 @@ Render every appearance and look at each one:
 Renditions: Default, Dark, TintedLight, TintedDark, ClearLight, ClearDark.
 
 Then update what is derived from it:
-- `Design/AppIcon-{light,dark,tinted}.svg` and the App icon section of `Design/COLORS.md`.
+- `Design/AppIcon-{light,dark,tinted}.svg`, the flat references.
 - `apple/ORBT/Assets.xcassets/AppIconImage.imageset`: ictool's Default rendition at 360 px.
 - Android's adaptive icon, by hand: `android/androidApp/src/main/res/drawable/ic_launcher_{background,foreground,monochrome}.xml`
   (the cards and knight in the icon's 1024 units, its square the visible 72dp; also the splash).

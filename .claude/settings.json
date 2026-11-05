@@ -20,14 +20,18 @@
       "Bash(git merge *)",
       "Bash(git -C * merge *)",
       "Bash(git checkout main*)",
-      "Bash(git switch main*)"
+      "Bash(git switch main*)",
+      "Bash(website/deploy.sh*)",
+      "Bash(*wrangler* pages deploy*)"
     ],
     "deny": [
-      "Read(./apple/Config/Secrets.xcconfig)",
+      "Read(**/Secrets.xcconfig)",
       "Read(**/local.properties)",
       "Read(**/keystore.properties)",
       "Read(**/*.jks)",
-      "Read(**/*.keystore)"
+      "Read(**/*.keystore)",
+      "Edit(**/OpeningCoreRust/opening_core.swift)",
+      "Edit(**/orbt/core/opening_core.kt)"
     ]
   }
 }

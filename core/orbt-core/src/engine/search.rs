@@ -5,6 +5,11 @@
 //! The cloud eval comes first (lichess mobile's order): the local engine waits
 //! `CLOUD_WAIT_MS` for it, never runs when it is `CLOUD_DEEP_ENOUGH`, and replaces it once it is
 //! deeper.
+//!
+//! Differences: lichess mobile asks for a cloud eval only before ply 15; here at every ply, and
+//! the local engine never runs where the cloud eval is depth 30 or more with every line asked
+//! for: this app analyses opening positions, and the owner wants no engine time spent where
+//! Lichess already has a deep answer.
 
 use super::uci::{EngineCommand, EngineOutput, Score, parse_line};
 use super::{

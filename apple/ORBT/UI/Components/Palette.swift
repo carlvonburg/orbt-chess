@@ -192,6 +192,13 @@ private struct AppTint: ViewModifier {
 
 /// The board for a theme: content with its own colors (not the app's light or dark
 /// appearance), its squares tinted toward the app color, its overlays in the theme's colors.
+/// The board: squares tinted toward the app color, overlays in one ink told apart by width,
+/// opacity and dashes. Measured (OKLab ΔE of each overlay against the weaker of its two squares,
+/// ≥ ~10 clearly visible) on all nine boards, light and dark: the ink at 38% 10.2–14.4, at 85%
+/// 23–33; the last move 7.1–11.7, the selected square 10.4–15.4 (graphite's ink 5.7–6.9 and
+/// 10.1–12.2); the engine's graphite 8–12 at 30%, 12–18 at 45%. A white engine line failed on the
+/// light squares (3–6); the app color over its own board measured only 6–9, hence the ink. Brown
+/// barely tints the slate, so it isn't an app color.
 nonisolated struct BoardTheme {
     let theme: Theme
 
