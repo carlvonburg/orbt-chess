@@ -1,0 +1,4 @@
+# UniFFI bindings generated from core/orbt-ffi: keep them out of GitHub's language stats
+# and collapse their diffs in pull requests.
+android/core/src/commonMain/kotlin/org/orbtchess/orbt/core/opening_core.kt linguist-generated
+apple/OpeningCoreRust/Sources/OpeningCoreRust/opening_core.swift linguist-generated
