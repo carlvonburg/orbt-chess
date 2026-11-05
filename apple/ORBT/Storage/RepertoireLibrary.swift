@@ -90,6 +90,13 @@ final class RepertoireLibrary {
 
     init(folder: URL? = nil) {
         fixedFolder = folder
+        #if DEBUG
+        if folder == nil, let launch = SlowICloudSimulation.launch {
+            remembered = launch == .returning ? [RememberedRepertoire(name: SlowICloudSimulation.sampleName, white: true)] : []
+            expectsRepertoires = launch != .new
+            return
+        }
+        #endif
         remembered = folder == nil ? Self.loadRemembered() : []
         expectsRepertoires = !remembered.isEmpty
             || folder == nil && UserDefaults.standard.object(forKey: RepertoireSettingsDraft.sourceKey) != nil
@@ -168,6 +175,9 @@ final class RepertoireLibrary {
 
     /// Remembers the repertoires, for the next launch (`remembered`).
     private func rememberRepertoires() {
+        #if DEBUG
+        if SlowICloudSimulation.seconds != nil { return }
+        #endif
         guard fixedFolder == nil, isLoaded || !entries.isEmpty else { return }
         let now = entries.map { RememberedRepertoire(name: $0.name, white: $0.sidecar.map { $0.color() == .white }) }
         guard now != Self.loadRemembered() else { return }
@@ -221,7 +231,18 @@ final class RepertoireLibrary {
         guard let seconds = SlowICloudSimulation.seconds, fixedFolder == nil else { return false }
         try? await Task.sleep(for: .seconds(seconds))
         hidesRepertoires = true
-        use(URL.documentsDirectory, iCloud: false)
+        if SlowICloudSimulation.launch != nil {
+            let scratch = SlowICloudSimulation.scratchFolder
+            let pgn = scratch.appending(path: SlowICloudSimulation.sampleName + ".pgn")
+            try? FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true)
+            if !FileManager.default.fileExists(atPath: pgn.path) {
+                try? FileAccess.write(Data(newRepertoirePgn(name: SlowICloudSimulation.sampleName).utf8), to: pgn)
+                try? FileAccess.write(RepertoireSettingsDraft().makeSidecar(), to: Self.sidecarURL(for: pgn))
+            }
+            use(scratch, iCloud: false)
+        } else {
+            use(URL.documentsDirectory, iCloud: false)
+        }
         Task {
             try? await Task.sleep(for: .seconds(seconds))
             hidesRepertoires = false

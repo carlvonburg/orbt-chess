@@ -30,11 +30,6 @@ struct StatisticsView: View {
         }
     }
 
-    private struct TaskKey: Hashable {
-        let scope: StatisticsModel.Scope
-        let entries: Int
-    }
-
     /// The repertoire, in the toolbar as iOS 26 apps do; the icon is filled while filtering.
     private var filterMenu: some View {
         Menu {
@@ -70,12 +65,20 @@ struct InlineStatistics<Lead: View>: View {
 
     var body: some View {
         StatisticsSummary(model: model, lead: lead)
-            .task(id: scope) {
+            // Again when the repertoires change: the Mac's column is made at launch, before
+            // iCloud Drive may have listed them.
+            .task(id: TaskKey(scope: scope, entries: app.library.entries.count)) {
                 model.scope = scope
                 await model.load(app)
             }
             .refreshable { await model.load(app) }
     }
+}
+
+/// When statistics load: for their scope, and again when the repertoires change.
+private struct TaskKey: Hashable {
+    let scope: StatisticsModel.Scope
+    let entries: Int
 }
 
 extension InlineStatistics where Lead == EmptyView {
