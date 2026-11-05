@@ -56,8 +56,8 @@ request.
 - `docs/PLATFORMS.md`: why native apps only, where each platform keeps the repertoires, and how
   Google Drive and Dropbox sync.
 
-`CLAUDE.md` describes the design in detail: the rules, where each one lives, and the
-conventions.
+`AGENTS.md` (and one each in `core/`, `apple/` and `android/`) describes the design in
+detail: the rules, where each one lives, and the conventions.
 
 ## Building
 Requires Xcode 26 (iOS 26, macOS 26) and rustup (`brew install rustup`); the pinned toolchain

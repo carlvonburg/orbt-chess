@@ -24,7 +24,7 @@ orbtchess › Custom domains).
   work without rewrite rules. Keep them.
 - `404.html` is served for missing pages.
 - `assets/icon.png` and `assets/apple-touch-icon.png` are exported from `apple/ORBT/AppIcon.icon`
-  with `ictool` (see `CLAUDE.md`); `assets/favicon.svg` is `Design/AppIcon-light.svg`.
+  with `ictool` (see `apple/AGENTS.md`); `assets/favicon.svg` is `Design/AppIcon-light.svg`.
 - `assets/screens/` are simulator screenshots (iPhone 16e and iPad Pro 13-inch (M5), iOS 26.2,
   status bar at 9:41), each in `-light` and `-dark`, picked by the browser's color scheme
   (`<picture>`), resized and saved as WebP (`cwebp -q 84`). The repertoires shown are sample
