@@ -16,6 +16,15 @@ struct RepertoireOverviewView: View {
     let practice: () -> Void
     /// iPad's two columns: the cards and the statistics in the detail.
     var dashboard = false
+
+    /// Coverage and Study as cards: iPad's dashboard, and the Mac's middle column.
+    private var usesCards: Bool {
+        #if os(macOS)
+        true
+        #else
+        dashboard
+        #endif
+    }
     @State private var sheet: Sheet?
 
     private enum Sheet: String, Identifiable {
@@ -29,10 +38,19 @@ struct RepertoireOverviewView: View {
             if dashboard {
                 InlineStatistics(scope: .repertoire(document.entryID)) { cards(stats) }
             } else {
+                #if os(macOS)
+                // The Mac's middle column: the same cards, without the statistics (they are
+                // in the board column). Buttons in list rows are an iPhone pattern, and a
+                // Mac's gray push button nearly vanishes on a gray row; a box sets it off.
+                ScrollView {
+                    cards(stats).scenePadding()
+                }
+                #else
                 List {
                     coverageSection(stats)
                     studySection(stats)
                 }
+                #endif
             }
         }
         .checksCoverage(document)
@@ -113,7 +131,7 @@ struct RepertoireOverviewView: View {
                 CoverageCheckStatus(document: document)
             }
             LabeledContent("Saved moves", value: stats.savedMoves.formatted())
-            if dashboard { Spacer(minLength: 0) }
+            if usesCards { Spacer(minLength: 0) }
             Button("Browse / Edit", action: editLines)
                 .actionButton(prominent: buildFirst(stats))
     }
@@ -174,7 +192,7 @@ struct RepertoireOverviewView: View {
                 .foregroundStyle(stats.progress.studied > 0 ? AnyShapeStyle(.learned) : AnyShapeStyle(.secondary))
         }
         if stats.progress.cards > 0 {
-            if dashboard { Spacer(minLength: 0) }
+            if usesCards { Spacer(minLength: 0) }
             studyButton(stats).actionButton(prominent: !buildFirst(stats))
         }
         // The split view shows the statistics beside the overview.
