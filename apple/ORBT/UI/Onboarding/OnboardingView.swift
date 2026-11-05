@@ -144,10 +144,18 @@ struct OnboardingView: View {
                 // The choice Settings › Sync makes, checked on the one in use: iCloud Drive when
                 // there is an account (it syncs already, nothing to do), else this device only.
                 Menu {
-                    Picker("Sync with", selection: Binding(get: { currentSync }, set: choose)) {
-                        ForEach(syncChoices) { Text($0.title).tag($0) }
+                    // A checkmark on the one in use, as a picker draws it; toggles rather than a
+                    // picker, as their labels take a subtitle (a picker makes it another item).
+                    ForEach(syncChoices) { choice in
+                        Toggle(isOn: Binding(get: { currentSync == choice }, set: { if $0 { choose(choice) } })) {
+                            Text(choice.title)
+                            // A repertoire made on another device may be on its way: the
+                            // menu says so under iCloud Drive while its folder is listed.
+                            if choice == .iCloud && !model.library.isLoaded {
+                                Text("Checking for repertoires…")
+                            }
+                        }
                     }
-                    .pickerStyle(.inline)
                     if !hasICloud {
                         Button {} label: {
                             Text("iCloud Drive")
@@ -172,7 +180,7 @@ struct OnboardingView: View {
     }
 
     private var hasICloud: Bool {
-        FileManager.default.ubiquityIdentityToken != nil || model.library.usesICloud
+        FileManager.default.ubiquityIdentityToken != nil || model.library.isICloud
     }
 
     /// As Settings › Sync: iCloud Drive while there is an iCloud account (or it is in use), the
@@ -187,7 +195,7 @@ struct OnboardingView: View {
             // Still finding the folder: the one it will be.
             return hasICloud && !UserDefaults.standard.bool(forKey: AppModel.onDeviceKey) ? .iCloud : .off
         }
-        return model.library.usesICloud ? .iCloud : .off
+        return model.library.isICloud ? .iCloud : .off
     }
 
     /// A provider signs in (its repertoires then arrive); iCloud Drive is used again. Nothing to

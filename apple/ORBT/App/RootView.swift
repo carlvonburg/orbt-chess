@@ -7,6 +7,9 @@ struct RootView: View {
     var body: some View {
         @Bindable var model = model
         content
+            // Repertoires another device made arrive while onboarding shows (a new install):
+            // the library takes its place in a cross-fade, not a cut.
+            .animation(.smooth, value: showsOnboarding)
             // Here, over onboarding and the library alike: it stays while the first repertoire
             // replaces onboarding under it, and closes onto the screen it opens.
             .sheet(item: $model.setup) { request in
@@ -22,11 +25,16 @@ struct RootView: View {
             }
     }
 
+    /// No repertoire to show, and none expected while the folder is listed.
+    private var showsOnboarding: Bool {
+        let library = model.library
+        return library.entries.isEmpty && (library.isLoaded || !library.expectsRepertoires)
+    }
+
     @ViewBuilder
     private var content: some View {
         @Bindable var model = model
-        let library = model.library
-        if library.entries.isEmpty && (library.isLoaded || !library.expectsRepertoires) {
+        if showsOnboarding {
             // Nothing for the tabs or the sidebar to show: the ways to a first repertoire, at
             // once (HIG, Launching). A first launch never waits for iCloud Drive: repertoires
             // already there (another device's) replace this screen as they arrive.

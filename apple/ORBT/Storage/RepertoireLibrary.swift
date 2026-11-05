@@ -47,6 +47,14 @@ final class RepertoireLibrary {
 
     private(set) var folder: URL?
     private(set) var usesICloud = false
+    /// iCloud Drive's folder as onboarding's sync menu shows it: `usesICloud`, or the device's
+    /// folder standing in for it (`SlowICloudSimulation`, DEBUG only).
+    var isICloud: Bool {
+        #if DEBUG
+        if SlowICloudSimulation.seconds != nil { return true }
+        #endif
+        return usesICloud
+    }
     private(set) var entries: [RepertoireEntry] = [] {
         didSet { rememberRepertoires() }
     }
