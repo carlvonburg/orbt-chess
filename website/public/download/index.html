@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Download — ORBT Chess</title>
-  <meta name="description" content="Download ORBT Chess for iPhone, iPad, Mac, Android, Windows and Linux. Free and open source.">
+  <title>Join the beta — ORBT Chess</title>
+  <meta name="description" content="Join the ORBT Chess public beta on iPhone, iPad, Mac, Android, Windows and Linux. Free and open source.">
   <link rel="canonical" href="https://orbtchess.org/download/">
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="/assets/site.css?v=18">
+  <link rel="stylesheet" href="/assets/site.css?v=19">
 </head>
 <body>
   <header class="site-header">
@@ -28,35 +28,62 @@
   </header>
 
   <main class="wrap page">
-    <h1>Download</h1>
-    <p>ORBT Chess is free on every platform: no subscription, no ads, no account. To keep your repertoires on several devices, choose iCloud Drive (Apple devices only), Dropbox or Google Drive in Settings › Sync.</p>
-
-    <section class="platform" id="apple">
-      <h2>iPhone, iPad and Mac</h2>
-      <p class="requires">iOS 26, iPadOS 26 or macOS 26</p>
-      <div class="cta">
-        <a class="badge" href="https://apps.apple.com/app/id6828347828" aria-label="Download on the App Store"><img src="/assets/app-store-badge.svg" alt="Download on the App Store" width="150" height="50"></a>
-      </div>
-      <p>One download for all three, with your repertoires in iCloud Drive.</p>
-    </section>
+    <h1>Join the beta</h1>
+    <p>In public beta until the launch on 1 December: your feedback shapes the 1.0.</p>
+    <!-- After launch (1 Dec): <h1>Download</h1> again, without the beta paragraph above -->
+    <p>ORBT Chess is free on every platform: no subscription, no ads, no account.</p>
 
     <section class="platform" id="android">
       <h2>Android</h2>
       <p class="requires">Android 10 or later, phones and tablets</p>
+      <p>With the Google account you use on your phone or tablet:</p>
+      <ol class="steps">
+        <li>Join the testers group.</li>
+        <li>Become a tester, then install ORBT Chess from Google Play.</li>
+      </ol>
+      <div class="cta">
+        <a class="button" href="https://groups.google.com/g/orbt-chess-beta/about">1. Join the testers group</a>
+        <a class="button ghost" href="https://play.google.com/apps/testing/org.orbtchess.orbt">2. Become a tester</a>
+      </div>
+      <!-- After launch (1 Dec): the Google Play badge, in place of the beta above
       <div class="cta">
         <a class="badge" href="https://play.google.com/store/apps/details?id=org.orbtchess.orbt"><img src="/assets/google-play-badge.svg" alt="Get it on Google Play" width="175" height="52"></a>
       </div>
+      -->
+    </section>
+
+    <section class="platform" id="apple">
+      <h2>iPhone, iPad and Mac</h2>
+      <p class="requires">iOS 26, iPadOS 26 or macOS 26</p>
+      <p>Install Apple's TestFlight app, then open the link on your iPhone, iPad or Mac. One beta for all three, with your repertoires in iCloud Drive.</p>
+      <!-- Beta: uncomment once Apple approves the beta build, and remove the "soon" line
+      <div class="cta">
+        <a class="button" href="https://testflight.apple.com/join/eDSZaGnc">Join on TestFlight</a>
+      </div>
+      -->
+      <p class="soon">The TestFlight link opens in a few days.</p>
+      <!-- After launch (1 Dec): the App Store badge, in place of the beta above
+      <div class="cta">
+        <a class="badge" href="https://apps.apple.com/app/id6828347828" aria-label="Download on the App Store"><img src="/assets/app-store-badge.svg" alt="Download on the App Store" width="150" height="50"></a>
+      </div>
+      <p>One download for all three, with your repertoires in iCloud Drive.</p>
+      -->
     </section>
 
     <section class="platform" id="windows">
       <h2>Windows</h2>
       <p class="requires">Windows 10 or 11, x64</p>
       <div class="cta">
-        <!-- The Store's search until the app's own page (apps.microsoft.com/detail/<product id>) exists -->
-        <a class="badge" href="https://apps.microsoft.com/search?query=ORBT%20Chess"><img src="/assets/microsoft-store-badge.svg" alt="Get it from Microsoft" width="190" height="52"></a>
+        <a class="button" href="https://github.com/carlvonburg/orbt-chess/releases/latest/download/ORBT-Chess-windows-x64.msi">Download the installer (.msi)</a>
+      </div>
+      <p>The installer doesn't update itself: download the new one when there is a release. Windows asks once before running it, since it isn't signed: choose More info › Run anyway. The Microsoft Store version comes on 1 December.</p>
+      <!-- After launch (1 Dec): the Store badge first and the installer as the ghost button, in place of the beta above
+      <div class="cta">
+        <a class="badge" href="https://apps.microsoft.com/detail/9P5KC621ZCFX"><img src="/assets/microsoft-store-badge.svg" alt="Get it from Microsoft" width="190" height="52"></a>
         <a class="button ghost" href="https://github.com/carlvonburg/orbt-chess/releases/latest/download/ORBT-Chess-windows-x64.msi">Download the installer (.msi)</a>
       </div>
       <p>The Store version updates itself. The installer from GitHub doesn't, and Windows asks once before running it, since it isn't signed: choose More info › Run anyway.</p>
+      -->
     </section>
 
     <section class="platform" id="linux">
@@ -69,6 +96,14 @@
       <pre><code>sudo apt install ./orbt-chess_amd64.deb</code></pre>
       <p>It doesn't update itself: download the new package when there is a release.</p>
     </section>
+
+    <h2 id="feedback">Send feedback</h2>
+    <p>Tell us what works, what breaks and what's missing:</p>
+    <ul>
+      <li>On iPhone, iPad and Mac: take a screenshot in the app and share it as beta feedback, or use Send Beta Feedback in the TestFlight app.</li>
+      <li>Everywhere: <a href="https://github.com/carlvonburg/orbt-chess/issues">report a bug or suggest an idea on GitHub</a>, or write to us from the <a href="/contact/">contact page</a>.</li>
+    </ul>
+    <!-- After launch (1 Dec): this section can go, or stay as Feedback without the TestFlight line -->
 
     <h2>Syncing your repertoires</h2>
     <p>Your repertoires and training progress sync between all your devices: choose Dropbox or Google Drive in Settings › Sync on each, or iCloud Drive if all of them are Apple devices. They're plain PGN files, and on Windows and Linux you'll also find them in the <code>ORBT Chess</code> folder in your home folder, where you can drop in PGNs from other apps.</p>
