@@ -145,6 +145,8 @@ p { margin: 0 0 1em; }
 .pill { flex-wrap: wrap; justify-content: center; gap: 0 8px; }
 .pill b { color: var(--text); font-weight: 750; }
 .pill .sep { color: var(--text-3); }
+/* The line under the hero's beta button (until launch) */
+.cta-note { margin: 14px 0 0; font-size: 15px; color: var(--text-3); }
 
 .stage-wrap { perspective: 1600px; margin-top: 64px; }
 
@@ -393,6 +395,9 @@ details p:last-child { margin-bottom: 0; }
 .platform .requires { color: var(--text-3); font-size: 15px; margin-top: -0.4em; }
 .platform .cta { margin: 20px 0; }
 .platform p:last-child { margin-bottom: 0; }
+.platform .soon { color: var(--text-3); font-weight: 600; }
+.platform .steps { padding-left: 1.4em; }
+.platform .steps li { margin: 4px 0; }
 .platform pre { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--surface-2); padding: 12px 16px; border-radius: 12px; overflow-x: auto; }
 @media (max-width: 560px) { .platform { padding: 22px 20px; border-radius: 20px; } }
 
