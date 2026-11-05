@@ -47,6 +47,10 @@ final class AppModel {
         let onDevice = UserDefaults.standard.bool(forKey: Self.onDeviceKey)
         await library.setUp(inICloud: !onDevice)
         if SyncService.chosenProvider() != nil, library.usesICloud { await moveRepertoires(toICloud: false) }
+        #if DEBUG
+        // Nothing synced from a simulated folder (`SlowICloudSimulation`).
+        if SlowICloudSimulation.seconds != nil { return }
+        #endif
         sync.start()
     }
 
