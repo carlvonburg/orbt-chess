@@ -165,6 +165,8 @@ struct RepertoireSetupFlow: View {
     private func finish() async {
         do {
             let entry: RepertoireEntry
+            // Onboarding can be used while iCloud Drive's folder is still being found.
+            _ = await model.library.readyFolder()
             switch mode {
             case .new:
                 entry = try model.library.create(name: name, sidecar: draft.makeSidecar())

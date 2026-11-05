@@ -26,18 +26,14 @@ struct RootView: View {
     private var content: some View {
         @Bindable var model = model
         let library = model.library
-        if library.entries.isEmpty && !(library.isLoaded || library.expectsRepertoires) {
-            // The first launch, until the folder is listed: the window's own background, as the
-            // launch screen, then onboarding or the library.
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.background)
-        } else if library.entries.isEmpty && library.isLoaded {
-            // Nothing for the tabs or the sidebar to show yet: the ways to a first repertoire.
+        if library.entries.isEmpty && (library.isLoaded || library.remembered.isEmpty) {
+            // Nothing for the tabs or the sidebar to show: the ways to a first repertoire, at
+            // once (HIG, Launching). A first launch never waits for iCloud Drive: its repertoires
+            // replace this screen as they arrive, and it says while it looks for them.
             OnboardingView()
         } else if isRegularWidth(sizeClass) {
-            // The library, loading (`LibraryView`) while iCloud Drive lists a folder that had
-            // repertoires; never the welcome screen in between.
+            // Also while iCloud Drive lists a folder that had repertoires: the library as it was
+            // left, its rows placeholders (`LibraryView`), never the welcome screen in between.
             // iPad and Mac: the library's sidebar, with statistics in each overview.
             LibraryView()
         } else {

@@ -17,10 +17,24 @@ nonisolated struct RepertoireEntry: Identifiable, Equatable, Sendable {
 
     var needsSetup: Bool { sidecar == nil }
 
+    /// A row while the folder is listed (`RepertoireLibrary.remembered`); no file.
+    static func placeholder(_ name: String) -> RepertoireEntry {
+        let none = URL(filePath: "/dev/null")
+        return RepertoireEntry(id: "placeholder:" + name, name: name, pgnURL: none, sidecarURL: none,
+                               sidecarData: nil, sidecar: nil, isDownloading: false)
+    }
+
     static func == (a: RepertoireEntry, b: RepertoireEntry) -> Bool {
         a.id == b.id && a.name == b.name && a.pgnURL == b.pgnURL && a.sidecarURL == b.sidecarURL
             && a.sidecarData == b.sidecarData && a.isDownloading == b.isDownloading
     }
+}
+
+/// A repertoire as the library last listed it: its row while the folder is listed again.
+nonisolated struct RememberedRepertoire: Codable, Equatable, Sendable {
+    var name: String
+    /// The side it is for; nil when not set up.
+    var white: Bool?
 }
 
 /// The repertoires in the app's iCloud Drive folder ("ORBT Chess" in Files), or in the device's
@@ -41,9 +55,10 @@ final class RepertoireLibrary {
     private(set) var isLoaded = false {
         didSet { rememberRepertoires() }
     }
-    /// The library had repertoires when last seen on this device, so while it loads, the app
-    /// shows the library (`RootView`) rather than the welcome screen.
-    let expectsRepertoires: Bool
+    /// The repertoires when last seen on this device: while iCloud Drive lists the folder, the
+    /// library shows them as placeholders (HIG, Launching: restore the previous state), never
+    /// the welcome screen (`RootView`).
+    let remembered: [RememberedRepertoire]
     var lastError: String?
 
     @ObservationIgnored private var presenter: FilePresenter?
@@ -57,11 +72,21 @@ final class RepertoireLibrary {
     @ObservationIgnored private var listing: NSMetadataQuery?
     @ObservationIgnored private var listingObservers: [any NSObjectProtocol] = []
 
-    private static let hadRepertoiresKey = "libraryHadRepertoires"
+    /// Resumed once the folder is known (`readyFolder`).
+    @ObservationIgnored private var folderWaiters: [CheckedContinuation<URL, Never>] = []
+
+    private static let rememberedKey = "libraryRepertoires"
 
     init(folder: URL? = nil) {
         fixedFolder = folder
-        expectsRepertoires = folder == nil && UserDefaults.standard.bool(forKey: Self.hadRepertoiresKey)
+        remembered = folder == nil ? Self.loadRemembered() : []
+    }
+
+    /// The folder, once `setUp` has found it (iCloud Drive's can take a while after an install):
+    /// onboarding's ways in can be used before.
+    func readyFolder() async -> URL {
+        if let folder { return folder }
+        return await withCheckedContinuation { folderWaiters.append($0) }
     }
 
     /// iCloud Drive's folder, when there is one (`inICloud`); else the device's.
@@ -128,13 +153,17 @@ final class RepertoireLibrary {
         isLoaded = true
     }
 
-    /// Remembers whether there are repertoires, for the next launch (`expectsRepertoires`).
+    /// Remembers the repertoires, for the next launch (`remembered`).
     private func rememberRepertoires() {
         guard fixedFolder == nil, isLoaded || !entries.isEmpty else { return }
-        let has = !entries.isEmpty
-        if UserDefaults.standard.bool(forKey: Self.hadRepertoiresKey) != has {
-            UserDefaults.standard.set(has, forKey: Self.hadRepertoiresKey)
-        }
+        let now = entries.map { RememberedRepertoire(name: $0.name, white: $0.sidecar.map { $0.color() == .white }) }
+        guard now != Self.loadRemembered() else { return }
+        UserDefaults.standard.set(try? JSONEncoder().encode(now), forKey: Self.rememberedKey)
+    }
+
+    private static func loadRemembered() -> [RememberedRepertoire] {
+        guard let data = UserDefaults.standard.data(forKey: rememberedKey) else { return [] }
+        return (try? JSONDecoder().decode([RememberedRepertoire].self, from: data)) ?? []
     }
 
     /// Moves the repertoires to iCloud Drive's folder or to the device's (close the documents
@@ -169,6 +198,8 @@ final class RepertoireLibrary {
         let presenter = FilePresenter(url: url) { [weak self] in self?.scheduleRefresh() }
         presenter.start()
         self.presenter = presenter
+        folderWaiters.forEach { $0.resume(returning: url) }
+        folderWaiters = []
     }
 
     /// `SlowICloudSimulation`: always false in Release builds.
@@ -311,7 +342,7 @@ final class RepertoireLibrary {
     }
 
     private func add(name: String, pgn: (String) throws -> Data, sidecar: Data) throws -> RepertoireEntry {
-        guard let folder else { throw CocoaError(.fileNoSuchFile) }
+        guard let folder else { throw CocoaError(.fileNoSuchFile) }  // `readyFolder` first
         let clean = Self.cleanName(name)
         guard !clean.isEmpty else { throw CocoaError(.fileWriteInvalidFileName) }
         let url = folder.appending(path: clean + ".pgn")
