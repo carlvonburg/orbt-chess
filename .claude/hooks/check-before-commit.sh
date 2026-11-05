@@ -96,6 +96,15 @@ if touches '^android/app/src/.*/ui/'; then
 fi
 
 if $app_needed; then
+  # The xcframework is not committed: a new worktree may have none, or one built from older
+  # sources. Copy a current one from another worktree, else build it.
+  fingerprint=$(core/scripts/core-fingerprint.sh)
+  framework_sources=apple/OpeningCoreRust/OpeningCoreFFI.sources
+  if [[ "$(cat "$framework_sources" 2>/dev/null)" != "$fingerprint" ]]; then
+    core/scripts/git-hooks/rebuild-core.sh 0000000000000000000000000000000000000000 HEAD >>"$log" 2>&1
+    [[ "$(cat "$framework_sources" 2>/dev/null)" == "$fingerprint" ]] \
+      || core/scripts/build-apple.sh >>"$log" 2>&1 || fail "core/scripts/build-apple.sh"
+  fi
   # The checkout's own project, whatever it is called (its scheme has the same name).
   project=(apple/*.xcodeproj(N))
   [[ ${#project} -eq 1 ]] || { echo "no single Xcode project in apple/" >"$log"; fail "finding the Xcode project"; }
@@ -105,8 +114,10 @@ if $app_needed; then
 fi
 
 if $android_needed; then
-  # Needs the host library from build-android.sh (android/core/build/host).
-  [[ -d android/core/build/host ]] || core/scripts/build-android.sh --debug >>"$log" 2>&1 \
+  # Needs the host library from build-android.sh (android/core/build/host), built from the
+  # current sources: an older one fails the tests with UnsatisfiedLinkError.
+  [[ "$(cat android/core/build/host/sources 2>/dev/null)" == "$(core/scripts/core-fingerprint.sh)" ]] \
+    || core/scripts/build-android.sh --debug >>"$log" 2>&1 \
     || fail "core/scripts/build-android.sh"
   (cd android && ./gradlew -q :core:jvmTest :app:desktopTest :androidApp:compileDebugKotlin) >>"$log" 2>&1 \
     || fail "the Android/desktop JVM tests or the Android app's build"

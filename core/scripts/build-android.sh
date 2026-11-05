@@ -96,3 +96,5 @@ echo "updated $module_dir and $jni_dir"
 # The licenses of what the Android and desktop app ships.
 python3 "$core_dir/scripts/acknowledgements.py" --android
 if [[ "$profile" == release ]]; then echo "$fingerprint" > "$stamp"; fi
+# Which sources the host library was built from, for the commit hook (.claude/hooks).
+echo "$fingerprint" > "$host/sources"

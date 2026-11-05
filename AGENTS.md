@@ -77,10 +77,9 @@ model games.
 - A `.claude/hooks` hook runs the checks a commit needs before every `git commit` and blocks it
   on failure. Fix the failure; never bypass it. It sees unstaged files only when the same
   command runs `git add`.
-- Built core libraries are not committed. In a new worktree, run
-  `core/scripts/git-hooks/rebuild-core.sh 0000000000000000000000000000000000000000 HEAD` to copy
-  the xcframework from another worktree (else `build-apple.sh`), and `build-android.sh --debug`
-  before the JVM tests (a stale host library fails them with `UnsatisfiedLinkError`).
+- Built core libraries (the xcframework, Android's and the host's) are not committed. The commit
+  hook copies or rebuilds them when they don't match the sources; by hand, `build-apple.sh` and
+  `build-android.sh --debug` (an old host library fails the JVM tests with `UnsatisfiedLinkError`).
 - Generated bindings (`opening_core.swift`, `opening_core.kt`) are committed and never edited by
   hand.
 - `testData/` (ignored) holds personal repertoires for manual tests. Never commit one.
