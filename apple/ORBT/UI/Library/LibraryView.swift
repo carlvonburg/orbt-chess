@@ -184,7 +184,8 @@ struct LibraryView: View {
         isRegularWidth(sizeClass) && !model.library.entries.isEmpty
     }
 
-    /// iPad and Mac, like Mail: the repertoires in the sidebar, selected rather than pushed
+    #if os(macOS)
+    /// The Mac, like Mail: the repertoires in the sidebar, selected rather than pushed
     /// (macOS 26 lays a scroll view pushed onto a stack in a sidebar out under an inset as tall
     /// as the column, so it shows nothing). In the middle the selection: Today, or the
     /// repertoire's overview with Browse's and Study's panels pushed on it; on the right the
@@ -211,6 +212,62 @@ struct LibraryView: View {
         .environment(\.openScreen, openScreen)
         .environment(\.openAnalysis, openAnalysis)
     }
+    #else
+    /// iPad, two columns as on Android's wide windows. On the left the library, with Browse's,
+    /// Study's and Analysis's panels pushed on it (they replace the list; back returns to it);
+    /// on the right the board of the screen on top, else the selection's dashboard: Today's
+    /// card or the repertoire's Coverage and Study, above their statistics.
+    private var split: some View {
+        NavigationSplitView(columnVisibility: $columns) {
+            NavigationStack(path: $path) {
+                content
+                    .navigationTitle("Repertoires")
+                    .toolbar { libraryToolbar }
+                    .navigationDestination(for: LibraryRoute.self, destination: route)
+            }
+            // A starting width only (one for the list and the panels: a width that changed
+            // with the path would resize the column during the push).
+            .navigationSplitViewColumnWidth(ideal: 380)
+        } detail: {
+            NavigationStack {
+                if let board {
+                    BoardColumnView(board: board, statisticsScope: statisticsScope)
+                } else {
+                    dashboard
+                }
+            }
+        }
+        .environment(\.inSplitView, true)
+        .environment(\.openScreen, openScreen)
+        .environment(\.openAnalysis, openAnalysis)
+    }
+
+    /// The detail with no board: Today's card across the page, or the selected repertoire's
+    /// overview cards, then the statistics.
+    @ViewBuilder
+    private var dashboard: some View {
+        if case .repertoire(let id) = selection {
+            destination(id) { doc in
+                RepertoireOverviewView(document: doc,
+                                       editLines: { go(to: [.builder(doc.entryID)]) },
+                                       study: { go(to: [.study(doc.entryID)]) },
+                                       practice: { go(to: [.practice(doc.entryID, RepertoireTree.rootID)]) },
+                                       dashboard: true)
+            }
+            .id(model.currentID(id))
+            .environment(\.openScreen, openScreen)
+            .environment(\.openAnalysis, openAnalysis)
+        } else {
+            let stats = entryStats
+            InlineStatistics(scope: .all) {
+                GroupBox {
+                    todayCard(stats, wide: true)
+                }
+            }
+            .navigationTitle("Today")
+        }
+    }
+    #endif
 
     /// The sidebar's selection as the list sets it: choosing another item starts its column
     /// afresh. (The list sets it again when it redraws, so only a change does.)
@@ -223,6 +280,7 @@ struct LibraryView: View {
         })
     }
 
+    #if os(macOS)
     /// The middle column's root: Today, or the selected repertoire's overview.
     @ViewBuilder
     private var middleRoot: some View {
@@ -254,6 +312,7 @@ struct LibraryView: View {
         }
         .navigationTitle("Today")
     }
+    #endif
 
     /// What is left to do today and what was studied: in the library's Today section on a
     /// phone, in the Today column in the split view.
@@ -269,10 +328,10 @@ struct LibraryView: View {
 
     /// Today across every repertoire, with Study All: atop the library on a phone, in the
     /// middle column when Today is selected in the split view.
-    private func todayCard(_ stats: [String: EntryStats]) -> some View {
+    private func todayCard(_ stats: [String: EntryStats], wide: Bool = false) -> some View {
         TodayCard(entries: model.library.entries.filter { !$0.needsSetup }.map { ($0, entryStats(for: $0, in: stats)) },
                   today: today.today, streak: today.streak,
-                  studyAll: { open(.studyAll(studyAllEntries)) }, open: open)
+                  studyAll: { open(.studyAll(studyAllEntries)) }, open: open, wide: wide)
     }
 
     /// Opens a screen from Today: pushed on a phone; in the split view the repertoire is
@@ -387,6 +446,7 @@ struct LibraryView: View {
             return
         }
         if usesSplit {
+            #if os(macOS)
             if selection == .repertoire(id) {
                 path = routes
             } else {
@@ -395,6 +455,10 @@ struct LibraryView: View {
                 selection = .repertoire(id)
                 path = []
             }
+            #else
+            selection = .repertoire(id)
+            path = routes
+            #endif
         } else {
             path = pending.build ? routes : [.overview(id)]
         }
@@ -545,6 +609,8 @@ private struct BoardColumnView: View {
     @Environment(AppModel.self) private var app
     @Environment(\.openAnalysis) private var openAnalysis
     @State private var columnWidth: CGFloat = 0
+    /// The board's side (`BoardColumnLayout`), 0 until it is laid out.
+    @State private var boardSide: CGFloat = 0
 
     /// Looking the move up counts as Again, as Browse in the panel does.
     private func studyAnalysisButton(_ model: DrillModel) -> some View {
@@ -554,16 +620,23 @@ private struct BoardColumnView: View {
         }
     }
 
-    /// The history in the bottom bar: on iPad as wide as the bar allows. On the Mac the bar is
-    /// the window toolbar: with the sidebar hidden the middle column's items reach into this
-    /// column's, and a history that does not fit goes to the overflow menu and stays there, so
-    /// it gets a fixed width from the column.
+    /// The history in the bottom bar, a fixed width (on iPad the bar spans the board, as on
+    /// Android): a toolbar item takes the
+    /// width of what is in it, so a history sized by its moves grew and shrank the bar as you
+    /// went back and forth, moving the buttons beside it. The moves scroll inside it. On the
+    /// Mac the bar is the window toolbar: with the sidebar hidden the middle column's items
+    /// reach into this column's, and a history that does not fit goes to the overflow menu and
+    /// stays there; its Analysis button is in the bar too.
     @ViewBuilder
     private func historyFrame(_ history: some View, buttons: Bool) -> some View {
         #if os(macOS)
         history.frame(width: max(120, columnWidth - (buttons ? 180 : 60) - 200))
         #else
-        history.frame(maxWidth: .infinity)
+        // The bar as wide as the board, within the bar's margins (a board edge to edge across
+        // the column is wider than they allow, and an item that does not fit is dropped): the
+        // history takes what the buttons leave.
+        let bar = min(boardSide > 0 ? boardSide : columnWidth, columnWidth - 48)
+        history.frame(width: max(120, bar - (buttons ? 112 : 16)))
         #endif
     }
 
@@ -602,6 +675,7 @@ private struct BoardColumnView: View {
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { columnWidth = $0 }
+        .onPreferenceChange(BoardSideKey.self) { boardSide = $0 }
         .navigationTitle(title)
         .toolbar {
             if case .builder(let model, let presentation) = board {
@@ -613,13 +687,11 @@ private struct BoardColumnView: View {
                 ToolbarSpacer(.flexible, placement: .bottomActions)
                 #endif
                 ToolbarItemGroup(placement: .bottomActions) { BuilderNavigationButtons(model: model) }
-                // A fixed width from the column: moving never resizes the bar; the moves
-                // scroll inside it. Not at the start position with nothing ahead, where the
-                // strip has nothing to show (no home button, no moves) and was empty space.
-                if model.current != RepertoireTree.rootID || model.hasDraft || !model.lineAhead.isEmpty {
-                    ToolbarItem(placement: .bottomActions) {
-                        historyFrame(MovePathStrip(model: model), buttons: true)
-                    }
+                // A fixed width from the column, there from the start (even with no moves to
+                // show yet): moving never resizes the bar or moves its buttons; the moves
+                // scroll inside it.
+                ToolbarItem(placement: .bottomActions) {
+                    historyFrame(MovePathStrip(model: model), buttons: true)
                 }
                 #if os(macOS)
                 ToolbarItem(placement: .bottomActions) {
@@ -693,6 +765,9 @@ private struct TodayCard: View {
     let streak: Streak
     let studyAll: () -> Void
     let open: (LibraryRoute) -> Void
+    /// Across iPad's dashboard: what is left on the leading side, the streak and the actions
+    /// on the trailing side (as Android's wide card). Else list rows, the streak by the title.
+    var wide = false
 
     private enum Phase {
         case due
@@ -732,7 +807,24 @@ private struct TodayCard: View {
 
     /// List rows: what today looks like, then its actions (a menu when several repertoires
     /// could take one), the same buttons, the most likely one prominent.
+    @ViewBuilder
     var body: some View {
+        if wide {
+            HStack(alignment: .top, spacing: 24) {
+                summary.frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .trailing, spacing: 8) {
+                    streakBadge
+                    actions
+                }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        } else {
+            summary
+            actions
+        }
+    }
+
+    private var summary: some View {
         VStack(alignment: .leading, spacing: 8) {
             switch phase {
             case .due:
@@ -768,6 +860,10 @@ private struct TodayCard: View {
                 nextLine
             }
         }
+    }
+
+    @ViewBuilder
+    private var actions: some View {
         switch phase {
         case .due:
             Button("Study All", action: studyAll).actionButton(prominent: true)
@@ -787,7 +883,8 @@ private struct TodayCard: View {
         HStack(alignment: .firstTextBaseline) {
             title().font(.headline)
             Spacer()
-            trailing()
+            // Across the dashboard the streak heads the actions instead.
+            if !wide { trailing() }
         }
     }
 

@@ -63,6 +63,7 @@ struct BoardView: View {
     var onMove: (BoardSquare, BoardSquare, PieceKind?) -> Void = { _, _, _ in }
 
     @Environment(\.theme) private var appTheme
+    @Environment(\.boardCornerRadius) private var cornerRadius
     private var theme: BoardTheme { appTheme.board }
     @State private var selected: BoardSquare?
     @State private var dragFrom: BoardSquare?
@@ -162,6 +163,8 @@ struct BoardView: View {
             }
         }
         .frame(width: sq * 8, height: sq * 8)
+        // Only the squares: a piece dragged past the edge stays visible.
+        .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
     }
 
     private func badgeLayer(sq: CGFloat) -> some View {
