@@ -42,7 +42,18 @@ extension LibraryRoute {
 extension EnvironmentValues {
     /// Opens Browse or Study from another screen (set by the library). Only the screen it is
     /// opened from stays under it, so switching back and forth doesn't pile up screens.
-    @Entry var openScreen: ((LibraryRoute) -> Void)?
+    @Entry var openScreen: OpenScreenAction?
+}
+
+/// The library's `openScreen`, called like a function (as SwiftUI's own `OpenURLAction`).
+/// Equatable so the environment can tell it hasn't changed (a closure can't be compared,
+/// so every update would redraw the screens that read it): it always does the same thing,
+/// reading the library's state when called, so any two are equal.
+struct OpenScreenAction: Equatable {
+    let perform: (LibraryRoute) -> Void
+    init(_ perform: @escaping (LibraryRoute) -> Void) { self.perform = perform }
+    func callAsFunction(_ route: LibraryRoute) { perform(route) }
+    static func == (lhs: Self, rhs: Self) -> Bool { true }
 }
 
 /// A setup sheet to show (`RepertoireSetupFlow`).
@@ -161,8 +172,8 @@ struct LibraryView: View {
                 .toolbar { libraryToolbar }
                 .navigationDestination(for: LibraryRoute.self, destination: route)
         }
-        .environment(\.openScreen, openScreen)
-        .environment(\.openAnalysis, openAnalysis)
+        .environment(\.openScreen, OpenScreenAction(openScreen))
+        .environment(\.openAnalysis, OpenAnalysisAction(openAnalysis))
     }
 
     /// Shows `newPath` once the models of its Browse and Study screens are made, so the screen
@@ -209,8 +220,8 @@ struct LibraryView: View {
             }
         }
         .environment(\.inSplitView, true)
-        .environment(\.openScreen, openScreen)
-        .environment(\.openAnalysis, openAnalysis)
+        .environment(\.openScreen, OpenScreenAction(openScreen))
+        .environment(\.openAnalysis, OpenAnalysisAction(openAnalysis))
     }
     #else
     /// iPad, two columns as on Android's wide windows. On the left the library, with Browse's,
@@ -238,8 +249,8 @@ struct LibraryView: View {
             }
         }
         .environment(\.inSplitView, true)
-        .environment(\.openScreen, openScreen)
-        .environment(\.openAnalysis, openAnalysis)
+        .environment(\.openScreen, OpenScreenAction(openScreen))
+        .environment(\.openAnalysis, OpenAnalysisAction(openAnalysis))
     }
 
     /// The detail with no board: Today's card across the page, or the selected repertoire's
@@ -255,8 +266,8 @@ struct LibraryView: View {
                                        dashboard: true)
             }
             .id(model.currentID(id))
-            .environment(\.openScreen, openScreen)
-            .environment(\.openAnalysis, openAnalysis)
+            .environment(\.openScreen, OpenScreenAction(openScreen))
+            .environment(\.openAnalysis, OpenAnalysisAction(openAnalysis))
         } else {
             let stats = entryStats
             InlineStatistics(scope: .all) {
@@ -397,8 +408,8 @@ struct LibraryView: View {
     /// reach the screens the stack pushes (in the split view's column).
     private func route(_ route: LibraryRoute) -> some View {
         screen(route)
-            .environment(\.openScreen, openScreen)
-            .environment(\.openAnalysis, openAnalysis)
+            .environment(\.openScreen, OpenScreenAction(openScreen))
+            .environment(\.openAnalysis, OpenAnalysisAction(openAnalysis))
     }
 
     @ViewBuilder
@@ -615,7 +626,7 @@ private struct BoardColumnView: View {
     /// Looking the move up counts as Again, as Browse in the panel does.
     private func studyAnalysisButton(_ model: DrillModel) -> some View {
         Button("Analysis", systemImage: "cpu") {
-            openAnalysis?(AnalysisModel(document: model.document, moves: model.analysisMoves(),
+            openAnalysis?.callAsFunction(AnalysisModel(document: model.document, moves: model.analysisMoves(),
                                         orientation: model.color, origin: .study))
         }
     }

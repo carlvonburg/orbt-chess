@@ -77,6 +77,8 @@ struct BuilderView: View {
         .onDisappear { StudyBranchTip.justSaved = false }
         .onAppear {
             // Edit > Undo and ⌘Z undo through the builder, which also leaves a removed position.
+            // Held weakly by the undo manager, which outlives the screen.
+            let model = model, document = document
             document.attachUndo(undoManager) { [weak model, weak document] in
                 if let model { model.undo() } else { document?.undo() }
             }
@@ -327,7 +329,7 @@ final class BuilderPresentation {
 
     /// The analysis board from the position on the board, pushed through the library (`open`),
     /// else here; going back puts its line on the builder as a draft.
-    func analyze(_ model: BuilderModel, open: ((AnalysisModel) -> Void)?) {
+    func analyze(_ model: BuilderModel, open: OpenAnalysisAction?) {
         let analysis = AnalysisModel(document: model.document, moves: model.movesToBoard,
                                      orientation: model.orientation, origin: .build(model))
         if let open { open(analysis) } else { self.analysis = analysis }
